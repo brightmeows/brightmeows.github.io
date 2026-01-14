@@ -1,7 +1,6 @@
 import { mdsvex } from "mdsvex";
 import adapter from "@sveltejs/adapter-static";
 import { vitePreprocess } from "@sveltejs/vite-plugin-svelte";
-import process from "node:process";
 import type { Config } from "@sveltejs/kit";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -35,7 +34,7 @@ const config: Config = {
       preload: false,
     }),
     paths: {
-      base: process.argv.includes("dev") ? "" : process.env.BASE_PATH,
+      base: "",
     },
     alias: {
       $content: path.resolve("./src/content"),
