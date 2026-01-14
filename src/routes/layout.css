@@ -24,6 +24,18 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+
+    /* 玻璃效果颜色变量 - 使用标准格式避免被 Tailwind 转换 */
+    --glass-white-10: 255 255 255 / 0.1;
+    --glass-white-20: 255 255 255 / 0.2;
+    --glass-white-05: 255 255 255 / 0.05;
+    --glass-white-15: 255 255 255 / 0.15;
+    --glass-white-30: 255 255 255 / 0.3;
+    --glass-white-40: 255 255 255 / 0.4;
+    --glass-black-10: 0 0 0 / 0.1;
+    --glass-black-20: 0 0 0 / 0.2;
+    --glass-black-30: 0 0 0 / 0.3;
+    --glass-black-40: 0 0 0 / 0.4;
   }
 
   body {
@@ -62,18 +74,18 @@
   .glass-container {
     @apply relative rounded-[20px] p-8 text-white backdrop-blur-[10px];
 
-    /* 回退值 - 确保在不支持现代特性的浏览器中也能显示基本样式 */
-    border: 1px solid #ffffff1a;
-    background-color: #ffffff1a;
-    box-shadow: 0 8px 32px #0000004d;
+    /* 使用 CSS 变量避免被 Tailwind 转换 */
+    border: 1px solid rgb(var(--glass-white-10));
+    background-color: rgb(var(--glass-white-10));
+    box-shadow: 0 8px 32px rgb(var(--glass-black-30));
   }
 
   /* 支持 backdrop-filter 的浏览器（现代浏览器）- 使用 rgba */
   @supports (backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px)) {
     .glass-container {
-      border-color: rgba(255, 255, 255, 0.1);
-      background-color: rgba(255, 255, 255, 0.1);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      border-color: rgb(var(--glass-white-10));
+      background-color: rgb(var(--glass-white-10));
+      box-shadow: 0 8px 32px rgb(var(--glass-black-30));
     }
   }
 
@@ -82,15 +94,15 @@
     @apply relative overflow-hidden text-white backdrop-blur-[10px]
       transition-opacity duration-200 ease-in-out;
 
-    border: 1px solid #ffffff33;
-    background-color: #ffffff1a;
-    box-shadow: 0 4px 30px #0000001a;
+    border: 1px solid rgb(var(--glass-white-20));
+    background-color: rgb(var(--glass-white-10));
+    box-shadow: 0 4px 30px rgb(var(--glass-black-10));
   }
 
   @supports (backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px)) {
     .glass-panel {
-      border-color: rgba(255, 255, 255, 0.2);
-      background-color: rgba(255, 255, 255, 0.1);
+      border-color: rgb(var(--glass-white-20));
+      background-color: rgb(var(--glass-white-10));
     }
   }
 
@@ -100,14 +112,14 @@
       transition-[transform,background] duration-300 ease-out
       hover:-translate-y-0.5;
 
-    border: 1px solid #ffffff1a;
-    background-color: #0003;
+    border: 1px solid rgb(var(--glass-white-10));
+    background-color: rgb(var(--glass-black-20));
   }
 
   @supports (backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px)) {
     .glass-card {
-      border-color: rgba(255, 255, 255, 0.1);
-      background-color: rgba(0, 0, 0, 0.2);
+      border-color: rgb(var(--glass-white-10));
+      background-color: rgb(var(--glass-black-20));
     }
   }
 
@@ -124,21 +136,21 @@
       hover:-translate-y-0.5 active:translate-y-0 active:scale-95
       cursor-pointer;
 
-    border: 1px solid #ffffff33;
-    background-color: #ffffff1a;
+    border: 1px solid rgb(var(--glass-white-20));
+    background-color: rgb(var(--glass-white-10));
   }
 
   @supports (backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px)) {
     .glass-button {
-      border-color: rgba(255, 255, 255, 0.2);
-      background-color: rgba(255, 255, 255, 0.1);
+      border-color: rgb(var(--glass-white-20));
+      background-color: rgb(var(--glass-white-10));
     }
   }
 
   @supports (backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px)) {
     .glass-button:hover {
-      background-color: rgba(255, 255, 255, 0.2);
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+      background-color: rgb(var(--glass-white-20));
+      box-shadow: 0 5px 15px rgb(var(--glass-black-20));
     }
   }
 
@@ -147,16 +159,16 @@
     @apply relative mx-auto my-8 max-w-375 rounded-[20px] p-8
       backdrop-blur-[10px];
 
-    border: 1px solid #ffffff1a;
-    background-color: #ffffff0d;
-    box-shadow: 0 8px 32px #0003, inset 0 1px 0 #ffffff1a;
+    border: 1px solid rgb(var(--glass-white-10));
+    background-color: rgb(var(--glass-white-05));
+    box-shadow: 0 8px 32px rgb(var(--glass-black-20)), inset 0 1px 0 rgb(var(--glass-white-10));
   }
 
   @supports (backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px)) {
     .glass-bms-container {
-      border-color: rgba(255, 255, 255, 0.1);
-      background-color: rgba(255, 255, 255, 0.05);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      border-color: rgb(var(--glass-white-10));
+      background-color: rgb(var(--glass-white-05));
+      box-shadow: 0 8px 32px rgb(var(--glass-black-20)), inset 0 1px 0 rgb(var(--glass-white-10));
     }
   }
 
@@ -164,14 +176,14 @@
   .glass-loading-container {
     @apply rounded-[15px] p-8;
 
-    border: 1px solid #ffffff1a;
-    background-color: #0003;
+    border: 1px solid rgb(var(--glass-white-10));
+    background-color: rgb(var(--glass-black-20));
   }
 
   @supports (backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px)) {
     .glass-loading-container {
-      border-color: rgba(255, 255, 255, 0.1);
-      background-color: rgba(0, 0, 0, 0.2);
+      border-color: rgb(var(--glass-white-10));
+      background-color: rgb(var(--glass-black-20));
     }
   }
 }
