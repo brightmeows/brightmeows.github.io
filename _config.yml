@@ -1,0 +1,16 @@
+# GitHub Pages 配置
+# 由于此仓库使用 Vite 构建静态文件，Jekyll 被禁用
+theme: jekyll-theme-minimal
+title: 白喵斯的小窝
+description: 白喵斯的小窝
+
+# 禁用 Jekyll 处理，让 Vite 构建的静态文件正常工作
+lsi: false
+safe: true
+incremental: false
+highlighter: rouge
+gist:
+  noscript: false
+kramdown:
+  math_engine: mathjax
+  syntax_highlighter: rouge

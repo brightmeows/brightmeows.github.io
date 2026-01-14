@@ -4,7 +4,6 @@ import { sveltekit } from "@sveltejs/kit/vite";
 import { defineConfig } from "vite";
 import path from "node:path";
 import { blogIndexPlugin } from "./src/lib/vite-plugin/blog-index.ts";
-import { nojekyllPlugin } from "./src/lib/vite-plugin/nojekyll.ts";
 
 export default defineConfig({
   plugins: [
@@ -15,7 +14,6 @@ export default defineConfig({
       outdir: "./src/lib/paraglide",
     }),
     blogIndexPlugin(),
-    nojekyllPlugin(),
   ],
   resolve: {
     alias: {
