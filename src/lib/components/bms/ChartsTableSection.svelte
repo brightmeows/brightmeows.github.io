@@ -204,34 +204,22 @@
               </colgroup>
               <thead>
                 <tr>
-                  <th
-                    class="border-b-2 border-white/10 bg-[rgba(100,181,246,0.2)] p-4 text-left font-semibold text-white"
-                  >
+                  <th class="table-th-glass">
                     等级
                   </th>
-                  <th
-                    class="border-b-2 border-white/10 bg-[rgba(100,181,246,0.2)] p-4 text-left font-semibold text-white"
-                  >
+                  <th class="table-th-glass">
                     下载
                   </th>
-                  <th
-                    class="border-b-2 border-white/10 bg-[rgba(100,181,246,0.2)] p-4 text-left font-semibold text-white"
-                  >
+                  <th class="table-th-glass">
                     BMS网站
                   </th>
-                  <th
-                    class="border-b-2 border-white/10 bg-[rgba(100,181,246,0.2)] p-4 text-left font-semibold text-white"
-                  >
+                  <th class="table-th-glass">
                     标题
                   </th>
-                  <th
-                    class="border-b-2 border-white/10 bg-[rgba(100,181,246,0.2)] p-4 text-left font-semibold text-white"
-                  >
+                  <th class="table-th-glass">
                     艺术家
                   </th>
-                  <th
-                    class="border-b-2 border-white/10 bg-[rgba(100,181,246,0.2)] p-4 text-left font-semibold text-white"
-                  >
+                  <th class="table-th-glass">
                     备注
                   </th>
                 </tr>
@@ -243,9 +231,7 @@
                   {@const bmsLinks = getBmsLinks(chart)}
                   {@const               chartJson = { ...chart, groupLevel: group.level }}
                   <tr class="hover:bg-white/5">
-                    <td
-                      class="border-b border-white/5 p-4 wrap-break-word text-white/90"
-                    >
+                    <td class="table-td-glass wrap-break-word">
                       <span
                         class="inline-block min-w-7.5 rounded-xl px-2 py-1 text-center text-[0.85rem] font-semibold text-white"
                         style={`background-color:${groupColor};`}
@@ -253,13 +239,11 @@
                         {group.level}
                       </span>
                     </td>
-                    <td
-                      class="border-b border-white/5 p-4 wrap-break-word text-white/90"
-                    >
+                    <td class="table-td-glass wrap-break-word">
                       <div class="flex flex-row flex-wrap gap-[0.3rem]">
                         {#if bundleUrl}
                           <a
-                            class="flex min-w-17 flex-1 cursor-pointer items-center justify-center gap-[0.2rem] rounded-md border-none bg-[linear-gradient(135deg,#4caf50,#2e7d32)] px-2 py-[0.35rem] text-[0.85rem] font-semibold text-white no-underline transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:bg-[linear-gradient(135deg,#66bb6a,#388e3c)] hover:shadow-[0_4px_8px_rgba(0,0,0,0.2)] active:translate-y-0"
+                            class="flex min-w-17 flex-1 items-center justify-center gap-[0.2rem] btn-gradient-green"
                             href={bundleUrl}
                             title={bundleUrl}
                             target="_blank"
@@ -270,7 +254,7 @@
                         {/if}
                         {#if diffUrl}
                           <a
-                            class="flex min-w-17 flex-1 cursor-pointer items-center justify-center gap-[0.2rem] rounded-md border-none bg-[linear-gradient(135deg,#2196f3,#1565c0)] px-2 py-[0.35rem] text-[0.85rem] font-semibold text-white no-underline transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:bg-[linear-gradient(135deg,#42a5f5,#1976d2)] hover:shadow-[0_4px_8px rgba(0,0,0,0.2)] active:translate-y-0"
+                            class="flex min-w-17 flex-1 items-center justify-center gap-[0.2rem] btn-gradient-blue"
                             href={diffUrl}
                             title={diffUrl}
                             target="_blank"
@@ -281,13 +265,11 @@
                         {/if}
                       </div>
                     </td>
-                    <td
-                      class="border-b border-white/5 p-4 wrap-break-word text-white/90"
-                    >
+                    <td class="table-td-glass wrap-break-word">
                       <div class="flex flex-wrap justify-center gap-[0.4rem]">
                         {#if hasMd5(chart)}
                           <a
-                            class="flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-full border-none bg-[linear-gradient(135deg,#ff9800,#f57c00)] p-0 text-[1.2rem] text-white no-underline transition-all duration-200 ease-in-out hover:scale-110 hover:bg-[linear-gradient(135deg,#ffb74d,#ff9800)] hover:shadow-[0_4px_8px_rgba(0,0,0,0.3)] active:scale-95"
+                            class="btn-icon-circle bg-[linear-gradient(135deg,#ff9800,#f57c00)] hover:bg-[linear-gradient(135deg,#ffb74d,#ff9800)]"
                             href={bmsLinks.bmsScoreViewer}
                             title={bmsLinks.bmsScoreViewer}
                             target="_blank"
@@ -296,7 +278,7 @@
                             📊
                           </a>
                           <a
-                            class="flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-full border-none bg-[linear-gradient(135deg,#9c27b0,#7b1fa2)] p-0 text-[0.85rem] font-bold text-white no-underline transition-all duration-200 ease-in-out hover:scale-110 hover:bg-[linear-gradient(135deg,#ba68c8,#9c27b0)] hover:shadow-[0_4px_8px_rgba(0,0,0,0.3)] active:scale-95"
+                            class="btn-icon-circle bg-[linear-gradient(135deg,#9c27b0,#7b1fa2)] hover:bg-[linear-gradient(135deg,#ba68c8,#9c27b0)] text-[0.85rem] font-bold"
                             href={bmsLinks.lr2ir}
                             title={bmsLinks.lr2ir}
                             target="_blank"
@@ -307,7 +289,7 @@
                         {/if}
                         {#if hasSha256(chart)}
                           <a
-                            class="flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-full border-none bg-[linear-gradient(135deg,#795548,#5d4037)] p-0 text-[1.2rem] text-white no-underline transition-all duration-200 ease-in-out hover:scale-110 hover:bg-[linear-gradient(135deg,#a1887f,#795548)] hover:shadow-[0_4px_8px_rgba(0,0,0,0.3)] active:scale-95"
+                            class="btn-icon-circle bg-[linear-gradient(135deg,#795548,#5d4037)] hover:bg-[linear-gradient(135deg,#a1887f,#795548)]"
                             href={bmsLinks.mocha}
                             title={bmsLinks.mocha}
                             target="_blank"
@@ -320,7 +302,7 @@
                             />
                           </a>
                           <a
-                            class="flex h-9 w-9 cursor-pointer items-center justify-center overflow-hidden rounded-full border-none bg-[linear-gradient(135deg,#00bcd4,#0097a7)] p-0 text-[1.2rem] text-white no-underline transition-all duration-200 ease-in-out hover:scale-110 hover:bg-[linear-gradient(135deg,#4dd0e1,#00bcd4)] hover:shadow-[0_4px_8px_rgba(0,0,0,0.3)] active:scale-95"
+                            class="btn-icon-circle bg-[linear-gradient(135deg,#00bcd4,#0097a7)] hover:bg-[linear-gradient(135deg,#4dd0e1,#00bcd4)]"
                             href={bmsLinks.minir}
                             title={bmsLinks.minir}
                             target="_blank"
@@ -335,9 +317,7 @@
                         {/if}
                       </div>
                     </td>
-                    <td
-                      class="border-b border-white/5 p-4 wrap-break-word text-white/90"
-                    >
+                    <td class="table-td-glass wrap-break-word">
                       <strong
                         class="cursor-default"
                         use:jsonPreview={{
@@ -352,14 +332,10 @@
                         {chart.title || "未知标题"}
                       </strong>
                     </td>
-                    <td
-                      class="border-b border-white/5 p-4 wrap-break-word text-white/90"
-                    >
+                    <td class="table-td-glass wrap-break-word">
                       {chart.artist || "未知艺术家"}
                     </td>
-                    <td
-                      class="border-b border-white/5 p-4 wrap-break-word text-white/90"
-                    >
+                    <td class="table-td-glass wrap-break-word">
                       {chart.comment || ""}
                     </td>
                   </tr>

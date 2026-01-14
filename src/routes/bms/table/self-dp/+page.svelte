@@ -319,9 +319,9 @@
               {Math.round(loadingState.progress)}%
             </div>
           </div>
-          <div class="mb-6 h-3 overflow-hidden rounded-md bg-white/10">
+          <div class="progress-bar-container">
             <div
-              class="h-full rounded-md bg-[linear-gradient(90deg,#4caf50,#64b5f6)] transition-[width] duration-300 ease-out"
+              class="progress-bar-fill"
               style={`width:${loadingState.progress}%;`}
             >
             </div>
@@ -386,17 +386,13 @@
               统计摘要
             </h3>
             <div class="grid grid-cols-3 gap-4">
-              <div
-                class="rounded-[10px] border border-white/10 bg-white/5 p-4 text-center"
-              >
+              <div class="stat-card">
                 <div class="mb-2 text-[2rem] font-bold text-[#64b5f6]">
                   {tableStats().totalCharts}
                 </div>
                 <div class="text-[0.9rem] text-white/70">总谱面数</div>
               </div>
-              <div
-                class="rounded-[10px] border border-white/10 bg-white/5 p-4 text-center"
-              >
+              <div class="stat-card">
                 <div class="mb-2 text-[2rem] font-bold text-[#64b5f6]">
                   {tableStats().difficulties.length}
                 </div>
