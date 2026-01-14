@@ -280,7 +280,7 @@
 />
 <main class="m-0 mx-auto box-border w-full max-w-350 p-8">
   <section
-    class="animate-fadeIn mt-8 w-full rounded-[20px] border border-white/10 bg-white/10 p-8 text-white shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-[10px]"
+    class="glass-container animate-fadeIn mt-8 w-full"
   >
     <h1 id="bms-table-mirror" class="page-title mb-2 scroll-mt-5 text-center">
       BMS 难度表镜像
@@ -312,7 +312,7 @@
     <div class="mt-4 flex flex-wrap items-stretch justify-center gap-4">
       {#each links as link (link.href)}
         <a
-          class="flex w-80 flex-col rounded-[14px] border border-white/10 bg-black/20 p-5 text-white no-underline transition-[transform,background] duration-300 ease-out hover:-translate-y-0.5 hover:bg-[rgba(255,255,255,0.06)]"
+          class="glass-card w-80 flex flex-col"
           href={link.href}
         >
           <div class="mb-2 text-[1.2rem] font-bold text-[#64b5f6]">
@@ -326,7 +326,7 @@
 
   <section
     id="mirror-list"
-    class="animate-fadeIn mt-8 w-full scroll-mt-5 rounded-[20px] border border-white/10 bg-white/10 p-8 text-white shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-[10px]"
+    class="glass-container animate-fadeIn mt-8 w-full scroll-mt-5"
   >
     <div class="flex flex-col gap-3">
       <div class="relative w-full">

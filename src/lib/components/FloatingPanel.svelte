@@ -196,8 +196,7 @@
   const currentPosition = $derived(positionConfig[position]);
 
   function getPanelClasses(isOpen: boolean): string {
-    const base =
-      "relative overflow-hidden border border-white/20 bg-white/10 text-white shadow-[0_4px_30px_rgba(0,0,0,0.1)] backdrop-blur-[10px] transition-opacity duration-200 ease-in-out";
+    const base = "glass-panel";
     const sizeSetting = sizeConfig[size];
     if (isOpen) {
       return `${base} ${sizeSetting.maxHeightClass} ${sizeSetting.widthClass} ${sizeSetting.paddingClass} rounded-2xl`;

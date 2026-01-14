@@ -42,19 +42,19 @@
       <a
         href="https://github.com/MiyakoMeow"
         target="_blank"
-        class="rounded-[50px] border border-white/20 bg-white/10 px-6 py-[0.8rem] font-medium text-white no-underline transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:bg-white/20 hover:shadow-[0_5px_15px_rgba(0,0,0,0.2)]"
+        class="glass-button"
       >
         GitHub
       </a>
       <a
         href="https://space.bilibili.com/215242890"
-        class="rounded-[50px] border border-white/20 bg-white/10 px-6 py-[0.8rem] font-medium text-white no-underline transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:bg-white/20 hover:shadow-[0_5px_15px_rgba(0,0,0,0.2)]"
+        class="glass-button"
       >
         Bilibili
       </a>
       <a
         href="https://x.com/MiyakoWoW"
-        class="rounded-[50px] border border-white/20 bg-white/10 px-6 py-[0.8rem] font-medium text-white no-underline transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:bg-white/20 hover:shadow-[0_5px_15px_rgba(0,0,0,0.2)]"
+        class="glass-button"
       >
         X (Twitter)
       </a>

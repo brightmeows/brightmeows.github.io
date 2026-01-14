@@ -282,7 +282,7 @@
   initiallyOpen={false}
 />
 <div
-  class="mx-auto my-8 max-w-375 rounded-[20px] border border-white/10 bg-white/5 p-8 shadow-[0_8px_32px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-[10px]"
+  class="glass-bms-container"
 >
   <div class="mb-8 text-center">
     <h1 class="page-title mb-2">

@@ -38,13 +38,13 @@
 <main class="m-0 mx-auto box-border w-full max-w-350 p-8">
   <!-- 菜单部分 -->
   <div
-    class="animate-fadeIn mt-8 w-full rounded-[20px] border border-white/10 bg-white/10 p-8 text-white shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-[10px]"
+    class="glass-container animate-fadeIn mt-8 w-full"
   >
     <h1 class="page-title text-center">BMS</h1>
     <div class="mt-4 flex flex-wrap items-stretch justify-center gap-4">
       <a
         href="/bms/table-mirror"
-        class="flex w-80 flex-col rounded-[14px] border border-white/10 bg-black/20 p-5 text-white no-underline transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)]"
+        class="glass-card w-80 flex flex-col"
       >
         <div class="mb-2 text-[1.2rem] font-bold text-[#64b5f6]">
           难度表镜像
@@ -55,7 +55,7 @@
       </a>
       <a
         href="/bms/table/self-sp"
-        class="flex w-80 flex-col rounded-[14px] border border-white/10 bg-black/20 p-5 text-white no-underline transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)]"
+        class="glass-card w-80 flex flex-col"
       >
         <div class="mb-2 text-[1.2rem] font-bold text-[#64b5f6]">
           谱面合集（SP）
@@ -66,7 +66,7 @@
       </a>
       <a
         href="/bms/table/self-dp"
-        class="flex w-80 flex-col rounded-[14px] border border-white/10 bg-black/20 p-5 text-white no-underline transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)]"
+        class="glass-card w-80 flex flex-col"
       >
         <div class="mb-2 text-[1.2rem] font-bold text-[#64b5f6]">
           谱面合集（DP）
@@ -80,7 +80,7 @@
 
   <!-- Markdown内容部分 -->
   <div
-    class="animate-fadeIn mt-8 w-full rounded-[20px] border border-white/10 bg-white/10 p-8 text-white shadow-[0_8px_32px_rgba(0,0,0,0.3)] backdrop-blur-[10px]"
+    class="glass-container animate-fadeIn mt-8 w-full"
   >
     <MarkdownContent>
       <BmsContent />
