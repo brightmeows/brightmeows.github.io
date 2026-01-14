@@ -1,10 +1,12 @@
 <script lang="ts">
+  import { goto } from "$app/navigation";
+
   function scrollToTop(): void {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function goHome(): void {
-    window.location.href = "/";
+    goto("/");
   }
 </script>
 

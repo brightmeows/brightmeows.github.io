@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { cubicInOut } from "svelte/easing";
   import { fade } from "svelte/transition";
+  import { resolve } from "$app/paths";
 
   interface BreadcrumbItem {
     /** 显示文本 */
@@ -278,7 +279,7 @@
             </span>
           {:else}
             <a
-              href={item.href}
+              href={resolve(item.href)}
               class="flex items-center gap-2 text-white/90 no-underline transition-colors duration-150 hover:text-white"
               onclick={(event) => event.stopPropagation()}
             >
