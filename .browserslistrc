@@ -1,0 +1,28 @@
+# 广泛兼容性配置
+# 支持全球超过 0.5% 的用户
+> 0.5%
+
+# 最后 2 个版本
+last 2 versions
+
+# Firefox ESR（长期支持版本）
+Firefox ESR
+
+# 不包含已停止维护的浏览器
+not dead
+
+# Safari 9+ (支持 backdrop-filter 的 -webkit- 前缀)
+iOS >= 9
+Safari >= 9
+
+# Android Chrome 60+
+ChromeAndroid >= 60
+Android >= 60
+
+# 移动端浏览器（中国市场）
+Samsung >= 7
+UCAndroid >= 11
+
+# 中国/韩国市场特定需求
+> 1% in CN
+> 1% in KR
