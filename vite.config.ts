@@ -3,6 +3,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { sveltekit } from "@sveltejs/kit/vite";
 import { defineConfig } from "vite";
 import path from "node:path";
+import { blogIndexPlugin } from "./src/lib/vite-plugin/blog-index.ts";
 
 export default defineConfig({
   plugins: [
@@ -12,6 +13,7 @@ export default defineConfig({
       project: "./project.inlang",
       outdir: "./src/lib/paraglide",
     }),
+    blogIndexPlugin(),
   ],
   resolve: {
     alias: {
