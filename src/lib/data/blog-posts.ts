@@ -9,7 +9,7 @@ export const blogPosts: BlogPost[] = [
     "date": "2025-12-25",
     "order": 0,
     "firstSentence": "本网站提供BMS难度表镜像，以及个人创作的谱面合集。个人分享资源在BMS主页。\r\n\r\n\r\n\r\n目前本网站提供以下内容：\r\n\r\n- BMS难度表镜像：大概是目前最全的BMS难度表目录。\r\n- 个...",
-    "url": "/blog/homepage-markdown"
+    "url": "/miyakomeow.github.io/blog/homepage-markdown"
   },
   {
     "slug": "markdown-elements-test",
@@ -17,6 +17,6 @@ export const blogPosts: BlogPost[] = [
     "date": "2025-12-26",
     "order": 1,
     "firstSentence": "这是一篇用于测试 Markdown 渲染能力的博文，尽量覆盖常见语法（包含数学公式）。\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\n普通段落。支持 **加粗**、_斜体_、~...",
-    "url": "/blog/markdown-elements-test"
+    "url": "/miyakomeow.github.io/blog/markdown-elements-test"
   }
 ];

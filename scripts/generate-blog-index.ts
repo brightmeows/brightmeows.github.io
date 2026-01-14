@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --allow-read --allow-write
+#!/usr/bin/env -S deno run --allow-read --allow-write --allow-env
 
 import { walk } from "https://deno.land/std@0.224.0/fs/walk.ts";
 import {
@@ -9,6 +9,7 @@ import type { BlogPost } from "../src/lib/types/blog.ts";
 
 const BLOG_DIR = "./src/content/blog";
 const OUTPUT_FILE = "./src/lib/data/blog-posts.ts";
+const BASE_PATH = Deno.env.get("BASE_PATH") || "";
 
 /**
  * 扫描博客目录并生成索引
@@ -39,7 +40,7 @@ async function generateBlogIndex(): Promise<BlogPost[]> {
         date: metadata.date,
         order: metadata.order,
         firstSentence: metadata.description || extractFirstSentence(content),
-        url: `/blog/${slug}`,
+        url: `${BASE_PATH}/blog/${slug}`,
       });
     } catch (error) {
       console.error(`Error processing ${entry.path}:`, error);
