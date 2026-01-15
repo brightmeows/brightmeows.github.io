@@ -3,6 +3,7 @@
   import { cubicInOut } from "svelte/easing";
   import { fade } from "svelte/transition";
   import { resolve } from "$app/paths";
+  import { GlassPanel } from "$lib/components/ui";
 
   interface BreadcrumbItem {
     /** 显示文本 */
@@ -188,16 +189,14 @@
     };
   });
 
-  const basePanelClass = "glass-panel";
+  const lastItemIndex = $derived(items.length - 1);
 
   function getPanelClasses(isOpen: boolean): string {
     if (isOpen) {
-      return `${basePanelClass} max-h-16 py-3 px-6 rounded-2xl`;
+      return `max-h-16 py-3 px-6 rounded-2xl cursor-default`;
     }
-    return `${basePanelClass} max-h-7 w-14 p-1 rounded-xl cursor-pointer`;
+    return `max-h-7 w-14 p-1 rounded-xl cursor-pointer`;
   }
-
-  const lastItemIndex = $derived(items.length - 1);
 </script>
 
 <div
@@ -213,7 +212,7 @@
     {@const keyedOpen = open}
     {@const panelClasses = getPanelClasses(keyedOpen)}
     <div
-      class="{panelClasses} {panelClass}"
+      class="glass-panel-wrapper"
       in:fade={{
         delay: enableTransitions ? fadeDurationMs : 0,
         duration: enableTransitions ? fadeDurationMs : 0,
@@ -229,67 +228,92 @@
       onclick={() => {
         if (!keyedOpen) openNow();
       }}
-      onkeydown={(event) => {
+      onkeydown={(event: KeyboardEvent) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
           if (!keyedOpen) openNow();
         }
       }}
     >
-      <div
-        class="pointer-events-none absolute inset-0 flex items-center justify-center"
-        class:opacity-0={keyedOpen}
-        class:opacity-100={!keyedOpen}
+      <GlassPanel
+        class="{panelClasses} {panelClass}"
+        padding="none"
+        rounded="none"
+        overflow={false}
       >
-        {#if icon}
-          {@render icon()}
-        {:else}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            class="size-4"
-            fill="currentColor"
-          >
-            <circle cx="5" cy="12" r="1.5" fill="currentColor" opacity="0.7" />
-            <circle cx="12" cy="12" r="1.5" fill="currentColor" opacity="0.7" />
-            <circle cx="19" cy="12" r="1.5" fill="currentColor" opacity="0.7" />
-          </svg>
-        {/if}
-      </div>
-
-      <div
-        class="flex items-center gap-2"
-        class:opacity-100={keyedOpen}
-        class:opacity-0={!keyedOpen}
-      >
-        {#each items as item, index (index)}
-          {#if index > 0}
-            <span class="mx-2 text-white/40 select-none">{separator}</span>
-          {/if}
-
-          {#if index === lastItemIndex || item.disabled}
-            <span
-              class="flex cursor-default items-center gap-2 font-medium text-white"
-            >
-              {#if item.icon}
-                <span class="inline-flex">{@render item.icon()}</span>
-              {/if}
-              {item.label}
-            </span>
+        <div
+          class="pointer-events-none absolute inset-0 flex items-center justify-center"
+          class:opacity-0={keyedOpen}
+          class:opacity-100={!keyedOpen}
+        >
+          {#if icon}
+            {@render icon()}
           {:else}
-            <a
-              href={item.href ?? "#"}
-              class="flex items-center gap-2 text-white/90 no-underline transition-colors duration-150 hover:text-white"
-              onclick={(event) => event.stopPropagation()}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              class="size-4"
+              fill="currentColor"
             >
-              {#if item.icon}
-                <span class="inline-flex">{@render item.icon()}</span>
-              {/if}
-              {item.label}
-            </a>
+              <circle
+                cx="5"
+                cy="12"
+                r="1.5"
+                fill="currentColor"
+                opacity="0.7"
+              />
+              <circle
+                cx="12"
+                cy="12"
+                r="1.5"
+                fill="currentColor"
+                opacity="0.7"
+              />
+              <circle
+                cx="19"
+                cy="12"
+                r="1.5"
+                fill="currentColor"
+                opacity="0.7"
+              />
+            </svg>
           {/if}
-        {/each}
-      </div>
+        </div>
+
+        <div
+          class="flex items-center gap-2"
+          class:opacity-100={keyedOpen}
+          class:opacity-0={!keyedOpen}
+        >
+          {#each items as item, index (index)}
+            {#if index > 0}
+              <span class="mx-2 text-white/40 select-none">{separator}</span>
+            {/if}
+
+            {#if index === lastItemIndex || item.disabled}
+              <span
+                class="flex cursor-default items-center gap-2 font-medium text-white"
+              >
+                {#if item.icon}
+                  <span class="inline-flex">{@render item.icon()}</span>
+                {/if}
+                {item.label}
+              </span>
+            {:else}
+              <a
+                href={item.href ?? "#"}
+                class="flex items-center gap-2 text-white/90 no-underline transition-colors duration-150 hover:text-white"
+                onclick={(event) => event.stopPropagation()}
+              >
+                {#if item.icon}
+                  <span class="inline-flex">{@render item.icon()}</span>
+                {/if}
+                {item.label}
+              </a>
+            {/if}
+          {/each}
+        </div>
+      </GlassPanel>
     </div>
   {/key}
 </div>

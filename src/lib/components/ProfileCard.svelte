@@ -1,5 +1,6 @@
 <script lang="ts">
   import FloatingPanel from "./FloatingPanel.svelte";
+  import { GlassButton } from "./ui";
 </script>
 
 <FloatingPanel
@@ -39,25 +40,22 @@
     </div>
 
     <div class="flex flex-wrap justify-center gap-4">
-      <a
+      <GlassButton
         href="https://github.com/MiyakoMeow"
         target="_blank"
-        class="glass-button"
       >
         GitHub
-      </a>
-      <a
+      </GlassButton>
+      <GlassButton
         href="https://space.bilibili.com/215242890"
-        class="glass-button"
       >
         Bilibili
-      </a>
-      <a
+      </GlassButton>
+      <GlassButton
         href="https://x.com/MiyakoWoW"
-        class="glass-button"
       >
         X (Twitter)
-      </a>
+      </GlassButton>
     </div>
   </div>
 </FloatingPanel>

@@ -8,6 +8,7 @@
   } from "$lib/components/FloatingToc.svelte";
   import QuickActions from "$lib/components/QuickActions.svelte";
   import StarryBackground from "$lib/components/StarryBackground.svelte";
+  import { GlassButton, GlassContainer } from "$lib/components/ui";
   import { blogPosts } from "$lib/data/blog-posts";
 
   let tocItems: TocItem[] = [];
@@ -21,23 +22,22 @@
 <ProfileCard />
 <main class="m-0 mx-auto box-border w-full max-w-350 p-8">
   <!-- 菜单部分 -->
-  <section
+  <GlassContainer
     id="blog"
-    class="glass-container animate-fadeIn mt-8 w-full"
+    animate={true}
+    class="mt-8 w-full"
   >
     <h1 class="page-title mb-8 text-center">欢迎来到白喵斯的小屋！</h1>
     <div class="mb-8 flex flex-wrap items-center justify-center gap-4">
-      <a
-        class="glass-button"
-        href="/bms"
-      >
+      <GlassButton href="/bms">
         BMS 主页
-      </a>
+      </GlassButton>
     </div>
-  </section>
+  </GlassContainer>
 
-  <section
-    class="glass-container animate-fadeIn mt-8 w-full"
+  <GlassContainer
+    animate={true}
+    class="mt-8 w-full"
   >
     <div class="mb-6 flex flex-wrap items-baseline justify-between gap-3">
       <h2 class="section-title m-0">博客</h2>
@@ -73,7 +73,7 @@
         {/each}
       </div>
     {/if}
-  </section>
+  </GlassContainer>
 </main>
 <FloatingToc items={tocItems} />
 <QuickActions />

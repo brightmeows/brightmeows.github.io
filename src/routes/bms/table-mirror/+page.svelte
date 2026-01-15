@@ -10,6 +10,7 @@
   } from "$lib/components/FloatingToc.svelte";
   import QuickActions from "$lib/components/QuickActions.svelte";
   import StarryBackground from "$lib/components/StarryBackground.svelte";
+  import { GlassCard, GlassContainer } from "$lib/components/ui";
 
   interface MirrorTableItem {
     name: string;
@@ -279,8 +280,9 @@
   initiallyOpen={false}
 />
 <main class="m-0 mx-auto box-border w-full max-w-350 p-8">
-  <section
-    class="glass-container animate-fadeIn mt-8 w-full"
+  <GlassContainer
+    animate={true}
+    class="mt-8 w-full"
   >
     <h1 id="bms-table-mirror" class="page-title mb-2 scroll-mt-5 text-center">
       BMS 难度表镜像
@@ -311,22 +313,23 @@
 
     <div class="mt-4 flex flex-wrap items-stretch justify-center gap-4">
       {#each links as link (link.href)}
-        <a
-          class="glass-card w-80 flex flex-col"
+        <GlassCard
           href={link.href}
+          class="w-80 flex flex-col"
         >
           <div class="mb-2 text-[1.2rem] font-bold text-[#64b5f6]">
             {link.title}
           </div>
           <div class="text-[0.95rem] text-white/80">{link.desc}</div>
-        </a>
+        </GlassCard>
       {/each}
     </div>
-  </section>
+  </GlassContainer>
 
-  <section
+  <GlassContainer
     id="mirror-list"
-    class="glass-container animate-fadeIn mt-8 w-full scroll-mt-5"
+    animate={true}
+    class="mt-8 w-full scroll-mt-5"
   >
     <div class="flex flex-col gap-3">
       <div class="relative w-full">
@@ -363,7 +366,7 @@
     {:else}
       <GroupedTablesSection bind:selectedMap groups={groupedByTags} />
     {/if}
-  </section>
+  </GlassContainer>
 </main>
 
 <SelectedTablesPanel {tables} {selectedMap} />

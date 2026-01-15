@@ -70,18 +70,6 @@
 }
 
 @layer components {
-  /* 主要玻璃容器 - 用于页面级别的容器 */
-  .glass-container {
-    @apply relative rounded-[20px] p-8 text-white backdrop-blur-[10px];
-    border: 1px solid rgb(var(--glass-white-10));
-    background-color: rgb(var(--glass-white-10));
-    box-shadow: 0 8px 32px rgb(var(--glass-black-30));
-    transition:
-      background-color 0.3s ease,
-      border-color 0.3s ease,
-      box-shadow 0.3s ease;
-  }
-
   /* 浮动玻璃面板 - 用于浮动元素 */
   .glass-panel {
     @apply relative overflow-hidden text-white backdrop-blur-[10px]
@@ -93,44 +81,6 @@
       background-color 0.3s ease,
       border-color 0.3s ease,
       box-shadow 0.3s ease;
-  }
-
-  /* 玻璃卡片 - 用于卡片式布局 */
-  .glass-card {
-    @apply relative rounded-[14px] p-5 text-white backdrop-blur-[10px];
-    @apply transition-[transform,background] duration-300 ease-out
-      hover:-translate-y-0.5 active:translate-y-0 active:scale-95;
-    border: 1px solid rgb(var(--glass-white-10));
-    background-color: rgb(var(--glass-black-20));
-    transition:
-      background-color 0.3s ease,
-      border-color 0.3s ease,
-      box-shadow 0.3s ease,
-      transform 0.3s ease;
-  }
-
-  .glass-card:hover {
-    background-color: rgba(255, 255, 255, 0.06);
-  }
-
-  /* 玻璃按钮 - 用于按钮和链接 */
-  .glass-button {
-    @apply relative inline-block rounded-xl px-6 py-[0.8rem] font-medium
-      text-white no-underline cursor-pointer backdrop-blur-[10px];
-    @apply transition-all duration-300 ease-in-out hover:-translate-y-0.5
-      active:translate-y-0 active:scale-95;
-    border: 1px solid rgb(var(--glass-white-20));
-    background-color: rgb(var(--glass-white-10));
-    transition:
-      background-color 0.3s ease,
-      border-color 0.3s ease,
-      box-shadow 0.3s ease,
-      transform 0.3s ease;
-  }
-
-  .glass-button:hover {
-    background-color: rgb(var(--glass-white-20));
-    box-shadow: 0 5px 15px rgb(var(--glass-black-20));
   }
 
   /* BMS容器 - 用于BMS相关页面 */
@@ -153,39 +103,6 @@
     @apply rounded-[15px] p-8;
     border: 1px solid rgb(var(--glass-white-10));
     background-color: rgb(var(--glass-black-20));
-  }
-
-  /* 渐变按钮 */
-  .btn-gradient-green {
-    @apply rounded-md border-none px-2 py-[0.35rem] text-[0.85rem] font-semibold
-      text-white no-underline transition-all duration-200 ease-in-out
-      hover:-translate-y-0.5 hover:shadow-[0_4px_8px_rgba(0,0,0,0.2)]
-      active:translate-y-0;
-    background: linear-gradient(135deg, #4caf50, #2e7d32);
-  }
-
-  .btn-gradient-green:hover {
-    background: linear-gradient(135deg, #66bb6a, #388e3c);
-  }
-
-  .btn-gradient-blue {
-    @apply rounded-md border-none px-2 py-[0.35rem] text-[0.85rem] font-semibold
-      text-white no-underline transition-all duration-200 ease-in-out
-      hover:-translate-y-0.5 hover:shadow-[0_4px_8px_rgba(0,0,0,0.2)]
-      active:translate-y-0;
-    background: linear-gradient(135deg, #2196f3, #1565c0);
-  }
-
-  .btn-gradient-blue:hover {
-    background: linear-gradient(135deg, #42a5f5, #1976d2);
-  }
-
-  /* 圆形图标按钮 */
-  .btn-icon-circle {
-    @apply flex h-9 w-9 cursor-pointer items-center justify-center
-      overflow-hidden rounded-full border-none p-0 text-[1.2rem] text-white
-      transition-all duration-200 ease-in-out hover:scale-110
-      hover:shadow-[0_4px_8px_rgba(0,0,0,0.3)] active:scale-95;
   }
 
   /* 难度标签 */

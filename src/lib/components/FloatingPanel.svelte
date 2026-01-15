@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { cubicInOut } from "svelte/easing";
   import { fade } from "svelte/transition";
+  import { GlassPanel } from "$lib/components/ui";
 
   interface Props {
     sessionKey: string;
@@ -196,12 +197,11 @@
   const currentPosition = $derived(positionConfig[position]);
 
   function getPanelClasses(isOpen: boolean): string {
-    const base = "glass-panel";
     const sizeSetting = sizeConfig[size];
     if (isOpen) {
-      return `${base} ${sizeSetting.maxHeightClass} ${sizeSetting.widthClass} ${sizeSetting.paddingClass} rounded-2xl`;
+      return `${sizeSetting.maxHeightClass} ${sizeSetting.widthClass} ${sizeSetting.paddingClass} rounded-2xl`;
     }
-    return `${base} max-h-14 w-14 p-2 rounded-full`;
+    return `max-h-14 w-14 p-2 rounded-full`;
   }
 </script>
 
@@ -217,7 +217,7 @@
     {@const keyedOpen = open}
     {@const panelClasses = getPanelClasses(keyedOpen)}
     <div
-      class="{panelClasses} {panelClass}"
+      class="glass-panel-wrapper"
       in:fade={{
         delay: enableTransitions ? fadeDurationMs : 0,
         duration: enableTransitions ? fadeDurationMs : 0,
@@ -234,37 +234,48 @@
       onclick={() => {
         if (!keyedOpen) openNow();
       }}
-      onkeydown={(event) => {
+      onkeydown={(event: KeyboardEvent) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
           if (!keyedOpen) openNow();
         }
       }}
     >
-      <div
-        class="pointer-events-none absolute inset-0 flex items-center justify-center"
-        class:opacity-0={keyedOpen}
-        class:opacity-100={!keyedOpen}
+      <GlassPanel
+        class="{panelClasses} {panelClass}"
+        padding="none"
+        rounded="none"
+        overflow={false}
       >
-        {#if icon}
-          {@render icon()}
-        {:else}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            class="size-9"
-            fill="currentColor"
-          >
-            <path d="M4 6h16v2H4V6zm0 5h10v2H4v-2zm0 5h16v2H4v-2z" />
-          </svg>
-        {/if}
-      </div>
+        <div
+          class="pointer-events-none absolute inset-0 flex items-center justify-center"
+          class:opacity-0={keyedOpen}
+          class:opacity-100={!keyedOpen}
+        >
+          {#if icon}
+            {@render icon()}
+          {:else}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              class="size-9"
+              fill="currentColor"
+            >
+              <path d="M4 6h16v2H4V6zm0 5h10v2H4v-2zm0 5h16v2H4v-2z" />
+            </svg>
+          {/if}
+        </div>
 
-      <div class="" class:opacity-100={keyedOpen} class:opacity-0={!keyedOpen}>
-        {#if children}
-          {@render children()}
-        {/if}
-      </div>
+        <div
+          class=""
+          class:opacity-100={keyedOpen}
+          class:opacity-0={!keyedOpen}
+        >
+          {#if children}
+            {@render children()}
+          {/if}
+        </div>
+      </GlassPanel>
     </div>
   {/key}
 </div>

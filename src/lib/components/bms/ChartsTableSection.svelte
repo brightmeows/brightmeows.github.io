@@ -4,6 +4,7 @@
     type JsonPreviewHandle,
   } from "$lib/components/JsonPreview.svelte";
   import ScrollSyncGroup from "$lib/components/ScrollSyncGroup.svelte";
+  import { GradientButton, IconButton } from "$lib/components/ui";
 
   let chartPreview: JsonPreviewHandle | undefined;
 
@@ -242,78 +243,79 @@
                     <td class="table-td-glass wrap-break-word">
                       <div class="flex flex-row flex-wrap gap-[0.3rem]">
                         {#if bundleUrl}
-                          <a
-                            class="flex min-w-17 flex-1 items-center justify-center gap-[0.2rem] btn-gradient-green"
+                          <GradientButton
+                            variant="green"
                             href={bundleUrl}
-                            title={bundleUrl}
                             target="_blank"
                             rel="noopener noreferrer"
+                            class="min-w-17 flex-1"
                           >
                             📦 同捆
-                          </a>
+                          </GradientButton>
                         {/if}
                         {#if diffUrl}
-                          <a
-                            class="flex min-w-17 flex-1 items-center justify-center gap-[0.2rem] btn-gradient-blue"
+                          <GradientButton
+                            variant="blue"
                             href={diffUrl}
-                            title={diffUrl}
                             target="_blank"
                             rel="noopener noreferrer"
+                            class="min-w-17 flex-1"
                           >
                             🔄 差分
-                          </a>
+                          </GradientButton>
                         {/if}
                       </div>
                     </td>
                     <td class="table-td-glass wrap-break-word">
                       <div class="flex flex-wrap justify-center gap-[0.4rem]">
                         {#if hasMd5(chart)}
-                          <a
-                            class="btn-icon-circle bg-[linear-gradient(135deg,#ff9800,#f57c00)] hover:bg-[linear-gradient(135deg,#ffb74d,#ff9800)]"
+                          <IconButton
+                            variant="orange"
                             href={bmsLinks.bmsScoreViewer}
-                            title={bmsLinks.bmsScoreViewer}
                             target="_blank"
                             rel="noopener noreferrer"
+                            ariaLabel="BMS Score Viewer"
                           >
                             📊
-                          </a>
-                          <a
-                            class="btn-icon-circle bg-[linear-gradient(135deg,#9c27b0,#7b1fa2)] hover:bg-[linear-gradient(135deg,#ba68c8,#9c27b0)] text-[0.85rem] font-bold"
+                          </IconButton>
+                          <IconButton
+                            variant="purple"
                             href={bmsLinks.lr2ir}
-                            title={bmsLinks.lr2ir}
                             target="_blank"
                             rel="noopener noreferrer"
+                            ariaLabel="LR2IR"
+                            class="text-[0.85rem] font-bold"
                           >
                             LR2
-                          </a>
+                          </IconButton>
                         {/if}
                         {#if hasSha256(chart)}
-                          <a
-                            class="btn-icon-circle bg-[linear-gradient(135deg,#795548,#5d4037)] hover:bg-[linear-gradient(135deg,#a1887f,#795548)]"
+                          <IconButton
+                            variant="brown"
                             href={bmsLinks.mocha}
-                            title={bmsLinks.mocha}
                             target="_blank"
                             rel="noopener noreferrer"
+                            ariaLabel="Mocha"
                           >
                             <img
                               src="/assets/logo/mocha_logo.gif"
                               alt="Mocha"
                               class="h-6 w-6 object-contain"
                             />
-                          </a>
-                          <a
-                            class="btn-icon-circle bg-[linear-gradient(135deg,#00bcd4,#0097a7)] hover:bg-[linear-gradient(135deg,#4dd0e1,#00bcd4)]"
+                          </IconButton>
+                          <IconButton
+                            variant="cyan"
                             href={bmsLinks.minir}
-                            title={bmsLinks.minir}
                             target="_blank"
                             rel="noopener noreferrer"
+                            ariaLabel="Minir"
                           >
                             <img
                               src="/assets/logo/minir_logo.gif"
                               alt="Minir"
                               class="h-6 w-6 object-contain"
                             />
-                          </a>
+                          </IconButton>
                         {/if}
                       </div>
                     </td>
