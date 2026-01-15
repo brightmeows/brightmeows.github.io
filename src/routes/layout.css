@@ -74,9 +74,8 @@
   .glass-panel {
     @apply relative overflow-hidden text-white backdrop-blur-[10px]
       transition-opacity duration-200 ease-in-out;
-    border: 1px solid var(--glass-white-20);
-    background-color: var(--glass-white-10);
-    box-shadow: 0 4px 30px var(--glass-black-10);
+    @apply border-white/20 bg-white/10;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
     transition:
       background-color 0.3s ease,
       border-color 0.3s ease,
@@ -87,11 +86,10 @@
   .glass-bms-container {
     @apply relative mx-auto my-8 max-w-375 rounded-[20px] p-8 text-white
       backdrop-blur-[10px];
-    border: 1px solid var(--glass-white-10);
-    background-color: var(--glass-white-05);
+    @apply border-white/10 bg-white/5;
     box-shadow:
-      0 8px 32px var(--glass-black-20),
-      inset 0 1px 0 var(--glass-white-10);
+      0 8px 32px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
     transition:
       background-color 0.3s ease,
       border-color 0.3s ease,
@@ -101,8 +99,7 @@
   /* 加载状态容器 */
   .glass-loading-container {
     @apply rounded-[15px] p-8;
-    border: 1px solid var(--glass-white-10);
-    background-color: var(--glass-black-20);
+    @apply border-white/10 bg-black/20;
   }
 
   /* 难度标签 */
