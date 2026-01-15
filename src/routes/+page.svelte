@@ -32,6 +32,15 @@
       <GlassButton href="/bms">
         BMS 主页
       </GlassButton>
+      <GlassButton href="/bms/table-mirror">
+        BMS 难度表镜像
+      </GlassButton>
+      <GlassButton href="/bms/table/self-sp">
+        个人难度表（SP）
+      </GlassButton>
+      <GlassButton href="/bms/table/self-dp">
+        个人难度表（DP）
+      </GlassButton>
     </div>
   </GlassContainer>
 
