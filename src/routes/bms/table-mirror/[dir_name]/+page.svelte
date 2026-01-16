@@ -48,6 +48,12 @@
   let headerUrl = $derived(data.headerUrl);
   let originUrl = $derived(data.originUrl);
 
+  // 从 headerUrl 中提取相对路径用于 meta 标签
+  const headerJsonPath = $derived(() => {
+    const url = new URL(data.headerUrl, window.location.origin);
+    return url.pathname;
+  });
+
   let pageTitle = $state("加载难度表header中");
 
   let loadingState = $state<LoadingState>({
@@ -275,7 +281,7 @@
 </script>
 
 <svelte:head>
-  <meta name="bmstable" content={headerUrl} />
+  <meta name="bmstable" content={headerJsonPath()} />
 </svelte:head>
 
 <StarryBackground />

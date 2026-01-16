@@ -1,7 +1,5 @@
 import type { PageLoad } from "./$types";
 
-export const prerender = true;
-
 export const load: PageLoad = async ({ params, fetch }) => {
   const { dir_name } = params;
 
