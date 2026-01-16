@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { onMount } from "svelte";
   import ChartsTableSection from "$lib/components/bms/ChartsTableSection.svelte";
   import LevelRefTable from "$lib/components/bms/LevelRefTable.svelte";
   import StarryBackground from "$lib/components/StarryBackground.svelte";
@@ -10,63 +9,16 @@
   import QuickActions from "$lib/components/QuickActions.svelte";
   import BreadcrumbNav from "$lib/components/BreadcrumbNav.svelte";
   import type { PageData } from "./$types";
-
-  interface ChartData {
-    title?: string;
-    artist?: string;
-    level?: string;
-    sha256?: string;
-    md5?: string;
-    comment?: string;
-    url?: string;
-    url_diff?: string;
-    [key: string]: unknown;
-  }
-
-  interface DifficultyGroup {
-    level: string;
-    charts: ChartData[];
-  }
-
-  interface HeaderData {
-    name?: string;
-    symbol?: string;
-    data_url?: string;
-    level_order?: string[];
-    [key: string]: unknown;
-  }
-
-  interface LoadingState {
-    isLoading: boolean;
-    progress: number;
-    currentStep: string;
-    totalSteps: number;
-  }
+  import type { DifficultyGroup } from "$lib/types/bms";
 
   let { data }: { data: PageData } = $props();
 
-  let headerUrl = $derived(data.headerUrl);
+  // 从服务端传递的数据
+  let headerData = $derived(data.header);
+  let tableData = $derived(data.tableData);
   let originUrl = $derived(data.originUrl);
-
-  // 从 headerUrl 中提取相对路径用于 meta 标签
-  const headerJsonPath = $derived(() => {
-    const url = new URL(data.headerUrl, window.location.origin);
-    return url.pathname;
-  });
-
-  let pageTitle = $state("加载难度表header中");
-
-  let loadingState = $state<LoadingState>({
-    isLoading: true,
-    progress: 0,
-    currentStep: "正在初始化...",
-    totalSteps: 4,
-  });
-
-  let tableData = $state<ChartData[] | null>(null);
-  let headerData = $state<HeaderData | null>(null);
-  let dataFetchUrl = $state<string | null>(null);
-  let error = $state<string | null>(null);
+  let headerUrl = $derived(data.headerUrl);
+  let dataFetchUrl = $derived(data.dataFetchUrl);
 
   let copied = $state(false);
 
@@ -92,77 +44,6 @@
       }, 1500);
     } catch {
       copied = false;
-    }
-  }
-
-  function updateProgress(step: string, progress: number): void {
-    loadingState = { ...loadingState, currentStep: step, progress };
-  }
-
-  async function lazyLoadTableData(): Promise<void> {
-    try {
-      error = null;
-      tableData = null;
-      headerData = null;
-      dataFetchUrl = null;
-
-      loadingState = {
-        ...loadingState,
-        isLoading: true,
-        progress: 0,
-        currentStep: "正在初始化...",
-      };
-
-      pageTitle = "加载难度表header中";
-      document.title = pageTitle;
-      updateProgress("正在加载表头信息...", 25);
-
-      const headerUrlBase = new URL(headerUrl, window.location.href)
-        .toString();
-
-      const headerResponse = await fetch(headerUrlBase, {
-        redirect: "follow",
-      });
-      if (!headerResponse.ok) {
-        throw new Error(`无法加载表头信息: ${headerResponse.status}`);
-      }
-      headerData = await headerResponse.json();
-
-      pageTitle = String(headerData?.name || "未命名");
-      document.title = pageTitle;
-
-      updateProgress("表头信息加载完成", 50);
-
-      const dataUrl = headerData?.data_url;
-      if (!dataUrl) {
-        throw new Error("表头信息中未找到data_url");
-      }
-
-      updateProgress("正在加载谱面数据...", 75);
-
-      const isAbsolute = (u: string) =>
-        /^(https?:)?\/\//i.test(u) || u.startsWith("/");
-      dataFetchUrl = isAbsolute(String(dataUrl))
-        ? String(dataUrl)
-        : new URL(String(dataUrl), headerUrlBase).toString();
-
-      const dataResponse = await fetch(dataFetchUrl, {
-        redirect: "follow",
-      });
-      if (!dataResponse.ok) {
-        throw new Error(`无法加载谱面数据: ${dataResponse.status}`);
-      }
-      tableData = await dataResponse.json();
-
-      updateProgress("数据加载完成", 100);
-
-      setTimeout(() => {
-        loadingState = { ...loadingState, isLoading: false };
-      }, 500);
-    } catch (err) {
-      error = err instanceof Error ? err.message : "未知错误";
-      loadingState = { ...loadingState, isLoading: false };
-      console.error("加载BMS难度表数据失败:", err);
     }
   }
 
@@ -268,16 +149,9 @@
     { label: "主页", href: "/" },
     { label: "BMS", href: "/bms" },
     {
-      label: (headerData as HeaderData | null)?.name ||
-        "加载难度表header中",
+      label: headerData?.name || "未命名难度表",
     },
   ]);
-
-  onMount(() => {
-    setTimeout(() => {
-      void lazyLoadTableData();
-    }, 300);
-  });
 </script>
 
 <StarryBackground />
@@ -292,7 +166,7 @@
 >
   <div class="mb-8 text-center">
     <h1 class="page-title mb-2">
-      {pageTitle}
+      {headerData?.name || "未命名难度表"}
     </h1>
     {#if headerData?.symbol}
       <div class="text-[1.2rem] text-white/70 italic">
@@ -353,62 +227,7 @@
     </div>
   </div>
   <div class="w-full text-[1.1rem] leading-[1.6] text-white/90">
-    {#if loadingState.isLoading}
-      <div class="p-8">
-        <div class="rounded-[15px] border border-white/10 bg-black/20 p-8">
-          <div class="mb-6 flex items-center justify-between">
-            <h3 class="m-0 text-[1.5rem] text-white">
-              正在加载BMS难度表数据...
-            </h3>
-            <div
-              class="rounded-[20px] bg-[#64b5f6]/20 px-4 py-2 text-[1.2rem] font-bold text-[#64b5f6]"
-            >
-              {Math.round(loadingState.progress)}%
-            </div>
-          </div>
-          <div class="mb-6 h-3 overflow-hidden rounded-md bg-white/10">
-            <div
-              class="h-full rounded-md bg-[linear-gradient(90deg,#4caf50,#64b5f6)] transition-[width] duration-300 ease-out"
-              style={`width:${loadingState.progress}%;`}
-            >
-            </div>
-          </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div class="flex flex-col gap-2">
-              <span class="text-[0.9rem] text-white/60">当前步骤:</span>
-              <span class="font-medium text-white">{
-                loadingState.currentStep
-              }</span>
-            </div>
-            <div class="flex flex-col gap-2">
-              <span class="text-[0.9rem] text-white/60">总步骤数:</span>
-              <span class="font-medium text-white">{
-                loadingState.totalSteps
-              }</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    {:else if error}
-      <div class="p-12 text-center">
-        <div class="mb-4 text-[4rem]">⚠️</div>
-        <h3 class="mb-4 text-[#ff6b6b]">加载失败</h3>
-        <p
-          class="my-6 rounded-[10px] border-l-4 border-[#ff6b6b] bg-[rgba(255,107,107,0.1)] p-4"
-        >
-          {error}
-        </p>
-        <p>请检查网络连接或稍后重试。</p>
-        <button
-          class="mt-4 cursor-pointer rounded-[25px] border-none bg-[#64b5f6] px-8 py-3 text-[1rem] font-semibold text-white transition-colors duration-300 ease-out hover:bg-[#42a5f5]"
-          type="button"
-          onclick={lazyLoadTableData}
-        >
-          重新加载
-        </button>
-      </div>
-    {:else}
-      <div class="py-4">
+    <div class="py-4">
         <div class="mb-8 flex flex-wrap gap-8 rounded-[15px] bg-black/20 p-6">
           <div class="min-w-[18rem] flex-1">
             <h2 id="table-info" class="section-title mt-0 mb-4 scroll-mt-5">
@@ -473,7 +292,6 @@
           {/if}
         </div>
       </div>
-    {/if}
   </div>
 </div>
 <FloatingToc items={tocItems()} />

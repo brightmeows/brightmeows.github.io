@@ -29,7 +29,12 @@
 
   function buildLevelRefUrl(headerUrlRaw: string): string {
     try {
-      const baseUrl = new URL(headerUrlRaw, window.location.href);
+      // 检查是否在浏览器环境
+      const isBrowser = typeof window !== "undefined" && window.location;
+      const baseUrl = new URL(
+        headerUrlRaw,
+        isBrowser ? window.location.href : "https://example.com",
+      );
       const pathParts = baseUrl.pathname.split("/");
       pathParts[pathParts.length - 1] = "level-ref.json";
       baseUrl.pathname = pathParts.join("/");
