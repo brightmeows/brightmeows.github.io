@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { page } from "$app/stores";
   import ChartsTableSection from "$lib/components/bms/ChartsTableSection.svelte";
   import LevelRefTable from "$lib/components/bms/LevelRefTable.svelte";
   import StarryBackground from "$lib/components/StarryBackground.svelte";
@@ -273,7 +272,7 @@
 </script>
 
 <svelte:head>
-  <meta name="bmstable" content={$page.url.origin + "/bms/table/self-sp/header.json"} />
+  <meta name="bmstable" content="./header.json" />
 </svelte:head>
 
 <StarryBackground />
