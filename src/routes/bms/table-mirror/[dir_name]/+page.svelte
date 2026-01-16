@@ -280,10 +280,6 @@
   });
 </script>
 
-<svelte:head>
-  <meta name="bmstable" content={headerJsonPath()} />
-</svelte:head>
-
 <StarryBackground />
 <ProfileCard />
 <BreadcrumbNav
