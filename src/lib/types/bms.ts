@@ -15,9 +15,6 @@ export interface MirrorTableItem {
   url_header_json?: string;
 }
 
-/** tables_proxy.json 中的单个难度表配置项 */
-export type TableProxyItem = MirrorTableItem;
-
 /** 二级分组（按 tag2） */
 export interface Tag2Group {
   tag2: string;

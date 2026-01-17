@@ -1,42 +1,30 @@
 import type { Handle } from "@sveltejs/kit";
 
-// BMS表格路径模式
-const BMS_TABLE_PATTERNS = [
-  /^\/bms\/table\/self-sp\/?$/,
-  /^\/bms\/table\/self-dp\/?$/,
-  /^\/bms\/table-mirror\/[^/]+\/?$/,
-];
-
-// 检查是否为BMS表格页面
-function isBmsTablePath(pathname: string): boolean {
-  return BMS_TABLE_PATTERNS.some((pattern) => pattern.test(pathname));
-}
-
+/**
+ * SvelteKit 服务器端 hooks
+ * 在预渲染和 SSR 模式下执行
+ */
 export const handle: Handle = async ({ event, resolve }) => {
   const response = await resolve(event);
 
-  // 只处理HTML响应
+  // 非HTML响应，直接返回
   const contentType = response.headers.get("content-type");
   if (!contentType?.includes("text/html")) {
     return response;
   }
 
-  const pathname = event.url.pathname;
-
-  // 读取并修改HTML
-  const html = await response.text();
-  let modifiedHtml = html;
-
-  if (isBmsTablePath(pathname)) {
-    // BMS表格页面，注入bmstable meta
-    const bmstableMeta = `<meta name="bmstable" content="./header.json" />`;
-    modifiedHtml = html.replace("%bmstable.meta%", bmstableMeta);
-  } else {
-    // 非BMS表格页面，移除占位符
-    modifiedHtml = html.replace("%bmstable.meta%", "");
+  // 如果页面设置了 bmstableMeta，注入 meta 标签
+  if (event.locals.bmstableMeta) {
+    const html = await response.text();
+    const bmstableMeta = `<meta name="bmstable" content="${event.locals.bmstableMeta}" />`;
+    return new Response(html.replace("%bmstable.meta%", bmstableMeta), {
+      headers: response.headers,
+    });
   }
 
-  return new Response(modifiedHtml, {
+  // 否则移除占位符
+  const html = await response.text();
+  return new Response(html.replace("%bmstable.meta%", ""), {
     headers: response.headers,
   });
 };
