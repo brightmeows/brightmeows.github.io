@@ -16,7 +16,8 @@ export const handle: Handle = async ({ event, resolve }) => {
   // 如果页面设置了 bmstableMeta，注入 meta 标签
   if (event.locals.bmstableMeta) {
     const html = await response.text();
-    const bmstableMeta = `<meta name="bmstable" content="${event.locals.bmstableMeta}" />`;
+    const bmstableMeta =
+      `<meta name="bmstable" content="${event.locals.bmstableMeta}" />`;
     return new Response(html.replace("%bmstable.meta%", bmstableMeta), {
       headers: response.headers,
     });

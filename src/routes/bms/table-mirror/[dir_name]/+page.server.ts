@@ -9,7 +9,7 @@ export const prerender = true;
  * 预渲染配置：告诉 SvelteKit 需要预渲染哪些路由
  * 在构建时执行，返回所有有效的 dir_name
  */
-export async function entries() {
+export function entries() {
   try {
     // 读取 tables_proxy.json
     const jsonPath = join("static", "bms", "table-mirror", "tables_proxy.json");
@@ -22,7 +22,7 @@ export async function entries() {
 
     // 过滤出有效的 dir_name
     const validTables = tables_proxy.filter(
-      (item) => item.dir_name && item.dir_name.trim().length > 0
+      (item) => item.dir_name && item.dir_name.trim().length > 0,
     );
 
     console.log(`[Prerender] Found ${validTables.length} tables to prerender`);
@@ -41,7 +41,7 @@ export async function entries() {
  * 服务端加载数据
  * 在构建时（预渲染）和运行时都会执行
  */
-export const load: PageServerLoad = async ({ params, locals }) => {
+export const load: PageServerLoad = ({ params, locals }) => {
   const { dir_name } = params;
 
   try {
