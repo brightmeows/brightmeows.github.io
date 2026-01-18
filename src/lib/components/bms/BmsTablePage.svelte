@@ -117,7 +117,6 @@
       };
 
       pageTitle = "加载难度表header中";
-      document.title = pageTitle;
       updateProgress("正在加载表头信息...", 25);
 
       const headerUrlBase = new URL(headerUrl, window.location.href)
@@ -132,8 +131,6 @@
       headerData = await headerResponse.json();
 
       pageTitle = String(headerData?.name || "未命名");
-      document.title = formatBmsTableTitle(pageTitle);
-
       updateProgress("表头信息加载完成", 50);
 
       const dataUrl = headerData?.data_url;
@@ -282,6 +279,10 @@
     }, 300);
   });
 </script>
+
+<svelte:head>
+  <title>{formatBmsTableTitle(pageTitle)}</title>
+</svelte:head>
 
 <StarryBackground />
 <ProfileCard />

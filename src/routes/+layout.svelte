@@ -5,22 +5,15 @@
 
   let { children } = $props();
 
-  // 客户端动态设置 HTML lang 属性
   $effect(() => {
     if (typeof document !== "undefined") {
       document.documentElement.lang = getLocale();
     }
   });
-
-  // 动态设置页面标题
-  $effect(() => {
-    if (typeof document !== "undefined" && page.data.title) {
-      document.title = page.data.title as string;
-    }
-  });
 </script>
 
 <svelte:head>
+  <title>{page.data.title || "白喵斯的小屋"}</title>
   <link rel="icon" href="https://github.com/MiyakoMeow.png" />
 </svelte:head>
 
