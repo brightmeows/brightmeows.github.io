@@ -2,12 +2,18 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: "main"
+  schedule:
+    - cron: "0 * * * *"
 jobs:
   build_site:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Download table mirror data
+        run: |
+          curl -o static/bms/table-mirror/tables_proxy.json https://raw.githubusercontent.com/MiyakoMeow/bms-table-mirror/refs/heads/main/outputs/tables_github_proxy_best.json
+          curl -o static/bms/table-mirror/tables.json https://raw.githubusercontent.com/MiyakoMeow/bms-table-mirror/refs/heads/main/outputs/tables_miyakomeow.json
       - uses: denoland/setup-deno@v2
         with:
           cache: true
