@@ -2,7 +2,6 @@
   import { page } from "$app/state";
   import { getLocale } from "$lib/paraglide/runtime";
   import "./layout.css";
-  import favicon from "$lib/assets/favicon.svg";
 
   let { children } = $props();
 
@@ -12,10 +11,17 @@
       document.documentElement.lang = getLocale();
     }
   });
+
+  // 动态设置页面标题
+  $effect(() => {
+    if (typeof document !== "undefined" && page.data.title) {
+      document.title = page.data.title as string;
+    }
+  });
 </script>
 
 <svelte:head>
-  <link rel="icon" href={favicon} />
+  <link rel="icon" href="https://github.com/MiyakoMeow.png" />
 </svelte:head>
 
 {@render children()}

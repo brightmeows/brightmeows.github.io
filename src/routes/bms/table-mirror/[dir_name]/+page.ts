@@ -1,9 +1,9 @@
 import type { PageLoad } from "./$types";
+import { formatTitle } from "$lib/utils/title";
 
 export const load: PageLoad = async ({ params, fetch }) => {
   const { dir_name } = params;
 
-  // 从 tables_proxy.json 查找对应项
   const res = await fetch("/bms/table-mirror/tables_proxy.json");
   const tables_proxy = await res.json() as Array<{
     dir_name: string;
@@ -21,5 +21,6 @@ export const load: PageLoad = async ({ params, fetch }) => {
     dir_name,
     headerUrl: tableItem.url,
     originUrl: tableItem.url_ori || null,
+    title: formatTitle("难度表"),
   };
 };

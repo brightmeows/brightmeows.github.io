@@ -9,6 +9,7 @@
   } from "$lib/components/FloatingToc.svelte";
   import QuickActions from "$lib/components/QuickActions.svelte";
   import BreadcrumbNav from "$lib/components/BreadcrumbNav.svelte";
+  import { formatBmsTableTitle } from "$lib/utils/title";
 
   interface ChartData {
     title?: string;
@@ -131,7 +132,7 @@
       headerData = await headerResponse.json();
 
       pageTitle = String(headerData?.name || "未命名");
-      document.title = pageTitle;
+      document.title = formatBmsTableTitle(pageTitle);
 
       updateProgress("表头信息加载完成", 50);
 
