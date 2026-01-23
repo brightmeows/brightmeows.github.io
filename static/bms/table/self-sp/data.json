@@ -100,7 +100,7 @@
     "comment": "BOF21同捆"
   },
   {
-    "level": "0",
+    "level": "Ln8",
     "sha256": "034583b9d6f3154ceee4b207cdf11a9d695820233cc579413cc765e2a1cb0885",
     "md5": "d9c50f18fe925e247cde601d280a4c91",
     "title": "Plunge [SP ANOTHER]",
@@ -150,7 +150,7 @@
     "comment": "BOF2011差分"
   },
   {
-    "level": "1",
+    "level": "2",
     "sha256": "e1c50fd0a4d5c2dbdc216a42c90cb1d4eb54c12a183d5926287711ad75ff3035",
     "md5": "70bed34277dcece85fa6152324a0be90",
     "title": "シンフォニックライツ [Glow]",
@@ -160,7 +160,7 @@
     "comment": ""
   },
   {
-    "level": "2",
+    "level": "3",
     "sha256": "0f0fe19bae18053eff7c8dbd14faedc105419e2fdb111d59b2529e05d7f37f8a",
     "md5": "6e1bae413743ba910ab66fedd8d61925",
     "title": "Fly up to : the Sky [Atmosphere]",
@@ -170,7 +170,7 @@
     "comment": "修改自[Another] sl2sub"
   },
   {
-    "level": "2",
+    "level": "3",
     "sha256": "d78828cdd8de634573dcb00d0da04208f089c5a46beb716c6d3f5952b104b97e",
     "md5": "7726cab6fd3b64cf829ed2c303096703",
     "title": "Flowing Light [SP Another]",
@@ -180,7 +180,7 @@
     "comment": "BOF21同捆"
   },
   {
-    "level": "2",
+    "level": "3",
     "sha256": "baaf901f38572a0263c33381a6669cf08ca2402d7126a659bfec03f611ba7a7f",
     "md5": "b0559aa56ca15bba470ef585682c8a9e",
     "title": "Last Encounter [SP ANOTHER]",
@@ -198,5 +198,25 @@
     "url": "https://www.dropbox.com/s/qxf8j53t87cw6ac/yuta_smcpack_s_flyup.zip?dl=1",
     "url_diff": "https://stellabms.xyz/upload/6742",
     "comment": "修改自[Another]，HCN daisuki！"
+  },
+  {
+    "level": "Ln7",
+    "sha256": "f3bf002c2ebcc9241c551f0b92c7c43461a60a708036952bf814a2e027a2d972",
+    "md5": "b9d87ec05732299ee85a7e5fe8813474",
+    "title": "君待つわれそ [絶対に...]",
+    "artist": "Gavial BMS. CalendarV",
+    "url": "https://venue.bmssearch.net/bmstukuru2026/47",
+    "url_diff": "",
+    "comment": "Bた作26"
+  },
+  {
+    "level": "4",
+    "sha256": "c13183aca6c7b536bc30266ba5ad7e021a35c4bb9694d1dfe129c6ec53413a53",
+    "md5": "1d9524e107d770b614f05f8a9f5e07fe",
+    "title": "Wish to the Firework [SP Another]",
+    "artist": "GM_Shadows",
+    "url": "https://venue.bmssearch.net/bmstukuru2026/93",
+    "url_diff": "",
+    "comment": "Bた作26"
   }
 ]
