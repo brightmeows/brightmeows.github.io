@@ -9,19 +9,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: denoland/setup-deno@v2
+      - uses: pnpm/action-setup@v4
         with:
-          cache: true
-          deno-version: latest
+          version: 10
+      - uses: actions/setup-node@v6
+        with:
+          node-version: latest
+          cache: 'pnpm'
       - name: Install dependencies
         run: |
-          deno install
+          pnpm install
       - name: Run development server check
         run: |
-          deno task dev --host &
+          pnpm dev --host &
           sleep 10  # Wait for server to start
       - name: Build project
-        run: deno task build
+        run: pnpm build
       - name: Run preview
         run: |
-          deno task build
+          pnpm build

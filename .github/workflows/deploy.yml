@@ -9,23 +9,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Download table mirror data
         run: |
           curl -o static/bms/table-mirror/tables_proxy.json https://raw.githubusercontent.com/MiyakoMeow/bms-table-mirror/refs/heads/main/outputs/tables_github_proxy_best.json
           curl -o static/bms/table-mirror/tables.json https://raw.githubusercontent.com/MiyakoMeow/bms-table-mirror/refs/heads/main/outputs/tables_miyakomeow.json
-      - uses: denoland/setup-deno@v2
+      - uses: pnpm/action-setup@v4
         with:
+          version: 10
           cache: true
-          deno-version: latest
+      - uses: actions/setup-node@v6
+        with:
+          node-version: latest
+          cache: 'pnpm'
       - name: Install dependencies
         run: |
-          deno install
+          pnpm install
       - name: Build
         run: |
-          deno task build
+          pnpm build
       - name: Upload Artifacts
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           # this should match the `pages` option in your adapter-static options
           path: "build/"
