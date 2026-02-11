@@ -7,7 +7,7 @@ settings:
 importers:
 
   .:
-    dependencies:
+    devDependencies:
       '@inlang/paraglide-js':
         specifier: 2.6.0
         version: 2.6.0
@@ -29,6 +29,9 @@ importers:
       '@tailwindcss/vite':
         specifier: 4.1.17
         version: 4.1.17(vite@7.2.6(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.30.2))
+      '@types/node':
+        specifier: ^25.2.3
+        version: 25.2.3
       cookie:
         specifier: 1.1.1
         version: 1.1.1
@@ -80,10 +83,6 @@ importers:
       vite:
         specifier: 7.2.6
         version: 7.2.6(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.30.2)
-    devDependencies:
-      '@types/node':
-        specifier: ^25.2.3
-        version: 25.2.3
 
 packages:
 

@@ -8,17 +8,15 @@ export const blogPosts: BlogPost[] = [
     "title": "白喵斯的小屋",
     "date": "2025-12-25",
     "order": 0,
-    "firstSentence":
-      "本网站提供BMS难度表镜像，以及个人创作的谱面合集。个人分享资源在BMS主页。",
-    "url": "/blog/homepage-markdown",
+    "firstSentence": "本网站提供BMS难度表镜像，以及个人创作的谱面合集。个人分享资源在BMS主页。",
+    "url": "/blog/homepage-markdown"
   },
   {
     "slug": "markdown-elements-test",
     "title": "Markdown 元素测试页",
     "date": "2025-12-26",
     "order": 1,
-    "firstSentence":
-      "这是一篇用于测试 Markdown 渲染能力的博文，尽量覆盖常见语法（包含数学公式）。",
-    "url": "/blog/markdown-elements-test",
-  },
+    "firstSentence": "这是一篇用于测试 Markdown 渲染能力的博文，尽量覆盖常见语法（包含数学公式）。",
+    "url": "/blog/markdown-elements-test"
+  }
 ];

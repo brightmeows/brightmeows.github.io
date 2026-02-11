@@ -18,7 +18,8 @@
     ]
   },
   "exports": {},
-  "dependencies": {
+  "dependencies": {},
+  "devDependencies": {
     "@inlang/paraglide-js": "2.6.0",
     "@sveltejs/adapter-static": "3.0.10",
     "@sveltejs/kit": "2.49.1",
@@ -26,6 +27,7 @@
     "@tailwindcss/forms": "0.5.10",
     "@tailwindcss/typography": "0.5.19",
     "@tailwindcss/vite": "4.1.17",
+    "@types/node": "^25.2.3",
     "cookie": "1.1.1",
     "gray-matter": "4.0.3",
     "katex": "0.16.27",
@@ -43,8 +45,5 @@
     "typescript": "5.9.3",
     "unified": "11.0.0",
     "vite": "7.2.6"
-  },
-  "devDependencies": {
-    "@types/node": "^25.2.3"
   }
 }
