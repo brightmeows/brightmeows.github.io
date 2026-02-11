@@ -41,7 +41,7 @@ import type { BlogPost } from "$lib/types/blog";
 export const blogPosts: BlogPost[] = ${JSON.stringify(posts, null, 2)};
 `;
 
-    writeFileSync(join(process.cwd(), "src/lib/data/blog-posts.ts"), output);
+    writeFileSync(join(process.cwd(), "src/lib/data/blog-posts.generated.ts"), output);
     console.log(`✅ Generated blog index with ${posts.length} posts`);
   }
 }

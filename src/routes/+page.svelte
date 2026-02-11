@@ -9,7 +9,7 @@
   import QuickActions from "$lib/components/QuickActions.svelte";
   import StarryBackground from "$lib/components/StarryBackground.svelte";
   import { GlassButton, GlassContainer } from "$lib/components/ui";
-  import { blogPosts } from "$lib/data/blog-posts";
+  import { blogPosts } from "$lib/data/blog-posts.generated";
 
   let tocItems: TocItem[] = [];
 

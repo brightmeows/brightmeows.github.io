@@ -1,4 +1,4 @@
-import { blogPosts } from "$lib/data/blog-posts";
+import { blogPosts } from "$lib/data/blog-posts.generated";
 import type { PageServerLoad } from "./$types";
 import { formatTitle } from "$lib/utils/title";
 
