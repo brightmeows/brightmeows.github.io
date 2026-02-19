@@ -110,10 +110,7 @@
       this.x += this.speedX;
       this.y += this.speedY;
 
-      if (
-        this.x < -300 || this.x > width + 300 || this.y < -300 ||
-        this.y > height + 300
-      ) {
+      if (this.x < -300 || this.x > width + 300 || this.y < -300 || this.y > height + 300) {
         this.init(width, height);
       }
     }
@@ -122,12 +119,7 @@
       const trailX = this.x - this.speedX * 100;
       const trailY = this.y - this.speedY * 100;
 
-      const gradient = ctx.createLinearGradient(
-        trailX,
-        trailY,
-        this.x,
-        this.y,
-      );
+      const gradient = ctx.createLinearGradient(trailX, trailY, this.x, this.y);
 
       gradient.addColorStop(0, "rgba(255, 255, 255, 0)");
       gradient.addColorStop(0.5, "rgba(255, 255, 255, 0.3)");
@@ -161,9 +153,9 @@
     const canvas = canvasRef;
     if (!canvas) return;
 
-    const rawCtx = canvas.getContext("2d");
-    if (!rawCtx) return;
-    const ctx: CanvasRenderingContext2D = rawCtx;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+    const ctx = canvas.getContext("2d") as CanvasRenderingContext2D | null;
+    if (!ctx) return;
 
     let width = window.innerWidth;
     let height = window.innerHeight;
@@ -188,6 +180,7 @@
     let animationId: number | null = null;
 
     function animate(): void {
+      if (!ctx) return;
       ctx.clearRect(0, 0, width, height);
 
       const gradient = ctx.createLinearGradient(0, 0, 0, height);
@@ -229,8 +222,5 @@
   });
 </script>
 
-<canvas
-  bind:this={canvasRef}
-  class="pointer-events-none fixed top-0 left-0 z-0 h-full w-full"
->
+<canvas bind:this={canvasRef} class="pointer-events-none fixed top-0 left-0 z-0 h-full w-full">
 </canvas>

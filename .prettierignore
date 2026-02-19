@@ -1,0 +1,25 @@
+# 依赖
+node_modules/
+.pnpm-store/
+
+# 构建输出
+.svelte-kit/
+build/
+dist/
+
+# 环境文件
+*.log
+.env*
+
+# 其他
+.DS_Store
+coverage/
+
+# 锁文件
+pnpm-lock.yaml
+
+# Vite插件文件
+src/lib/vite-plugin/blog-index.ts
+
+# 自动生成的文件
+*.generated.ts

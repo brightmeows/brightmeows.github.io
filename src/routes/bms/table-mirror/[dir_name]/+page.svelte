@@ -1,6 +1,7 @@
 <script lang="ts">
-  import BmsTablePage from "$lib/components/bms/BmsTablePage.svelte";
   import type { PageData } from "./$types";
+
+  import BmsTablePage from "$lib/components/bms/BmsTablePage.svelte";
 
   let { data }: { data: PageData } = $props();
 </script>

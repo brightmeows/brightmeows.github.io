@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { cubicInOut } from "svelte/easing";
   import { fade } from "svelte/transition";
+
   import { resolve } from "$app/paths";
   import { GlassPanel } from "$lib/components/ui";
 
@@ -129,33 +130,25 @@
 
     const onOutsidePointerDown = (event: PointerEvent) => {
       if (!container) return;
-      if (
-        event.target instanceof Node && container.contains(event.target)
-      ) return;
+      if (event.target instanceof Node && container.contains(event.target)) return;
       closeImmediately();
     };
 
     const onOutsideKeyDown = (event: KeyboardEvent) => {
       if (!container) return;
-      if (
-        event.target instanceof Node && container.contains(event.target)
-      ) return;
+      if (event.target instanceof Node && container.contains(event.target)) return;
       closeImmediately();
     };
 
     const onOutsideWheel = (event: WheelEvent) => {
       if (!container) return;
-      if (
-        event.target instanceof Node && container.contains(event.target)
-      ) return;
+      if (event.target instanceof Node && container.contains(event.target)) return;
       closeImmediately();
     };
 
     const onOutsideFocusIn = (event: FocusEvent) => {
       if (!container) return;
-      if (
-        event.target instanceof Node && container.contains(event.target)
-      ) return;
+      if (event.target instanceof Node && container.contains(event.target)) return;
       closeImmediately();
     };
 
@@ -178,11 +171,7 @@
 
     return () => {
       clearTimers();
-      document.removeEventListener(
-        "pointerdown",
-        onOutsidePointerDown,
-        true,
-      );
+      document.removeEventListener("pointerdown", onOutsidePointerDown, true);
       document.removeEventListener("keydown", onOutsideKeyDown, true);
       document.removeEventListener("wheel", onOutsideWheel, true);
       document.removeEventListener("focusin", onOutsideFocusIn, true);
@@ -255,27 +244,9 @@
               class="size-4"
               fill="currentColor"
             >
-              <circle
-                cx="5"
-                cy="12"
-                r="1.5"
-                fill="currentColor"
-                opacity="0.7"
-              />
-              <circle
-                cx="12"
-                cy="12"
-                r="1.5"
-                fill="currentColor"
-                opacity="0.7"
-              />
-              <circle
-                cx="19"
-                cy="12"
-                r="1.5"
-                fill="currentColor"
-                opacity="0.7"
-              />
+              <circle cx="5" cy="12" r="1.5" fill="currentColor" opacity="0.7" />
+              <circle cx="12" cy="12" r="1.5" fill="currentColor" opacity="0.7" />
+              <circle cx="19" cy="12" r="1.5" fill="currentColor" opacity="0.7" />
             </svg>
           {/if}
         </div>
@@ -291,9 +262,7 @@
             {/if}
 
             {#if index === lastItemIndex || item.disabled}
-              <span
-                class="flex cursor-default items-center gap-2 font-medium text-white"
-              >
+              <span class="flex cursor-default items-center gap-2 font-medium text-white">
                 {#if item.icon}
                   <span class="inline-flex">{@render item.icon()}</span>
                 {/if}
@@ -301,7 +270,7 @@
               </span>
             {:else}
               <a
-                href={item.href ?? "#"}
+                href={resolve(item.href ?? "#", {})}
                 class="flex items-center gap-2 text-white/90 no-underline transition-colors duration-150 hover:text-white"
                 onclick={(event) => event.stopPropagation()}
               >

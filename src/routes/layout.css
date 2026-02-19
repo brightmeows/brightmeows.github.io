@@ -43,8 +43,7 @@
   }
 
   .page-title {
-    @apply text-[clamp(2rem,3vw,2.5rem)] leading-[1.2] font-extrabold
-      text-white;
+    @apply text-[clamp(2rem,3vw,2.5rem)] leading-[1.2] font-extrabold text-white;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
   }
 
@@ -72,8 +71,7 @@
 @layer components {
   /* 浮动玻璃面板 - 用于浮动元素 */
   .glass-panel {
-    @apply relative overflow-hidden text-white backdrop-blur-[10px]
-      transition-opacity duration-200 ease-in-out;
+    @apply relative overflow-hidden text-white backdrop-blur-[10px] transition-opacity duration-200 ease-in-out;
     @apply border-white/20 bg-white/10;
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
     transition:
@@ -84,8 +82,7 @@
 
   /* BMS容器 - 用于BMS相关页面 */
   .glass-bms-container {
-    @apply relative mx-auto my-8 max-w-375 rounded-[20px] p-8 text-white
-      backdrop-blur-[10px];
+    @apply relative mx-auto my-8 max-w-375 rounded-[20px] p-8 text-white backdrop-blur-[10px];
     @apply border-white/10 bg-white/5;
     box-shadow:
       0 8px 32px rgba(0, 0, 0, 0.2),
@@ -104,19 +101,16 @@
 
   /* 难度标签 */
   .badge-level {
-    @apply inline-block min-w-7.5 rounded-xl px-2 py-1 text-center
-      text-[0.85rem] font-semibold text-white;
+    @apply inline-block min-w-7.5 rounded-xl px-2 py-1 text-center text-[0.85rem] font-semibold text-white;
   }
 
   /* 表格样式 */
   .table-glass {
-    @apply w-full table-fixed overflow-hidden rounded-[10px] border-collapse
-      bg-white/5;
+    @apply w-full table-fixed border-collapse overflow-hidden rounded-[10px] bg-white/5;
   }
 
   .table-th-glass {
-    @apply border-b-2 border-white/10 bg-[rgba(100,181,246,0.2)] px-4 py-3
-      text-left font-semibold text-white;
+    @apply border-b-2 border-white/10 bg-[rgba(100,181,246,0.2)] px-4 py-3 text-left font-semibold text-white;
   }
 
   .table-td-glass {
@@ -130,8 +124,7 @@
 
   /* 弹出框 */
   .popover-glass {
-    @apply fixed z-2000 overflow-hidden rounded-xl border border-white/20
-      bg-white/10 shadow-[0_10px_24px_rgba(0,0,0,0.45)] backdrop-blur-sm;
+    @apply fixed z-2000 overflow-hidden rounded-xl border border-white/20 bg-white/10 shadow-[0_10px_24px_rgba(0,0,0,0.45)] backdrop-blur-sm;
   }
 
   /* 进度条 */

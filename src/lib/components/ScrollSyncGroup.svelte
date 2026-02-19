@@ -3,7 +3,7 @@
 
   export let watchKeys: unknown = undefined;
 
-  const containers = new Set<HTMLDivElement>();
+  const containers: HTMLDivElement[] = [];
 
   let isSyncing = false;
   let rafId: number | null = null;
@@ -45,13 +45,16 @@
   }
 
   function setRef(node: HTMLDivElement) {
-    containers.add(node);
+    containers.push(node);
     attach(node);
 
     return {
       destroy() {
         detach(node);
-        containers.delete(node);
+        const index = containers.indexOf(node);
+        if (index !== -1) {
+          containers.splice(index, 1);
+        }
       },
     };
   }
@@ -62,7 +65,7 @@
     for (const el of containers) {
       detach(el);
     }
-    containers.clear();
+    containers.length = 0;
     if (rafId !== null) {
       cancelAnimationFrame(rafId);
     }

@@ -1,7 +1,10 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+
 import matter from "gray-matter";
+
 import type { BlogPost } from "../types/blog";
+
 import { extractFirstSentence } from "./blog-metadata";
 
 export interface BlogPostMetadata {
@@ -26,7 +29,7 @@ export function scanBlogDirectory(blogDir: string, basePath = ""): BlogPost[] {
   for (const entry of entries) {
     // 跳过非字符串条目和非 Markdown 文件
     if (typeof entry !== "string") continue;
-    if (!entry.match(/\.(md|svx)$/)) continue;
+    if (!/\.(md|svx)$/.exec(entry)) continue;
 
     const fullPath = join(blogDir, entry);
     const content = readFileSync(fullPath, "utf-8");
@@ -35,14 +38,14 @@ export function scanBlogDirectory(blogDir: string, basePath = ""): BlogPost[] {
 
     // 从文件名提取 slug（不含扩展名）
     const filename = entry.replace(/\.(md|svx)$/, "");
-    const slug = metadata.slug || filename;
+    const slug = metadata.slug ?? filename;
 
     posts.push({
       slug,
       title: metadata.title,
       date: metadata.date,
       order: metadata.order,
-      firstSentence: metadata.description || extractFirstSentence(content),
+      firstSentence: metadata.description ?? extractFirstSentence(content),
       url: `${basePath}/blog/${slug}`,
     });
   }

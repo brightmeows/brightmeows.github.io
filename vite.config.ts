@@ -1,8 +1,10 @@
-import { paraglideVitePlugin } from "@inlang/paraglide-js";
-import tailwindcss from "@tailwindcss/vite";
-import { sveltekit } from "@sveltejs/kit/vite";
-import { defineConfig } from "vite";
 import path from "node:path";
+
+import { paraglideVitePlugin } from "@inlang/paraglide-js";
+import { sveltekit } from "@sveltejs/kit/vite";
+import tailwindcss from "@tailwindcss/vite";
+import { defineConfig } from "vite";
+
 import { blogIndexPlugin } from "./src/lib/vite-plugin/blog-index.ts";
 
 export default defineConfig({

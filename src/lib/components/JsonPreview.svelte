@@ -1,7 +1,5 @@
 <script context="module" lang="ts">
-  export type JsonPreviewCopyHandler = (
-    text: string,
-  ) => Promise<void> | void;
+  export type JsonPreviewCopyHandler = (text: string) => Promise<void> | void;
 
   export interface JsonPreviewShowOptions {
     value: unknown;
@@ -10,32 +8,27 @@
     onCopy?: JsonPreviewCopyHandler;
   }
 
-  export type JsonPreviewHandle = {
+  export interface JsonPreviewHandle {
     show: (
       options: JsonPreviewShowOptions,
       clientX: number,
-      clientY: number,
+      clientY: number
     ) => void | Promise<void>;
     scheduleHide: () => void;
     hideNow: () => void;
-  };
+  }
 
-  export type JsonPreviewActionParams = {
+  export interface JsonPreviewActionParams {
     preview: JsonPreviewHandle | undefined;
     options: JsonPreviewShowOptions | (() => JsonPreviewShowOptions);
     disabled?: boolean;
-  };
+  }
 
-  export function jsonPreview(
-    node: HTMLElement,
-    params: JsonPreviewActionParams,
-  ) {
+  export function jsonPreview(node: HTMLElement, params: JsonPreviewActionParams) {
     let current = params;
 
     function getOptions(): JsonPreviewShowOptions {
-      return typeof current.options === "function"
-        ? current.options()
-        : current.options;
+      return typeof current.options === "function" ? current.options() : current.options;
     }
 
     function onEnter(event: PointerEvent): void {
@@ -88,15 +81,16 @@
     try {
       return JSON.stringify(
         input,
-        (_key, v) => {
+        (_key, v): unknown => {
           if (typeof v === "bigint") return v.toString();
           if (typeof v === "object" && v !== null) {
-            if (seen.has(v)) return "[Circular]";
-            seen.add(v);
+            const obj = v as object;
+            if (seen.has(obj)) return "[Circular]";
+            seen.add(obj);
           }
           return v;
         },
-        space,
+        space
       );
     } catch {
       try {
@@ -111,18 +105,20 @@
 
   async function copyText(
     text: string,
-    onCopy: ((text: string) => Promise<void> | void) | undefined,
+    onCopy: ((text: string) => Promise<void> | void) | undefined
   ): Promise<void> {
     if (onCopy) {
       await onCopy(text);
       return;
     }
     try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
+      if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(text);
         return;
       }
-    } catch {}
+    } catch {
+      // clipboard API failed, fallback to textarea method
+    }
 
     const textarea = document.createElement("textarea");
     textarea.value = text;
@@ -133,7 +129,9 @@
     textarea.select();
     try {
       await navigator.clipboard.writeText(textarea.value);
-    } catch {}
+    } catch {
+      // clipboard API failed
+    }
     document.body.removeChild(textarea);
   }
 
@@ -163,7 +161,8 @@
       const contain = style.contain ?? "";
       const willChange = style.willChange ?? "";
 
-      const createsContainingBlock = style.transform !== "none" ||
+      const createsContainingBlock =
+        style.transform !== "none" ||
         style.perspective !== "none" ||
         style.filter !== "none" ||
         style.backdropFilter !== "none" ||
@@ -196,19 +195,13 @@
     if (left + popRect.width + margin > viewportW) {
       left = localX - offset - popRect.width;
     }
-    left = Math.max(
-      margin,
-      Math.min(left, viewportW - popRect.width - margin),
-    );
+    left = Math.max(margin, Math.min(left, viewportW - popRect.width - margin));
 
     let top = localY + offset;
     if (top + popRect.height + margin > viewportH) {
       top = localY - offset - popRect.height;
     }
-    top = Math.max(
-      margin,
-      Math.min(top, viewportH - popRect.height - margin),
-    );
+    top = Math.max(margin, Math.min(top, viewportH - popRect.height - margin));
 
     popoverStyle = `left:${left}px;top:${top}px;`;
   }
@@ -216,7 +209,7 @@
   export async function show(
     options: JsonPreviewShowOptions,
     clientX: number,
-    clientY: number,
+    clientY: number
   ): Promise<void> {
     cancelHide();
     open = true;
@@ -262,9 +255,7 @@
     on:pointerenter={cancelHide}
     on:pointerleave={scheduleHide}
   >
-    <div
-      class="flex items-center justify-between gap-3 border-b border-white/10 p-3"
-    >
+    <div class="flex items-center justify-between gap-3 border-b border-white/10 p-3">
       <div class="text-[0.9rem] font-semibold text-white/90">{label}</div>
       <div class="flex gap-2">
         <button
@@ -285,7 +276,6 @@
     </div>
     <pre
       class="overflow-auto bg-black/20 p-3 font-mono text-[0.8rem] leading-relaxed text-white/90"
-      style={`max-height:${maxHeightRem}rem;`}
-    ><code>{jsonText}</code></pre>
+      style={`max-height:${maxHeightRem}rem;`}><code>{jsonText}</code></pre>
   </div>
 {/if}

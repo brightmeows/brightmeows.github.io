@@ -9,31 +9,24 @@
   let levelRefData: LevelRefItem[] = [];
   let shouldShow = false;
 
-  let leftTableData: LevelRefItem[] = [];
-  let rightTableData: LevelRefItem[] = [];
-
-  let tableHalves: Array<{ id: "left" | "right"; items: LevelRefItem[] }> =
-    [];
-
-  $: {
+  $: tableHalves = (() => {
     const data = levelRefData;
     const midIndex = Math.ceil(data.length / 2);
-    leftTableData = data.slice(0, midIndex);
-    rightTableData = data.slice(midIndex);
-  }
-
-  $: tableHalves = [
-    { id: "left", items: leftTableData },
-    { id: "right", items: rightTableData },
-  ];
+    return [
+      { id: "left" as const, items: data.slice(0, midIndex) },
+      { id: "right" as const, items: data.slice(midIndex) },
+    ];
+  })();
 
   function buildLevelRefUrl(headerUrlRaw: string): string {
     try {
-      const baseUrl = new URL(headerUrlRaw, window.location.href);
-      const pathParts = baseUrl.pathname.split("/");
-      pathParts[pathParts.length - 1] = "level-ref.json";
-      baseUrl.pathname = pathParts.join("/");
-      return baseUrl.toString();
+      let url = headerUrlRaw;
+      if (!/^https?:\/\//i.test(url)) {
+        url = new URL(headerUrlRaw, window.location.href).toString();
+      }
+      const parts = url.split("/");
+      parts[parts.length - 1] = "level-ref.json";
+      return parts.join("/");
     } catch (err) {
       console.error("构建 level-ref.json URL 失败:", err);
       return "";
@@ -42,9 +35,7 @@
 
   let requestToken = 0;
 
-  async function loadLevelRefData(
-    header: string | undefined,
-  ): Promise<void> {
+  async function loadLevelRefData(header: string | undefined): Promise<void> {
     if (!header) {
       shouldShow = false;
       return;
@@ -64,7 +55,7 @@
       if (token !== requestToken) return;
 
       if (response.ok) {
-        const data = await response.json();
+        const data = (await response.json()) as LevelRefItem[];
         if (token !== requestToken) return;
 
         if (Array.isArray(data)) {
@@ -77,9 +68,7 @@
       } else if (response.status === 404) {
         shouldShow = false;
       } else {
-        throw new Error(
-          `加载失败: ${response.status} ${response.statusText}`,
-        );
+        throw new Error(`加载失败: ${response.status} ${response.statusText}`);
       }
     } catch (err) {
       console.error("加载难度对照表数据失败:", err);

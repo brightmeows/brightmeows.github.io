@@ -1,22 +1,24 @@
 <script context="module" lang="ts">
-  export type TocItem = {
+  import { resolve } from "$app/paths";
+
+  export interface TocItem {
     id: string;
     title: string;
     href?: string;
     children?: TocItem[];
-  };
+  }
 
-  type HeadingInfo = {
+  interface HeadingInfo {
     id: string;
     title: string;
     level: number;
-  };
+  }
 
-  export type BuildTocFromHeadingsOptions = {
+  export interface BuildTocFromHeadingsOptions {
     root?: ParentNode | null;
     minLevel?: number;
     maxLevel?: number;
-  };
+  }
 
   function slugifyHeadingText(input: string): string {
     const normalized = input
@@ -35,19 +37,14 @@
     return slug || "section";
   }
 
-  function collectHeadingInfo(
-    root: ParentNode,
-    minLevel: number,
-    maxLevel: number,
-  ): HeadingInfo[] {
-    const headings = Array.from(root.querySelectorAll("h1,h2,h3,h4,h5,h6"))
-      .filter((el) => {
-        if (!(el instanceof HTMLHeadingElement)) return false;
-        const level = Number(el.tagName.slice(1));
-        return level >= minLevel && level <= maxLevel;
-      }) as HTMLHeadingElement[];
+  function collectHeadingInfo(root: ParentNode, minLevel: number, maxLevel: number): HeadingInfo[] {
+    const headings = Array.from(root.querySelectorAll("h1,h2,h3,h4,h5,h6")).filter((el) => {
+      if (!(el instanceof HTMLHeadingElement)) return false;
+      const level = Number(el.tagName.slice(1));
+      return level >= minLevel && level <= maxLevel;
+    }) as HTMLHeadingElement[];
 
-    const usedIds = new Map<string, number>();
+    const usedIds: Record<string, number> = {};
     return headings
       .map((h) => {
         const text = (h.textContent ?? "").trim();
@@ -55,15 +52,11 @@
         const level = Number(h.tagName.slice(1));
 
         let baseId = h.id?.trim() || slugifyHeadingText(text);
-        const currentCount = usedIds.get(baseId) ?? 0;
-        usedIds.set(baseId, currentCount + 1);
+        const currentCount = usedIds[baseId] ?? 0;
+        usedIds[baseId] = currentCount + 1;
 
         if (!h.id?.trim()) {
-          h.id = currentCount === 0
-            ? baseId
-            : `${baseId}-${currentCount + 1}`;
-        } else if (currentCount > 0) {
-          baseId = h.id.trim();
+          h.id = currentCount === 0 ? baseId : `${baseId}-${currentCount + 1}`;
         }
 
         return { id: h.id, title: text, level };
@@ -73,12 +66,10 @@
 
   function buildTreeFromHeadingInfo(
     headingInfo: HeadingInfo[],
-    minLevel: number,
-  ): Array<TocItem & { level: number }> {
-    const rootItems: Array<TocItem & { level: number }> = [];
-    const stack: Array<
-      { level: number; children: Array<TocItem & { level: number }> }
-    > = [
+    minLevel: number
+  ): (TocItem & { level: number })[] {
+    const rootItems: (TocItem & { level: number })[] = [];
+    const stack: { level: number; children: (TocItem & { level: number })[] }[] = [
       { level: minLevel - 1, children: rootItems },
     ];
 
@@ -86,8 +77,7 @@
       while (stack.length > 0 && h.level <= stack[stack.length - 1].level) {
         stack.pop();
       }
-      const parent = stack[stack.length - 1] ??
-        { level: minLevel - 1, children: rootItems };
+      const parent = stack[stack.length - 1] ?? { level: minLevel - 1, children: rootItems };
       const node: TocItem & { level: number } = {
         id: h.id,
         title: h.title,
@@ -97,39 +87,31 @@
       parent.children.push(node);
       stack.push({
         level: h.level,
-        children: node.children as Array<TocItem & { level: number }>,
+        children: node.children as (TocItem & { level: number })[],
       });
     }
 
     return rootItems;
   }
 
-  function stripLevel(
-    nodes: Array<TocItem & { level: number }>,
-  ): TocItem[] {
+  function stripLevel(nodes: (TocItem & { level: number })[]): TocItem[] {
     return nodes.map((n) => ({
       id: n.id,
       title: n.title,
       ...(n.children && n.children.length > 0
         ? {
-          children: stripLevel(
-            n.children as Array<TocItem & { level: number }>,
-          ),
-        }
+            children: stripLevel(n.children as (TocItem & { level: number })[]),
+          }
         : {}),
     }));
   }
 
-  export function buildTocFromHeadings(
-    options: BuildTocFromHeadingsOptions = {},
-  ): TocItem[] {
+  export function buildTocFromHeadings(options: BuildTocFromHeadingsOptions = {}): TocItem[] {
     if (typeof document === "undefined") return [];
 
     const minLevel = options.minLevel ?? 2;
     const maxLevel = options.maxLevel ?? 6;
-    const root = options.root ??
-      (document.querySelector("main") as HTMLElement | null) ??
-      (document.body as HTMLElement);
+    const root = options.root ?? document.querySelector("main") ?? document.body;
 
     const headingInfo = collectHeadingInfo(root, minLevel, maxLevel);
     const tree = buildTreeFromHeadingInfo(headingInfo, minLevel);
@@ -139,28 +121,30 @@
 
 <script lang="ts">
   import { onMount } from "svelte";
-  import { browser } from "$app/environment";
+
   import FloatingPanel from "./FloatingPanel.svelte";
 
-  type TocItem = {
+  import { browser } from "$app/environment";
+
+  interface TocItem {
     id: string;
     title: string;
     href?: string;
     children?: TocItem[];
-  };
+  }
 
-  type FlatTocItem = {
+  interface FlatTocItem {
     id: string;
     title: string;
     href: string;
     depth: number;
-  };
+  }
 
   export let items: TocItem[] = [];
-  export let title: string = "目录";
+  export let title = "目录";
 
   let activeId: string | null = null;
-  let scrollScheduled = false;
+  let _scrollScheduled = false;
 
   $: flatItems = flattenItems(items);
 
@@ -196,17 +180,15 @@
       if (top - offset <= 0) current = id;
     }
 
-    activeId = current ??
-      (list[0]?.href.startsWith("#")
-        ? list[0].href.slice(1)
-        : (list[0]?.id ?? null));
+    activeId =
+      current ?? (list[0]?.href.startsWith("#") ? list[0].href.slice(1) : (list[0]?.id ?? null));
   }
 
   function scheduleUpdateActive(): void {
-    if (scrollScheduled) return;
-    scrollScheduled = true;
+    if (_scrollScheduled) return;
+    _scrollScheduled = true;
     requestAnimationFrame(() => {
-      scrollScheduled = false;
+      _scrollScheduled = false;
       updateActive();
     });
   }
@@ -258,11 +240,10 @@
     <nav class="max-h-[calc(60vh-3rem)] overflow-auto pr-1">
       {#each flatItems as item (item.id)}
         <a
-          href={item.href}
+          href={resolve(item.href || "", {})}
           class={[
             "block rounded-lg py-2 pr-3 text-[0.9rem] leading-snug transition-colors",
-            activeId ===
-                (item.href.startsWith("#") ? item.href.slice(1) : item.id)
+            activeId === (item.href.startsWith("#") ? item.href.slice(1) : item.id)
               ? "bg-white/10 text-sky-200"
               : "text-white/85 hover:bg-white/8 hover:text-white",
           ].join(" ")}

@@ -1,5 +1,6 @@
-import { blogPosts } from "$lib/data/blog-posts.generated";
 import type { PageServerLoad } from "./$types";
+
+import { blogPosts } from "$lib/data/blog-posts.generated";
 import { formatTitle } from "$lib/utils/title";
 
 export const load: PageServerLoad = () => {

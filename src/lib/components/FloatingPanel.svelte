@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import { cubicInOut } from "svelte/easing";
   import { fade } from "svelte/transition";
+
   import { GlassPanel } from "$lib/components/ui";
 
   interface Props {
@@ -109,33 +110,25 @@
 
     const onOutsidePointerDown = (event: PointerEvent) => {
       if (!container) return;
-      if (
-        event.target instanceof Node && container.contains(event.target)
-      ) return;
+      if (event.target instanceof Node && container.contains(event.target)) return;
       closeImmediately();
     };
 
     const onOutsideKeyDown = (event: KeyboardEvent) => {
       if (!container) return;
-      if (
-        event.target instanceof Node && container.contains(event.target)
-      ) return;
+      if (event.target instanceof Node && container.contains(event.target)) return;
       closeImmediately();
     };
 
     const onOutsideWheel = (event: WheelEvent) => {
       if (!container) return;
-      if (
-        event.target instanceof Node && container.contains(event.target)
-      ) return;
+      if (event.target instanceof Node && container.contains(event.target)) return;
       closeImmediately();
     };
 
     const onOutsideFocusIn = (event: FocusEvent) => {
       if (!container) return;
-      if (
-        event.target instanceof Node && container.contains(event.target)
-      ) return;
+      if (event.target instanceof Node && container.contains(event.target)) return;
       closeImmediately();
     };
 
@@ -158,11 +151,7 @@
 
     return () => {
       clearTimers();
-      document.removeEventListener(
-        "pointerdown",
-        onOutsidePointerDown,
-        true,
-      );
+      document.removeEventListener("pointerdown", onOutsidePointerDown, true);
       document.removeEventListener("keydown", onOutsideKeyDown, true);
       document.removeEventListener("wheel", onOutsideWheel, true);
       document.removeEventListener("focusin", onOutsideFocusIn, true);
@@ -266,11 +255,7 @@
           {/if}
         </div>
 
-        <div
-          class=""
-          class:opacity-100={keyedOpen}
-          class:opacity-0={!keyedOpen}
-        >
+        <div class="" class:opacity-100={keyedOpen} class:opacity-0={!keyedOpen}>
           {#if children}
             {@render children()}
           {/if}

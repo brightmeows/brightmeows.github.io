@@ -61,19 +61,20 @@
   const containerStyleString = $derived(
     Object.entries({
       "box-shadow": "0 8px 32px rgba(0, 0, 0, 0.3)",
-      transition:
-        "background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease",
+      transition: "background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease",
       ...variantStyles[variant],
       ...style,
     })
       .map(([key, value]) => `${key}:${value}`)
-      .join(";"),
+      .join(";")
   );
 </script>
 
 <div
   {id}
-  class="backdrop-blur relative block text-white {paddingConfig[padding]} {roundedConfig[rounded]} {className}"
+  class="relative block text-white backdrop-blur {paddingConfig[padding]} {roundedConfig[
+    rounded
+  ]} {className}"
   class:animate-fadeIn={animate}
   style={containerStyleString}
 >

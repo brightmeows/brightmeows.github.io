@@ -1,8 +1,5 @@
 <script lang="ts">
-  import JsonPreview, {
-    jsonPreview,
-    type JsonPreviewHandle,
-  } from "$lib/components/JsonPreview.svelte";
+  import JsonPreview, { jsonPreview } from "$lib/components/JsonPreview.svelte";
   import ScrollSyncGroup from "$lib/components/ScrollSyncGroup.svelte";
 
   interface MirrorTableItem {
@@ -34,12 +31,22 @@
     Checked: 2,
   } as const;
 
-  type CheckboxState = typeof CheckboxState[keyof typeof CheckboxState];
+  type CheckboxState = (typeof CheckboxState)[keyof typeof CheckboxState];
 
   export let groups: Tag1Group[] = [];
   export let selectedMap: Record<string, boolean> = {};
 
-  let tablePreview: JsonPreviewHandle | undefined;
+  let tablePreview:
+    | {
+        show: (
+          options: import("$lib/components/JsonPreview.svelte").JsonPreviewShowOptions,
+          clientX: number,
+          clientY: number
+        ) => void | Promise<void>;
+        scheduleHide: () => void;
+        hideNow: () => void;
+      }
+    | undefined;
 
   function compareAscii(a: string, b: string): number {
     if (a === b) return 0;
@@ -92,10 +99,7 @@
     return sg.items.map((item) => item.url);
   }
 
-  function aggregateCheckboxState(
-    urls: string[],
-    map: Record<string, boolean>,
-  ): CheckboxState {
+  function aggregateCheckboxState(urls: string[], map: Record<string, boolean>): CheckboxState {
     if (urls.length === 0) return CheckboxState.Unchecked;
     let selected = 0;
     for (const u of urls) if (map[u]) selected++;
@@ -104,17 +108,11 @@
     return CheckboxState.Indeterminate;
   }
 
-  function tag1State(
-    g: Tag1Group,
-    map: Record<string, boolean>,
-  ): CheckboxState {
+  function tag1State(g: Tag1Group, map: Record<string, boolean>): CheckboxState {
     return aggregateCheckboxState(getTag1Urls(g), map);
   }
 
-  function tag2State(
-    sg: Tag2Group,
-    map: Record<string, boolean>,
-  ): CheckboxState {
+  function tag2State(sg: Tag2Group, map: Record<string, boolean>): CheckboxState {
     return aggregateCheckboxState(getTag2Urls(sg), map);
   }
 
@@ -177,9 +175,7 @@
                 on:click={() => scrollToTag2(g.tag1, sg.tag2)}
               >
                 {sg.tag2}
-                <span
-                  class="rounded-[10px] bg-black/20 px-2 py-[0.1rem] text-[0.9rem] opacity-90"
-                >
+                <span class="rounded-[10px] bg-black/20 px-2 py-[0.1rem] text-[0.9rem] opacity-90">
                   ({sg.items.length})
                 </span>
               </button>
@@ -195,14 +191,9 @@
               <input
                 type="checkbox"
                 class="h-5.5 w-5.5 scale-[1.2]"
-                use:indeterminate={tag1State(g, selectedMap) ===
-                  CheckboxState.Indeterminate}
+                use:indeterminate={tag1State(g, selectedMap) === CheckboxState.Indeterminate}
                 checked={tag1State(g, selectedMap) === CheckboxState.Checked}
-                on:change={(e) =>
-                  onTag1Change(
-                    (e.currentTarget as HTMLInputElement).checked,
-                    g,
-                  )}
+                on:change={(e) => onTag1Change((e.currentTarget as HTMLInputElement).checked, g)}
               />
               <span
                 class="rounded-[20px] bg-[rgba(100,181,246,0.3)] px-6 py-2 text-[1.2rem] font-bold text-white shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
@@ -213,24 +204,14 @@
           </div>
 
           {#each g.subgroups as sg (sg.tag2)}
-            <div
-              id={`tag2-group-${slugifyTag(g.tag1)}-${slugifyTag(sg.tag2)}`}
-              class="mt-4"
-            >
-              <h3
-                class="mt-2 mb-2 flex items-center gap-2 text-[1.1rem] text-white"
-              >
+            <div id={`tag2-group-${slugifyTag(g.tag1)}-${slugifyTag(sg.tag2)}`} class="mt-4">
+              <h3 class="mt-2 mb-2 flex items-center gap-2 text-[1.1rem] text-white">
                 <input
                   type="checkbox"
                   class="h-5.5 w-5.5 scale-[1.2]"
-                  use:indeterminate={tag2State(sg, selectedMap) ===
-                    CheckboxState.Indeterminate}
+                  use:indeterminate={tag2State(sg, selectedMap) === CheckboxState.Indeterminate}
                   checked={tag2State(sg, selectedMap) === CheckboxState.Checked}
-                  on:change={(e) =>
-                    onTag2Change(
-                      (e.currentTarget as HTMLInputElement).checked,
-                      sg,
-                    )}
+                  on:change={(e) => onTag2Change((e.currentTarget as HTMLInputElement).checked, sg)}
                 />
                 {sg.tag2}
               </h3>
@@ -278,25 +259,17 @@
                   <tbody>
                     {#each sortedItems(sg.items) as item (item.url)}
                       <tr class="hover:bg-white/5 last:[&>td]:border-b-0">
-                        <td
-                          class="border-b border-white/5 p-4 wrap-break-word text-white/90"
-                        >
+                        <td class="border-b border-white/5 p-4 wrap-break-word text-white/90">
                           <input
                             type="checkbox"
                             class="h-5.5 w-5.5 scale-[1.2]"
                             checked={!!selectedMap[item.url]}
                             on:change={(e) =>
-                              onRowChange(
-                                (e.currentTarget as HTMLInputElement)
-                                  .checked,
-                                item.url,
-                              )}
+                              onRowChange((e.currentTarget as HTMLInputElement).checked, item.url)}
                           />
                         </td>
-                        <td
-                          class="border-b border-white/5 p-4 wrap-break-word text-white/90"
-                        >
-                          {item.symbol || ""}
+                        <td class="border-b border-white/5 p-4 wrap-break-word text-white/90">
+                          {item.symbol ?? ""}
                         </td>
                         <td
                           class="min-w-50 border-b border-white/5 p-4 wrap-break-word text-white/90"
@@ -307,9 +280,7 @@
                               preview: tablePreview,
                               options: {
                                 value: item,
-                                label: `${
-                                  item.name || "难度表"
-                                } JSON`,
+                                label: `${item.name ?? "难度表"} JSON`,
                                 maxHeightRem: 14,
                               },
                             }}

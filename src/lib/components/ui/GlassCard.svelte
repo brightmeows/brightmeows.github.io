@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { resolve } from "$app/paths";
+
   interface Props {
     /** 子元素内容 */
     children?: import("svelte").Snippet;
@@ -57,7 +59,7 @@
       ...style,
     })
       .map(([key, value]) => `${key}:${value}`)
-      .join(";"),
+      .join(";")
   );
 
   const hoverStyleString = $derived(
@@ -66,7 +68,7 @@
       "box-shadow": "0 4px 12px rgba(0, 0, 0, 0.2)",
     })
       .map(([key, value]) => `${key}:${value}`)
-      .join(";"),
+      .join(";")
   );
 
   function handleMouseEnter(event: MouseEvent) {
@@ -82,10 +84,12 @@
 
 {#if href}
   <a
-    {href}
+    href={resolve(href, {})}
     {target}
     {rel}
-    class="backdrop-blur relative block text-white no-underline {paddingConfig[padding]} {roundedConfig[rounded]} {className}"
+    class="relative block text-white no-underline backdrop-blur {paddingConfig[
+      padding
+    ]} {roundedConfig[rounded]} {className}"
     class:hover:-translate-y-0.5={hoverLift}
     class:active:translate-y-0={clickShrink}
     class:active:scale-95={clickShrink}
@@ -101,7 +105,9 @@
   <div
     role="button"
     tabindex="0"
-    class="backdrop-blur relative text-white {paddingConfig[padding]} {roundedConfig[rounded]} {className}"
+    class="relative text-white backdrop-blur {paddingConfig[padding]} {roundedConfig[
+      rounded
+    ]} {className}"
     class:hover:-translate-y-0.5={hoverLift}
     class:active:translate-y-0={clickShrink}
     class:active:scale-95={clickShrink}

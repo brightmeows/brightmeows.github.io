@@ -2,7 +2,7 @@
   import "katex/dist/katex.min.css";
   import { onDestroy, onMount } from "svelte";
 
-  export let className: string = "";
+  export let className = "";
 
   let container: HTMLDivElement | null = null;
   let observer: MutationObserver | null = null;
@@ -28,27 +28,23 @@
   function ensureHeadingAnchors(): void {
     if (!container) return;
 
-    const headings = Array.from(
-      container.querySelectorAll("h1,h2,h3,h4,h5,h6"),
-    );
-    const usedIds = new Map<string, number>();
+    const headings = Array.from(container.querySelectorAll("h1,h2,h3,h4,h5,h6"));
+    const usedIds: Record<string, number> = {};
 
     for (const heading of headings) {
-      const existingAnchor = heading.querySelector(
-        ":scope > a.heading-anchor",
-      );
+      const existingAnchor = heading.querySelector(":scope > a.heading-anchor");
       if (existingAnchor) continue;
 
       const rawText = (heading.textContent ?? "").trim();
       const baseId = heading.id?.trim() || slugifyHeadingText(rawText);
 
-      const currentCount = usedIds.get(baseId) ?? 0;
-      usedIds.set(baseId, currentCount + 1);
+      const currentCount = usedIds[baseId] ?? 0;
+      usedIds[baseId] = currentCount + 1;
       const id = heading.id?.trim()
         ? heading.id.trim()
         : currentCount === 0
-        ? baseId
-        : `${baseId}-${currentCount + 1}`;
+          ? baseId
+          : `${baseId}-${currentCount + 1}`;
 
       heading.id = id;
 

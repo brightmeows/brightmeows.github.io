@@ -1,14 +1,13 @@
 <script lang="ts">
   import { onMount } from "svelte";
+
+  import BreadcrumbNav from "$lib/components/BreadcrumbNav.svelte";
+  import FloatingToc from "$lib/components/FloatingToc.svelte";
+  import ProfileCard from "$lib/components/ProfileCard.svelte";
+  import QuickActions from "$lib/components/QuickActions.svelte";
+  import StarryBackground from "$lib/components/StarryBackground.svelte";
   import ChartsTableSection from "$lib/components/bms/ChartsTableSection.svelte";
   import LevelRefTable from "$lib/components/bms/LevelRefTable.svelte";
-  import StarryBackground from "$lib/components/StarryBackground.svelte";
-  import ProfileCard from "$lib/components/ProfileCard.svelte";
-  import FloatingToc, {
-    type TocItem,
-  } from "$lib/components/FloatingToc.svelte";
-  import QuickActions from "$lib/components/QuickActions.svelte";
-  import BreadcrumbNav from "$lib/components/BreadcrumbNav.svelte";
   import { formatBmsTableTitle } from "$lib/utils/title";
 
   interface ChartData {
@@ -76,7 +75,7 @@
   async function copySiteUrl(): Promise<void> {
     try {
       const url = window.location.href;
-      if (navigator.clipboard && navigator.clipboard.writeText) {
+      if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(url);
       } else {
         const textarea = document.createElement("textarea");
@@ -119,8 +118,7 @@
       pageTitle = "加载难度表header中";
       updateProgress("正在加载表头信息...", 25);
 
-      const headerUrlBase = new URL(headerUrl, window.location.href)
-        .toString();
+      const headerUrlBase = new URL(headerUrl, window.location.href).toString();
 
       const headerResponse = await fetch(headerUrlBase, {
         redirect: "follow",
@@ -128,9 +126,9 @@
       if (!headerResponse.ok) {
         throw new Error(`无法加载表头信息: ${headerResponse.status}`);
       }
-      headerData = await headerResponse.json();
+      headerData = (await headerResponse.json()) as HeaderData;
 
-      pageTitle = String(headerData?.name || "未命名");
+      pageTitle = String(headerData?.name ?? "未命名");
       updateProgress("表头信息加载完成", 50);
 
       const dataUrl = headerData?.data_url;
@@ -140,8 +138,7 @@
 
       updateProgress("正在加载谱面数据...", 75);
 
-      const isAbsolute = (u: string) =>
-        /^(https?:)?\/\//i.test(u) || u.startsWith("/");
+      const isAbsolute = (u: string) => /^(https?:)?\/\//i.test(u) || u.startsWith("/");
       dataFetchUrl = isAbsolute(String(dataUrl))
         ? String(dataUrl)
         : new URL(String(dataUrl), headerUrlBase).toString();
@@ -152,7 +149,7 @@
       if (!dataResponse.ok) {
         throw new Error(`无法加载谱面数据: ${dataResponse.status}`);
       }
-      tableData = await dataResponse.json();
+      tableData = (await dataResponse.json()) as ChartData[];
 
       updateProgress("数据加载完成", 100);
 
@@ -170,16 +167,16 @@
     if (!tableData || !Array.isArray(tableData)) {
       return [];
     }
-    const groupsMap = new Map<string, DifficultyGroup>();
+    const groupsMap: Record<string, DifficultyGroup> = {};
     const charts = tableData;
     for (const chart of charts) {
-      const level = chart.level || "unknown";
-      if (!groupsMap.has(level)) {
-        groupsMap.set(level, { level, charts: [] });
+      const level = chart.level ?? "unknown";
+      if (!groupsMap[level]) {
+        groupsMap[level] = { level, charts: [] };
       }
-      groupsMap.get(level)?.charts.push(chart);
+      groupsMap[level].charts.push(chart);
     }
-    return Array.from(groupsMap.values());
+    return Object.values(groupsMap);
   });
 
   const tableStats = $derived(() => {
@@ -189,11 +186,13 @@
     }
     const { totalCharts, difficulties } = groups.reduce(
       (acc, group) => {
-        acc.difficulties.add(group.level);
+        if (!acc.difficulties.includes(group.level)) {
+          acc.difficulties.push(group.level);
+        }
         acc.totalCharts += group.charts.length;
         return acc;
       },
-      { totalCharts: 0, difficulties: new Set<string>() },
+      { totalCharts: 0, difficulties: [] as string[] }
     );
     return { totalCharts, difficulties: Array.from(difficulties) };
   });
@@ -201,18 +200,14 @@
   const sortedDifficultyGroups = $derived(() => {
     const groups = groupedCharts();
     const order = headerData?.level_order ?? [];
-    const orderIndex = new Map<string, number>();
-    order.forEach((lv, idx) => orderIndex.set(String(lv), idx));
+    const orderIndex: Record<string, number> = {};
+    order.forEach((lv, idx) => (orderIndex[String(lv)] = idx));
     const defined: DifficultyGroup[] = [];
     const others: DifficultyGroup[] = [];
     for (const g of groups) {
-      (orderIndex.has(String(g.level)) ? defined : others).push(g);
+      (String(g.level) in orderIndex ? defined : others).push(g);
     }
-    defined.sort(
-      (a, b) =>
-        (orderIndex.get(String(a.level)) ?? 0) -
-        (orderIndex.get(String(b.level)) ?? 0),
-    );
+    defined.sort((a, b) => (orderIndex[String(a.level)] ?? 0) - (orderIndex[String(b.level)] ?? 0));
     others.sort((a, b) => {
       const as = String(a.level).trim();
       const bs = String(b.level).trim();
@@ -248,11 +243,13 @@
         id: "table-info",
         title: "难度表信息",
         href: "#table-info",
-        children: [{
-          id: "table-stats",
-          title: "统计摘要",
-          href: "#table-stats",
-        }],
+        children: [
+          {
+            id: "table-stats",
+            title: "统计摘要",
+            href: "#table-stats",
+          },
+        ],
       },
       { id: "level-ref", title: "等级参考", href: "#level-ref" },
       {
@@ -268,8 +265,7 @@
     { label: "主页", href: "/" },
     { label: "BMS", href: "/bms" },
     {
-      label: (headerData as HeaderData | null)?.name ||
-        "加载难度表header中",
+      label: headerData?.name ?? "加载难度表header中",
     },
   ]);
 
@@ -286,14 +282,8 @@
 
 <StarryBackground />
 <ProfileCard />
-<BreadcrumbNav
-  items={breadcrumbs}
-  sessionKey={breadcrumbSessionKey}
-  initiallyOpen={false}
-/>
-<div
-  class="glass-bms-container"
->
+<BreadcrumbNav items={breadcrumbs} sessionKey={breadcrumbSessionKey} initiallyOpen={false} />
+<div class="glass-bms-container">
   <div class="mb-8 text-center">
     <h1 class="page-title mb-2">
       {pageTitle}
@@ -363,9 +353,7 @@
       <div class="p-8">
         <div class="glass-loading-container">
           <div class="mb-6 flex items-center justify-between">
-            <h3 class="m-0 text-[1.5rem] text-white">
-              正在加载BMS难度表数据...
-            </h3>
+            <h3 class="m-0 text-[1.5rem] text-white">正在加载BMS难度表数据...</h3>
             <div
               class="rounded-[20px] bg-[#64b5f6]/20 px-4 py-2 text-[1.2rem] font-bold text-[#64b5f6]"
             >
@@ -376,21 +364,16 @@
             <div
               class="h-full rounded-md bg-[linear-gradient(90deg,#4caf50,#64b5f6)] transition-[width] duration-300 ease-out"
               style={`width:${loadingState.progress}%;`}
-            >
-            </div>
+            ></div>
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div class="flex flex-col gap-2">
               <span class="text-[0.9rem] text-white/60">当前步骤:</span>
-              <span class="font-medium text-white">{
-                loadingState.currentStep
-              }</span>
+              <span class="font-medium text-white">{loadingState.currentStep}</span>
             </div>
             <div class="flex flex-col gap-2">
               <span class="text-[0.9rem] text-white/60">总步骤数:</span>
-              <span class="font-medium text-white">{
-                loadingState.totalSteps
-              }</span>
+              <span class="font-medium text-white">{loadingState.totalSteps}</span>
             </div>
           </div>
         </div>
@@ -399,9 +382,7 @@
       <div class="p-12 text-center">
         <div class="mb-4 text-[4rem]">⚠️</div>
         <h3 class="mb-4 text-[#ff6b6b]">加载失败</h3>
-        <p
-          class="my-6 rounded-[10px] border-l-4 border-[#ff6b6b] bg-[rgba(255,107,107,0.1)] p-4"
-        >
+        <p class="my-6 rounded-[10px] border-l-4 border-[#ff6b6b] bg-[rgba(255,107,107,0.1)] p-4">
           {error}
         </p>
         <p>请检查网络连接或稍后重试。</p>
@@ -417,27 +398,23 @@
       <div class="py-4">
         <div class="mb-8 flex flex-wrap gap-8 rounded-[15px] bg-black/20 p-6">
           <div class="min-w-[18rem] flex-1">
-            <h2 id="table-info" class="section-title mt-0 mb-4 scroll-mt-5">
-              难度表信息
-            </h2>
+            <h2 id="table-info" class="section-title mt-0 mb-4 scroll-mt-5">难度表信息</h2>
             <div>
               {#if headerData}
                 <p class="my-2 text-white/80">
                   <strong class="text-[#64b5f6]">难度表名称:</strong>
-                  {headerData.name || "未命名"}
+                  {headerData.name ?? "未命名"}
                 </p>
                 <p class="my-2 text-white/80">
                   <strong class="text-[#64b5f6]">难度表符号:</strong>
-                  {headerData.symbol || "未定义"}
+                  {headerData.symbol ?? "未定义"}
                 </p>
               {/if}
             </div>
           </div>
 
           <div class="min-w-[18rem] flex-1">
-            <h3 id="table-stats" class="section-title mt-0 mb-4 scroll-mt-5">
-              统计摘要
-            </h3>
+            <h3 id="table-stats" class="section-title mt-0 mb-4 scroll-mt-5">统计摘要</h3>
             <div class="grid grid-cols-3 gap-4">
               <div class="stat-card">
                 <div class="mb-2 text-[2rem] font-bold text-[#64b5f6]">
@@ -463,8 +440,8 @@
           {#if sortedDifficultyGroups().length > 0}
             <ChartsTableSection
               groups={sortedDifficultyGroups()}
-              totalCharts={tableData?.length || 0}
-              levelOrder={headerData?.level_order || []}
+              totalCharts={tableData?.length ?? 0}
+              levelOrder={headerData?.level_order ?? []}
             />
           {:else}
             <div class="p-12 text-center">

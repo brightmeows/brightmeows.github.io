@@ -1,12 +1,19 @@
 <script lang="ts">
-  import JsonPreview, {
-    jsonPreview,
-    type JsonPreviewHandle,
-  } from "$lib/components/JsonPreview.svelte";
+  import JsonPreview, { jsonPreview } from "$lib/components/JsonPreview.svelte";
   import ScrollSyncGroup from "$lib/components/ScrollSyncGroup.svelte";
   import { GradientButton, IconButton } from "$lib/components/ui";
 
-  let chartPreview: JsonPreviewHandle | undefined;
+  let chartPreview:
+    | {
+        show: (
+          options: import("$lib/components/JsonPreview.svelte").JsonPreviewShowOptions,
+          clientX: number,
+          clientY: number
+        ) => void | Promise<void>;
+        scheduleHide: () => void;
+        hideNow: () => void;
+      }
+    | undefined;
 
   interface ChartData {
     title?: string;
@@ -36,22 +43,18 @@
   export let totalCharts: number;
   export let levelOrder: string[] | undefined = undefined;
 
-  let displayGroups: DifficultyGroup[] = [];
+  let displayGroups: DifficultyGroup[];
 
-  $: {
+  $: displayGroups = (() => {
     const order = levelOrder ?? [];
-    const orderIndex = new Map<string, number>();
-    order.forEach((lv, idx) => orderIndex.set(String(lv), idx));
+    const orderIndex: Record<string, number> = {};
+    order.forEach((lv, idx) => (orderIndex[String(lv)] = idx));
     const defined: DifficultyGroup[] = [];
     const others: DifficultyGroup[] = [];
     for (const g of groups) {
-      (orderIndex.has(String(g.level)) ? defined : others).push(g);
+      (String(g.level) in orderIndex ? defined : others).push(g);
     }
-    defined.sort(
-      (a, b) =>
-        (orderIndex.get(String(a.level)) ?? 0) -
-        (orderIndex.get(String(b.level)) ?? 0),
-    );
+    defined.sort((a, b) => (orderIndex[String(a.level)] ?? 0) - (orderIndex[String(b.level)] ?? 0));
     others.sort((a, b) => {
       const as = String(a.level).trim();
       const bs = String(b.level).trim();
@@ -63,18 +66,11 @@
       if (!ai && bi) return 1;
       return as.localeCompare(bs);
     });
-    displayGroups = [...defined, ...others];
-  }
+    return [...defined, ...others];
+  })();
 
   function segmentColor(index: number, total: number): string {
-    const palette = [
-      "#4caf50",
-      "#2196f3",
-      "#ff9800",
-      "#f44336",
-      "#ce50d8",
-      "#9c27b0",
-    ];
+    const palette = ["#4caf50", "#2196f3", "#ff9800", "#f44336", "#ce50d8", "#9c27b0"];
     if (total <= 0) return palette[1];
     const bins = palette.length;
     const size = Math.ceil(total / bins);
@@ -86,19 +82,12 @@
     const md5 = typeof chart.md5 === "string" ? chart.md5.trim() : "";
     const sha = typeof chart.sha256 === "string" ? chart.sha256.trim() : "";
     return {
-      bmsScoreViewer: `https://bms-score-viewer.pages.dev/view?md5=${
-        encodeURIComponent(md5)
-      }`,
-      lr2ir:
-        `http://www.dream-pro.info/~lavalse/LR2IR/search.cgi?mode=ranking&bmsmd5=${
-          encodeURIComponent(md5)
-        }`,
-      mocha: `https://mocha-repository.info/song.php?sha256=${
-        encodeURIComponent(sha)
-      }`,
-      minir: `https://www.gaftalk.com/minir/#/viewer/song/${
-        encodeURIComponent(sha)
-      }/0`,
+      bmsScoreViewer: `https://bms-score-viewer.pages.dev/view?md5=${encodeURIComponent(md5)}`,
+      lr2ir: `http://www.dream-pro.info/~lavalse/LR2IR/search.cgi?mode=ranking&bmsmd5=${encodeURIComponent(
+        md5
+      )}`,
+      mocha: `https://mocha-repository.info/song.php?sha256=${encodeURIComponent(sha)}`,
+      minir: `https://www.gaftalk.com/minir/#/viewer/song/${encodeURIComponent(sha)}/0`,
     };
   }
 
@@ -116,8 +105,8 @@
     const s = (raw ?? "").trim();
     if (!s) return undefined;
     if (/^https?:\/\//i.test(s)) return s;
-    if (/^\/\//.test(s)) return `https:${s}`;
-    if (/^\//.test(s)) return s;
+    if (s.startsWith("//")) return `https:${s}`;
+    if (s.startsWith("/")) return s;
     if (/^[\w.-]+\.[A-Za-z]{2,}(?:\/.*)?$/.test(s)) return `https://${s}`;
     return undefined;
   }
@@ -157,14 +146,13 @@
                 class="flex cursor-pointer items-center justify-center gap-2 rounded-[25px] border-2 border-transparent px-6 py-3 text-[1.1rem] font-bold text-white opacity-70 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:opacity-90 hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)] active:-translate-y-px active:opacity-90"
                 type="button"
                 on:click={() => scrollToDifficultyGroup(group.level)}
-                style={`background-color:${
-                  segmentColor(idx, displayGroups.length)
-                };border-color:${segmentColor(idx, displayGroups.length)};`}
+                style={`background-color:${segmentColor(
+                  idx,
+                  displayGroups.length
+                )};border-color:${segmentColor(idx, displayGroups.length)};`}
               >
                 {group.level}
-                <span
-                  class="rounded-[10px] bg-black/20 px-2 py-[0.1rem] text-[0.9rem] opacity-90"
-                >
+                <span class="rounded-[10px] bg-black/20 px-2 py-[0.1rem] text-[0.9rem] opacity-90">
                   ({group.charts.length})
                 </span>
               </button>
@@ -179,7 +167,7 @@
           <div class="mb-6 border-b-2 border-white/10 pb-4">
             <div class="flex items-center gap-4">
               <span
-                class="rounded-[20px] px-6 py-2 text-[1.2rem] font-bold text-white shadow-[0_2px_8px rgba(0,0,0,0.2)]"
+                class="shadow-[0_2px_8px rgba(0,0,0,0.2)] rounded-[20px] px-6 py-2 text-[1.2rem] font-bold text-white"
                 style={`background-color:${groupColor};`}
               >
                 难度 {group.level}
@@ -190,10 +178,7 @@
             </div>
           </div>
 
-          <div
-            class="overflow-x-auto rounded-[10px] border border-white/10 bg-black/20"
-            use:setRef
-          >
+          <div class="overflow-x-auto rounded-[10px] border border-white/10 bg-black/20" use:setRef>
             <table class="w-full min-w-225 table-fixed border-collapse">
               <colgroup>
                 <col style="width: 7%" />
@@ -205,24 +190,12 @@
               </colgroup>
               <thead>
                 <tr>
-                  <th class="table-th-glass">
-                    等级
-                  </th>
-                  <th class="table-th-glass">
-                    下载
-                  </th>
-                  <th class="table-th-glass">
-                    BMS网站
-                  </th>
-                  <th class="table-th-glass">
-                    标题
-                  </th>
-                  <th class="table-th-glass">
-                    艺术家
-                  </th>
-                  <th class="table-th-glass">
-                    备注
-                  </th>
+                  <th class="table-th-glass"> 等级 </th>
+                  <th class="table-th-glass"> 下载 </th>
+                  <th class="table-th-glass"> BMS网站 </th>
+                  <th class="table-th-glass"> 标题 </th>
+                  <th class="table-th-glass"> 艺术家 </th>
+                  <th class="table-th-glass"> 备注 </th>
                 </tr>
               </thead>
               <tbody>
@@ -230,7 +203,7 @@
                   {@const bundleUrl = resolvedBundleUrl(chart)}
                   {@const diffUrl = resolvedDiffUrl(chart)}
                   {@const bmsLinks = getBmsLinks(chart)}
-                  {@const               chartJson = { ...chart, groupLevel: group.level }}
+                  {@const chartJson = { ...chart, groupLevel: group.level }}
                   <tr class="hover:bg-white/5">
                     <td class="table-td-glass wrap-break-word">
                       <span
@@ -331,14 +304,14 @@
                           },
                         }}
                       >
-                        {chart.title || "未知标题"}
+                        {chart.title ?? "未知标题"}
                       </strong>
                     </td>
                     <td class="table-td-glass wrap-break-word">
-                      {chart.artist || "未知艺术家"}
+                      {chart.artist ?? "未知艺术家"}
                     </td>
                     <td class="table-td-glass wrap-break-word">
-                      {chart.comment || ""}
+                      {chart.comment ?? ""}
                     </td>
                   </tr>
                 {/each}

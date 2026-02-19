@@ -1,6 +1,5 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import type { HTMLAttributes } from "svelte/elements";
 
   interface Props {
     /** 子元素内容 */
@@ -50,18 +49,19 @@
       "background-color": "rgba(255, 255, 255, 0.1)",
       border: "1px solid rgba(255, 255, 255, 0.2)",
       "box-shadow": "0 4px 30px rgba(0, 0, 0, 0.1)",
-      transition:
-        "background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease",
+      transition: "background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease",
       ...style,
     })
       .map(([key, value]) => `${key}:${value}`)
-      .join(";"),
+      .join(";")
   );
 </script>
 
 <div
   {id}
-  class="backdrop-blur relative text-white {paddingConfig[padding]} {roundedConfig[rounded]} {className}"
+  class="relative text-white backdrop-blur {paddingConfig[padding]} {roundedConfig[
+    rounded
+  ]} {className}"
   class:overflow-hidden={overflow}
   style={panelStyleString}
 >

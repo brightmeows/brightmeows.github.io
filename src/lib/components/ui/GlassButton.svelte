@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { resolve } from "$app/paths";
+
   interface Props {
     /** 按钮文本或内容 */
     children?: import("svelte").Snippet;
@@ -57,7 +59,7 @@
       ...style,
     })
       .map(([key, value]) => `${key}:${value}`)
-      .join(";"),
+      .join(";")
   );
 
   const hoverStyleString = $derived(
@@ -66,7 +68,7 @@
       "box-shadow": "0 5px 15px rgba(0, 0, 0, 0.2)",
     })
       .map(([key, value]) => `${key}:${value}`)
-      .join(";"),
+      .join(";")
   );
 
   function handleMouseEnter(event: MouseEvent) {
@@ -84,10 +86,12 @@
 
 {#if href && !disabled}
   <a
-    {href}
+    href={resolve(href, {})}
     {target}
     {rel}
-    class="backdrop-blur relative inline-block rounded-xl font-medium text-white no-underline cursor-pointer {sizeConfig[size]} {className}"
+    class="relative inline-block cursor-pointer rounded-xl font-medium text-white no-underline backdrop-blur {sizeConfig[
+      size
+    ]} {className}"
     class:hover:-translate-y-0.5={hoverLift}
     class:active:translate-y-0={clickShrink}
     class:active:scale-95={clickShrink}
@@ -104,7 +108,9 @@
     {type}
     {disabled}
     {onclick}
-    class="backdrop-blur relative inline-block rounded-xl font-medium text-white cursor-pointer {sizeConfig[size]} {className}"
+    class="relative inline-block cursor-pointer rounded-xl font-medium text-white backdrop-blur {sizeConfig[
+      size
+    ]} {className}"
     class:opacity-50={disabled}
     class:cursor-not-allowed={disabled}
     class:hover:-translate-y-0.5={hoverLift && !disabled}
