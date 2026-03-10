@@ -17,7 +17,6 @@ updates:
       - "MiyakoMeow"
     assignees:
       - "MiyakoMeow"
-    auto-merge: true
 
   - package-ecosystem: "github-actions"
     directory: "/"
@@ -28,4 +27,3 @@ updates:
       - "dependencies"
       - "automated"
     open-pull-requests-limit: 20
-    auto-merge: true
