@@ -12,31 +12,26 @@ export const prerender = true;
  * 在构建时执行，返回所有有效的 dir_name
  */
 export function entries() {
-  try {
-    // 读取 tables_proxy.json
-    const jsonPath = join("static", "bms", "table", "mirror-proxy", "tables_proxy.json");
-    const fileContent = readFileSync(jsonPath, "utf-8");
-    const tables_proxy = JSON.parse(fileContent) as {
-      dir_name: string;
-      url: string;
-      url_ori?: string;
-    }[];
+  // 读取 tables_proxy.json
+  const jsonPath = join("static", "bms", "table", "mirror-proxy", "tables_proxy.json");
+  const fileContent = readFileSync(jsonPath, "utf-8");
+  const tables_proxy = JSON.parse(fileContent) as {
+    dir_name: string;
+    url: string;
+    url_ori?: string;
+  }[];
 
-    // 过滤出有效的 dir_name
-    const validTables = tables_proxy.filter(
-      (item) => item.dir_name && item.dir_name.trim().length > 0
-    );
+  // 过滤出有效的 dir_name
+  const validTables = tables_proxy.filter(
+    (item) => item.dir_name && item.dir_name.trim().length > 0
+  );
 
-    console.log(`[Prerender] Found ${validTables.length} tables to prerender`);
+  console.log(`[Prerender] Found ${validTables.length} tables to prerender`);
 
-    // 返回所有需要预渲染的路由参数
-    return validTables.map((item) => ({
-      dir_name: item.dir_name,
-    }));
-  } catch (err) {
-    console.error("[Prerender] Failed to load tables_proxy.json:", err);
-    return [];
-  }
+  // 返回所有需要预渲染的路由参数
+  return validTables.map((item) => ({
+    dir_name: item.dir_name,
+  }));
 }
 
 /**
