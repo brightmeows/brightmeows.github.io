@@ -1,31 +1,28 @@
-name: Auto-merge Dependabot PRs
-
+name: Dependabot Auto-Merge
 on:
-  pull_request_target:
-    types: [opened, synchronize, reopened, labeled]
-  check_suite:
-    types: [completed]
-  status: {}
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - labeled
+
+# 1. 显式声明写入权限
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
-  dependabot-auto-merge:
-    if: |
-      github.event_name == 'check_suite' ||
-      github.event_name == 'status' ||
-      github.event.pull_request.user.login == 'dependabot[bot]' ||
-      github.event.pull_request.user.login == 'dependabot-preview[bot]'
+  auto-merge:
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
-      contents: write
+    # 2. 确保只处理 Dependabot 的 PR
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
     steps:
-      - name: Auto-merge Dependabot PR
-        uses: pascalgn/automerge-action@v0.16.0
+      - name: Enable auto-merge
+        run: |
+          # 3. 使用 gh 命令标记自动合并
+          # 如果分支保护允许 auto-merge，这将成功
+          gh pr merge --auto --squash "$PR_URL"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          MERGE_LABELS: "dependencies,automated"
-          MERGE_REQUIRED_STATUSES: "CI/*"
-          MERGE_METHOD: "squash"
-          MERGE_DELETE_BRANCH: true
-          MERGE_RETRIES: "10"
-          MERGE_RETRY_SLEEP: "60000"
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
