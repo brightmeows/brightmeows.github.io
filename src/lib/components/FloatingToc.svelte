@@ -240,7 +240,7 @@
     <nav class="max-h-[calc(60vh-3rem)] overflow-auto pr-1">
       {#each flatItems as item (item.id)}
         <a
-          href={resolve(item.href || "", {})}
+          href={item.href.startsWith("#") ? item.href : resolve(item.href || "", {})}
           class={[
             "block rounded-lg py-2 pr-3 text-[0.9rem] leading-snug transition-colors",
             activeId === (item.href.startsWith("#") ? item.href.slice(1) : item.id)

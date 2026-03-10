@@ -97,6 +97,8 @@ export default tseslint.config(
       "src/lib/components/ui/GradientButton.svelte",
       "src/lib/components/ui/GlassCard.svelte",
       "src/lib/components/ui/GlassButton.svelte",
+      "src/lib/components/BreadcrumbNav.svelte",
+      "src/lib/components/FloatingToc.svelte",
     ],
     rules: {
       "svelte/no-navigation-without-resolve": "off",
