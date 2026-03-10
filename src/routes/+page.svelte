@@ -27,10 +27,10 @@
   <GlassContainer id="blog" animate={true} class="mt-8 w-full">
     <h1 class="page-title mb-8 text-center">欢迎来到白喵斯的小屋！</h1>
     <div class="mb-8 flex flex-wrap items-center justify-center gap-4">
-      <GlassButton href="/bms">BMS 主页</GlassButton>
-      <GlassButton href="/bms/table-mirror">BMS 难度表镜像</GlassButton>
-      <GlassButton href="/bms/table/self-sp">个人难度表（SP）</GlassButton>
-      <GlassButton href="/bms/table/self-dp">个人难度表（DP）</GlassButton>
+      <GlassButton href={resolve("/bms", {})}>BMS 主页</GlassButton>
+      <GlassButton href={resolve("/bms/table-mirror", {})}>BMS 难度表镜像</GlassButton>
+      <GlassButton href={resolve("/bms/table/self-sp", {})}>个人难度表（SP）</GlassButton>
+      <GlassButton href={resolve("/bms/table/self-dp", {})}>个人难度表（DP）</GlassButton>
     </div>
   </GlassContainer>
 

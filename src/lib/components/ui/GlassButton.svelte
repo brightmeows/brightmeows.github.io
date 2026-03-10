@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { resolve } from "$app/paths";
-
   interface Props {
     /** 按钮文本或内容 */
     children?: import("svelte").Snippet;
@@ -86,7 +84,7 @@
 
 {#if href && !disabled}
   <a
-    href={resolve(href, {})}
+    {href}
     {target}
     {rel}
     class="relative inline-block cursor-pointer rounded-xl font-medium text-white no-underline backdrop-blur {sizeConfig[

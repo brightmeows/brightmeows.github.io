@@ -1,6 +1,4 @@
 <script lang="ts">
-  import { resolve } from "$app/paths";
-
   interface Props {
     /** 图标内容 */
     children?: import("svelte").Snippet;
@@ -131,7 +129,7 @@
 
 {#if href && !disabled}
   <a
-    href={resolve(href, {})}
+    {href}
     {target}
     {rel}
     aria-label={ariaLabel}

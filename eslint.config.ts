@@ -93,6 +93,10 @@ export default tseslint.config(
     files: [
       "src/lib/components/bms/BmsTablePage.svelte",
       "src/lib/components/bms/GroupedTablesSection.svelte",
+      "src/lib/components/ui/IconButton.svelte",
+      "src/lib/components/ui/GradientButton.svelte",
+      "src/lib/components/ui/GlassCard.svelte",
+      "src/lib/components/ui/GlassButton.svelte",
     ],
     rules: {
       "svelte/no-navigation-without-resolve": "off",

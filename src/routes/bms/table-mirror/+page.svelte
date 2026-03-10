@@ -2,6 +2,7 @@
   import * as OpenCC from "opencc-js";
   import { onMount, tick } from "svelte";
 
+  import { resolve } from "$app/paths";
   import BreadcrumbNav from "$lib/components/BreadcrumbNav.svelte";
   import FloatingToc, { type TocItem } from "$lib/components/FloatingToc.svelte";
   import ProfileCard from "$lib/components/ProfileCard.svelte";
@@ -295,7 +296,10 @@
 
     <div class="mt-4 flex flex-wrap items-stretch justify-center gap-4">
       {#each links as link (link.href)}
-        <GlassCard href={link.href} class="flex w-80 flex-col">
+        <GlassCard
+          href={link.href.startsWith("/") ? resolve(link.href, {}) : link.href}
+          class="flex w-80 flex-col"
+        >
           <div class="mb-2 text-[1.2rem] font-bold text-[#64b5f6]">
             {link.title}
           </div>
