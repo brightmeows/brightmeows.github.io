@@ -9,7 +9,11 @@ on:
 
 jobs:
   dependabot-auto-merge:
-    if: github.event.pull_request.user.login == 'dependabot[bot]' || github.event.pull_request.user.login == 'dependabot-preview[bot]'
+    if: |
+      github.event_name == 'check_suite' ||
+      github.event_name == 'status' ||
+      github.event.pull_request.user.login == 'dependabot[bot]' ||
+      github.event.pull_request.user.login == 'dependabot-preview[bot]'
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -20,6 +24,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MERGE_LABELS: "dependencies,automated"
+          MERGE_REQUIRED_STATUSES: "CI/*"
           MERGE_METHOD: "squash"
           MERGE_DELETE_BRANCH: true
           MERGE_RETRIES: "10"
