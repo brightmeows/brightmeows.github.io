@@ -14,7 +14,7 @@ export const prerender = true;
 export function entries() {
   try {
     // 读取 tables_proxy.json
-    const jsonPath = join("static", "bms", "table-mirror", "tables_proxy.json");
+    const jsonPath = join("static", "bms", "table", "mirror-proxy", "tables_proxy.json");
     const fileContent = readFileSync(jsonPath, "utf-8");
     const tables_proxy = JSON.parse(fileContent) as {
       dir_name: string;
@@ -48,7 +48,7 @@ export const load: PageServerLoad = ({ params, locals }) => {
 
   try {
     // 读取 tables_proxy.json
-    const jsonPath = join("static", "bms", "table-mirror", "tables_proxy.json");
+    const jsonPath = join("static", "bms", "table", "mirror-proxy", "tables_proxy.json");
     const fileContent = readFileSync(jsonPath, "utf-8");
     const tables_proxy = JSON.parse(fileContent) as {
       dir_name: string;

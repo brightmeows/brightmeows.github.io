@@ -129,7 +129,7 @@
 
   async function copyTables(): Promise<void> {
     const tablesJsonPath = new URL(
-      "/bms/table-mirror/tables.json",
+      "/bms/table/mirror-proxy/tables.json",
       window.location.origin
     ).toString();
     await copySelected(tablesJsonPath);
@@ -233,7 +233,7 @@
 
   async function loadTablesJson(): Promise<void> {
     try {
-      const url = new URL("/bms/table-mirror/tables.json", window.location.origin).toString();
+      const url = new URL("/bms/table/mirror-proxy/tables.json", window.location.origin).toString();
       const res = await fetch(url, { redirect: "follow" });
       if (!res.ok) {
         throw new Error(`无法加载tables.json: ${res.status}`);
@@ -246,7 +246,7 @@
       tables = (data as MirrorTableItem[]).map((item) => {
         const dir = String(item.dir_name ?? "").replace(/^\/+|\/+/g, "");
         if (!dir) return item;
-        return { ...item, url: `/bms/table-mirror/${dir}/` };
+        return { ...item, url: `/bms/table/mirror-proxy/${dir}/` };
       });
       error = null;
     } catch (e) {
