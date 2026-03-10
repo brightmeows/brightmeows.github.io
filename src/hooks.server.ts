@@ -1,21 +1,10 @@
 import type { Handle } from "@sveltejs/kit";
-import { redirect } from "@sveltejs/kit";
 
 /**
  * SvelteKit 服务器端 hooks
  * 在预渲染和 SSR 模式下执行
  */
 export const handle: Handle = async ({ event, resolve }) => {
-  const path = event.url.pathname;
-
-  if (path === "/bms/table-mirror" || path.startsWith("/bms/table-mirror/")) {
-    const reqUrl = event.request.url;
-    const searchStart = reqUrl.indexOf("?");
-    const search = searchStart >= 0 ? reqUrl.slice(searchStart) : "";
-    const newPath = path.replace("/bms/table-mirror", "/bms/table/mirror-proxy") + search;
-    redirect(301, newPath);
-  }
-
   const response = await resolve(event);
 
   // 非HTML响应，直接返回
