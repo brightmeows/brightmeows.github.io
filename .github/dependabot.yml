@@ -9,14 +9,6 @@ updates:
       - "dependencies"
       - "automated"
     open-pull-requests-limit: 20
-    versioning-strategy: "increase"
-    commit-message:
-      prefix: "chore"
-      include: "scope"
-    reviewers:
-      - "MiyakoMeow"
-    assignees:
-      - "MiyakoMeow"
 
   - package-ecosystem: "github-actions"
     directory: "/"
