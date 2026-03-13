@@ -13,7 +13,7 @@ export const load: PageServerLoad = () => {
   const posts = cachedPosts;
 
   return {
-    posts,
-    title: formatTitle("博客文章"),
+    recentPosts: posts.slice(0, 5),
+    title: formatTitle("欢迎来到白喵斯的小屋！"),
   };
 };

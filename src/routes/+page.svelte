@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
+  import type { PageData } from "./$types";
+
   import { resolve } from "$app/paths";
   import FloatingToc, {
     buildTocFromHeadings,
@@ -10,7 +12,8 @@
   import QuickActions from "$lib/components/QuickActions.svelte";
   import StarryBackground from "$lib/components/StarryBackground.svelte";
   import { GlassButton, GlassContainer } from "$lib/components/ui";
-  import { blogPosts } from "$lib/data/blog-posts.generated";
+
+  export let data: PageData;
 
   let tocItems: TocItem[] = [];
 
@@ -45,11 +48,11 @@
       </a>
     </div>
 
-    {#if blogPosts.length === 0}
+    {#if !data.recentPosts || data.recentPosts.length === 0}
       <div class="text-center text-white/70">暂无文章</div>
     {:else}
       <div class="flex flex-col gap-4">
-        {#each blogPosts as post (post.slug)}
+        {#each data.recentPosts as post (post.slug)}
           <a
             class="block rounded-[14px] border border-white/10 bg-black/20 p-6 text-white no-underline transition-[transform,background] duration-300 ease-out hover:-translate-y-0.5 hover:bg-[rgba(255,255,255,0.06)]"
             href={resolve(post.url, {})}

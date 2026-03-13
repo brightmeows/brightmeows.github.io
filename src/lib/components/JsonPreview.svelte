@@ -219,6 +219,7 @@
     onCopy = options.onCopy;
 
     await tick();
+    popoverEl?.focus();
     updatePositionAtPointer(clientX, clientY);
   }
 
@@ -254,9 +255,12 @@
     out:fade={{ duration: 120 }}
     on:pointerenter={cancelHide}
     on:pointerleave={scheduleHide}
+    role="dialog"
+    tabindex="-1"
+    aria-labelledby="json-preview-label"
   >
     <div class="flex items-center justify-between gap-3 border-b border-white/10 p-3">
-      <div class="text-[0.9rem] font-semibold text-white/90">{label}</div>
+      <div id="json-preview-label" class="text-[0.9rem] font-semibold text-white/90">{label}</div>
       <div class="flex gap-2">
         <button
           class="cursor-pointer rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-[0.85rem] font-semibold text-white transition-all duration-200 ease-in-out hover:bg-white/15"
