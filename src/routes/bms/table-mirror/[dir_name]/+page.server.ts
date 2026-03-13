@@ -45,5 +45,5 @@ export const load: PageServerLoad = ({ params }) => {
   const encodedDirName = encodeURIComponent(dir_name);
 
   // eslint-disable-next-line @typescript-eslint/only-throw-error
-  throw redirect(301, `/bms/table/mirror-proxy/${encodedDirName}`);
+  throw redirect(308, `/bms/table/mirror-proxy/${encodedDirName}`);
 };
