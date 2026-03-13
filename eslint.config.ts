@@ -31,6 +31,7 @@ export default tseslint.config(
       "project.inlang/cache/",
       ".vite",
       "/legacy",
+      "static/bms/",
     ],
   },
 

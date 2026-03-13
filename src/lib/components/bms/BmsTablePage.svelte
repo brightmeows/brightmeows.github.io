@@ -101,6 +101,36 @@
     loadingState = { ...loadingState, currentStep: step, progress };
   }
 
+  function fetchJsonp(url: string, timeoutMs = 10000): Promise<unknown> {
+    return new Promise((resolve, reject) => {
+      const callbackName = "jsonp_callback_" + Math.round(100000 * Math.random());
+      const script = document.createElement("script");
+      const win = window as unknown as Record<string, unknown>;
+      const cleanup = () => {
+        delete win[callbackName];
+        if (script.parentNode) document.body.removeChild(script);
+      };
+      const timer = window.setTimeout(() => {
+        cleanup();
+        reject(new Error("JSONP request timed out"));
+      }, timeoutMs);
+      const requestUrl = new URL(url, window.location.href);
+      requestUrl.searchParams.set("callback", callbackName);
+      script.src = requestUrl.toString();
+      win[callbackName] = (data: unknown) => {
+        window.clearTimeout(timer);
+        cleanup();
+        resolve(data);
+      };
+      script.onerror = () => {
+        window.clearTimeout(timer);
+        cleanup();
+        reject(new Error("JSONP request failed"));
+      };
+      document.body.appendChild(script);
+    });
+  }
+
   async function lazyLoadTableData(): Promise<void> {
     try {
       error = null;
@@ -138,18 +168,40 @@
 
       updateProgress("正在加载谱面数据...", 75);
 
-      const isAbsolute = (u: string) => /^(https?:)?\/\//i.test(u) || u.startsWith("/");
-      dataFetchUrl = isAbsolute(String(dataUrl))
-        ? String(dataUrl)
-        : new URL(String(dataUrl), headerUrlBase).toString();
+      const resolvedDataUrl = new URL(String(dataUrl), headerUrlBase);
+      const finalDataUrl = resolvedDataUrl.toString();
+      const isJsonp =
+        resolvedDataUrl.hostname === "script.google.com" &&
+        resolvedDataUrl.pathname.startsWith("/macros/");
 
-      const dataResponse = await fetch(dataFetchUrl, {
-        redirect: "follow",
-      });
-      if (!dataResponse.ok) {
-        throw new Error(`无法加载谱面数据: ${dataResponse.status}`);
+      updateProgress("正在加载谱面数据...", 75);
+
+      let tableDataRaw: unknown;
+      if (isJsonp) {
+        tableDataRaw = await fetchJsonp(finalDataUrl);
+      } else {
+        const dataResponse = await fetch(finalDataUrl, {
+          redirect: "follow",
+        });
+        if (!dataResponse.ok) {
+          throw new Error(`无法加载谱面数据: ${dataResponse.status}`);
+        }
+        tableDataRaw = await dataResponse.json();
       }
-      tableData = (await dataResponse.json()) as ChartData[];
+      if (!Array.isArray(tableDataRaw)) {
+        let apiError = "谱面数据格式无效";
+        if (typeof tableDataRaw === "object" && tableDataRaw !== null && "error" in tableDataRaw) {
+          const err = (tableDataRaw as Record<string, unknown>).error;
+          if (err !== undefined) {
+            apiError = typeof err === "string" ? err : JSON.stringify(err);
+          } else {
+            apiError = "未知错误";
+          }
+        }
+        throw new Error(`无法解析谱面数据: ${apiError}`);
+      }
+      tableData = tableDataRaw as ChartData[];
+      dataFetchUrl = finalDataUrl;
 
       updateProgress("数据加载完成", 100);
 
