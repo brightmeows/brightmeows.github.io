@@ -12,13 +12,19 @@ jobs:
         uses: actions/checkout@v6
       - name: Download table mirror data
         run: |
+          # Fetch
+          curl --fail --show-error --location -o /tmp/bms-table-mirror.zip https://github.com/MiyakoMeow/bms-table-mirror/archive/refs/heads/main.zip
+          unzip -o /tmp/bms-table-mirror.zip -d /tmp
+          # Mkdir
           mkdir -p static/bms/table/mirror-proxy
-          curl --fail --show-error --location \
-            -o static/bms/table/mirror-proxy/tables_proxy.json \
-            https://raw.githubusercontent.com/MiyakoMeow/bms-table-mirror/refs/heads/main/outputs/tables_github_proxy_best.json
-          curl --fail --show-error --location \
-            -o static/bms/table/mirror-proxy/tables.json \
-            https://raw.githubusercontent.com/MiyakoMeow/bms-table-mirror/refs/heads/main/outputs/tables_miyakomeow.json
+          mkdir -p static/bms/table/mirror
+          # Copy tables.json
+          cp /tmp/bms-table-mirror-main/outputs/tables_miyakomeow.json static/bms/table/mirror/tables.json
+          cp /tmp/bms-table-mirror-main/outputs/tables_miyakomeow_proxy.json static/bms/table/mirror-proxy/tables.json
+          cp /tmp/bms-table-mirror-main/outputs/tables_miyakomeow_proxy.json static/bms/table/mirror-proxy/tables_proxy.json
+          cp /tmp/bms-table-mirror-main/outputs/tables_github_proxy_best.json static/bms/table/mirror-proxy/
+          # Copy table directories
+          cp -r /tmp/bms-table-mirror-main/tables/* static/bms/table/mirror/
       - uses: pnpm/action-setup@v4
         with:
           version: 10
