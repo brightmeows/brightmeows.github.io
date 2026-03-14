@@ -1,0 +1,263 @@
+
+Satellite Skill Analyzer 3rd sl10～sl12コースにて協力者3名以上の異論なしとご意見を頂きましたのでsl10～sl12コースの提案を開始したいと思います。
+
+今回から適用するコース提案の進行方法についてですが、2週間後の2/1までの期間でSTELLAVVERSEアカウントをお持ちの皆様にこちらのスレッド内にてコースの提案をお願いします。他スレッド・レベルのコース提案は全て無効になりますのでご注意ください。
+また、2/1までに目標提案数が達成されなかった場合、従来のスプレッドシートに自由に書き込む方式での提案を追加して行います。
+sl10～12コースでは5件のコース提案が目標提案数です。
+
+提案方法については以下の例を参考にご提案ください。
+また、推薦難易度表収録楽曲については先頭に〇を、絶対に収録したい、おススメしたいと考えている譜面があれば先頭に★をつけてください。
+コメントについてはお好きな場所にコメントしてください。
+
+提案例です。sl10コース提案も兼ねています。
+Course:sl10
+
+1st:〇Implexrough -Luna-　BPM150乱打、体力、皿複合
+2nd:SupersonicdiverS -Xe-　BPM212ガチ押し、乱打
+3rd:★Candy & Baguette [HARDEST]　BPM179総合力(乱打、皿複合、ディレイ)
+final:Lapis [World Extend]　BPM146微縦複合乱打、ジャリ複合
+
+曲順はbeatorajaレート順ソートで難易度が徐々に上がる構成にしています。
+ボスは最初REZIDUAL MiND [CONNECT]を提案する予定でしたがテストした際sl12より強く感じてしまったので代わりにLapis [World Extend]を採用する形にしています。
+もしそれでも強すぎるのであれば3曲目のCandy & Baguetteをボスにしても良いかもしれません。
+13. NOMINATOR
+selene.
+ @ 2026/01/17 20:12:03
+
+コース提案用のテンプレートです。コピーにどうぞ。
+
+Course:
+
+1st:
+2nd:
+3rd:
+final:
+14.
+べりめとろす
+ @ 2026/01/17 20:42:13
+
+Course:sl10
+
+1st:★Seventh Summer of Love [Loves Only You] 同時押し BPM90
+2nd:○★Lolita Scaffold [sLUNATIC] ガチ押し、ディレイ、局所発狂 BPM500
+3rd:○Affection [Appreciation] 中速乱打、体力 BPM145
+final:○orbitalgazer (FINESSE) 高速乱打、皿複合、総合譜面 BPM176~192
+
+1st:がっつり同時押し譜面。複雑な同時押しがsl10から増えるので習得したいところ。テストプレイの結果、これが一番ちょうどよさそうだった。
+2nd:ガチ押しとディレイ両方の実力が要求される譜面。初代sl10にもあったが段位に良い譜面で推薦グレードなのでまた採用したい。
+3rd:長い間一定密度の中速乱打を叩かせる譜面。アウトロまでチョコたっぷり。
+final:高速乱打と局所の皿複合発狂がある総合力譜面。sl10の中で恐らく中上くらいでボスとしてちょうどよさそう。
+
+現行段位の要素に純粋な同時押しをプラスした形。複雑な同時押しはsl10あたりから出てくるので必ず習得したいところ。
+Affectionが強めな場合はImplexrough等に変えると良いかも?
+15.
+べりめとろす
+ @ 2026/01/17 20:45:08
+
+Course:sl11
+
+1st:○★未来予想図に淡い希望を [Ponder] 微縦、中速ガチ押し BPM145
+2nd:Chainsaw NINJA vs ALIEN -Despair- 中高速乱打、ジャリ系 BPM170
+3rd:After Burner [SKY HIGH] 高速乱打、局所発狂 BPM95.5~191
+final:★LUV TO ME 2011 [HARDEST] 中速乱打、微縦、体力 BPM159
+
+1st:中速寄りの微縦・ガチ押し譜面。sl11から微縦譜面が増えてくるので出来るようになってほしい。
+2nd:ジャリ含みの中高速乱打。発狂回復挟んで発狂な構成。
+3rd:局所発狂のある高速乱打。終盤前の局所発狂がけっこう殺傷力あるから油断できない。
+final:少し微縦のある乱打体力譜面。じわじわと削れる構成でボスにピッタリ。
+
+現行からガチ押しを微縦に変更、難易度をsl11に馴らした形。
+これならちょうどいい?
+16.
+べりめとろす
+ @ 2026/01/17 21:01:57
+
+Course:sl12
+
+1st:○★溶けたアイス、キミの声 [MELTY] ガチ押し BPM114
+2nd:Bad Elixir -Eclipse- 高速乱打、階段、局所発狂 BPM 203
+3rd:★Weaponhuman [フィジカル横人間] 中速乱打、フィジ横 BPM 150
+final:○夢/あるいは在りし日の ［usual days'］中高速乱打、重発狂 BPM175
+
+1st:sl12の推薦譜面の中でもオススメのガチ押し譜面。地力系のガチ押しで是非ともできるようになってほしい。
+2nd:階段ディレイ強めの高速乱打。局所発狂もあり100%ゲージが全て吹き飛ぶ可能性も。
+3rd:sl12名物のフィジ横譜面。テストプレイの結果、元祖だと強すぎたためこちらを採用。
+final:横に広めの重発狂譜面。少な目の回復で重発狂を耐える厳しい構成。現行4曲目よりは仕事するかも?
+
+推薦の中でも特にオススメなガチ押し譜面とフィジ横を擁した段位。
+Weaponhumanをギリギリ耐えた後少ない回復で重発狂のボスをなんとか耐える構成。現行よりもしかしたら一回り強いかも?
+Weaponhumanが強すぎる場合はEnaを採用すると良さそう。
+17. NOMINATOR
+selene.
+ @ 2026/01/19 20:04:23
+
+Course:sl11
+
+1st:〇AIWS [Oblivion]　BPM247ガチ押し
+2nd:Let me go Seaside (Sao-Sao Brilliance Mix) [yumether]　BPM172総合力(乱打、微縦複合、ジャリ・ズレ複合)
+3rd:Blooderay Malie [D-Heavy]　BPM141手動ディレイ、微縦
+final:〇Valkyrie Revolutia [Blossom]　BPM205乱打、ジャリ・皿複合
+
+beatorajaレートソート順ではないですがなんとなくこの方が良い感じかなと思った曲順にしてます。
+1st:長めの連打箇所はあるものの全体で色々な種類のガチ押しを問われると思います
+2nd:BPM180付近の乱打に微縦・ジャリが絡むため総合力が問われる譜面です。縦連が多めなので採用したいか分かれそうです
+3rd:数少ない採用出来るディレイ枠として。ただジャリ系の複合が多いなら採用しなくてもいいかも？
+final:中盤休憩はあるもののBPM200帯の休みの無い物量と局所のジャリ・皿複合がゲージを奪っていくかなと思ってます
+18. NOMINATOR
+selene.
+ @ 2026/01/19 20:32:21
+
+Course:sl12
+
+1st:アジサイ -Xe-　BPM212総合力(乱打、同時押し、微縦、ジャリ)
+2nd:〇溶けたアイス、キミの声 [MELTY]　BPM114ガチ押し
+3rd:ETERNAL DRAIN(ETERNAL DELAY　BPM149手動ディレイ
+final:〇★Air [Myth]　BPM180重発狂、ジャリ複合、体力
+
+beatorajaレートソート順に難しくなるようにしています。ただ1st,2ndは大差ないかも
+1st:BPM200～帯の総合力。2ndの1stに近い感じになっていまうかも？徐々に削るタイプの譜面に感じたので1st採用の方が良いかと
+2nd:Stellaへのステップアップのためにも突破して欲しいガチ押し譜面。回復箇所が少ないため1st,2ndどちらの採用でも大差ないかも
+3rd:Stellaへのステップアップのためにも突破して欲しいディレイ譜面。前半回復箇所はあるものの後半ディレイが結構難しめ
+final:Stellaへのステップアップのためにも絶対に突破して欲しい物量ボス。Total値は低めの譜面ですが回復と言える箇所が少ない重発狂譜面。
+3曲目まで体力を消費させた上でノート数制限ギリギリの体力を問われる、ラスト8小節がかなり難しいので道中の重発狂で崩れない地力が必要
+19.
+Steve58313_B
+ @ 2026/01/22 02:13:25
+
+Course:sl12
+
+1st:〇★7SP:雪の少女-MorningDash!Mix- [EXTREME] BPM188 中高速切换//Bracket of mid-high speed
+2nd:Bad Elixir -Eclipse- BPM203 高速乱打及爆发//High-speed stream and burst
+3rd:ハニエルのうた [EXTRA] BPM275 以砖、乱为主的综合技巧谱面//Comprehensive and technical(Jack, bracket and delay)
+final:-+　 -EX- BPM185 由切换和乱键构成的爆发谱//Burst(Bracket and delay)
+
+考虑到st前最后一个段的位置，将对地力的考察排在了第一首，后面三首都是针对不同方面的综合谱面。7SP:雪の少女-MorningDash!Mix-这首相较于ting ting来说有更多的缓冲时间，但同时对于切指能力要求更高；-+相较于Terpsichore对谱中爆发的应对能力要求也有提高，而Bad Elixir相较于Sparkling☆Sunshine!!会更简单以平衡难度。//Considering that this is the last course before stella, chart for basically stream&bracket skill is placed at the first song, while the latter 3 comprehensive chart focus differently on technics. The 1st offers more relax time than ting ting, while there is higher demand for bracket. The final makes higher demand for dealing with burst, while the 2nd is easier than Sparkling☆Sunshine!! for balancing the overall difficulty.
+20.
+Steve58313_B
+ @ 2026/01/22 02:34:38
+
+Course:sl11
+
+1st:BIG LOVE [mini jacks] BPM175 微纵、皿复合//Minijack & scratch complex
+2nd:〇Andromeda [yumether] BPM193 高速综合切换//High-speed comprehensive stream
+3rd:サカサマの空に在ったのは [SP XANADU] 叠键综合及爆发//Burst & jack complex
+final:〇emergency call: Xeno [Unknown Encountered] 耐力切换//Stamina
+
+一三首偏向于技巧而二四首偏向于地力。目前尚不清楚原sl10的boss曲现在放进sl11是否合适，考虑到微易化的目标和第三首的排列也许没什么问题。//The 1st & 3rd mainly focus on skill while the 2nd & the final focus on stamina. It's not clear if the former boss of sl10 course become a song of sl11 course, it might be okay considering both the goal for making sl11 a bit easier and note arrangements of the 3rd song.
+21.
+Steve58313_B
+ @ 2026/01/23 04:13:47
+
+Course:sl10
+
+1st:〇PEACE BREAKER [HARDEST] BPM160 切掺乱、爆发//Mixture of bracket&delay, burst
+2nd:Flashdance [Crazy_Life] BPM130 叠键、皿复合//Jack & scratch complex
+3rd:禁忌と緋色幻想 -The Primary Plasm- [rather] BPM208 高速乱打//High-speed stream
+final:ハードルネッサンバ [ANOTHER BOSS] BPM162 耐力切换、delay、皿复合(综合谱面)//Comprehesive chart of stamina(bracket), delay and scratch complex
+
+最后一首也许可以换成REZIDUAL MiND [CONNECT],不过那一首恐怕压力也会更大//The final might be able to be replaced by REZIDUAL MiND [CONNECT], though it will also bring higher pressure.
+22. NOMINATOR
+shigeno_aoi
+ @ 2026/01/31 21:09:24
+
+Course:sl10
+
+1st : ★ Central GRAY [Crazy]
+BPM148 微縦複合
+おそらくsl10でもっとも癖のない150付近の微縦譜面
+容赦のない3連打/4連打が特徴
+
+2nd : 〇 夢の地図と僕らの旅 -To The Future-
+BPM167 8分同時押し
+ECランプ的には高いT/Nのおかげで入門クラスだが譜面としての同時押し濃さはかなり強め
+たまに入る16分も難しい
+サビ前は身構えるほど事故りやすい段位向き要素あり
+
+3rd : Luminaria [INSANE7]
+BPM227 ディレイ・階段?
+同時押しも多め
+T/Nが高いだけで譜面自体はめちゃくちゃ難しい
+かなり正規がきれい
+微ソフラン(197)ありでこれは議論が必要
+
+final : Defeat awaken battle ship (SP AWAKEN)
+BPM153 16分乱打
+いわゆるディレイに相当する箇所も多め
+特に中盤の16分乱打が押しにくく火力高め
+23. NOMINATOR
+shigeno_aoi
+ @ 2026/02/01 19:13:24
+
+Course:sl11
+
+1st:Q.E.D. [scarlet]
+BPM196 同時押し
+この難易度帯としては5点/6点押しの個数が多く、この先のステップアップを考えると必要な要素が多い譜面。
+
+2nd:〇 endemize[RE:RIZE]
+BPM150 微縦複合
+sl11の中でもとりわけオーソドックスな微縦譜面。
+時折混ざる32分も難しい。
+
+3rd:〇 DANCING KIWI [WARK]
+BPM159 16分乱打
+地力正面勝負。
+偏りはないが密度が抜群に濃い。
+
+final:★ Amnehilesie [Etude]
+BPM230 16分乱打?
+高速乱打とガチ押し。
+定期的な局所発狂の火力が高い。
+特にラストが難しめ。ゲージを溜めておかないと落ちることは必至。
+24. NOMINATOR
+shigeno_aoi
+ @ 2026/02/01 19:37:56
+
+Course:sl12
+
+1st:Spider Dance(METTAMETA Remix) [マフェットファンクラブ]
+BPM240 ガチ押し(120)/高速乱打(240)
+難所のメインはガチ押し。
+高速乱打部分は比較的正規が当たっているため回復に使える、かもしれない。
+
+2nd:The Island of Albatross(Flight to Twilight Remix)-EX-
+BPM150 16分乱打
+オーソドックスな乱打。
+前半は簡単だが後半の乱打が長く密度も濃い。
+ラス殺しもあるためゲージを溜めておく必要あり。
+
+3rd:★ REWD "B159 mix" [Rising]
+BPM159 微縦複合
+縦に押させて来るのが難しい。
+正規当たりのため段位で理不尽な立ち位置にはならない……と思う。
+
+final:〇 夢/あるいは在りし日の ［usual days'］
+BPM175 重発狂
+言わずと知れたsl12最強格の乱打譜面。
+25.
+IN
+ @ 2026/02/02 11:28:48
+
+Course:sl10
+1st: All is fair in Rage [Toasty Fatality] ガチ押し、瞬間発狂
+2nd: ★GOODRUSH [LUNATIC] 乱打、二重階段
+3rd: 海神寓拝[Nemesis] sl11、同時押し
+final: 〇PEACE BREAKER[HARDEST] 体力
+26.
+IN
+ @ 2026/02/02 11:29:16
+
+Course:sl11
+1st: NS18 [ANOTHER+] 高速乱打、ラス殺し
+2nd: ★Hammertime [カラクリ認識] ガチ押し
+3rd: ★〇BAMBOO TWIST [my treat] 乱打、微縦
+final: Central Nucleus [INFERNO] 乱打
+27.
+IN
+ @ 2026/02/02 11:40:08
+
+Course:sl12
+1st: AstericA [INSANE] 高速乱打
+2nd: c.s.q.n. -Modus ponens- 瞬間発狂、軸
+3rd: The Island of Albatross(Flight to Twilight Remix)-EX- 乱打、体力
+final: Total Eclipse of the Sun -Nightmare- 体力、ガチ押し
