@@ -23,7 +23,7 @@ export function entries() {
 export const load: PageServerLoad = ({ params, locals }) => {
   const { table } = params;
 
-  locals.bmstableMeta = `./${table}/header.json`;
+  locals.bmstableMeta = "./header.json";
 
   return {
     title: formatTitle(`BMS ${table}`),
