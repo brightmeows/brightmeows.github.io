@@ -66,8 +66,8 @@ importers:
         specifier: 4.0.3
         version: 4.0.3
       katex:
-        specifier: 0.16.27
-        version: 0.16.27
+        specifier: 0.16.39
+        version: 0.16.39
       mdsvex:
         specifier: 0.12.6
         version: 0.12.6(svelte@5.54.0)
@@ -1677,8 +1677,8 @@ packages:
     engines: {node: '>=6'}
     hasBin: true
 
-  katex@0.16.27:
-    resolution: {integrity: sha512-aeQoDkuRWSqQN6nSvVCEFvfXdqo1OQiCmmW1kc9xSdjutPv7BGO7pqY9sQRJpMOGrEdfDgF2TfRXe5eUAD2Waw==}
+  katex@0.16.39:
+    resolution: {integrity: sha512-FR2f6y85+81ZLO0GPhyQ+EJl/E5ILNWltJhpAeOTzRny952Z13x2867lTFDmvMZix//Ux3CuMQ2VkLXRbUwOFg==}
     hasBin: true
 
   keyv@4.5.4:
@@ -2364,9 +2364,6 @@ packages:
   tailwind-csstree@0.1.4:
     resolution: {integrity: sha512-FzD187HuFIZEyeR7Xy6sJbJll2d4SybS90satC8SKIuaNRC05CxMvdzN7BUsfDQffcnabckRM5OIcfArjsZ0mg==}
     engines: {node: '>=18.18'}
-
-  tailwindcss@4.1.17:
-    resolution: {integrity: sha512-j9Ee2YjuQqYT9bbRTfTZht9W/ytp5H+jJpZKiYdP/bpnXARAuELt9ofP0lPnmHjbga7SNQIxdTAXCmtKVYjN+Q==}
 
   tailwindcss@4.2.2:
     resolution: {integrity: sha512-KWBIxs1Xb6NoLdMVqhbhgwZf2PGBpPEiwOqgI4pFIYbNTfBXiKYyWoTsXgBQ9WFg/OlhnvHaY+AEpW7wSmFo2Q==}
@@ -4182,7 +4179,7 @@ snapshots:
 
   json5@2.2.3: {}
 
-  katex@0.16.27:
+  katex@0.16.39:
     dependencies:
       commander: 8.3.0
 
@@ -4489,7 +4486,7 @@ snapshots:
     dependencies:
       '@types/katex': 0.16.8
       devlop: 1.1.0
-      katex: 0.16.27
+      katex: 0.16.39
       micromark-factory-space: 2.0.1
       micromark-util-character: 2.1.1
       micromark-util-symbol: 2.0.1
@@ -4795,7 +4792,7 @@ snapshots:
       '@types/katex': 0.16.8
       hast-util-from-html-isomorphic: 2.0.0
       hast-util-to-text: 4.0.2
-      katex: 0.16.27
+      katex: 0.16.39
       unist-util-visit-parents: 6.0.2
       vfile: 6.0.3
 
@@ -5086,8 +5083,6 @@ snapshots:
       '@pkgr/core': 0.2.9
 
   tailwind-csstree@0.1.4: {}
-
-  tailwindcss@4.1.17: {}
 
   tailwindcss@4.2.2: {}
 
