@@ -42,7 +42,7 @@
     "eslint-plugin-svelte": "^3.16.0",
     "globals": "^17.3.0",
     "gray-matter": "4.0.3",
-    "katex": "0.16.43",
+    "katex": "0.16.44",
     "mdsvex": "0.12.6",
     "opencc-js": "1.0.5",
     "prettier": "^3.8.1",
