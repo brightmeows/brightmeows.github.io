@@ -19,13 +19,12 @@ const config: Config = {
         [
           rehypeKatex as any, // eslint-disable-line @typescript-eslint/no-explicit-any
           {
-            strict: "warn",
             throwOnError: false,
             macros: {
               "\\N": "\\mathbb{N}",
               "\\Z": "\\mathbb{Z}",
             },
-          },
+          } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
         ],
       ],
     }) as any, // eslint-disable-line @typescript-eslint/no-explicit-any
