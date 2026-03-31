@@ -58,7 +58,7 @@
     "tailwindcss": "4.2.2",
     "types": "0.1.1",
     "typescript": "5.9.3",
-    "typescript-eslint": "^8.57.2",
+    "typescript-eslint": "^8.58.0",
     "unified": "11.0.0",
     "vite": "7.2.6"
   }
