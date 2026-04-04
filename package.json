@@ -23,7 +23,6 @@
   },
   "exports": {},
   "devDependencies": {
-    "@eslint/compat": "^2.0.3",
     "@eslint/js": "^10.0.1",
     "@inlang/paraglide-js": "2.15.1",
     "@sveltejs/adapter-static": "3.0.10",
@@ -37,7 +36,6 @@
     "eslint": "^10.1.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-better-tailwindcss": "^4.3.2",
-    "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-import-x": "^4.16.2",
     "eslint-plugin-svelte": "^3.17.0",
     "globals": "^17.4.0",
