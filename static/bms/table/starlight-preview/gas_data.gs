@@ -112,7 +112,7 @@ var ConfigManager = {
         Comment: "comment",
       }),
       processors: Object.assign({}, this._baseProcessors),
-      levelColumnIndices: [0, 1, 2, 3, 4, 5],
+      levelColumnHeader: "Original Level",
     };
   },
 };
@@ -125,14 +125,18 @@ var ConfigManager = {
 
 var DataUtils = {
   /**
-   * 从指定列索引中提取 level 值
+   * 从 "Original Level" 列之前的所有列中提取 level 值
    * @param {Array} row - 数据行
-   * @param {Array} columnIndices - 需要检查的列索引数组
+   * @param {Object} headerIndexMap - 列名到索引的映射
+   * @param {string} levelColumnHeader - level 列的列名
    * @returns {string|null} - 提取的 level 值，如果没有有效值则返回 null
    */
-  extractSrLevel: function (row, columnIndices) {
-    for (var i = 0; i < columnIndices.length; i++) {
-      var val = String(row[columnIndices[i]] || "").trim();
+  extractSrLevel: function (row, headerIndexMap, levelColumnHeader) {
+    var originalLevelIndex = headerIndexMap[levelColumnHeader];
+    if (originalLevelIndex === undefined) return null;
+
+    for (var i = 0; i < originalLevelIndex; i++) {
+      var val = String(row[i] || "").trim();
       var match = val.match(CONSTANTS.LEVEL_PATTERN);
       if (match) return match[1];
     }
@@ -330,8 +334,8 @@ function doGet(e) {
     // 处理 Migration 表
     var migrationConfig = ConfigManager.createMigrationConfig();
     var migrationData = JsonHandler.processSheet(migrationConfig, {
-      levelExtractor: function (row) {
-        return DataUtils.extractSrLevel(row, migrationConfig.levelColumnIndices);
+      levelExtractor: function (row, headerIndexMap) {
+        return DataUtils.extractSrLevel(row, headerIndexMap, migrationConfig.levelColumnHeader);
       },
     });
     result = result.concat(migrationData);
