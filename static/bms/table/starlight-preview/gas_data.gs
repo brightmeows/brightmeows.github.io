@@ -9,7 +9,8 @@
 var CONSTANTS = {
   DEFAULT_MD5: "ffffffffffffffffffffffffffffffff",
   DEFAULT_SHA256: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-  LEVEL_PATTERN: /^sr(\d+)$/i,
+  LEVEL_SR_PATTERN: /^sr(\d+)$/i,
+  LEVEL_SRSLSO_PATTERN: /^(sr|sl|so)(\d+)$/i,
   MD5_PATTERN: /^[a-f0-9]{32}$/,
   SHA256_PATTERN: /^[a-f0-9]{64}$/,
   CALLBACK_PATTERN: /^[A-Za-z_$][0-9A-Za-z_$\.]*$/,
@@ -31,7 +32,7 @@ var Validators = {
   processLevel: function (val) {
     var match = String(val || "")
       .trim()
-      .match(CONSTANTS.LEVEL_PATTERN);
+      .match(CONSTANTS.LEVEL_SR_PATTERN);
     return match ? match[1] : null;
   },
 
@@ -135,12 +136,23 @@ var DataUtils = {
     var originalLevelIndex = headerIndexMap[levelColumnHeader];
     if (originalLevelIndex === undefined) return null;
 
+    var hasMatch = false;
+    var levelValue = null;
+
     for (var i = 0; i < originalLevelIndex; i++) {
       var val = String(row[i] || "").trim();
-      var match = val.match(CONSTANTS.LEVEL_PATTERN);
-      if (match) return match[1];
+      if (val === "") continue;
+
+      if (!CONSTANTS.LEVEL_SRSLSO_PATTERN.test(val)) return null;
+
+      hasMatch = true;
+      if (levelValue === null) {
+        var srMatch = val.match(CONSTANTS.LEVEL_SR_PATTERN);
+        levelValue = srMatch ? srMatch[1] : val;
+      }
     }
-    return null;
+
+    return hasMatch ? levelValue : null;
   },
 
   /**
