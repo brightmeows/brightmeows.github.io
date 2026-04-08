@@ -219,7 +219,8 @@
     onCopy = options.onCopy;
 
     await tick();
-    popoverEl?.focus();
+    // 使用 preventScroll 避免 focus 触发页面滚动到末尾
+    popoverEl?.focus({ preventScroll: true });
     updatePositionAtPointer(clientX, clientY);
   }
 
