@@ -38,7 +38,7 @@
     "eslint-plugin-better-tailwindcss": "^4.4.0",
     "eslint-plugin-import-x": "^4.16.2",
     "eslint-plugin-svelte": "^3.17.0",
-    "globals": "^17.4.0",
+    "globals": "^17.5.0",
     "gray-matter": "4.0.3",
     "katex": "0.16.45",
     "mdsvex": "0.12.7",
