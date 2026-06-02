@@ -30,4 +30,7 @@ project.inlang/cache/
 .vite
 
 # Legacy Page
-/legacy
+/legacy/.worktrees
+
+# Git Worktrees
+/.worktrees
