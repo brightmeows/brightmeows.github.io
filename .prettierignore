@@ -18,8 +18,5 @@ coverage/
 # 锁文件
 pnpm-lock.yaml
 
-# Vite插件文件
-src/lib/vite-plugin/blog-index.ts
-
 # 自动生成的文件
 *.generated.ts
