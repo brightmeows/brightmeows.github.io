@@ -1,5 +1,6 @@
 name: Deploy to Codeberg Pages
 on:
+  workflow_dispatch:
   push:
     branches: "main"
   schedule:
@@ -17,6 +18,19 @@ jobs:
           node-version: latest
       - run: corepack enable && corepack prepare pnpm@11 --activate
       - run: pnpm install
+      - name: Download bms-table-mirror
+        run: curl -L -o /tmp/bms-mirror.zip https://codeberg.org/brightmeows/bms-table-mirror/archive/main.zip
+      - name: Extract tables and indexes
+        run: |
+          mkdir -p static/bms/table/mirror static/bms/table/search
+          unzip -o /tmp/bms-mirror.zip -d /tmp/bms-mirror
+          cp -r /tmp/bms-mirror/bms-table-mirror/tables/* static/bms/table/mirror/
+          cp -r /tmp/bms-mirror/bms-table-mirror/indexes/* static/bms/table/search/
+      - name: Transform tables.json URLs
+        run: |
+          jq '[.[] | .url_from = .url | .url = ("https://brightmeows.codeberg.page/bms/table/mirror/" + ("[" + (.url | capture("://(?<h>[^/]+)").h) + "] " + .name | @uri) + "/")]' \
+            static/bms/table/mirror/tables.json > /tmp/tables.json \
+            && mv /tmp/tables.json static/bms/table/mirror/tables.json
       - run: pnpm build
       - name: Deploy to Codeberg Pages
         uses: https://codeberg.org/git-pages/action@v2
