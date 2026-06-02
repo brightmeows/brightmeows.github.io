@@ -1,6 +1,7 @@
 <script lang="ts">
-  import JsonPreview, { jsonPreview } from "$lib/components/JsonPreview.svelte";
+  import JsonPreview from "$lib/components/JsonPreview.svelte";
   import ScrollSyncGroup from "$lib/components/ScrollSyncGroup.svelte";
+  import MirrorTableRow from "./MirrorTableRow.svelte";
   import type { MirrorTableItem, Tag1Group, Tag2Group } from "$lib/types/bms";
   import { slugifyTag } from "$lib/utils/mirror-tables";
 
@@ -237,66 +238,12 @@
                     </thead>
                     <tbody>
                       {#each sortedItems(sg.items) as item (item.url)}
-                        <tr class="hover:bg-white/5 last:[&>td]:border-b-0">
-                          <td class="border-b border-white/5 p-4 wrap-break-word text-white/90">
-                            <input
-                              type="checkbox"
-                              class="h-5.5 w-5.5 scale-[1.2]"
-                              checked={!!selectedMap[item.url]}
-                              onchange={(e) => onRowChange(e.currentTarget.checked, item.url)}
-                            />
-                          </td>
-                          <td class="border-b border-white/5 p-4 wrap-break-word text-white/90">
-                            {item.symbol ?? ""}
-                          </td>
-                          <td
-                            class="min-w-50 border-b border-white/5 p-4 wrap-break-word text-white/90"
-                          >
-                            <strong
-                              class="cursor-default"
-                              use:jsonPreview={{
-                                preview: tablePreview,
-                                options: {
-                                  value: item,
-                                  label: `${item.name ?? "难度表"} JSON`,
-                                  maxHeightRem: 14,
-                                },
-                              }}
-                            >
-                              {item.name}
-                            </strong>
-                          </td>
-                          <td
-                            class="min-w-32.5 border-b border-white/5 p-4 wrap-break-word text-white/90"
-                          >
-                            <a
-                              class="flex min-w-15 cursor-pointer items-center justify-center gap-[0.2rem] rounded-md border-none bg-[linear-gradient(135deg,#2196f3,#1565c0)] px-2 py-[0.35rem] text-[0.85rem] font-semibold text-white no-underline transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:bg-[linear-gradient(135deg,#42a5f5,#1976d2)] hover:shadow-[0_4px_8px_rgba(0,0,0,0.2)]"
-                              href={item.url}
-                              title={item.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              镜像
-                            </a>
-                          </td>
-                          <td
-                            class="min-w-32.5 border-b border-white/5 p-4 wrap-break-word text-white/90"
-                          >
-                            {#if item.url_from}
-                              <a
-                                class="flex min-w-15 cursor-pointer items-center justify-center gap-[0.2rem] rounded-md border-none bg-[linear-gradient(135deg,#ff9800,#f57c00)] px-2 py-[0.35rem] text-[0.85rem] font-semibold text-white no-underline transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:bg-[linear-gradient(135deg,#ffb74d,#ff9800)] hover:shadow-[0_4px_8px_rgba(0,0,0,0.2)]"
-                                href={item.url_from}
-                                title={item.url_from}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                原链接
-                              </a>
-                            {:else}
-                              <span class="text-white/50">无</span>
-                            {/if}
-                          </td>
-                        </tr>
+                        <MirrorTableRow
+                          {item}
+                          selected={!!selectedMap[item.url]}
+                          onchange={(checked) => onRowChange(checked, item.url)}
+                          {tablePreview}
+                        />
                       {/each}
                     </tbody>
                   </table>

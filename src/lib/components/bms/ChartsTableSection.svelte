@@ -1,7 +1,7 @@
 <script lang="ts">
-  import JsonPreview, { jsonPreview } from "$lib/components/JsonPreview.svelte";
+  import JsonPreview from "$lib/components/JsonPreview.svelte";
   import ScrollSyncGroup from "$lib/components/ScrollSyncGroup.svelte";
-  import { GradientButton, IconButton } from "$lib/components/ui";
+  import ChartTableRow from "./ChartTableRow.svelte";
   import type { ChartData, DifficultyGroup } from "$lib/types/bms";
   import { sortDifficultyGroups } from "$lib/utils/bms-table";
 
@@ -57,16 +57,6 @@
       mocha: `https://mocha-repository.info/song.php?sha256=${encodeURIComponent(sha)}`,
       minir: `https://www.gaftalk.com/minir/#/viewer/song/${encodeURIComponent(sha)}/0`,
     };
-  }
-
-  function hasMd5(chart: ChartData): boolean {
-    const v = chart.md5;
-    return typeof v === "string" && v.trim().length > 0;
-  }
-
-  function hasSha256(chart: ChartData): boolean {
-    const v = chart.sha256;
-    return typeof v === "string" && v.trim().length > 0;
   }
 
   function expandToValidLink(raw: string | undefined): string | undefined {
@@ -177,117 +167,16 @@
                     {@const bundleUrl = resolvedBundleUrl(chart)}
                     {@const diffUrl = resolvedDiffUrl(chart)}
                     {@const bmsLinks = getBmsLinks(chart)}
-                    {@const chartJson = { ...chart, groupLevel: group.level }}
-                    <tr class="hover:bg-white/5">
-                      <td class="table-td-glass wrap-break-word">
-                        <span
-                          class="inline-block min-w-7.5 rounded-xl px-2 py-1 text-center text-[0.85rem] font-semibold text-white"
-                          style={`background-color:${groupColor};`}
-                        >
-                          {group.level}
-                        </span>
-                      </td>
-                      <td class="table-td-glass wrap-break-word">
-                        <div class="flex flex-row flex-wrap gap-[0.3rem]">
-                          {#if bundleUrl}
-                            <GradientButton
-                              variant="green"
-                              href={bundleUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              class="min-w-17 flex-1"
-                            >
-                              📦 同捆
-                            </GradientButton>
-                          {/if}
-                          {#if diffUrl}
-                            <GradientButton
-                              variant="blue"
-                              href={diffUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              class="min-w-17 flex-1"
-                            >
-                              🔄 差分
-                            </GradientButton>
-                          {/if}
-                        </div>
-                      </td>
-                      <td class="table-td-glass wrap-break-word">
-                        <div class="flex flex-wrap justify-center gap-[0.4rem]">
-                          {#if hasMd5(chart)}
-                            <IconButton
-                              variant="orange"
-                              href={bmsLinks.bmsScoreViewer}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              ariaLabel="BMS Score Viewer"
-                            >
-                              📊
-                            </IconButton>
-                            <IconButton
-                              variant="purple"
-                              href={bmsLinks.lr2ir}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              ariaLabel="LR2IR"
-                              class="text-[0.85rem] font-bold"
-                            >
-                              LR2
-                            </IconButton>
-                          {/if}
-                          {#if hasSha256(chart)}
-                            <IconButton
-                              variant="brown"
-                              href={bmsLinks.mocha}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              ariaLabel="Mocha"
-                            >
-                              <img
-                                src="/assets/logo/mocha_logo.gif"
-                                alt="Mocha"
-                                class="h-6 w-6 object-contain"
-                              />
-                            </IconButton>
-                            <IconButton
-                              variant="cyan"
-                              href={bmsLinks.minir}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              ariaLabel="Minir"
-                            >
-                              <img
-                                src="/assets/logo/minir_logo.gif"
-                                alt="Minir"
-                                class="h-6 w-6 object-contain"
-                              />
-                            </IconButton>
-                          {/if}
-                        </div>
-                      </td>
-                      <td class="table-td-glass wrap-break-word">
-                        <strong
-                          class="cursor-default"
-                          use:jsonPreview={{
-                            preview: chartPreview,
-                            options: {
-                              value: chartJson,
-                              label: "谱面 JSON",
-                              maxHeightRem: 14,
-                            },
-                          }}
-                        >
-                          {chart.title ?? "未知标题"}
-                        </strong>
-                      </td>
-                      <td class="table-td-glass wrap-break-word">
-                        {chart.artist ?? "未知艺术家"}
-                      </td>
-                      <td class="table-td-glass wrap-break-word">
-                        {chart.comment ?? ""}
-                      </td>
-                    </tr>
+                    <ChartTableRow
+                      {chart}
+                      groupLevel={group.level}
+                      {groupColor}
+                      {index}
+                      {bundleUrl}
+                      {diffUrl}
+                      {bmsLinks}
+                      {chartPreview}
+                    />
                   {/each}
                 </tbody>
               </table>
