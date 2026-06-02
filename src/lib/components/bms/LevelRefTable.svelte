@@ -1,8 +1,5 @@
 <script lang="ts">
-  interface LevelRefItem {
-    level: string;
-    ref: string;
-  }
+  import type { LevelRefItem } from "$lib/types/bms";
 
   export let headerUrl: string | undefined = undefined;
 

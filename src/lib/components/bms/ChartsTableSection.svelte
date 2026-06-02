@@ -2,8 +2,10 @@
   import JsonPreview, { jsonPreview } from "$lib/components/JsonPreview.svelte";
   import ScrollSyncGroup from "$lib/components/ScrollSyncGroup.svelte";
   import { GradientButton, IconButton } from "$lib/components/ui";
+  import type { ChartData, DifficultyGroup } from "$lib/types/bms";
+  import { sortDifficultyGroups } from "$lib/utils/bms-table";
 
-  let chartPreview:
+  let chartPreview = $state<
     | {
         show: (
           options: import("$lib/components/JsonPreview.svelte").JsonPreviewShowOptions,
@@ -13,24 +15,8 @@
         scheduleHide: () => void;
         hideNow: () => void;
       }
-    | undefined;
-
-  interface ChartData {
-    title?: string;
-    artist?: string;
-    level?: string;
-    sha256?: string;
-    md5?: string;
-    comment?: string;
-    url?: string;
-    url_diff?: string;
-    [key: string]: unknown;
-  }
-
-  interface DifficultyGroup {
-    level: string;
-    charts: ChartData[];
-  }
+    | undefined
+  >();
 
   interface BmsLinks {
     bmsScoreViewer: string;
@@ -39,35 +25,19 @@
     minir: string;
   }
 
-  export let groups: DifficultyGroup[] = [];
-  export let totalCharts: number;
-  export let levelOrder: string[] | undefined = undefined;
+  let {
+    groups = [] as DifficultyGroup[],
+    totalCharts,
+    levelOrder = undefined as string[] | undefined,
+  }: {
+    groups?: DifficultyGroup[];
+    totalCharts: number;
+    levelOrder?: string[] | undefined;
+  } = $props();
 
-  let displayGroups: DifficultyGroup[];
-
-  $: displayGroups = (() => {
-    const order = levelOrder ?? [];
-    const orderIndex: Record<string, number> = {};
-    order.forEach((lv, idx) => (orderIndex[String(lv)] = idx));
-    const defined: DifficultyGroup[] = [];
-    const others: DifficultyGroup[] = [];
-    for (const g of groups) {
-      (String(g.level) in orderIndex ? defined : others).push(g);
-    }
-    defined.sort((a, b) => (orderIndex[String(a.level)] ?? 0) - (orderIndex[String(b.level)] ?? 0));
-    others.sort((a, b) => {
-      const as = String(a.level).trim();
-      const bs = String(b.level).trim();
-      const intRe = /^-?\d+$/;
-      const ai = intRe.test(as);
-      const bi = intRe.test(bs);
-      if (ai && bi) return parseInt(as, 10) - parseInt(bs, 10);
-      if (ai && !bi) return -1;
-      if (!ai && bi) return 1;
-      return as.localeCompare(bs);
-    });
-    return [...defined, ...others];
-  })();
+  let displayGroups: DifficultyGroup[] = $derived(
+    sortDifficultyGroups(groups, levelOrder ?? []),
+  );
 
   function segmentColor(index: number, total: number): string {
     const palette = ["#4caf50", "#2196f3", "#ff9800", "#f44336", "#ce50d8", "#9c27b0"];
@@ -145,7 +115,7 @@
               <button
                 class="flex cursor-pointer items-center justify-center gap-2 rounded-[25px] border-2 border-transparent px-6 py-3 text-[1.1rem] font-bold text-white opacity-70 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:opacity-90 hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)] active:-translate-y-px active:opacity-90"
                 type="button"
-                on:click={() => scrollToDifficultyGroup(group.level)}
+                onclick={() => scrollToDifficultyGroup(group.level)}
                 style={`background-color:${segmentColor(
                   idx,
                   displayGroups.length

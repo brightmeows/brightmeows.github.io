@@ -8,32 +8,9 @@
   import StarryBackground from "$lib/components/StarryBackground.svelte";
   import ChartsTableSection from "$lib/components/bms/ChartsTableSection.svelte";
   import LevelRefTable from "$lib/components/bms/LevelRefTable.svelte";
+  import type { ChartData, DifficultyGroup, HeaderData } from "$lib/types/bms";
+  import { sortDifficultyGroups } from "$lib/utils/bms-table";
   import { formatBmsTableTitle } from "$lib/utils/title";
-
-  interface ChartData {
-    title?: string;
-    artist?: string;
-    level?: string;
-    sha256?: string;
-    md5?: string;
-    comment?: string;
-    url?: string;
-    url_diff?: string;
-    [key: string]: unknown;
-  }
-
-  interface DifficultyGroup {
-    level: string;
-    charts: ChartData[];
-  }
-
-  interface HeaderData {
-    name?: string;
-    symbol?: string;
-    data_url?: string;
-    level_order?: string[];
-    [key: string]: unknown;
-  }
 
   interface LoadingState {
     isLoading: boolean;
@@ -250,28 +227,7 @@
   });
 
   const sortedDifficultyGroups = $derived(() => {
-    const groups = groupedCharts();
-    const order = headerData?.level_order ?? [];
-    const orderIndex: Record<string, number> = {};
-    order.forEach((lv, idx) => (orderIndex[String(lv)] = idx));
-    const defined: DifficultyGroup[] = [];
-    const others: DifficultyGroup[] = [];
-    for (const g of groups) {
-      (String(g.level) in orderIndex ? defined : others).push(g);
-    }
-    defined.sort((a, b) => (orderIndex[String(a.level)] ?? 0) - (orderIndex[String(b.level)] ?? 0));
-    others.sort((a, b) => {
-      const as = String(a.level).trim();
-      const bs = String(b.level).trim();
-      const intRe = /^-?\d+$/;
-      const ai = intRe.test(as);
-      const bi = intRe.test(bs);
-      if (ai && bi) return parseInt(as, 10) - parseInt(bs, 10);
-      if (ai && !bi) return -1;
-      if (!ai && bi) return 1;
-      return as.localeCompare(bs);
-    });
-    return [...defined, ...others];
+    return sortDifficultyGroups(groupedCharts(), headerData?.level_order ?? []);
   });
 
   const difficultyTocItems = $derived(() => {

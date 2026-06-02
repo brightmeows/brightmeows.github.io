@@ -18,13 +18,13 @@
 - **`static/bms/table/mirror/` 在 repo 中为空** — CI（`.forgejo/workflows/deploy.yml`）每小时从上游仓库拉取填充。本地看不到内容不代表功能损坏。
 - **Paraglide i18n 基础设施存在但只用于 `/demo/paraglide/`** — 不要擅自扩展到全站。
 - **无测试框架** — 构建通过即验证通过。不要加测试依赖或测试文件。
-- **`bms/table/[table]/+page.svelte` 仍用 `$app/stores`** — 已知遗留模式（其他文件已用 `$app/state`）。改到该文件时一并迁移。
 
 ## 架构边界
 
 - **纯 SSG** — `@sveltejs/adapter-static` + 全局 `prerender = true`。不加 server routes / API endpoints。
 - **BMS 数据源分流** — `static/bms/table/{self-sp,self-dp,...}` 在 git 中；`mirror/` 由 CI 填充。修改数据入口时区分来源。
 - **`src/lib/loaders/`** — 共享数据加载层。博客扫描、BMS 表枚举入口在此，不走路由内联。
+- **数据加载策略** — 构建时加载（`+page.server.ts` / `+page.ts`）：数据在 git 仓库内，如博客 `.md` 文件、BMS 表目录枚举。客户端加载（`onMount` → `fetch`）：数据来自外部源或 CI 动态填充，如谱面数据（`data_url` 远程拉取）、镜像表列表（`tables.json`）。选择标准：数据源在构建时可访问且不依赖用户上下文 → 构建时加载；否则客户端加载。
 
 ## 技术栈
 

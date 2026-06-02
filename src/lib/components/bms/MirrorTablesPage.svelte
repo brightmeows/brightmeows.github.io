@@ -11,29 +11,7 @@
   import GroupedTablesSection from "$lib/components/bms/GroupedTablesSection.svelte";
   import SelectedTablesPanel from "$lib/components/bms/SelectedTablesPanel.svelte";
   import { GlassCard, GlassContainer } from "$lib/components/ui";
-
-  interface MirrorTableItem {
-    name: string;
-    symbol?: string;
-    url: string;
-    url_from?: string;
-    comment?: string;
-    tag1?: string;
-    tag2?: string;
-    tag_order?: string | number;
-    dir_name?: string;
-  }
-
-  interface Tag2Group {
-    tag2: string;
-    items: MirrorTableItem[];
-  }
-
-  interface Tag1Group {
-    tag1: string;
-    order: number;
-    subgroups: Tag2Group[];
-  }
+  import type { MirrorTableItem, Tag1Group, Tag2Group } from "$lib/types/bms";
 
   interface LinkItem {
     href: string;

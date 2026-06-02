@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { page } from "$app/stores";
+  import { page } from "$app/state";
   import BmsTablePage from "$lib/components/bms/BmsTablePage.svelte";
 
-  $: table = $page.params.table;
-  $: headerUrl = `/bms/table/${table}/header.json`;
-  $: breadcrumbKey = `breadcrumb-bms-table-${table}`;
+  let table = $derived(page.params.table);
+  let headerUrl = $derived(`/bms/table/${table}/header.json`);
+  let breadcrumbKey = $derived(`breadcrumb-bms-table-${table}`);
 </script>
 
 <BmsTablePage {headerUrl} breadcrumbSessionKey={breadcrumbKey} />

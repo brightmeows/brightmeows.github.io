@@ -3,11 +3,7 @@
   import { fly } from "svelte/transition";
 
   import JsonPreview, { jsonPreview } from "$lib/components/JsonPreview.svelte";
-
-  interface MirrorTableItem {
-    url: string;
-    url_from?: string;
-  }
+  import type { MirrorTableItem } from "$lib/types/bms";
 
   export let tables: MirrorTableItem[] = [];
   export let selectedMap: Record<string, boolean> = {};
