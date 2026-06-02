@@ -1,4 +1,4 @@
-<script context="module" lang="ts">
+<script module lang="ts">
   export type JsonPreviewCopyHandler = (text: string) => Promise<void> | void;
 
   export interface JsonPreviewShowOptions {
@@ -63,17 +63,19 @@
   import { cubicOut } from "svelte/easing";
   import { fade, fly } from "svelte/transition";
 
-  let open = false;
-  let value: unknown = undefined;
-  let label = "JSON";
-  let maxHeightRem = 14;
-  let onCopy: JsonPreviewCopyHandler | undefined = undefined;
+  import { writeToClipboard } from "$lib/utils/clipboard";
 
-  let popoverEl: HTMLDivElement | undefined;
-  let popoverStyle = "";
+  let open = $state(false);
+  let value = $state<unknown>(undefined);
+  let label = $state("JSON");
+  let maxHeightRem = $state(14);
+  let onCopy = $state<JsonPreviewCopyHandler | undefined>(undefined);
+
+  let popoverEl: HTMLDivElement | undefined = $state(undefined);
+  let popoverStyle = $state("");
 
   let hideTimer: ReturnType<typeof setTimeout> | undefined;
-  let copied = false;
+  let copied = $state(false);
   let copiedTimer: ReturnType<typeof setTimeout> | undefined;
 
   function safeStringify(input: unknown, space = 2): string {
@@ -101,39 +103,7 @@
     }
   }
 
-  $: jsonText = safeStringify(value, 2);
-
-  async function copyText(
-    text: string,
-    onCopy: ((text: string) => Promise<void> | void) | undefined
-  ): Promise<void> {
-    if (onCopy) {
-      await onCopy(text);
-      return;
-    }
-    try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(text);
-        return;
-      }
-    } catch {
-      // clipboard API failed, fallback to textarea method
-    }
-
-    const textarea = document.createElement("textarea");
-    textarea.value = text;
-    textarea.style.position = "fixed";
-    textarea.style.opacity = "0";
-    document.body.appendChild(textarea);
-    textarea.focus();
-    textarea.select();
-    try {
-      await navigator.clipboard.writeText(textarea.value);
-    } catch {
-      // clipboard API failed
-    }
-    document.body.removeChild(textarea);
-  }
+  let jsonText = $derived(safeStringify(value, 2));
 
   function cancelHide(): void {
     if (!hideTimer) return;
@@ -219,13 +189,16 @@
     onCopy = options.onCopy;
 
     await tick();
-    // 使用 preventScroll 避免 focus 触发页面滚动到末尾
     popoverEl?.focus({ preventScroll: true });
     updatePositionAtPointer(clientX, clientY);
   }
 
   async function copyJson(): Promise<void> {
-    await copyText(jsonText, onCopy);
+    if (onCopy) {
+      await onCopy(jsonText);
+    } else {
+      await writeToClipboard(jsonText);
+    }
 
     copied = true;
     if (copiedTimer) clearTimeout(copiedTimer);
@@ -242,7 +215,7 @@
 </script>
 
 <svelte:window
-  on:keydown={(event) => {
+  onkeydown={(event: KeyboardEvent) => {
     if (event.key === "Escape") hideNow();
   }}
 />
@@ -254,8 +227,8 @@
     style={popoverStyle}
     in:fly={{ y: 10, opacity: 0, duration: 160, easing: cubicOut }}
     out:fade={{ duration: 120 }}
-    on:pointerenter={cancelHide}
-    on:pointerleave={scheduleHide}
+    onpointerenter={cancelHide}
+    onpointerleave={scheduleHide}
     role="dialog"
     tabindex="-1"
     aria-labelledby="json-preview-label"
@@ -266,14 +239,14 @@
         <button
           class="cursor-pointer rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-[0.85rem] font-semibold text-white transition-all duration-200 ease-in-out hover:bg-white/15"
           type="button"
-          on:click={copyJson}
+          onclick={copyJson}
         >
           {copied ? "已复制" : "复制"}
         </button>
         <button
           class="cursor-pointer rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-[0.85rem] font-semibold text-white transition-all duration-200 ease-in-out hover:bg-white/15"
           type="button"
-          on:click={hideNow}
+          onclick={hideNow}
         >
           关闭
         </button>

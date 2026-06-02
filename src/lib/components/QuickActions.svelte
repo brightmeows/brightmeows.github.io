@@ -17,7 +17,7 @@
     type="button"
     aria-label="回到顶部"
     title="回到顶部"
-    on:click={scrollToTop}
+    onclick={scrollToTop}
   >
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="size-15" fill="currentColor">
       <path d="M12 4l-7 7h4v9h6v-9h4L12 4z" />
@@ -28,7 +28,7 @@
     type="button"
     aria-label="主页"
     title="主页"
-    on:click={goHome}
+    onclick={goHome}
   >
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="size-15" fill="currentColor">
       <path d="M12 3.172 3 10.172V21h6v-5h6v5h6V10.172L12 3.172z" />

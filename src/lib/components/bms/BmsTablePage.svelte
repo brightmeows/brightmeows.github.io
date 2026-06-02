@@ -4,14 +4,11 @@
   import PageShell from "$lib/components/PageShell.svelte";
   import ChartsTableSection from "$lib/components/bms/ChartsTableSection.svelte";
   import LevelRefTable from "$lib/components/bms/LevelRefTable.svelte";
+  import { groupChartsByLevel, computeTableStats } from "$lib/data/bms-data";
+  import { loadBmsTable } from "$lib/data/bms-table-loader";
   import type { ChartData, HeaderData } from "$lib/types/bms";
-  import {
-    fetchBmsHeader,
-    fetchBmsTableData,
-    groupChartsByLevel,
-    computeTableStats,
-  } from "$lib/utils/bms-data";
   import { sortDifficultyGroups } from "$lib/utils/bms-table";
+  import { writeToClipboard } from "$lib/utils/clipboard";
   import { formatTitle } from "$lib/utils/title";
 
   interface LoadingState {
@@ -52,27 +49,12 @@
   let copied = $state(false);
 
   async function copySiteUrl(): Promise<void> {
-    try {
-      const url = window.location.href;
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(url);
-      } else {
-        const textarea = document.createElement("textarea");
-        textarea.value = url;
-        textarea.style.position = "fixed";
-        textarea.style.opacity = "0";
-        document.body.appendChild(textarea);
-        textarea.focus();
-        textarea.select();
-        await navigator.clipboard.writeText(textarea.value);
-        document.body.removeChild(textarea);
-      }
+    const ok = await writeToClipboard(window.location.href);
+    if (ok) {
       copied = true;
       setTimeout(() => {
         copied = false;
       }, 1500);
-    } catch {
-      copied = false;
     }
   }
 
@@ -97,21 +79,15 @@
       pageTitle = "加载难度表header中";
       updateProgress("正在加载表头信息...", 25);
 
-      headerData = await fetchBmsHeader(headerUrl);
+      const result = await loadBmsTable(headerUrl);
+
+      headerData = result.headerData;
       pageTitle = String(headerData?.name ?? "未命名");
       updateProgress("表头信息加载完成", 50);
-
-      const dataUrl = headerData?.data_url;
-      if (!dataUrl) {
-        throw new Error("表头信息中未找到data_url");
-      }
-
       updateProgress("正在加载谱面数据...", 75);
 
-      const headerUrlBase = new URL(headerUrl, window.location.href).toString();
-      const result = await fetchBmsTableData(String(dataUrl), headerUrlBase);
-      tableData = result.data;
-      dataFetchUrl = result.fetchUrl;
+      tableData = result.tableData;
+      dataFetchUrl = result.dataFetchUrl;
 
       updateProgress("数据加载完成", 100);
 
@@ -179,9 +155,7 @@
   ]);
 
   onMount(() => {
-    setTimeout(() => {
-      void lazyLoadTableData();
-    }, 300);
+    void lazyLoadTableData();
   });
 </script>
 

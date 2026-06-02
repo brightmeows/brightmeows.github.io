@@ -105,189 +105,196 @@
   <div class="mt-8">
     <h3 class="mb-4 text-white">谱面列表 ({totalCharts} 个)</h3>
 
-    <ScrollSyncGroup watchKeys={groups} let:setRef>
-      {#if groups.length > 1}
-        <div class="mb-8">
-          <div class="mb-6 flex flex-wrap gap-3">
-            {#each displayGroups as group, idx (group.level)}
-              <button
-                class="flex cursor-pointer items-center justify-center gap-2 rounded-[25px] border-2 border-transparent px-6 py-3 text-[1.1rem] font-bold text-white opacity-70 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:opacity-90 hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)] active:-translate-y-px active:opacity-90"
-                type="button"
-                onclick={() => scrollToDifficultyGroup(group.level)}
-                style={`background-color:${segmentColor(
-                  idx,
-                  displayGroups.length
-                )};border-color:${segmentColor(idx, displayGroups.length)};`}
-              >
-                {group.level}
-                <span class="rounded-[10px] bg-black/20 px-2 py-[0.1rem] text-[0.9rem] opacity-90">
-                  ({group.charts.length})
-                </span>
-              </button>
-            {/each}
-          </div>
-        </div>
-      {/if}
-
-      {#each displayGroups as group, gIndex (group.level)}
-        {@const groupColor = segmentColor(gIndex, displayGroups.length)}
-        <div id={`difficulty-group-${group.level}`} class="mb-12 scroll-mt-5">
-          <div class="mb-6 border-b-2 border-white/10 pb-4">
-            <div class="flex items-center gap-4">
-              <span
-                class="shadow-[0_2px_8px rgba(0,0,0,0.2)] rounded-[20px] px-6 py-2 text-[1.2rem] font-bold text-white"
-                style={`background-color:${groupColor};`}
-              >
-                难度 {group.level}
-              </span>
-              <span class="text-[1.1rem] text-white/80">
-                {group.charts.length} 个谱面
-              </span>
+    <ScrollSyncGroup watchKeys={groups}>
+      {#snippet children({ setRef })}
+        {#if groups.length > 1}
+          <div class="mb-8">
+            <div class="mb-6 flex flex-wrap gap-3">
+              {#each displayGroups as group, idx (group.level)}
+                <button
+                  class="flex cursor-pointer items-center justify-center gap-2 rounded-[25px] border-2 border-transparent px-6 py-3 text-[1.1rem] font-bold text-white opacity-70 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:opacity-90 hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)] active:-translate-y-px active:opacity-90"
+                  type="button"
+                  onclick={() => scrollToDifficultyGroup(group.level)}
+                  style={`background-color:${segmentColor(
+                    idx,
+                    displayGroups.length
+                  )};border-color:${segmentColor(idx, displayGroups.length)};`}
+                >
+                  {group.level}
+                  <span
+                    class="rounded-[10px] bg-black/20 px-2 py-[0.1rem] text-[0.9rem] opacity-90"
+                  >
+                    ({group.charts.length})
+                  </span>
+                </button>
+              {/each}
             </div>
           </div>
+        {/if}
 
-          <div class="overflow-x-auto rounded-[10px] border border-white/10 bg-black/20" use:setRef>
-            <table class="w-full min-w-225 table-fixed border-collapse">
-              <colgroup>
-                <col style="width: 7%" />
-                <col style="width: 13%" />
-                <col style="width: 14%" />
-                <col style="width: 26%" />
-                <col style="width: 22%" />
-                <col style="width: 18%" />
-              </colgroup>
-              <thead>
-                <tr>
-                  <th class="table-th-glass"> 等级 </th>
-                  <th class="table-th-glass"> 下载 </th>
-                  <th class="table-th-glass"> BMS网站 </th>
-                  <th class="table-th-glass"> 标题 </th>
-                  <th class="table-th-glass"> 艺术家 </th>
-                  <th class="table-th-glass"> 备注 </th>
-                </tr>
-              </thead>
-              <tbody>
-                {#each group.charts as chart, index (index)}
-                  {@const bundleUrl = resolvedBundleUrl(chart)}
-                  {@const diffUrl = resolvedDiffUrl(chart)}
-                  {@const bmsLinks = getBmsLinks(chart)}
-                  {@const chartJson = { ...chart, groupLevel: group.level }}
-                  <tr class="hover:bg-white/5">
-                    <td class="table-td-glass wrap-break-word">
-                      <span
-                        class="inline-block min-w-7.5 rounded-xl px-2 py-1 text-center text-[0.85rem] font-semibold text-white"
-                        style={`background-color:${groupColor};`}
-                      >
-                        {group.level}
-                      </span>
-                    </td>
-                    <td class="table-td-glass wrap-break-word">
-                      <div class="flex flex-row flex-wrap gap-[0.3rem]">
-                        {#if bundleUrl}
-                          <GradientButton
-                            variant="green"
-                            href={bundleUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="min-w-17 flex-1"
-                          >
-                            📦 同捆
-                          </GradientButton>
-                        {/if}
-                        {#if diffUrl}
-                          <GradientButton
-                            variant="blue"
-                            href={diffUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="min-w-17 flex-1"
-                          >
-                            🔄 差分
-                          </GradientButton>
-                        {/if}
-                      </div>
-                    </td>
-                    <td class="table-td-glass wrap-break-word">
-                      <div class="flex flex-wrap justify-center gap-[0.4rem]">
-                        {#if hasMd5(chart)}
-                          <IconButton
-                            variant="orange"
-                            href={bmsLinks.bmsScoreViewer}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            ariaLabel="BMS Score Viewer"
-                          >
-                            📊
-                          </IconButton>
-                          <IconButton
-                            variant="purple"
-                            href={bmsLinks.lr2ir}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            ariaLabel="LR2IR"
-                            class="text-[0.85rem] font-bold"
-                          >
-                            LR2
-                          </IconButton>
-                        {/if}
-                        {#if hasSha256(chart)}
-                          <IconButton
-                            variant="brown"
-                            href={bmsLinks.mocha}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            ariaLabel="Mocha"
-                          >
-                            <img
-                              src="/assets/logo/mocha_logo.gif"
-                              alt="Mocha"
-                              class="h-6 w-6 object-contain"
-                            />
-                          </IconButton>
-                          <IconButton
-                            variant="cyan"
-                            href={bmsLinks.minir}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            ariaLabel="Minir"
-                          >
-                            <img
-                              src="/assets/logo/minir_logo.gif"
-                              alt="Minir"
-                              class="h-6 w-6 object-contain"
-                            />
-                          </IconButton>
-                        {/if}
-                      </div>
-                    </td>
-                    <td class="table-td-glass wrap-break-word">
-                      <strong
-                        class="cursor-default"
-                        use:jsonPreview={{
-                          preview: chartPreview,
-                          options: {
-                            value: chartJson,
-                            label: "谱面 JSON",
-                            maxHeightRem: 14,
-                          },
-                        }}
-                      >
-                        {chart.title ?? "未知标题"}
-                      </strong>
-                    </td>
-                    <td class="table-td-glass wrap-break-word">
-                      {chart.artist ?? "未知艺术家"}
-                    </td>
-                    <td class="table-td-glass wrap-break-word">
-                      {chart.comment ?? ""}
-                    </td>
+        {#each displayGroups as group, gIndex (group.level)}
+          {@const groupColor = segmentColor(gIndex, displayGroups.length)}
+          <div id={`difficulty-group-${group.level}`} class="mb-12 scroll-mt-5">
+            <div class="mb-6 border-b-2 border-white/10 pb-4">
+              <div class="flex items-center gap-4">
+                <span
+                  class="shadow-[0_2px_8px rgba(0,0,0,0.2)] rounded-[20px] px-6 py-2 text-[1.2rem] font-bold text-white"
+                  style={`background-color:${groupColor};`}
+                >
+                  难度 {group.level}
+                </span>
+                <span class="text-[1.1rem] text-white/80">
+                  {group.charts.length} 个谱面
+                </span>
+              </div>
+            </div>
+
+            <div
+              class="overflow-x-auto rounded-[10px] border border-white/10 bg-black/20"
+              use:setRef
+            >
+              <table class="w-full min-w-225 table-fixed border-collapse">
+                <colgroup>
+                  <col style="width: 7%" />
+                  <col style="width: 13%" />
+                  <col style="width: 14%" />
+                  <col style="width: 26%" />
+                  <col style="width: 22%" />
+                  <col style="width: 18%" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th class="table-th-glass"> 等级 </th>
+                    <th class="table-th-glass"> 下载 </th>
+                    <th class="table-th-glass"> BMS网站 </th>
+                    <th class="table-th-glass"> 标题 </th>
+                    <th class="table-th-glass"> 艺术家 </th>
+                    <th class="table-th-glass"> 备注 </th>
                   </tr>
-                {/each}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {#each group.charts as chart, index (index)}
+                    {@const bundleUrl = resolvedBundleUrl(chart)}
+                    {@const diffUrl = resolvedDiffUrl(chart)}
+                    {@const bmsLinks = getBmsLinks(chart)}
+                    {@const chartJson = { ...chart, groupLevel: group.level }}
+                    <tr class="hover:bg-white/5">
+                      <td class="table-td-glass wrap-break-word">
+                        <span
+                          class="inline-block min-w-7.5 rounded-xl px-2 py-1 text-center text-[0.85rem] font-semibold text-white"
+                          style={`background-color:${groupColor};`}
+                        >
+                          {group.level}
+                        </span>
+                      </td>
+                      <td class="table-td-glass wrap-break-word">
+                        <div class="flex flex-row flex-wrap gap-[0.3rem]">
+                          {#if bundleUrl}
+                            <GradientButton
+                              variant="green"
+                              href={bundleUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class="min-w-17 flex-1"
+                            >
+                              📦 同捆
+                            </GradientButton>
+                          {/if}
+                          {#if diffUrl}
+                            <GradientButton
+                              variant="blue"
+                              href={diffUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class="min-w-17 flex-1"
+                            >
+                              🔄 差分
+                            </GradientButton>
+                          {/if}
+                        </div>
+                      </td>
+                      <td class="table-td-glass wrap-break-word">
+                        <div class="flex flex-wrap justify-center gap-[0.4rem]">
+                          {#if hasMd5(chart)}
+                            <IconButton
+                              variant="orange"
+                              href={bmsLinks.bmsScoreViewer}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              ariaLabel="BMS Score Viewer"
+                            >
+                              📊
+                            </IconButton>
+                            <IconButton
+                              variant="purple"
+                              href={bmsLinks.lr2ir}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              ariaLabel="LR2IR"
+                              class="text-[0.85rem] font-bold"
+                            >
+                              LR2
+                            </IconButton>
+                          {/if}
+                          {#if hasSha256(chart)}
+                            <IconButton
+                              variant="brown"
+                              href={bmsLinks.mocha}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              ariaLabel="Mocha"
+                            >
+                              <img
+                                src="/assets/logo/mocha_logo.gif"
+                                alt="Mocha"
+                                class="h-6 w-6 object-contain"
+                              />
+                            </IconButton>
+                            <IconButton
+                              variant="cyan"
+                              href={bmsLinks.minir}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              ariaLabel="Minir"
+                            >
+                              <img
+                                src="/assets/logo/minir_logo.gif"
+                                alt="Minir"
+                                class="h-6 w-6 object-contain"
+                              />
+                            </IconButton>
+                          {/if}
+                        </div>
+                      </td>
+                      <td class="table-td-glass wrap-break-word">
+                        <strong
+                          class="cursor-default"
+                          use:jsonPreview={{
+                            preview: chartPreview,
+                            options: {
+                              value: chartJson,
+                              label: "谱面 JSON",
+                              maxHeightRem: 14,
+                            },
+                          }}
+                        >
+                          {chart.title ?? "未知标题"}
+                        </strong>
+                      </td>
+                      <td class="table-td-glass wrap-break-word">
+                        {chart.artist ?? "未知艺术家"}
+                      </td>
+                      <td class="table-td-glass wrap-break-word">
+                        {chart.comment ?? ""}
+                      </td>
+                    </tr>
+                  {/each}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
-      {/each}
+        {/each}
+      {/snippet}
     </ScrollSyncGroup>
   </div>
 {/if}

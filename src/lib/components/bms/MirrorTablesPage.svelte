@@ -8,7 +8,9 @@
   import GroupedTablesSection from "$lib/components/bms/GroupedTablesSection.svelte";
   import SelectedTablesPanel from "$lib/components/bms/SelectedTablesPanel.svelte";
   import { GlassCard, GlassContainer } from "$lib/components/ui";
+  import { loadMirrorTables } from "$lib/data/mirror-table-loader";
   import type { MirrorTableItem } from "$lib/types/bms";
+  import { writeToClipboard } from "$lib/utils/clipboard";
   import {
     buildSearchNeedles,
     filterTables,
@@ -71,20 +73,11 @@
     { label: pageTitle },
   ]);
 
-  async function copySelected(data: string): Promise<boolean> {
-    try {
-      if (!navigator.clipboard?.writeText) return false;
-      await navigator.clipboard.writeText(data);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
   async function copyTables(): Promise<void> {
     const tablesJsonUrl = new URL(tablesJsonPath, window.location.origin).toString();
-    copied = await copySelected(tablesJsonUrl);
-    if (!copied) return;
+    const ok = await writeToClipboard(tablesJsonUrl);
+    if (!ok) return;
+    copied = true;
     void setTimeout(() => {
       copied = false;
     }, 1500);
@@ -112,23 +105,9 @@
     ];
   });
 
-  async function loadTablesJson(): Promise<void> {
+  async function loadTables(): Promise<void> {
     try {
-      const url = new URL(tablesJsonPath, window.location.origin).toString();
-      const res = await fetch(url, { redirect: "follow" });
-      if (!res.ok) {
-        throw new Error(`无法加载tables.json: ${res.status}`);
-      }
-      const data = (await res.json()) as unknown;
-      if (!Array.isArray(data)) {
-        throw new Error("tables.json 格式错误：不是数组");
-      }
-
-      tables = (data as MirrorTableItem[]).map((item) => {
-        const dir = String(item.dir_name ?? "").replace(/^\/+|\/+$/g, "");
-        if (!dir) return item;
-        return { ...item, url: `/${baseRoute}/${dir}/` };
-      });
+      tables = await loadMirrorTables(tablesJsonPath, baseRoute);
       error = null;
     } catch (e) {
       error = e instanceof Error ? e.message : "未知错误";
@@ -138,9 +117,7 @@
   }
 
   onMount(() => {
-    void setTimeout(() => {
-      void loadTablesJson();
-    }, 250);
+    void loadTables();
     void tick();
   });
 </script>

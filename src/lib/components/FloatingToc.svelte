@@ -1,5 +1,6 @@
-<script context="module" lang="ts">
+<script module lang="ts">
   import { resolve } from "$app/paths";
+  import { slugifyHeadingText } from "$lib/utils/slugify";
 
   export interface TocItem {
     id: string;
@@ -18,23 +19,6 @@
     root?: ParentNode | null;
     minLevel?: number;
     maxLevel?: number;
-  }
-
-  function slugifyHeadingText(input: string): string {
-    const normalized = input
-      .trim()
-      .replace(/\s+/g, " ")
-      .normalize("NFKD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase();
-
-    const slug = normalized
-      .replace(/[^a-z0-9\u4e00-\u9fff _-]+/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-")
-      .replace(/^[-_]+|[-_]+$/g, "");
-
-    return slug || "section";
   }
 
   function collectHeadingInfo(root: ParentNode, minLevel: number, maxLevel: number): HeadingInfo[] {
@@ -126,13 +110,6 @@
 
   import { browser } from "$app/environment";
 
-  interface TocItem {
-    id: string;
-    title: string;
-    href?: string;
-    children?: TocItem[];
-  }
-
   interface FlatTocItem {
     id: string;
     title: string;
@@ -140,13 +117,17 @@
     depth: number;
   }
 
-  export let items: TocItem[] = [];
-  export let title = "目录";
+  interface Props {
+    items?: TocItem[];
+    title?: string;
+  }
 
-  let activeId: string | null = null;
+  let { items = [], title = "目录" }: Props = $props();
+
+  let activeId = $state<string | null>(null);
   let _scrollScheduled = false;
 
-  $: flatItems = flattenItems(items);
+  let flatItems = $derived(flattenItems(items));
 
   function flattenItems(source: TocItem[]): FlatTocItem[] {
     const out: FlatTocItem[] = [];
@@ -221,7 +202,9 @@
     };
   });
 
-  $: if (browser && flatItems) scheduleUpdateActive();
+  $effect(() => {
+    if (browser && flatItems) scheduleUpdateActive();
+  });
 </script>
 
 {#if flatItems.length > 0}
@@ -248,7 +231,7 @@
               : "text-white/85 hover:bg-white/8 hover:text-white",
           ].join(" ")}
           style={`padding-left: ${12 + item.depth * 14}px;`}
-          on:click={(e) => onNavigate(item, e)}
+          onclick={(e) => onNavigate(item, e)}
         >
           {item.title}
         </a>

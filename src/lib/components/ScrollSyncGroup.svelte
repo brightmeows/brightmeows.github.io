@@ -1,7 +1,13 @@
 <script lang="ts">
   import { onDestroy } from "svelte";
+  import type { Snippet } from "svelte";
 
-  export let watchKeys: unknown = undefined;
+  interface Props {
+    watchKeys?: unknown;
+    children: Snippet<[{ setRef: (node: HTMLDivElement) => { destroy: () => void } }]>;
+  }
+
+  let { watchKeys, children }: Props = $props();
 
   const containers: HTMLDivElement[] = [];
 
@@ -59,7 +65,9 @@
     };
   }
 
-  $: if (watchKeys !== undefined) refresh();
+  $effect(() => {
+    if (watchKeys !== undefined) refresh();
+  });
 
   onDestroy(() => {
     for (const el of containers) {
@@ -72,4 +80,4 @@
   });
 </script>
 
-<slot {setRef} />
+{@render children({ setRef })}
