@@ -21,8 +21,6 @@
 
 <PageShell
   {breadcrumbs}
-  breadcrumbSessionKey="breadcrumb-bms-home"
-  breadcrumbInitiallyOpen={false}
   {tocItems}
 >
   <!-- 菜单部分 -->

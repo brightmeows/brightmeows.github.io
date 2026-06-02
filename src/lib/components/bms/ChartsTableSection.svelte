@@ -1,7 +1,8 @@
 <script lang="ts">
+  import ChartTableRow from "./ChartTableRow.svelte";
+
   import JsonPreview from "$lib/components/JsonPreview.svelte";
   import ScrollSyncGroup from "$lib/components/ScrollSyncGroup.svelte";
-  import ChartTableRow from "./ChartTableRow.svelte";
   import type { ChartData, DifficultyGroup } from "$lib/types/bms";
   import { sortDifficultyGroups } from "$lib/utils/bms-table";
 
@@ -171,7 +172,6 @@
                       {chart}
                       groupLevel={group.level}
                       {groupColor}
-                      {index}
                       {bundleUrl}
                       {diffUrl}
                       {bmsLinks}

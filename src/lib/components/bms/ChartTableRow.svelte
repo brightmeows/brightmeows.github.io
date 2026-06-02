@@ -1,7 +1,8 @@
 <script lang="ts">
   import BmsLinkButtons from "./BmsLinkButtons.svelte";
-  import { GradientButton } from "$lib/components/ui";
+
   import { jsonPreview } from "$lib/components/JsonPreview.svelte";
+  import { GradientButton } from "$lib/components/ui";
   import type { ChartData } from "$lib/types/bms";
 
   interface BmsLinks {
@@ -15,7 +16,6 @@
     chart: ChartData;
     groupLevel: string;
     groupColor: string;
-    index: number;
     bundleUrl: string | undefined;
     diffUrl: string | undefined;
     bmsLinks: BmsLinks;
@@ -36,7 +36,6 @@
     chart,
     groupLevel,
     groupColor,
-    index,
     bundleUrl,
     diffUrl,
     bmsLinks,

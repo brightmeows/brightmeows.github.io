@@ -15,8 +15,6 @@
 
   interface Props {
     breadcrumbs?: BreadcrumbItem[];
-    breadcrumbSessionKey?: string;
-    breadcrumbInitiallyOpen?: boolean;
     tocItems?: TocItem[];
     mainClass?: string;
     children: Snippet;
@@ -24,8 +22,6 @@
 
   let {
     breadcrumbs,
-    breadcrumbSessionKey,
-    breadcrumbInitiallyOpen = true,
     tocItems = [],
     mainClass,
     children,
@@ -34,12 +30,8 @@
 
 <StarryBackground />
 <ProfileCard />
-{#if breadcrumbs && breadcrumbSessionKey}
-  <BreadcrumbNav
-    items={breadcrumbs}
-    sessionKey={breadcrumbSessionKey}
-    initiallyOpen={breadcrumbInitiallyOpen}
-  />
+{#if breadcrumbs}
+  <BreadcrumbNav items={breadcrumbs} />
 {/if}
 <main class={mainClass ?? "m-0 mx-auto box-border w-full max-w-350 p-8"}>
   {@render children()}

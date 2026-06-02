@@ -1,7 +1,8 @@
 <script lang="ts">
+  import MirrorTableRow from "./MirrorTableRow.svelte";
+
   import JsonPreview from "$lib/components/JsonPreview.svelte";
   import ScrollSyncGroup from "$lib/components/ScrollSyncGroup.svelte";
-  import MirrorTableRow from "./MirrorTableRow.svelte";
   import type { MirrorTableItem, Tag1Group, Tag2Group } from "$lib/types/bms";
   import { slugifyTag } from "$lib/utils/mirror-tables";
 
@@ -241,7 +242,7 @@
                         <MirrorTableRow
                           {item}
                           selected={!!selectedMap[item.url]}
-                          onchange={(checked) => onRowChange(checked, item.url)}
+                          onchange={(checked: boolean) => onRowChange(checked, item.url)}
                           {tablePreview}
                         />
                       {/each}

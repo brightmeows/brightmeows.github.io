@@ -21,14 +21,12 @@
   interface Props {
     headerUrl: string;
     originUrl?: string | null;
-    breadcrumbSessionKey: string;
     showExtraLinks?: boolean;
   }
 
   let {
     headerUrl,
     originUrl = null,
-    breadcrumbSessionKey,
     showExtraLinks = false,
   }: Props = $props();
 
@@ -165,8 +163,6 @@
 
 <PageShell
   {breadcrumbs}
-  {breadcrumbSessionKey}
-  breadcrumbInitiallyOpen={false}
   {tocItems}
   mainClass="glass-bms-container"
 >

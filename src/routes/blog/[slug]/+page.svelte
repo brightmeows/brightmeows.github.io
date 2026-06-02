@@ -14,7 +14,7 @@
   ]);
 </script>
 
-<PageShell {breadcrumbs} breadcrumbSessionKey="blog-post-nav">
+<PageShell {breadcrumbs}>
   <article class="animate-fadeIn mt-8 rounded-[20px] border border-white/10 bg-white/10 p-8">
     <h1 class="page-title mb-4">{data.post.title}</h1>
     {#if data.post.date}

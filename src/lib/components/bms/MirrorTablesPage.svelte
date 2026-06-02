@@ -26,12 +26,11 @@
 
   interface Props {
     tablesJsonPath: string;
-    breadcrumbKey: string;
     pageTitle: string;
     baseRoute: string;
   }
 
-  let { tablesJsonPath, breadcrumbKey, pageTitle, baseRoute }: Props = $props();
+  let { tablesJsonPath, pageTitle, baseRoute }: Props = $props();
 
   let loading = $state(true);
   let error = $state<string | null>(null);
@@ -124,8 +123,6 @@
 
 <PageShell
   {breadcrumbs}
-  breadcrumbSessionKey={breadcrumbKey}
-  breadcrumbInitiallyOpen={false}
   {tocItems}
 >
   <GlassContainer animate={true} class="mt-8 w-full">

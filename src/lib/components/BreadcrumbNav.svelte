@@ -1,7 +1,5 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { cubicInOut } from "svelte/easing";
-  import { fade } from "svelte/transition";
 
   import { resolve } from "$app/paths";
   import { GlassPanel } from "$lib/components/ui";
@@ -20,269 +18,103 @@
   interface Props {
     /** 面包屑数据数组 */
     items: BreadcrumbItem[];
-    /** sessionStorage 键名（用于记住已展开状态） */
-    sessionKey: string;
-    /** 初始是否展开 */
-    initiallyOpen?: boolean;
-    /** 延迟关闭时间（毫秒） */
-    closeDelayMs?: number;
-    /** 自动关闭时间（毫秒） */
-    autoCloseMs?: number;
     /** 自定义容器类名 */
     containerClass?: string;
-    /** 自定义面板类名 */
-    panelClass?: string;
-    /** 面包屑图标（收起状态显示） */
-    icon?: import("svelte").Snippet;
-    /** 无障碍标签 */
-    ariaLabel?: string;
     /** 分隔符（默认为 "→"） */
     separator?: string;
+    /** 无障碍标签 */
+    ariaLabel?: string;
   }
 
   const {
     items,
-    sessionKey,
-    initiallyOpen = false,
-    closeDelayMs = 500,
-    autoCloseMs = 3000,
     containerClass = "",
-    panelClass = "",
-    icon,
-    ariaLabel = "面包屑导航",
     separator = "→",
+    ariaLabel = "面包屑导航",
   }: Props = $props();
 
-  const fadeDurationMs = 200;
+  let isVisible = $state(true);
+  let lastScrollY = $state(0);
+  let accumulatedDelta = $state(0);
 
-  function getSessionFlag(key: string): boolean {
-    if (typeof window === "undefined") return false;
-    try {
-      return window.sessionStorage.getItem(key) === "1";
-    } catch {
-      return false;
+  const SCROLL_DOWN_THRESHOLD = 50;
+  const SCROLL_UP_THRESHOLD = 20;
+
+  function handleScroll() {
+    const currentScrollY = window.scrollY;
+    const delta = currentScrollY - lastScrollY;
+    lastScrollY = currentScrollY;
+
+    if (isVisible) {
+      if (delta > 0) {
+        accumulatedDelta += delta;
+        if (accumulatedDelta >= SCROLL_DOWN_THRESHOLD) {
+          isVisible = false;
+          accumulatedDelta = 0;
+        }
+      } else {
+        accumulatedDelta = 0;
+      }
+    } else {
+      if (delta < 0) {
+        accumulatedDelta += -delta;
+        if (accumulatedDelta >= SCROLL_UP_THRESHOLD) {
+          isVisible = true;
+          accumulatedDelta = 0;
+        }
+      } else {
+        accumulatedDelta = 0;
+      }
     }
-  }
-
-  // 计算初始打开状态，避免警告
-  const getInitialOpen = () => {
-    const initialFlag = getSessionFlag(sessionKey);
-    return initiallyOpen && !initialFlag;
-  };
-  let open = $state(getInitialOpen());
-  let enableTransitions = $state(false);
-
-  let container: HTMLDivElement | undefined;
-
-  let closeTimer: ReturnType<typeof setTimeout> | undefined;
-  let autoCloseTimer: ReturnType<typeof setTimeout> | undefined;
-  let isPointerInside = false;
-
-  function clearTimers(): void {
-    if (closeTimer) clearTimeout(closeTimer);
-    closeTimer = undefined;
-    if (autoCloseTimer) clearTimeout(autoCloseTimer);
-    autoCloseTimer = undefined;
-  }
-
-  function openNow(): void {
-    if (closeTimer) clearTimeout(closeTimer);
-    closeTimer = undefined;
-    if (open) return;
-    open = true;
-  }
-
-  function scheduleClose(): void {
-    if (closeTimer) clearTimeout(closeTimer);
-    if (!open) return;
-    closeTimer = setTimeout(() => {
-      open = false;
-      closeTimer = undefined;
-    }, closeDelayMs);
-  }
-
-  function closeImmediately(): void {
-    clearTimers();
-    isPointerInside = false;
-    open = false;
-  }
-
-  function onPointerEnter(): void {
-    isPointerInside = true;
-    openNow();
-  }
-
-  function onPointerMove(): void {
-    openNow();
-  }
-
-  function onPointerLeave(): void {
-    isPointerInside = false;
-    scheduleClose();
   }
 
   onMount(() => {
-    try {
-      window.sessionStorage.setItem(sessionKey, "1");
-    } catch (e) {
-      void e;
-    }
-
-    const onOutsidePointerDown = (event: PointerEvent) => {
-      if (!container) return;
-      if (event.target instanceof Node && container.contains(event.target)) return;
-      closeImmediately();
-    };
-
-    const onOutsideKeyDown = (event: KeyboardEvent) => {
-      if (!container) return;
-      if (event.target instanceof Node && container.contains(event.target)) return;
-      closeImmediately();
-    };
-
-    const onOutsideWheel = (event: WheelEvent) => {
-      if (!container) return;
-      if (event.target instanceof Node && container.contains(event.target)) return;
-      closeImmediately();
-    };
-
-    const onOutsideFocusIn = (event: FocusEvent) => {
-      if (!container) return;
-      if (event.target instanceof Node && container.contains(event.target)) return;
-      closeImmediately();
-    };
-
-    document.addEventListener("pointerdown", onOutsidePointerDown, true);
-    document.addEventListener("keydown", onOutsideKeyDown, true);
-    document.addEventListener("wheel", onOutsideWheel, {
-      capture: true,
-      passive: true,
-    });
-    document.addEventListener("focusin", onOutsideFocusIn, true);
-
-    enableTransitions = true;
-
-    if (open) {
-      autoCloseTimer = setTimeout(() => {
-        if (!isPointerInside && open) open = false;
-        autoCloseTimer = undefined;
-      }, autoCloseMs);
-    }
-
-    return () => {
-      clearTimers();
-      document.removeEventListener("pointerdown", onOutsidePointerDown, true);
-      document.removeEventListener("keydown", onOutsideKeyDown, true);
-      document.removeEventListener("wheel", onOutsideWheel, true);
-      document.removeEventListener("focusin", onOutsideFocusIn, true);
-    };
+    lastScrollY = window.scrollY;
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   });
 
   const lastItemIndex = $derived(items.length - 1);
-
-  function getPanelClasses(isOpen: boolean): string {
-    if (isOpen) {
-      return `max-h-16 py-3 px-6 rounded-2xl cursor-default`;
-    }
-    return `max-h-7 w-14 p-1 rounded-xl cursor-pointer`;
-  }
 </script>
 
 <div
-  class="fixed top-4 left-1/2 z-1000 -translate-x-1/2 {containerClass}"
-  bind:this={container}
+  class="fixed top-4 left-1/2 z-1000 {containerClass}"
+  style="transform: translateY({isVisible ? '0' : '-120%'}) translateX(-50%); transition: transform 150ms ease-out"
   role="navigation"
   aria-label={ariaLabel}
-  onmouseenter={onPointerEnter}
-  onmousemove={onPointerMove}
-  onmouseleave={onPointerLeave}
 >
-  {#key open}
-    {@const keyedOpen = open}
-    {@const panelClasses = getPanelClasses(keyedOpen)}
-    <div
-      class="glass-panel-wrapper"
-      in:fade={{
-        delay: enableTransitions ? fadeDurationMs : 0,
-        duration: enableTransitions ? fadeDurationMs : 0,
-        easing: cubicInOut,
-      }}
-      out:fade={{
-        duration: enableTransitions ? fadeDurationMs : 0,
-        easing: cubicInOut,
-      }}
-      role="button"
-      aria-expanded={keyedOpen}
-      tabindex={0}
-      onclick={() => {
-        if (!keyedOpen) openNow();
-      }}
-      onkeydown={(event: KeyboardEvent) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          if (!keyedOpen) openNow();
-        }
-      }}
-    >
-      <GlassPanel
-        class="{panelClasses} {panelClass}"
-        padding="none"
-        rounded="none"
-        overflow={false}
-      >
-        <div
-          class="pointer-events-none absolute inset-0 flex items-center justify-center"
-          class:opacity-0={keyedOpen}
-          class:opacity-100={!keyedOpen}
-        >
-          {#if icon}
-            {@render icon()}
-          {:else}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              class="size-4"
-              fill="currentColor"
-            >
-              <circle cx="5" cy="12" r="1.5" fill="currentColor" opacity="0.7" />
-              <circle cx="12" cy="12" r="1.5" fill="currentColor" opacity="0.7" />
-              <circle cx="19" cy="12" r="1.5" fill="currentColor" opacity="0.7" />
-            </svg>
-          {/if}
-        </div>
+  <GlassPanel
+    class="max-h-16 cursor-default rounded-2xl px-6 py-3"
+    padding="none"
+    rounded="none"
+    overflow={false}
+  >
+    <div class="flex items-center gap-2">
+      {#each items as item, index (index)}
+        {#if index > 0}
+          <span class="mx-2 text-white/40 select-none">{separator}</span>
+        {/if}
 
-        <div
-          class="flex items-center gap-2"
-          class:opacity-100={keyedOpen}
-          class:opacity-0={!keyedOpen}
-        >
-          {#each items as item, index (index)}
-            {#if index > 0}
-              <span class="mx-2 text-white/40 select-none">{separator}</span>
+        {#if index === lastItemIndex || item.disabled}
+          <span class="flex cursor-default items-center gap-2 font-medium text-white">
+            {#if item.icon}
+              <span class="inline-flex">{@render item.icon()}</span>
             {/if}
-
-            {#if index === lastItemIndex || item.disabled}
-              <span class="flex cursor-default items-center gap-2 font-medium text-white">
-                {#if item.icon}
-                  <span class="inline-flex">{@render item.icon()}</span>
-                {/if}
-                {item.label}
-              </span>
-            {:else}
-              <a
-                href={item.href?.startsWith("#") ? item.href : resolve(item.href ?? "#", {})}
-                class="flex items-center gap-2 text-white/90 no-underline transition-colors duration-150 hover:text-white"
-                onclick={(event) => event.stopPropagation()}
-              >
-                {#if item.icon}
-                  <span class="inline-flex">{@render item.icon()}</span>
-                {/if}
-                {item.label}
-              </a>
+            {item.label}
+          </span>
+        {:else}
+          <a
+            href={item.href?.startsWith("#") ? item.href : resolve(item.href ?? "#", {})}
+            class="flex items-center gap-2 text-white/90 no-underline transition-colors duration-150 hover:text-white"
+            onclick={(event) => event.stopPropagation()}
+          >
+            {#if item.icon}
+              <span class="inline-flex">{@render item.icon()}</span>
             {/if}
-          {/each}
-        </div>
-      </GlassPanel>
+            {item.label}
+          </a>
+        {/if}
+      {/each}
     </div>
-  {/key}
+  </GlassPanel>
 </div>
