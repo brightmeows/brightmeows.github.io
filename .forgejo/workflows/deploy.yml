@@ -13,10 +13,13 @@ jobs:
         uses: actions/checkout@v5
         env:
           GIT_DEFAULT_HASH: sha256
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11
+          cache: true
       - uses: actions/setup-node@v5
         with:
           node-version: latest
-      - run: corepack enable && corepack prepare pnpm@11 --activate
       - run: pnpm install
       - name: Download bms-table-mirror
         run: curl -L -o /tmp/bms-mirror.zip https://codeberg.org/brightmeows/bms-table-mirror/archive/main.zip
