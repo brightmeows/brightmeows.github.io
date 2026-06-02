@@ -6,7 +6,7 @@
 
   interface MirrorTableItem {
     url: string;
-    url_ori?: string;
+    url_from?: string;
   }
 
   export let tables: MirrorTableItem[] = [];
@@ -47,7 +47,7 @@
     for (const t of tables) {
       if (!t.url) continue;
       const mirrorAbs = new URL(t.url, window.location.origin).toString();
-      const rawOri = String(t.url_ori ?? "").trim();
+      const rawOri = String(t.url_from ?? "").trim();
       const oriAbs = rawOri.length > 0 ? new URL(rawOri, window.location.origin).toString() : "";
       m[mirrorAbs] = oriAbs;
     }

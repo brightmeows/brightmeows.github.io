@@ -3,7 +3,7 @@ export interface MirrorTableItem {
   name: string;
   symbol?: string;
   url: string;
-  url_ori?: string;
+  url_from?: string;
   comment?: string;
   date?: string;
   state?: string;

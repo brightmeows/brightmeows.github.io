@@ -6,7 +6,7 @@
     name: string;
     symbol?: string;
     url: string;
-    url_ori?: string;
+    url_from?: string;
     comment?: string;
     tag1?: string;
     tag2?: string;
@@ -304,11 +304,11 @@
                         <td
                           class="min-w-32.5 border-b border-white/5 p-4 wrap-break-word text-white/90"
                         >
-                          {#if item.url_ori}
+                          {#if item.url_from}
                             <a
                               class="flex min-w-15 cursor-pointer items-center justify-center gap-[0.2rem] rounded-md border-none bg-[linear-gradient(135deg,#ff9800,#f57c00)] px-2 py-[0.35rem] text-[0.85rem] font-semibold text-white no-underline transition-all duration-200 ease-in-out hover:-translate-y-0.5 hover:bg-[linear-gradient(135deg,#ffb74d,#ff9800)] hover:shadow-[0_4px_8px_rgba(0,0,0,0.2)]"
-                              href={item.url_ori}
-                              title={item.url_ori}
+                              href={item.url_from}
+                              title={item.url_from}
                               target="_blank"
                               rel="noopener noreferrer"
                             >

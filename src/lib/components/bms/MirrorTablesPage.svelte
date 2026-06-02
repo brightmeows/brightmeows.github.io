@@ -16,7 +16,7 @@
     name: string;
     symbol?: string;
     url: string;
-    url_ori?: string;
+    url_from?: string;
     comment?: string;
     tag1?: string;
     tag2?: string;
