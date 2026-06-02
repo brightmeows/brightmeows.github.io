@@ -2,6 +2,7 @@
   import JsonPreview, { jsonPreview } from "$lib/components/JsonPreview.svelte";
   import ScrollSyncGroup from "$lib/components/ScrollSyncGroup.svelte";
   import type { MirrorTableItem, Tag1Group, Tag2Group } from "$lib/types/bms";
+  import { slugifyTag } from "$lib/utils/mirror-tables";
 
   const CheckboxState = {
     Unchecked: 0,
@@ -11,10 +12,14 @@
 
   type CheckboxState = (typeof CheckboxState)[keyof typeof CheckboxState];
 
-  export let groups: Tag1Group[] = [];
-  export let selectedMap: Record<string, boolean> = {};
+  interface Props {
+    groups?: Tag1Group[];
+    selectedMap?: Record<string, boolean>;
+  }
 
-  let tablePreview:
+  let { groups = [], selectedMap = $bindable({}) }: Props = $props();
+
+  let tablePreview = $state<
     | {
         show: (
           options: import("$lib/components/JsonPreview.svelte").JsonPreviewShowOptions,
@@ -24,7 +29,8 @@
         scheduleHide: () => void;
         hideNow: () => void;
       }
-    | undefined;
+    | undefined
+  >();
 
   function compareAscii(a: string, b: string): number {
     if (a === b) return 0;
@@ -37,14 +43,6 @@
       if (byName !== 0) return byName;
       return compareAscii(a.url, b.url);
     });
-  }
-
-  function slugifyTag(tag: string): string {
-    return tag
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "-");
   }
 
   function scrollToTag1(tag1: string): void {
@@ -139,7 +137,7 @@
             <button
               class="cursor-pointer rounded-[18px] bg-white/10 px-4 py-2 font-bold text-white opacity-80 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:opacity-90 hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)]"
               type="button"
-              on:click={() => scrollToTag1(g.tag1)}
+              onclick={() => scrollToTag1(g.tag1)}
             >
               {g.tag1}
             </button>
@@ -150,7 +148,7 @@
               <button
                 class="cursor-pointer rounded-[18px] bg-white/10 px-4 py-2 font-bold text-white opacity-80 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:opacity-90 hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)]"
                 type="button"
-                on:click={() => scrollToTag2(g.tag1, sg.tag2)}
+                onclick={() => scrollToTag2(g.tag1, sg.tag2)}
               >
                 {sg.tag2}
                 <span class="rounded-[10px] bg-black/20 px-2 py-[0.1rem] text-[0.9rem] opacity-90">
@@ -171,7 +169,7 @@
                 class="h-5.5 w-5.5 scale-[1.2]"
                 use:indeterminate={tag1State(g, selectedMap) === CheckboxState.Indeterminate}
                 checked={tag1State(g, selectedMap) === CheckboxState.Checked}
-                on:change={(e) => onTag1Change((e.currentTarget as HTMLInputElement).checked, g)}
+                onchange={(e) => onTag1Change(e.currentTarget.checked, g)}
               />
               <span
                 class="rounded-[20px] bg-[rgba(100,181,246,0.3)] px-6 py-2 text-[1.2rem] font-bold text-white shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
@@ -189,7 +187,7 @@
                   class="h-5.5 w-5.5 scale-[1.2]"
                   use:indeterminate={tag2State(sg, selectedMap) === CheckboxState.Indeterminate}
                   checked={tag2State(sg, selectedMap) === CheckboxState.Checked}
-                  on:change={(e) => onTag2Change((e.currentTarget as HTMLInputElement).checked, sg)}
+                  onchange={(e) => onTag2Change(e.currentTarget.checked, sg)}
                 />
                 {sg.tag2}
               </h3>
@@ -242,8 +240,7 @@
                             type="checkbox"
                             class="h-5.5 w-5.5 scale-[1.2]"
                             checked={!!selectedMap[item.url]}
-                            on:change={(e) =>
-                              onRowChange((e.currentTarget as HTMLInputElement).checked, item.url)}
+                            onchange={(e) => onRowChange(e.currentTarget.checked, item.url)}
                           />
                         </td>
                         <td class="border-b border-white/5 p-4 wrap-break-word text-white/90">

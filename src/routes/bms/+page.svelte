@@ -3,15 +3,9 @@
 
   import { resolve } from "$app/paths";
   import BmsContent from "$content/bms/index.md";
-  import BreadcrumbNav from "$lib/components/BreadcrumbNav.svelte";
-  import FloatingToc, {
-    buildTocFromHeadings,
-    type TocItem,
-  } from "$lib/components/FloatingToc.svelte";
+  import { buildTocFromHeadings, type TocItem } from "$lib/components/FloatingToc.svelte";
   import MarkdownContent from "$lib/components/MarkdownContent.svelte";
-  import ProfileCard from "$lib/components/ProfileCard.svelte";
-  import QuickActions from "$lib/components/QuickActions.svelte";
-  import StarryBackground from "$lib/components/StarryBackground.svelte";
+  import PageShell from "$lib/components/PageShell.svelte";
   import { GlassCard, GlassContainer } from "$lib/components/ui";
 
   const breadcrumbs = [{ label: "主页", href: "/" }, { label: "BMS" }];
@@ -25,10 +19,12 @@
   });
 </script>
 
-<StarryBackground />
-<ProfileCard />
-<BreadcrumbNav items={breadcrumbs} sessionKey="breadcrumb-bms-home" initiallyOpen={false} />
-<main class="m-0 mx-auto box-border w-full max-w-350 p-8">
+<PageShell
+  {breadcrumbs}
+  breadcrumbSessionKey="breadcrumb-bms-home"
+  breadcrumbInitiallyOpen={false}
+  {tocItems}
+>
   <!-- 菜单部分 -->
   <GlassContainer animate={true} class="mt-8 w-full">
     <h1 class="page-title text-center">BMS</h1>
@@ -54,6 +50,4 @@
       <BmsContent />
     </MarkdownContent>
   </GlassContainer>
-</main>
-<FloatingToc items={tocItems} />
-<QuickActions />
+</PageShell>

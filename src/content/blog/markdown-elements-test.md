@@ -68,7 +68,7 @@ order: 1
 
 远程图片（用于测试 img 渲染与 alt 文本）：
 
-![MiyakoMeow avatar](https://github.com/MiyakoMeow.png)
+![白喵斯 avatar](https://codeberg.org/brightmeows.png)
 
 ## 表格（GFM）
 

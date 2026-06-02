@@ -1,19 +1,25 @@
 <script lang="ts">
   import type { LevelRefItem } from "$lib/types/bms";
 
-  export let headerUrl: string | undefined = undefined;
+  interface Props {
+    headerUrl?: string;
+  }
 
-  let levelRefData: LevelRefItem[] = [];
-  let shouldShow = false;
+  let { headerUrl = undefined }: Props = $props();
 
-  $: tableHalves = (() => {
+  let levelRefData = $state<LevelRefItem[]>([]);
+  let shouldShow = $state(false);
+
+  let requestToken = 0;
+
+  let tableHalves = $derived.by(() => {
     const data = levelRefData;
     const midIndex = Math.ceil(data.length / 2);
     return [
       { id: "left" as const, items: data.slice(0, midIndex) },
       { id: "right" as const, items: data.slice(midIndex) },
     ];
-  })();
+  });
 
   function buildLevelRefUrl(headerUrlRaw: string): string {
     try {
@@ -29,8 +35,6 @@
       return "";
     }
   }
-
-  let requestToken = 0;
 
   async function loadLevelRefData(header: string | undefined): Promise<void> {
     if (!header) {
@@ -73,7 +77,9 @@
     }
   }
 
-  $: void loadLevelRefData(headerUrl);
+  $effect(() => {
+    void loadLevelRefData(headerUrl);
+  });
 </script>
 
 {#if shouldShow && levelRefData.length > 0}

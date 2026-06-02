@@ -3,15 +3,18 @@
   import { onMount, tick } from "svelte";
 
   import { resolve } from "$app/paths";
-  import BreadcrumbNav from "$lib/components/BreadcrumbNav.svelte";
-  import FloatingToc, { type TocItem } from "$lib/components/FloatingToc.svelte";
-  import ProfileCard from "$lib/components/ProfileCard.svelte";
-  import QuickActions from "$lib/components/QuickActions.svelte";
-  import StarryBackground from "$lib/components/StarryBackground.svelte";
+  import type { TocItem } from "$lib/components/FloatingToc.svelte";
+  import PageShell from "$lib/components/PageShell.svelte";
   import GroupedTablesSection from "$lib/components/bms/GroupedTablesSection.svelte";
   import SelectedTablesPanel from "$lib/components/bms/SelectedTablesPanel.svelte";
   import { GlassCard, GlassContainer } from "$lib/components/ui";
-  import type { MirrorTableItem, Tag1Group, Tag2Group } from "$lib/types/bms";
+  import type { MirrorTableItem } from "$lib/types/bms";
+  import {
+    buildSearchNeedles,
+    filterTables,
+    groupByTags,
+    buildGroupTocItems,
+  } from "$lib/utils/mirror-tables";
 
   interface LinkItem {
     href: string;
@@ -53,36 +56,10 @@
     }
   })();
 
-  function buildSearchNeedles(raw: string): string[] {
-    const input = raw.trim();
-    if (input.length === 0) return [];
-
-    const normalized = input.normalize("NFKC");
-    const needles: string[] = [];
-
-    const add = (value: string) => {
-      const v = value.normalize("NFKC").toLowerCase();
-      if (v.length > 0 && !needles.includes(v)) {
-        needles.push(v);
-      }
-    };
-
-    add(normalized);
-    for (const convert of searchConverters) {
-      try {
-        add(convert(normalized));
-      } catch {
-        // converter failed, skip
-      }
-    }
-
-    return needles;
-  }
-
   const links: LinkItem[] = [
     { href: "/bms", title: "返回 BMS", desc: "返回 BMS 页面" },
     {
-      href: "https://github.com/MiyakoMeow/bms-table-mirror",
+      href: "https://codeberg.org/brightmeows/bms-table-mirror",
       title: "镜像仓库",
       desc: "查看镜像项目",
     },
@@ -113,82 +90,12 @@
     }, 1500);
   }
 
-  let normalizedSearch = $derived(searchQuery.trim().toLowerCase());
-  let searchNeedles = $derived(buildSearchNeedles(searchQuery));
-  let filteredTables = $derived(
-    normalizedSearch.length === 0
-      ? tables
-      : tables.filter((item) => {
-          const haystack = [item.name, item.symbol]
-            .filter((v): v is string => typeof v === "string" && v.length > 0)
-            .join("\n")
-            .normalize("NFKC")
-            .toLowerCase();
-          return searchNeedles.some((needle) => haystack.includes(needle));
-        })
-  );
-
-  let groupedByTags = $derived(() => {
-    const groupsMap: Record<string, { order: number; tag2Map: Record<string, MirrorTableItem[]> }> =
-      {};
-
-    filteredTables.forEach((item) => {
-      const tag1 = item.tag1 ?? "未分类";
-      const tag2 = item.tag2 ?? "其它";
-      const orderRaw = item.tag_order;
-      const order =
-        typeof orderRaw === "number" ? orderRaw : parseInt(String(orderRaw ?? "999"), 10);
-
-      if (!groupsMap[tag1]) {
-        groupsMap[tag1] = {
-          order,
-          tag2Map: {},
-        };
-      } else {
-        const existing = groupsMap[tag1];
-        existing.order = Math.min(existing.order, isNaN(order) ? 999 : order);
-      }
-
-      const tag2Map = groupsMap[tag1].tag2Map;
-      if (!tag2Map[tag2]) {
-        tag2Map[tag2] = [];
-      }
-
-      tag2Map[tag2].push(item);
-    });
-
-    const tag1Groups: Tag1Group[] = Object.entries(groupsMap).map(([tag1, { order, tag2Map }]) => {
-      const subgroups: Tag2Group[] = Object.entries(tag2Map)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([tag2, items]) => ({
-          tag2,
-          items: items.sort((x, y) => (x.name ?? "").localeCompare(y.name ?? "")),
-        }));
-      return { tag1, order: isNaN(order) ? 999 : order, subgroups };
-    });
-
-    tag1Groups.sort((a, b) => a.order - b.order || a.tag1.localeCompare(b.tag1));
-    return tag1Groups;
-  });
-
-  function slugifyTag(tag: string): string {
-    return encodeURIComponent(tag.normalize("NFKC").trim().toLowerCase())
-      .replace(/%/g, "-")
-      .replace(/-+/g, "-")
-      .replace(/^-|-$/g, "");
-  }
+  let searchNeedles = $derived(buildSearchNeedles(searchQuery, searchConverters));
+  let filteredTables = $derived(filterTables(tables, searchNeedles));
+  let groupedByTags = $derived(groupByTags(filteredTables));
 
   $effect(() => {
-    const tagItems: TocItem[] = groupedByTags().map((g) => ({
-      id: `tag1-group-${slugifyTag(g.tag1) || "untagged"}`,
-      title: `分类 ${g.tag1}`,
-      href: `#tag1-group-${slugifyTag(g.tag1) || "untagged"}`,
-      children: g.subgroups.map((sg) => ({
-        id: `tag2-group-${slugifyTag(g.tag1) || "untagged"}-${slugifyTag(sg.tag2) || "untagged"}`,
-        title: `${sg.tag2} (${sg.items.length})`,
-        href: `#tag2-group-${slugifyTag(g.tag1) || "untagged"}-${slugifyTag(sg.tag2) || "untagged"}`,
-      })),
-    }));
+    const tagItems = buildGroupTocItems(groupedByTags);
 
     tocItems = [
       {
@@ -238,10 +145,12 @@
   });
 </script>
 
-<StarryBackground />
-<ProfileCard />
-<BreadcrumbNav items={breadcrumbs} sessionKey={breadcrumbKey} initiallyOpen={false} />
-<main class="m-0 mx-auto box-border w-full max-w-350 p-8">
+<PageShell
+  {breadcrumbs}
+  breadcrumbSessionKey={breadcrumbKey}
+  breadcrumbInitiallyOpen={false}
+  {tocItems}
+>
   <GlassContainer animate={true} class="mt-8 w-full">
     <h1 id="bms-table-mirror" class="page-title mb-2 scroll-mt-5 text-center">{pageTitle}</h1>
 
@@ -292,7 +201,7 @@
           placeholder="按 名称 / 符号 搜索，支持 简体中文 / 繁体中文 / 日文汉字 自动转换"
           bind:value={searchQuery}
         />
-        {#if normalizedSearch.length > 0}
+        {#if searchQuery.trim().length > 0}
           <button
             class="absolute top-1/2 right-2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg border border-white/20 bg-white/10 p-0 text-[1.25rem] leading-none text-white transition-all duration-200 ease-in-out hover:bg-white/20"
             type="button"
@@ -303,7 +212,7 @@
           </button>
         {/if}
       </div>
-      {#if normalizedSearch.length > 0}
+      {#if searchQuery.trim().length > 0}
         <div class="text-[0.95rem] text-white/60">
           匹配 {filteredTables.length} / {tables.length}
         </div>
@@ -314,14 +223,12 @@
       <div class="mt-6 text-white/80">正在加载镜像列表...</div>
     {:else if error}
       <div class="mt-6 text-red-300">加载失败：{error}</div>
-    {:else if groupedByTags().length === 0}
+    {:else if groupedByTags.length === 0}
       <div class="mt-6 text-white/70">没有匹配的难度表</div>
     {:else}
-      <GroupedTablesSection bind:selectedMap groups={groupedByTags()} />
+      <GroupedTablesSection bind:selectedMap groups={groupedByTags} />
     {/if}
   </GlassContainer>
-</main>
+</PageShell>
 
 <SelectedTablesPanel {tables} {selectedMap} />
-<FloatingToc items={tocItems} />
-<QuickActions />

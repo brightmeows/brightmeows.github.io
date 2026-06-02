@@ -8,7 +8,7 @@ import type { DifficultyGroup } from "$lib/types/bms";
  */
 export function sortDifficultyGroups(
   groups: DifficultyGroup[],
-  levelOrder: string[],
+  levelOrder: string[]
 ): DifficultyGroup[] {
   const orderIndex: Record<string, number> = {};
   levelOrder.forEach((lv, idx) => (orderIndex[String(lv)] = idx));
@@ -20,9 +20,7 @@ export function sortDifficultyGroups(
     (String(g.level) in orderIndex ? defined : others).push(g);
   }
 
-  defined.sort(
-    (a, b) => (orderIndex[String(a.level)] ?? 0) - (orderIndex[String(b.level)] ?? 0),
-  );
+  defined.sort((a, b) => (orderIndex[String(a.level)] ?? 0) - (orderIndex[String(b.level)] ?? 0));
 
   others.sort((a, b) => {
     const as = String(a.level).trim();

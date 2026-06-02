@@ -3,18 +3,9 @@ import { join } from "node:path";
 
 import matter from "gray-matter";
 
-import type { BlogPost } from "../types/blog";
+import type { BlogPost, BlogPostMetadata } from "../types/blog";
 
 import { extractFirstSentence } from "./blog-metadata";
-
-export interface BlogPostMetadata {
-  title: string;
-  date?: string;
-  order?: number;
-  slug?: string;
-  description?: string;
-  tags?: string[];
-}
 
 /**
  * 扫描博客目录并生成索引

@@ -1,17 +1,17 @@
+import type { Component } from "svelte";
+
 import type { PageLoad } from "./$types";
 
-import { formatBlogPostTitle } from "$lib/utils/title";
+import type { BlogPostMetadata } from "$lib/types/blog";
+import { formatTitle } from "$lib/utils/title";
 
-interface BlogPostMetadata {
-  title: string;
-  date?: string;
-  order?: number;
-  default: unknown;
+interface BlogPostModule extends BlogPostMetadata {
+  default: Component;
 }
 
 export const load: PageLoad = async ({ params }) => {
   try {
-    const post = (await import(`$content/blog/${params.slug}.md`)) as BlogPostMetadata;
+    const post = (await import(`$content/blog/${params.slug}.md`)) as BlogPostModule;
 
     return {
       post: {
@@ -21,7 +21,7 @@ export const load: PageLoad = async ({ params }) => {
         order: post.order,
       },
       component: post.default,
-      title: formatBlogPostTitle(post.title ?? "文章"),
+      title: formatTitle(post.title ?? "文章"),
     };
   } catch {
     throw new Error(`Post not found: ${params.slug}`);

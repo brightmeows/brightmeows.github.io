@@ -35,9 +35,7 @@
     levelOrder?: string[] | undefined;
   } = $props();
 
-  let displayGroups: DifficultyGroup[] = $derived(
-    sortDifficultyGroups(groups, levelOrder ?? []),
-  );
+  let displayGroups: DifficultyGroup[] = $derived(sortDifficultyGroups(groups, levelOrder ?? []));
 
   function segmentColor(index: number, total: number): string {
     const palette = ["#4caf50", "#2196f3", "#ff9800", "#f44336", "#ce50d8", "#9c27b0"];

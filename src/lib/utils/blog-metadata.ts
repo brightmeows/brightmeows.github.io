@@ -1,13 +1,6 @@
 import matter from "gray-matter";
 
-export interface BlogPostMetadata {
-  title: string;
-  date?: string;
-  order?: number;
-  slug?: string;
-  description?: string;
-  tags?: string[];
-}
+import type { BlogPostMetadata } from "../types/blog";
 
 /**
  * 解析 Markdown 文件的 frontmatter 和内容

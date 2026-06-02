@@ -4,18 +4,13 @@
   import type { PageData } from "./$types";
 
   import { resolve } from "$app/paths";
-  import FloatingToc, {
-    buildTocFromHeadings,
-    type TocItem,
-  } from "$lib/components/FloatingToc.svelte";
-  import ProfileCard from "$lib/components/ProfileCard.svelte";
-  import QuickActions from "$lib/components/QuickActions.svelte";
-  import StarryBackground from "$lib/components/StarryBackground.svelte";
+  import { buildTocFromHeadings, type TocItem } from "$lib/components/FloatingToc.svelte";
+  import PageShell from "$lib/components/PageShell.svelte";
   import { GlassButton, GlassContainer } from "$lib/components/ui";
 
-  export let data: PageData;
+  let { data }: { data: PageData } = $props();
 
-  let tocItems: TocItem[] = [];
+  let tocItems = $state<TocItem[]>([]);
 
   onMount(() => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
@@ -23,9 +18,7 @@
   });
 </script>
 
-<StarryBackground />
-<ProfileCard />
-<main class="m-0 mx-auto box-border w-full max-w-350 p-8">
+<PageShell {tocItems}>
   <!-- 菜单部分 -->
   <GlassContainer id="blog" animate={true} class="mt-8 w-full">
     <h1 class="page-title mb-8 text-center">欢迎来到白喵斯的小屋！</h1>
@@ -71,6 +64,4 @@
       </div>
     {/if}
   </GlassContainer>
-</main>
-<FloatingToc items={tocItems} />
-<QuickActions />
+</PageShell>

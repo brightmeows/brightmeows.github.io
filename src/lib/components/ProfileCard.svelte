@@ -13,7 +13,7 @@
   {#snippet icon()}
     <img
       class="size-11 rounded-full border-2 border-white/30"
-      src="https://github.com/MiyakoMeow.png"
+      src="https://codeberg.org/brightmeows.png"
       alt="Miyako Meow"
     />
   {/snippet}
@@ -23,14 +23,14 @@
       <div>
         <img
           class="mx-auto mb-4 h-30 w-30 rounded-full border-4 border-white/30 shadow-[0_0_20px_rgba(255,255,255,0.2)] transition-transform duration-300 ease-in-out hover:scale-105 hover:rotate-[5deg]"
-          src="https://github.com/MiyakoMeow.png"
+          src="https://codeberg.org/brightmeows.png"
           alt="Miyako Meow"
         />
       </div>
       <h1
         class="my-2 bg-[linear-gradient(90deg,#a78bfa,#f472b6,#60a5fa)] bg-clip-text text-[2.5rem] text-transparent"
       >
-        MiyakoMeow
+        白喵斯
       </h1>
       <p class="mb-8 text-[1.1rem] text-[#a5b4fc]">喵喵喵！</p>
     </div>
@@ -40,8 +40,8 @@
     </div>
 
     <div class="flex flex-wrap justify-center gap-4">
-      <GlassButton href="https://github.com/MiyakoMeow" target="_blank" rel="noopener noreferrer"
-        >GitHub</GlassButton
+      <GlassButton href="https://codeberg.org/brightmeows" target="_blank" rel="noopener noreferrer"
+        >Codeberg</GlassButton
       >
       <GlassButton
         href="https://space.bilibili.com/215242890"

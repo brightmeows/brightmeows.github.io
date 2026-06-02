@@ -1,16 +1,18 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import BreadcrumbNav from "$lib/components/BreadcrumbNav.svelte";
-  import FloatingToc from "$lib/components/FloatingToc.svelte";
-  import ProfileCard from "$lib/components/ProfileCard.svelte";
-  import QuickActions from "$lib/components/QuickActions.svelte";
-  import StarryBackground from "$lib/components/StarryBackground.svelte";
+  import PageShell from "$lib/components/PageShell.svelte";
   import ChartsTableSection from "$lib/components/bms/ChartsTableSection.svelte";
   import LevelRefTable from "$lib/components/bms/LevelRefTable.svelte";
-  import type { ChartData, DifficultyGroup, HeaderData } from "$lib/types/bms";
+  import type { ChartData, HeaderData } from "$lib/types/bms";
+  import {
+    fetchBmsHeader,
+    fetchBmsTableData,
+    groupChartsByLevel,
+    computeTableStats,
+  } from "$lib/utils/bms-data";
   import { sortDifficultyGroups } from "$lib/utils/bms-table";
-  import { formatBmsTableTitle } from "$lib/utils/title";
+  import { formatTitle } from "$lib/utils/title";
 
   interface LoadingState {
     isLoading: boolean;
@@ -78,36 +80,6 @@
     loadingState = { ...loadingState, currentStep: step, progress };
   }
 
-  function fetchJsonp(url: string, timeoutMs = 10000): Promise<unknown> {
-    return new Promise((resolve, reject) => {
-      const callbackName = "jsonp_callback_" + Math.round(100000 * Math.random());
-      const script = document.createElement("script");
-      const win = window as unknown as Record<string, unknown>;
-      const cleanup = () => {
-        delete win[callbackName];
-        if (script.parentNode) document.body.removeChild(script);
-      };
-      const timer = window.setTimeout(() => {
-        cleanup();
-        reject(new Error("JSONP request timed out"));
-      }, timeoutMs);
-      const requestUrl = new URL(url, window.location.href);
-      requestUrl.searchParams.set("callback", callbackName);
-      script.src = requestUrl.toString();
-      win[callbackName] = (data: unknown) => {
-        window.clearTimeout(timer);
-        cleanup();
-        resolve(data);
-      };
-      script.onerror = () => {
-        window.clearTimeout(timer);
-        cleanup();
-        reject(new Error("JSONP request failed"));
-      };
-      document.body.appendChild(script);
-    });
-  }
-
   async function lazyLoadTableData(): Promise<void> {
     try {
       error = null;
@@ -125,16 +97,7 @@
       pageTitle = "加载难度表header中";
       updateProgress("正在加载表头信息...", 25);
 
-      const headerUrlBase = new URL(headerUrl, window.location.href).toString();
-
-      const headerResponse = await fetch(headerUrlBase, {
-        redirect: "follow",
-      });
-      if (!headerResponse.ok) {
-        throw new Error(`无法加载表头信息: ${headerResponse.status}`);
-      }
-      headerData = (await headerResponse.json()) as HeaderData;
-
+      headerData = await fetchBmsHeader(headerUrl);
       pageTitle = String(headerData?.name ?? "未命名");
       updateProgress("表头信息加载完成", 50);
 
@@ -145,40 +108,10 @@
 
       updateProgress("正在加载谱面数据...", 75);
 
-      const resolvedDataUrl = new URL(String(dataUrl), headerUrlBase);
-      const finalDataUrl = resolvedDataUrl.toString();
-      const isJsonp =
-        resolvedDataUrl.hostname === "script.google.com" &&
-        resolvedDataUrl.pathname.startsWith("/macros/");
-
-      updateProgress("正在加载谱面数据...", 75);
-
-      let tableDataRaw: unknown;
-      if (isJsonp) {
-        tableDataRaw = await fetchJsonp(finalDataUrl);
-      } else {
-        const dataResponse = await fetch(finalDataUrl, {
-          redirect: "follow",
-        });
-        if (!dataResponse.ok) {
-          throw new Error(`无法加载谱面数据: ${dataResponse.status}`);
-        }
-        tableDataRaw = await dataResponse.json();
-      }
-      if (!Array.isArray(tableDataRaw)) {
-        let apiError = "谱面数据格式无效";
-        if (typeof tableDataRaw === "object" && tableDataRaw !== null && "error" in tableDataRaw) {
-          const err = (tableDataRaw as Record<string, unknown>).error;
-          if (err !== undefined) {
-            apiError = typeof err === "string" ? err : JSON.stringify(err);
-          } else {
-            apiError = "未知错误";
-          }
-        }
-        throw new Error(`无法解析谱面数据: ${apiError}`);
-      }
-      tableData = tableDataRaw as ChartData[];
-      dataFetchUrl = finalDataUrl;
+      const headerUrlBase = new URL(headerUrl, window.location.href).toString();
+      const result = await fetchBmsTableData(String(dataUrl), headerUrlBase);
+      tableData = result.data;
+      dataFetchUrl = result.fetchUrl;
 
       updateProgress("数据加载完成", 100);
 
@@ -192,50 +125,18 @@
     }
   }
 
-  const groupedCharts = $derived(() => {
-    if (!tableData || !Array.isArray(tableData)) {
+  const groups = $derived(groupChartsByLevel(tableData ?? []));
+  const tableStats = $derived(computeTableStats(groups));
+  const sortedDifficultyGroups = $derived(
+    sortDifficultyGroups(groups, headerData?.level_order ?? [])
+  );
+
+  const difficultyTocItems = $derived.by(() => {
+    const sorted = sortedDifficultyGroups;
+    if (!sorted || sorted.length === 0) {
       return [];
     }
-    const groupsMap: Record<string, DifficultyGroup> = {};
-    const charts = tableData;
-    for (const chart of charts) {
-      const level = chart.level ?? "unknown";
-      if (!groupsMap[level]) {
-        groupsMap[level] = { level, charts: [] };
-      }
-      groupsMap[level].charts.push(chart);
-    }
-    return Object.values(groupsMap);
-  });
-
-  const tableStats = $derived(() => {
-    const groups = groupedCharts();
-    if (!groups || groups.length === 0) {
-      return { totalCharts: 0, difficulties: [] };
-    }
-    const { totalCharts, difficulties } = groups.reduce(
-      (acc, group) => {
-        if (!acc.difficulties.includes(group.level)) {
-          acc.difficulties.push(group.level);
-        }
-        acc.totalCharts += group.charts.length;
-        return acc;
-      },
-      { totalCharts: 0, difficulties: [] as string[] }
-    );
-    return { totalCharts, difficulties: Array.from(difficulties) };
-  });
-
-  const sortedDifficultyGroups = $derived(() => {
-    return sortDifficultyGroups(groupedCharts(), headerData?.level_order ?? []);
-  });
-
-  const difficultyTocItems = $derived(() => {
-    const groups = sortedDifficultyGroups();
-    if (!groups || groups.length === 0) {
-      return [];
-    }
-    return groups.map((g) => {
+    return sorted.map((g) => {
       const id = `difficulty-group-${g.level}`;
       return {
         id,
@@ -245,7 +146,7 @@
     });
   });
 
-  const tocItems = $derived(() => {
+  const tocItems = $derived.by(() => {
     return [
       {
         id: "table-info",
@@ -264,7 +165,7 @@
         id: "charts-list",
         title: "谱面列表",
         href: "#charts-list",
-        children: difficultyTocItems(),
+        children: difficultyTocItems,
       },
     ];
   });
@@ -285,13 +186,16 @@
 </script>
 
 <svelte:head>
-  <title>{formatBmsTableTitle(pageTitle)}</title>
+  <title>{formatTitle(pageTitle)}</title>
 </svelte:head>
 
-<StarryBackground />
-<ProfileCard />
-<BreadcrumbNav items={breadcrumbs} sessionKey={breadcrumbSessionKey} initiallyOpen={false} />
-<div class="glass-bms-container">
+<PageShell
+  {breadcrumbs}
+  {breadcrumbSessionKey}
+  breadcrumbInitiallyOpen={false}
+  {tocItems}
+  mainClass="glass-bms-container"
+>
   <div class="mb-8 text-center">
     <h1 class="page-title mb-2">
       {pageTitle}
@@ -426,13 +330,13 @@
             <div class="grid grid-cols-3 gap-4">
               <div class="stat-card">
                 <div class="mb-2 text-[2rem] font-bold text-[#64b5f6]">
-                  {tableStats().totalCharts}
+                  {tableStats.totalCharts}
                 </div>
                 <div class="text-[0.9rem] text-white/70">总谱面数</div>
               </div>
               <div class="stat-card">
                 <div class="mb-2 text-[2rem] font-bold text-[#64b5f6]">
-                  {tableStats().difficulties.length}
+                  {tableStats.difficulties.length}
                 </div>
                 <div class="text-[0.9rem] text-white/70">难度等级数</div>
               </div>
@@ -445,9 +349,9 @@
         </div>
 
         <div id="charts-list" class="scroll-mt-5">
-          {#if sortedDifficultyGroups().length > 0}
+          {#if sortedDifficultyGroups.length > 0}
             <ChartsTableSection
-              groups={sortedDifficultyGroups()}
+              groups={sortedDifficultyGroups}
               totalCharts={tableData?.length ?? 0}
               levelOrder={headerData?.level_order ?? []}
             />
@@ -462,6 +366,4 @@
       </div>
     {/if}
   </div>
-</div>
-<FloatingToc items={tocItems()} />
-<QuickActions />
+</PageShell>

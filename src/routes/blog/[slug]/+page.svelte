@@ -1,39 +1,34 @@
 <script lang="ts">
-  import BreadcrumbNav from "$lib/components/BreadcrumbNav.svelte";
+  import type { PageData } from "./$types";
+
   import FloatingToc from "$lib/components/FloatingToc.svelte";
   import MarkdownContent from "$lib/components/MarkdownContent.svelte";
-  import ProfileCard from "$lib/components/ProfileCard.svelte";
-  import StarryBackground from "$lib/components/StarryBackground.svelte";
-  import type { BlogPost } from "$lib/types/blog";
+  import PageShell from "$lib/components/PageShell.svelte";
 
-  export let data: {
-    post: Partial<BlogPost>;
-    component: import("svelte").Component;
-    title: string;
-  };
-  const { post, component: Content } = data;
+  let { data }: { data: PageData } = $props();
 
-  const breadcrumbs = [
+  const breadcrumbs = $derived([
     { label: "主页", href: "/" },
     { label: "博客", href: "/blog" },
-    { label: post.title ?? "文章" },
-  ];
+    { label: data.post.title ?? "文章" },
+  ]);
 </script>
 
-<StarryBackground />
-<ProfileCard />
-<BreadcrumbNav items={breadcrumbs} sessionKey="blog-post-nav" />
-<FloatingToc />
-
-<main class="m-0 mx-auto box-border w-full max-w-350 p-8">
+<PageShell {breadcrumbs} breadcrumbSessionKey="blog-post-nav">
   <article class="animate-fadeIn mt-8 rounded-[20px] border border-white/10 bg-white/10 p-8">
-    <h1 class="page-title mb-4">{post.title}</h1>
-    {#if post.date}
-      <div class="mb-8 text-white/60">{post.date}</div>
+    <h1 class="page-title mb-4">{data.post.title}</h1>
+    {#if data.post.date}
+      <div class="mb-8 text-white/60">{data.post.date}</div>
     {/if}
 
     <MarkdownContent>
-      <svelte:component this={Content} />
+      {@const Content = data.component}
+      {#if Content}
+        <!-- svelte-ignore svelte_component_deprecated -->
+        <svelte:component this={Content} />
+      {/if}
     </MarkdownContent>
   </article>
-</main>
+</PageShell>
+
+<FloatingToc />
