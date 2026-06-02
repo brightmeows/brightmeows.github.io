@@ -66,12 +66,6 @@
     },
   ];
 
-  const breadcrumbs = $derived([
-    { label: "主页", href: "/" },
-    { label: "BMS", href: "/bms" },
-    { label: pageTitle },
-  ]);
-
   async function copyTables(): Promise<void> {
     const tablesJsonUrl = new URL(tablesJsonPath, window.location.origin).toString();
     const ok = await writeToClipboard(tablesJsonUrl);
@@ -121,10 +115,7 @@
   });
 </script>
 
-<PageShell
-  {breadcrumbs}
-  {tocItems}
->
+<PageShell {tocItems}>
   <GlassContainer animate={true} class="mt-8 w-full">
     <h1 id="bms-table-mirror" class="page-title mb-2 scroll-mt-5 text-center">{pageTitle}</h1>
 

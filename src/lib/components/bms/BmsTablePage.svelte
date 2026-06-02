@@ -144,14 +144,6 @@
     ];
   });
 
-  const breadcrumbs = $derived([
-    { label: "主页", href: "/" },
-    { label: "BMS", href: "/bms" },
-    {
-      label: headerData?.name ?? "加载难度表header中",
-    },
-  ]);
-
   onMount(() => {
     void lazyLoadTableData();
   });
@@ -162,7 +154,7 @@
 </svelte:head>
 
 <PageShell
-  {breadcrumbs}
+  currentLabel={headerData?.name ?? "加载难度表header中"}
   {tocItems}
   mainClass="glass-bms-container"
 >

@@ -8,8 +8,6 @@
   import PageShell from "$lib/components/PageShell.svelte";
   import { GlassCard, GlassContainer } from "$lib/components/ui";
 
-  const breadcrumbs = [{ label: "主页", href: "/" }, { label: "BMS" }];
-
   let tocItems: TocItem[] = [];
 
   onMount(async () => {
@@ -19,10 +17,7 @@
   });
 </script>
 
-<PageShell
-  {breadcrumbs}
-  {tocItems}
->
+<PageShell {tocItems}>
   <!-- 菜单部分 -->
   <GlassContainer animate={true} class="mt-8 w-full">
     <h1 class="page-title text-center">BMS</h1>

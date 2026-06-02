@@ -6,15 +6,9 @@
   import PageShell from "$lib/components/PageShell.svelte";
 
   let { data }: { data: PageData } = $props();
-
-  const breadcrumbs = $derived([
-    { label: "主页", href: "/" },
-    { label: "博客", href: "/blog" },
-    { label: data.post.title ?? "文章" },
-  ]);
 </script>
 
-<PageShell {breadcrumbs}>
+<PageShell currentLabel={data.post.title ?? "文章"}>
   <article class="animate-fadeIn mt-8 rounded-[20px] border border-white/10 bg-white/10 p-8">
     <h1 class="page-title mb-4">{data.post.title}</h1>
     {#if data.post.date}

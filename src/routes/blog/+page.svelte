@@ -4,11 +4,9 @@
   import type { BlogPost } from "$lib/types/blog";
 
   let { data }: { data: { posts: BlogPost[] } } = $props();
-
-  const breadcrumbs = [{ label: "主页", href: "/" }, { label: "博客" }];
 </script>
 
-<PageShell {breadcrumbs}>
+<PageShell>
   <section class="animate-fadeIn mt-8 rounded-[20px] border border-white/10 bg-white/10 p-8">
     <h1 class="page-title mb-8 text-center">博客文章</h1>
 
