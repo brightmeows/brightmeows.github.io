@@ -117,10 +117,7 @@
               </div>
             </div>
 
-            <div
-              class="table-wrapper"
-              use:setRef
-            >
+            <div class="table-wrapper" use:setRef>
               <table class="w-full min-w-225 table-fixed border-collapse">
                 <colgroup>
                   <col style="width: 7%" />

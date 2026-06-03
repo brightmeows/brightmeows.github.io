@@ -120,9 +120,7 @@ export async function loadAndFilterCharts(
 }
 
 /** 加载表的 header.json，返回表名；表不存在时返回 null */
-export async function loadTableHeader(
-  tableId: string
-): Promise<{ name: string } | null> {
+export async function loadTableHeader(tableId: string): Promise<{ name: string } | null> {
   try {
     const header = await fetchJson<{ name?: string }>(`${TABLE_BASE}/${tableId}/header.json`);
     return { name: header.name ?? tableId };

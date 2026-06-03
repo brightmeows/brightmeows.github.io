@@ -55,9 +55,9 @@
 
 <div
   {id}
-  class="glass-base glass-panel-shadow border border-white/20 bg-white/10 {paddingConfig[padding]} {roundedConfig[
-    rounded
-  ]} {className}"
+  class="glass-base glass-panel-shadow border border-white/20 bg-white/10 {paddingConfig[
+    padding
+  ]} {roundedConfig[rounded]} {className}"
   class:overflow-hidden={overflow}
   style={styleString}
 >

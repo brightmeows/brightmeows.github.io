@@ -118,13 +118,7 @@
 
   <div class="mt-2 text-center text-[1.1rem] text-white/70 italic">
     对于BeMusicSeeker用户，可以使用tables.json链接（
-    <button
-      class="link-accent"
-      type="button"
-      onclick={copyTables}
-    >
-      点击复制
-    </button>
+    <button class="link-accent" type="button" onclick={copyTables}> 点击复制 </button>
     ），导入难度表清单至BeMusicSeeker。
     <a
       class="link-accent"

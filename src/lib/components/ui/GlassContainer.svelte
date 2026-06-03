@@ -62,9 +62,9 @@
 
 <div
   {id}
-  class="glass-base glass-container-shadow block {variantClass} {paddingConfig[padding]} {roundedConfig[
-    rounded
-  ]} {className}"
+  class="glass-base glass-container-shadow block {variantClass} {paddingConfig[
+    padding
+  ]} {roundedConfig[rounded]} {className}"
   class:animate-fadeIn={animate}
   style={styleString}
 >

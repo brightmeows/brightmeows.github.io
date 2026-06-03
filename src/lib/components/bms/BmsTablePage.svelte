@@ -167,13 +167,7 @@
     {/if}
     <div class="mt-2 text-[1.2rem] text-white/70 italic">
       使用方式：复制本网站链接（
-      <button
-        class="link-accent"
-        type="button"
-        onclick={copySiteUrl}
-      >
-        点击复制
-      </button>
+      <button class="link-accent" type="button" onclick={copySiteUrl}> 点击复制 </button>
       ），然后在BeMusicSeeker或beatoraja中，粘贴至对应选项处。
       {#if copied}
         <span class="ml-2 text-[#4caf50]">已复制</span>
@@ -181,12 +175,7 @@
     </div>
     <div class="mt-2 text-[1.2rem] text-white/70 italic">
       {#if originUrl}
-        <a
-          class="link-accent"
-          href={originUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <a class="link-accent" href={originUrl} target="_blank" rel="noopener noreferrer">
           原链接
         </a>
       {/if}
@@ -194,12 +183,7 @@
         <span class="mx-2"> | </span>
       {/if}
       {#if headerUrl}
-        <a
-          class="link-accent"
-          href={headerUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <a class="link-accent" href={headerUrl} target="_blank" rel="noopener noreferrer">
           查看header.json
         </a>
       {/if}
@@ -207,12 +191,7 @@
         <span class="mx-2">|</span>
       {/if}
       {#if dataFetchUrl}
-        <a
-          class="link-accent"
-          href={dataFetchUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
+        <a class="link-accent" href={dataFetchUrl} target="_blank" rel="noopener noreferrer">
           查看data.json
         </a>
       {/if}

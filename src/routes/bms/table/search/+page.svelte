@@ -52,14 +52,12 @@
         return;
       }
 
-      const loadTasks = [...candidates.entries()].map(
-        async ([tableId, matchedKeys]) => {
-          const header = await loadTableHeader(tableId);
-          if (!header) return null;
-          const charts = await loadAndFilterCharts(tableId, matchedKeys, type).catch(() => []);
-          return { tableId, tableName: header.name, charts };
-        }
-      );
+      const loadTasks = [...candidates.entries()].map(async ([tableId, matchedKeys]) => {
+        const header = await loadTableHeader(tableId);
+        if (!header) return null;
+        const charts = await loadAndFilterCharts(tableId, matchedKeys, type).catch(() => []);
+        return { tableId, tableName: header.name, charts };
+      });
 
       const chartsByTable = (await Promise.all(loadTasks)).filter(
         (r): r is NonNullable<typeof r> => r !== null
@@ -92,9 +90,7 @@
 
 {#snippet titlePane()}
   <h1 class="page-title text-center">BMS 谱面搜索</h1>
-  <p class="mt-2 text-center text-[1.1rem] text-white/70">
-    搜索谱面并查看其在所有难度表中的信息
-  </p>
+  <p class="mt-2 text-center text-[1.1rem] text-white/70">搜索谱面并查看其在所有难度表中的信息</p>
 {/snippet}
 
 {#snippet contentPane()}
@@ -132,7 +128,9 @@
           aria-label="搜索"
         >
           {#if isSearching}
-            <div class="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-[#64b5f6]"></div>
+            <div
+              class="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-[#64b5f6]"
+            ></div>
           {:else}
             🔍
           {/if}
@@ -145,8 +143,7 @@
       </div>
       <p class="mt-3 text-[0.85rem] text-white/40">
         按 <kbd class="rounded bg-white/10 px-1.5 py-0.5 text-white/60">Enter</kbd> 或点击搜索按钮执行搜索。
-        输入 32 位十六进制自动识别为 MD5，64 位为 SHA256；其他内容按标题/艺术家模糊匹配。
-        搜索结果按谱面聚合，展示该谱面在所有难度表中的出现情况。
+        输入 32 位十六进制自动识别为 MD5，64 位为 SHA256；其他内容按标题/艺术家模糊匹配。 搜索结果按谱面聚合，展示该谱面在所有难度表中的出现情况。
       </p>
     </div>
 

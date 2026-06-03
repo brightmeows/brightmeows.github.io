@@ -193,10 +193,7 @@
                   />
                   {sg.tag2}
                 </h3>
-                <div
-                  class="table-wrapper"
-                  use:setRef
-                >
+                <div class="table-wrapper" use:setRef>
                   <table class="w-full min-w-200 table-fixed border-collapse">
                     <colgroup>
                       <col class="w-15" />

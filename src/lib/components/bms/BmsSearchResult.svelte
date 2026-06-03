@@ -33,13 +33,13 @@
 <GlassContainer padding="lg" rounded="lg" class="mb-6">
   <!-- 谱面基本信息 -->
   <div class="mb-4">
-    <h3 class="mb-1 text-[1.2rem] font-bold text-white">{result.title || '(无标题)'}</h3>
-    <p class="text-white/70">{result.artist || '(未知艺术家)'}</p>
+    <h3 class="mb-1 text-[1.2rem] font-bold text-white">{result.title || "(无标题)"}</h3>
+    <p class="text-white/70">{result.artist || "(未知艺术家)"}</p>
   </div>
 
   <!-- 外部链接（复用已有组件） -->
   <div class="mb-4 flex flex-wrap gap-2">
-    <BmsLinkButtons chart={chartLike} bmsLinks={bmsLinks} />
+    <BmsLinkButtons chart={chartLike} {bmsLinks} />
   </div>
 
   <!-- 跨表信息 -->
@@ -54,10 +54,7 @@
         >
           {entry.level}
         </span>
-        <a
-          class="text-white no-underline transition-colors hover:text-[#64b5f6]"
-          href={entry.href}
-        >
+        <a class="text-white no-underline transition-colors hover:text-[#64b5f6]" href={entry.href}>
           {entry.tableName}
         </a>
         {#if entry.comment}
