@@ -4,6 +4,7 @@
   import type { PageData } from "./$types";
 
   import { resolve } from "$app/paths";
+  import BlogPostCard from "$lib/components/BlogPostCard.svelte";
   import { buildTocFromHeadings, type TocItem } from "$lib/components/FloatingToc.svelte";
   import PageShell from "$lib/components/PageShell.svelte";
   import { GlassButton, GlassContainer } from "$lib/components/ui";
@@ -46,20 +47,7 @@
     {:else}
       <div class="flex flex-col gap-4">
         {#each data.recentPosts as post (post.slug)}
-          <a
-            class="block rounded-[14px] border border-white/10 bg-black/20 p-6 text-white no-underline transition-[transform,background] duration-300 ease-out hover:-translate-y-0.5 hover:bg-[rgba(255,255,255,0.06)]"
-            href={resolve(post.url, {})}
-          >
-            <div class="mb-1 flex flex-wrap items-baseline justify-between gap-3">
-              <div class="text-[1.2rem] font-bold text-[#64b5f6]">
-                {post.title}
-              </div>
-              {#if post.date}
-                <div class="text-[0.85rem] text-white/60">{post.date}</div>
-              {/if}
-            </div>
-            <div class="text-[0.95rem] text-white/80">{post.firstSentence}</div>
-          </a>
+          <BlogPostCard {post} />
         {/each}
       </div>
     {/if}

@@ -1,13 +1,14 @@
 <script lang="ts">
-  import { resolve } from "$app/paths";
+  import BlogPostCard from "$lib/components/BlogPostCard.svelte";
   import PageShell from "$lib/components/PageShell.svelte";
+  import { GlassContainer } from "$lib/components/ui";
   import type { BlogPost } from "$lib/types/blog";
 
   let { data }: { data: { posts: BlogPost[] } } = $props();
 </script>
 
 <PageShell>
-  <section class="animate-fadeIn mt-8 rounded-[20px] border border-white/10 bg-white/10 p-8">
+  <GlassContainer animate={true} class="mt-8 w-full">
     <h1 class="page-title mb-8 text-center">博客文章</h1>
 
     {#if data.posts.length === 0}
@@ -15,20 +16,9 @@
     {:else}
       <div class="flex flex-col gap-4">
         {#each data.posts as post (post.slug)}
-          <a
-            class="block rounded-[14px] border border-white/10 bg-black/20 p-6 text-white no-underline transition hover:-translate-y-0.5 hover:bg-white/5"
-            href={resolve(post.url, {})}
-          >
-            <div class="mb-1 flex justify-between">
-              <div class="text-xl font-bold text-sky-300">{post.title}</div>
-              {#if post.date}
-                <div class="text-sm text-white/60">{post.date}</div>
-              {/if}
-            </div>
-            <div class="text-white/80">{post.firstSentence}</div>
-          </a>
+          <BlogPostCard {post} />
         {/each}
       </div>
     {/if}
-  </section>
+  </GlassContainer>
 </PageShell>
