@@ -109,15 +109,7 @@
   /* 玻璃效果基础类 —— 供 ui/ 组件使用 */
   .glass-base {
     @apply relative text-white backdrop-blur;
-    transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-  }
-
-  .glass-base-hover {
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-  }
-
-  .glass-card-hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
   }
 
   .glass-container-shadow {
