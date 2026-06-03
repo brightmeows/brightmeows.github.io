@@ -24,18 +24,6 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-
-    /* 玻璃效果颜色变量 - 使用 rgba() 格式确保最大兼容性 */
-    --glass-white-10: rgba(255, 255, 255, 0.1);
-    --glass-white-20: rgba(255, 255, 255, 0.2);
-    --glass-white-05: rgba(255, 255, 255, 0.05);
-    --glass-white-15: rgba(255, 255, 255, 0.15);
-    --glass-white-30: rgba(255, 255, 255, 0.3);
-    --glass-white-40: rgba(255, 255, 255, 0.4);
-    --glass-black-10: rgba(0, 0, 0, 0.1);
-    --glass-black-20: rgba(0, 0, 0, 0.2);
-    --glass-black-30: rgba(0, 0, 0, 0.3);
-    --glass-black-40: rgba(0, 0, 0, 0.4);
   }
 
   body {
@@ -69,39 +57,10 @@
 }
 
 @layer components {
-  /* 浮动玻璃面板 - 用于浮动元素 */
-  .glass-panel {
-    @apply relative overflow-hidden text-white backdrop-blur-[10px] transition-opacity duration-200 ease-in-out;
-    @apply border-white/20 bg-white/10;
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-    transition:
-      background-color 0.3s ease,
-      border-color 0.3s ease,
-      box-shadow 0.3s ease;
-  }
-
-  /* BMS容器 - 用于BMS相关页面 */
-  .glass-bms-container {
-    @apply relative mx-auto my-8 max-w-375 rounded-[20px] p-8 text-white backdrop-blur-[10px];
-    @apply border-white/10 bg-white/5;
-    box-shadow:
-      0 8px 32px rgba(0, 0, 0, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    transition:
-      background-color 0.3s ease,
-      border-color 0.3s ease,
-      box-shadow 0.3s ease;
-  }
-
   /* 加载状态容器 */
   .glass-loading-container {
     @apply rounded-[15px] p-8;
     @apply border-white/10 bg-black/20;
-  }
-
-  /* 难度标签 */
-  .badge-level {
-    @apply inline-block min-w-7.5 rounded-xl px-2 py-1 text-center text-[0.85rem] font-semibold text-white;
   }
 
   /* 表格样式 */
@@ -127,14 +86,4 @@
     @apply fixed z-2000 overflow-hidden rounded-xl border border-white/20 bg-white/10 shadow-[0_10px_24px_rgba(0,0,0,0.45)] backdrop-blur-sm;
   }
 
-  /* 进度条 */
-  .progress-bar-container {
-    @apply mb-6 h-3 overflow-hidden rounded-md bg-white/10;
-  }
-
-  .progress-bar-fill {
-    @apply h-full rounded-md;
-    background: linear-gradient(90deg, #4caf50, #64b5f6);
-    transition: width 0.3s ease-out;
-  }
 }
