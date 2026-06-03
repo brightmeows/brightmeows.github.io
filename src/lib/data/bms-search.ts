@@ -99,10 +99,11 @@ const TABLE_BASE = "/bms/table/mirror";
 export async function loadAndFilterCharts(
   tableId: string,
   matchedKeys: Set<string>,
-  queryType: QueryType
+  queryType: QueryType,
+  signal?: AbortSignal
 ): Promise<ChartData[]> {
   const url = `${TABLE_BASE}/${tableId}/data.json`;
-  const data = await fetchJson<ChartData[]>(url);
+  const data = await fetchJson<ChartData[]>(url, { signal });
 
   const lowerKeys = new Set([...matchedKeys].map((k) => k.toLowerCase()));
 
@@ -121,30 +122,107 @@ export async function loadAndFilterCharts(
 }
 
 /** 加载表的 header.json，返回表名；表不存在时返回 null */
-export async function loadTableHeader(tableId: string): Promise<{ name: string } | null> {
+export async function loadTableHeader(tableId: string, signal?: AbortSignal): Promise<{ name: string } | null> {
   try {
-    const header = await fetchJson<{ name?: string }>(`${TABLE_BASE}/${tableId}/header.json`);
+    const header = await fetchJson<{ name?: string }>(`${TABLE_BASE}/${tableId}/header.json`, { signal });
     return { name: header.name ?? tableId };
   } catch {
     return null;
   }
 }
 
+/** 仅有 md5 的待处理条目 */
+interface Md5Entry {
+  tableId: string;
+  tableName: string;
+  chart: ChartData;
+}
+
 /**
- * 跨表聚合谱面数据。
+ * 增量聚合器：支持逐表添加谱面数据，渐进返回合并结果。
  * 策略：sha256 优先聚合，md5 兜底。
  * 1. 有 sha256 的条目按 sha256 分组，同时建立 md5 → Set<sha256> 反向索引
  * 2. 无 sha256 的条目：若其 md5 仅对应唯一一个 sha256 组，则合并；否则独立成组
  * 3. 仅有 md5 的条目按 md5 独立成组
  */
-export function aggregateResults(
-  chartsByTable: { tableId: string; tableName: string; charts: ChartData[] }[]
-): SearchResult[] {
-  const bySha = new Map<string, SearchResult>();
-  const md5ToShas = new Map<string, Set<string>>();
-  const md5Only: { tableId: string; tableName: string; chart: ChartData }[] = [];
+export class IncrementalAggregator {
+  private bySha = new Map<string, SearchResult>();
+  private md5ToShas = new Map<string, Set<string>>();
+  private md5Only: Md5Entry[] = [];
 
-  function pushAppearance(
+  /** 添加一个表的谱面数据，返回添加后的当前累计结果（仅含 sha256 组） */
+  addTable(tableId: string, tableName: string, charts: ChartData[]): SearchResult[] {
+    for (const chart of charts) {
+      const sha = (chart.sha256 ?? "").trim().toLowerCase();
+      const md5 = (chart.md5 ?? "").trim().toLowerCase();
+
+      if (sha) {
+        let result = this.bySha.get(sha);
+        if (!result) {
+          result = this.createResult(sha, chart);
+          this.bySha.set(sha, result);
+        }
+        this.pushAppearance(result, tableId, tableName, chart);
+        if (md5) {
+          let shas = this.md5ToShas.get(md5);
+          if (!shas) {
+            shas = new Set();
+            this.md5ToShas.set(md5, shas);
+          }
+          shas.add(sha);
+        }
+      } else if (md5) {
+        this.md5Only.push({ tableId, tableName, chart });
+      }
+    }
+    return this.currentResults;
+  }
+
+  /** 当前所有 sha256 组结果 */
+  get currentResults(): SearchResult[] {
+    return [...this.bySha.values()];
+  }
+
+  /** 待处理的 md5-only 条目数 */
+  get pendingMd5Count(): number {
+    return this.md5Only.length;
+  }
+
+  /** 最终化：处理所有 md5-only 条目，返回完整结果 */
+  finalize(): SearchResult[] {
+    // 尝试将仅有 md5 的条目归入已有的 sha256 组
+    const remaining: Md5Entry[] = [];
+    for (const item of this.md5Only) {
+      const md5 = (item.chart.md5 ?? "").trim().toLowerCase();
+      const shas = this.md5ToShas.get(md5);
+      // 仅当 md5 唯一对应一个 sha256 组时才合并，避免错误归并
+      if (shas?.size === 1) {
+        const sha = [...shas][0];
+        const result = this.bySha.get(sha);
+        if (result) {
+          this.pushAppearance(result, item.tableId, item.tableName, item.chart);
+          continue;
+        }
+      }
+      remaining.push(item);
+    }
+
+    // 剩余的按 md5 独立成组
+    for (const item of remaining) {
+      const md5 = (item.chart.md5 ?? "").trim().toLowerCase();
+      let result = this.bySha.get(md5);
+      if (!result) {
+        result = this.createResult("", item.chart);
+        this.bySha.set(md5, result);
+      }
+      this.pushAppearance(result, item.tableId, item.tableName, item.chart);
+    }
+
+    this.md5Only = [];
+    return this.currentResults;
+  }
+
+  private pushAppearance(
     result: SearchResult,
     tableId: string,
     tableName: string,
@@ -153,7 +231,7 @@ export function aggregateResults(
     result.appearances.push({ tableId, tableName, chart });
   }
 
-  function createResult(sha256: string, chart: ChartData): SearchResult {
+  private createResult(sha256: string, chart: ChartData): SearchResult {
     return {
       sha256,
       title: chart.title ?? "",
@@ -162,66 +240,24 @@ export function aggregateResults(
       appearances: [],
     };
   }
-
-  for (const { tableId, tableName, charts } of chartsByTable) {
-    for (const chart of charts) {
-      const sha = (chart.sha256 ?? "").trim().toLowerCase();
-      const md5 = (chart.md5 ?? "").trim().toLowerCase();
-
-      if (sha) {
-        let result = bySha.get(sha);
-        if (!result) {
-          result = createResult(sha, chart);
-          bySha.set(sha, result);
-        }
-        pushAppearance(result, tableId, tableName, chart);
-        if (md5) {
-          let shas = md5ToShas.get(md5);
-          if (!shas) {
-            shas = new Set();
-            md5ToShas.set(md5, shas);
-          }
-          shas.add(sha);
-        }
-      } else if (md5) {
-        md5Only.push({ tableId, tableName, chart });
-      }
-    }
-  }
-
-  // 尝试将仅有 md5 的条目归入已有的 sha256 组
-  const remaining: typeof md5Only = [];
-  for (const item of md5Only) {
-    const md5 = (item.chart.md5 ?? "").trim().toLowerCase();
-    const shas = md5ToShas.get(md5);
-    // 仅当 md5 唯一对应一个 sha256 组时才合并，避免错误归并
-    if (shas?.size === 1) {
-      const sha = [...shas][0];
-      const result = bySha.get(sha);
-      if (result) {
-        pushAppearance(result, item.tableId, item.tableName, item.chart);
-        continue;
-      }
-    }
-    remaining.push(item);
-  }
-
-  // 剩余的按 md5 独立成组
-  for (const item of remaining) {
-    const md5 = (item.chart.md5 ?? "").trim().toLowerCase();
-    let result = bySha.get(md5);
-    if (!result) {
-      result = createResult("", item.chart);
-      bySha.set(md5, result);
-    }
-    pushAppearance(result, item.tableId, item.tableName, item.chart);
-  }
-
-  return [...bySha.values()];
 }
 
-async function fetchJson<T>(url: string): Promise<T> {
-  const res = await fetch(url);
+/**
+ * 跨表聚合谱面数据（一次性接口）。
+ * 委托给 IncrementalAggregator 实现。
+ */
+export function aggregateResults(
+  chartsByTable: { tableId: string; tableName: string; charts: ChartData[] }[]
+): SearchResult[] {
+  const agg = new IncrementalAggregator();
+  for (const { tableId, tableName, charts } of chartsByTable) {
+    agg.addTable(tableId, tableName, charts);
+  }
+  return agg.finalize();
+}
+
+async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url, init);
   if (!res.ok) throw new Error(`加载 ${url} 失败: ${res.status}`);
   return (await res.json()) as T;
 }

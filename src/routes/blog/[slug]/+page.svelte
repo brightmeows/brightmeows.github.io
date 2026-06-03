@@ -30,7 +30,7 @@
   <MarkdownContent>
     {@const Content = data.component}
     {#if Content}
-      <svelte:component this={Content} />
+      <Content />
     {/if}
   </MarkdownContent>
 {/snippet}
