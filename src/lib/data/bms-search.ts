@@ -26,6 +26,7 @@ export type TableLoadState =
 export interface ChartAppearance {
   tableId: string;
   tableName: string;
+  symbol?: string;
   chart: ChartData;
 }
 
@@ -186,16 +187,17 @@ export async function loadTableDataWithProgress(
   return filterChartsByKeys(data, matchedKeys, queryType);
 }
 
-/** 加载表的 header.json，返回表名；表不存在时返回 null */
+/** 加载表的 header.json，返回表名和 symbol；表不存在时返回 null */
 export async function loadTableHeader(
   tableId: string,
   signal?: AbortSignal
-): Promise<{ name: string } | null> {
+): Promise<{ name: string; symbol?: string } | null> {
   try {
-    const header = await fetchJson<{ name?: string }>(`${TABLE_BASE}/${tableId}/header.json`, {
-      signal,
-    });
-    return { name: header.name ?? tableId };
+    const header = await fetchJson<{ name?: string; symbol?: string }>(
+      `${TABLE_BASE}/${tableId}/header.json`,
+      { signal }
+    );
+    return { name: header.name ?? tableId, symbol: header.symbol };
   } catch {
     return null;
   }
@@ -205,6 +207,7 @@ export async function loadTableHeader(
 interface Md5Entry {
   tableId: string;
   tableName: string;
+  symbol?: string;
   chart: ChartData;
 }
 
@@ -221,7 +224,12 @@ export class IncrementalAggregator {
   private md5Only: Md5Entry[] = [];
 
   /** 添加一个表的谱面数据，返回添加后的当前累计结果（仅含 sha256 组） */
-  addTable(tableId: string, tableName: string, charts: ChartData[]): SearchResult[] {
+  addTable(
+    tableId: string,
+    tableName: string,
+    charts: ChartData[],
+    symbol?: string
+  ): SearchResult[] {
     for (const chart of charts) {
       const sha = (chart.sha256 ?? "").trim().toLowerCase();
       const md5 = (chart.md5 ?? "").trim().toLowerCase();
@@ -232,7 +240,7 @@ export class IncrementalAggregator {
           result = this.createResult(sha, chart);
           this.bySha.set(sha, result);
         }
-        this.pushAppearance(result, tableId, tableName, chart);
+        this.pushAppearance(result, tableId, tableName, chart, symbol);
         if (md5) {
           let shas = this.md5ToShas.get(md5);
           if (!shas) {
@@ -242,7 +250,7 @@ export class IncrementalAggregator {
           shas.add(sha);
         }
       } else if (md5) {
-        this.md5Only.push({ tableId, tableName, chart });
+        this.md5Only.push({ tableId, tableName, symbol, chart });
       }
     }
     return this.currentResults;
@@ -270,7 +278,7 @@ export class IncrementalAggregator {
         const sha = [...shas][0];
         const result = this.bySha.get(sha);
         if (result) {
-          this.pushAppearance(result, item.tableId, item.tableName, item.chart);
+          this.pushAppearance(result, item.tableId, item.tableName, item.chart, item.symbol);
           continue;
         }
       }
@@ -285,7 +293,7 @@ export class IncrementalAggregator {
         result = this.createResult("", item.chart);
         this.bySha.set(md5, result);
       }
-      this.pushAppearance(result, item.tableId, item.tableName, item.chart);
+      this.pushAppearance(result, item.tableId, item.tableName, item.chart, item.symbol);
     }
 
     this.md5Only = [];
@@ -296,9 +304,10 @@ export class IncrementalAggregator {
     result: SearchResult,
     tableId: string,
     tableName: string,
-    chart: ChartData
+    chart: ChartData,
+    symbol?: string
   ): void {
-    result.appearances.push({ tableId, tableName, chart });
+    result.appearances.push({ tableId, tableName, symbol, chart });
   }
 
   private createResult(sha256: string, chart: ChartData): SearchResult {
@@ -317,11 +326,11 @@ export class IncrementalAggregator {
  * 委托给 IncrementalAggregator 实现。
  */
 export function aggregateResults(
-  chartsByTable: { tableId: string; tableName: string; charts: ChartData[] }[]
+  chartsByTable: { tableId: string; tableName: string; symbol?: string; charts: ChartData[] }[]
 ): SearchResult[] {
   const agg = new IncrementalAggregator();
-  for (const { tableId, tableName, charts } of chartsByTable) {
-    agg.addTable(tableId, tableName, charts);
+  for (const { tableId, tableName, symbol, charts } of chartsByTable) {
+    agg.addTable(tableId, tableName, charts, symbol);
   }
   return agg.finalize();
 }

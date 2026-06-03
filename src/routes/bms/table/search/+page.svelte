@@ -170,6 +170,7 @@
       if (activeSearchId !== currentSearchId || abortController?.signal.aborted) return;
 
       const name = header?.name ?? tableId;
+      const symbol = header?.symbol;
 
       // loading-header → loading-data
       tableStates[index] = {
@@ -209,7 +210,7 @@
       tableStates[index] = { status: "parsing", tableId, name };
 
       // 聚合结果
-      aggregator?.addTable(tableId, name, charts);
+      aggregator?.addTable(tableId, name, charts, symbol);
       incrementalResults = aggregator?.currentResults ?? [];
       pendingMd5Count = aggregator?.pendingMd5Count ?? 0;
       noResults = incrementalResults.length === 0;
@@ -307,15 +308,15 @@
         const header = await loadTableHeader(tableId);
         if (!header) return null;
         const charts = await loadAndFilterCharts(tableId, matchedKeys, type).catch(() => []);
-        return { tableId, tableName: header.name, charts };
+        return { tableId, tableName: header.name, symbol: header.symbol, charts };
       });
 
       const chartsByTable = (await Promise.all(loadTasks)).filter(
         (r): r is NonNullable<typeof r> => r !== null
       );
       const agg = new IncrementalAggregator();
-      for (const { tableId, tableName, charts } of chartsByTable) {
-        agg.addTable(tableId, tableName, charts);
+      for (const { tableId, tableName, symbol, charts } of chartsByTable) {
+        agg.addTable(tableId, tableName, charts, symbol);
       }
       legacyResults = agg.finalize();
       legacyNoResults = legacyResults.length === 0;

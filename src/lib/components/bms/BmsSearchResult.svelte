@@ -101,7 +101,7 @@
             <span
               class="inline-block rounded-[8px] bg-[#4caf50]/20 px-3 py-1 text-[0.9rem] font-bold text-[#4caf50]"
             >
-              {entry.chart.level ?? "?"}
+              {entry.symbol ?? ""}{entry.chart.level ?? "?"}
             </span>
             <a
               class="text-white no-underline transition-colors hover:text-[#64b5f6]"
