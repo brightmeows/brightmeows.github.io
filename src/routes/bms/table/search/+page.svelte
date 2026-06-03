@@ -5,13 +5,15 @@
   import EmptyState from "$lib/components/EmptyState.svelte";
   import PageShell from "$lib/components/PageShell.svelte";
   import BmsSearchResult from "$lib/components/bms/BmsSearchResult.svelte";
-  import type { SearchResult, SearchIndex } from "$lib/data/bms-search";
+  import SearchProgressPanel from "$lib/components/bms/SearchProgressPanel.svelte";
+  import type { SearchResult, SearchIndex, TableLoadState } from "$lib/data/bms-search";
   import {
     loadSearchIndices,
     searchIndices,
     detectQueryType,
     loadAndFilterCharts,
     loadTableHeader,
+    loadTableDataWithProgress,
     IncrementalAggregator,
   } from "$lib/data/bms-search";
   import { buildSearchNeedles } from "$lib/utils/mirror-tables";
@@ -45,9 +47,7 @@
   // ---- Worker 模式状态 ----
   let worker: Worker | null = null;
   let indexPhase = $state<"loading" | "ready" | "error">("loading");
-  let indexProgress = $state<
-    { name: string; status: "loading" | "done" | "error" }[]
-  >([
+  let indexProgress = $state<{ name: string; status: "loading" | "done" | "error" }[]>([
     { name: "title", status: "loading" },
     { name: "artist", status: "loading" },
     { name: "md5", status: "loading" },
@@ -60,16 +60,9 @@
   let pendingMd5Count = $state(0);
   let noResults = $state(false);
 
-  let tableProgress = $state<{
-    total: number;
-    loaded: number;
-    failed: number;
-    items: {
-      tableId: string;
-      name: string;
-      status: "waiting" | "loading" | "done" | "error";
-    }[];
-  }>({ total: 0, loaded: 0, failed: 0, items: [] });
+  let tableStates = $state<TableLoadState[]>([]);
+  let candidates = $state<[string, string[]][]>([]);
+  let activeSearchId = 0;
 
   let currentSearchId = 0;
   let currentSearchType: ReturnType<typeof detectQueryType> = "text";
@@ -114,9 +107,7 @@
       switch (msg.type) {
         case "index-progress": {
           indexProgress = indexProgress.map((item) =>
-            item.name === msg.name
-              ? { ...item, status: msg.status }
-              : item
+            item.name === msg.name ? { ...item, status: msg.status } : item
           );
           break;
         }
@@ -156,107 +147,106 @@
     noResults = false;
     incrementalResults = [];
     pendingMd5Count = 0;
-    tableProgress = { total: 0, loaded: 0, failed: 0, items: [] };
+    tableStates = [];
+    candidates = [];
 
-    const needles = currentSearchType === "text" ? buildSearchNeedles(q, searchConverters) : undefined;
+    const needles =
+      currentSearchType === "text" ? buildSearchNeedles(q, searchConverters) : undefined;
 
     worker.postMessage({ type: "search", searchId, query: q, needles });
   }
 
+  async function loadSingleTable(index: number): Promise<void> {
+    const entry = candidates[index];
+    if (!entry) return;
+    const [tableId, matchedKeys] = entry;
+    const keySet = new Set(matchedKeys);
+
+    // waiting → loading-header
+    tableStates[index] = { status: "loading-header", tableId, name: tableId };
+
+    try {
+      const header = await loadTableHeader(tableId, abortController?.signal);
+      if (activeSearchId !== currentSearchId || abortController?.signal.aborted) return;
+
+      const name = header?.name ?? tableId;
+
+      // loading-header → loading-data
+      tableStates[index] = {
+        status: "loading-data",
+        tableId,
+        name,
+        progress: 0,
+        bytesLoaded: 0,
+        bytesTotal: 0,
+      };
+
+      const charts = await loadTableDataWithProgress(
+        tableId,
+        keySet,
+        currentSearchType,
+        abortController?.signal,
+        (loaded: number, total: number) => {
+          if (activeSearchId !== currentSearchId) return;
+          // 从 tableStates 实时读取 name，避免闭包捕获过期值
+          const current = tableStates[index];
+          const currentName = current && "name" in current ? current.name : name;
+          const progress = total > 0 ? Math.min(Math.round((loaded / total) * 100), 100) : 0;
+          tableStates[index] = {
+            status: "loading-data",
+            tableId,
+            name: currentName,
+            progress,
+            bytesLoaded: loaded,
+            bytesTotal: total,
+          };
+        }
+      );
+
+      if (activeSearchId !== currentSearchId || abortController?.signal.aborted) return;
+
+      // loading-data → parsing
+      tableStates[index] = { status: "parsing", tableId, name };
+
+      // 聚合结果
+      aggregator?.addTable(tableId, name, charts);
+      incrementalResults = aggregator?.currentResults ?? [];
+      pendingMd5Count = aggregator?.pendingMd5Count ?? 0;
+      noResults = incrementalResults.length === 0;
+
+      // parsing → done
+      tableStates[index] = { status: "done", tableId, name };
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      if (activeSearchId !== currentSearchId) return;
+
+      const errorMessage = err instanceof Error ? err.message : "未知错误";
+      // 从 tableStates 中获取当前 name（可能已在 loading-header 阶段获取）
+      const current = tableStates[index];
+      const name = current && "name" in current ? current.name : tableId;
+      tableStates[index] = { status: "error", tableId, name, errorMessage };
+    }
+  }
+
   async function loadTables(
     searchId: number,
-    candidates: [string, string[]][],
+    newCandidates: [string, string[]][],
     signal?: AbortSignal
   ): Promise<void> {
-    if (candidates.length === 0) {
+    if (newCandidates.length === 0) {
       searchPhase = "idle";
       noResults = true;
       return;
     }
 
     searchPhase = "loading-tables";
-    tableProgress = {
-      total: candidates.length,
-      loaded: 0,
-      failed: 0,
-      items: candidates.map(([tableId]) => ({
-        tableId,
-        name: tableId,
-        status: "waiting" as const,
-      })),
-    };
+    activeSearchId = searchId;
+    candidates = newCandidates;
+    tableStates = newCandidates.map(([tableId]) => ({ status: "waiting" as const, tableId }));
 
-    try {
-      // 并行加载每个表的数据
-      await Promise.all(
-        candidates.map(async ([tableId, matchedKeys]) => {
-          // 搜索已失效或已取消则丢弃
-          if (searchId !== currentSearchId || signal?.aborted) return;
-
-          // 更新状态为 loading
-          tableProgress = {
-            ...tableProgress,
-            items: tableProgress.items.map((item) =>
-              item.tableId === tableId ? { ...item, status: "loading" as const } : item
-            ),
-          };
-
-          try {
-            const header = await loadTableHeader(tableId, signal);
-            const name = header?.name ?? tableId;
-
-            // 搜索已失效（header 较慢时可能已取消）
-            if (searchId !== currentSearchId || signal?.aborted) return;
-
-            // 更新表名
-            tableProgress = {
-              ...tableProgress,
-              items: tableProgress.items.map((item) =>
-                item.tableId === tableId ? { ...item, name } : item
-              ),
-            };
-
-            const charts = await loadAndFilterCharts(
-              tableId,
-              new Set(matchedKeys),
-              currentSearchType,
-              signal
-            );
-
-            if (searchId !== currentSearchId || signal?.aborted) return;
-
-            // 增量聚合
-            aggregator?.addTable(tableId, name, charts);
-            incrementalResults = aggregator?.currentResults ?? [];
-            pendingMd5Count = aggregator?.pendingMd5Count ?? 0;
-
-            tableProgress = {
-              ...tableProgress,
-              loaded: tableProgress.loaded + 1,
-              items: tableProgress.items.map((item) =>
-                item.tableId === tableId ? { ...item, status: "done" as const } : item
-              ),
-            };
-          } catch (err) {
-            // AbortError 是预期行为，不视为失败
-            if (err instanceof DOMException && err.name === "AbortError") return;
-            if (searchId !== currentSearchId) return;
-
-            tableProgress = {
-              ...tableProgress,
-              failed: tableProgress.failed + 1,
-              items: tableProgress.items.map((item) =>
-                item.tableId === tableId ? { ...item, status: "error" as const } : item
-              ),
-            };
-          }
-        })
-      );
-    } catch {
-      // 同步/非预期错误：安全退出搜索状态
-      if (searchId === currentSearchId) searchPhase = "idle";
-      return;
-    }
+    // 并行加载所有表
+    const promises = newCandidates.map((_, i) => loadSingleTable(i));
+    await Promise.allSettled(promises);
 
     // 确保仍是当前搜索
     if (searchId !== currentSearchId || signal?.aborted) return;
@@ -269,6 +259,28 @@
 
     noResults = incrementalResults.length === 0;
     searchPhase = "done";
+  }
+
+  function cancelSearch(): void {
+    abortController?.abort();
+    // 创建新的 AbortController 使 cancelSearch 自洽，不依赖 workerSearch 隐式重建
+    abortController = new AbortController();
+    tableStates = [];
+    candidates = [];
+    incrementalResults = [];
+    pendingMd5Count = 0;
+    noResults = false;
+    searchPhase = "idle";
+  }
+
+  function retryTable(tableId: string): void {
+    const idx = tableStates.findIndex((s) => s.tableId === tableId);
+    if (idx === -1) return;
+
+    // 重置状态
+    tableStates[idx] = { status: "waiting", tableId };
+    // 重新执行，不阻塞
+    void loadSingleTable(idx);
   }
 
   // ---- 降级模式（纯前端，原位保留原始逻辑） ----
@@ -337,10 +349,9 @@
 
   onMount(() => {
     try {
-      const w = new Worker(
-        new URL("$lib/data/bms-search.worker.ts", import.meta.url),
-        { type: "module" }
-      );
+      const w = new Worker(new URL("$lib/data/bms-search.worker.ts", import.meta.url), {
+        type: "module",
+      });
       setupWorker(w);
       worker = w;
       useWorker = true;
@@ -366,21 +377,12 @@
   }
 
   // ---- 派生引用（供模板用） ----
-  const resultsForDisplay = $derived(
-    useWorker ? incrementalResults : legacyResults
-  );
+  const resultsForDisplay = $derived(useWorker ? incrementalResults : legacyResults);
   const isSearching = $derived(
-    useWorker
-      ? searchPhase === "searching" || searchPhase === "loading-tables"
-      : legacyIsSearching
+    useWorker ? searchPhase === "searching" || searchPhase === "loading-tables" : legacyIsSearching
   );
-  const hasNoResults = $derived(
-    useWorker ? noResults : legacyNoResults
-  );
-  const errorMessage = $derived(
-    useWorker ? indexErrorMessage : legacyIndexError
-  );
-
+  const hasNoResults = $derived(useWorker ? noResults : legacyNoResults);
+  const errorMessage = $derived(useWorker ? indexErrorMessage : legacyIndexError);
 </script>
 
 <PageShell panes={[titlePane, contentPane]} />
@@ -474,58 +476,19 @@
           <div class="mb-4 text-[4rem]">🔍</div>
           <p class="text-white/70">正在搜索...</p>
         </div>
-      {:else if searchPhase === "loading-tables"}
-        <!-- 表加载进度 -->
-        <div class="mb-6">
-          <div class="mb-3 flex items-center justify-between">
-            <span class="text-[0.9rem] text-white/70">
-              正在加载谱面数据 {tableProgress.loaded + tableProgress.failed}/{tableProgress.total}
-            </span>
-            <span class="text-[0.85rem] text-white/50">
-              已找到 {incrementalResults.length} 个谱面
-            </span>
-          </div>
-          <!-- 进度条 -->
-          <div class="h-2 w-full overflow-hidden rounded-full bg-white/10">
-            <div
-              class="h-full rounded-full bg-[#64b5f6] transition-all duration-300"
-              style="width: {tableProgress.total > 0
-                ? ((tableProgress.loaded + tableProgress.failed) / tableProgress.total) * 100
-                : 0}%"
-            ></div>
-          </div>
-          <!-- 表状态列表（仅显示前 10 个 + 折叠） -->
-          <details class="mt-3">
-            <summary class="cursor-pointer text-[0.8rem] text-white/40 hover:text-white/60">
-              查看加载详情
-            </summary>
-            <div class="mt-2 space-y-1">
-              {#each tableProgress.items as item (item.tableId)}
-                <div class="flex items-center gap-2 text-[0.85rem]">
-                  {#if item.status === "waiting"}
-                    <span class="shrink-0 text-white/30">○</span>
-                    <span class="text-white/40">{item.name}</span>
-                  {:else if item.status === "loading"}
-                    <div
-                      class="h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-white/30 border-t-[#64b5f6]"
-                    ></div>
-                    <span class="text-white/60">{item.name}</span>
-                  {:else if item.status === "done"}
-                    <span class="shrink-0 text-[#4caf50]">✓</span>
-                    <span class="text-white/80">{item.name}</span>
-                  {:else}
-                    <span class="shrink-0 text-[#ff6b6b]">✗</span>
-                    <span class="text-white/50">{item.name}</span>
-                  {/if}
-                </div>
-              {/each}
-            </div>
-          </details>
-        </div>
+      {:else if searchPhase === "loading-tables" || (searchPhase === "done" && tableStates.some((s) => s.status === "error"))}
+        <!-- 进度面板：loading 阶段显示取消按钮，done+有错误时保留面板供重试 -->
+        <SearchProgressPanel
+          states={tableStates}
+          oncancel={cancelSearch}
+          onretry={retryTable}
+          resultCount={incrementalResults.length}
+          showCancel={searchPhase === "loading-tables"}
+        />
 
         <!-- 增量结果 -->
         {#if incrementalResults.length > 0}
-          <div>
+          <div class="mt-6">
             <p class="mb-4 text-white/70">
               找到 {incrementalResults.length} 个谱面
               {#if pendingMd5Count > 0}
@@ -538,19 +501,25 @@
               <BmsSearchResult {result} />
             {/each}
           </div>
-        {:else if tableProgress.loaded === 0 && tableProgress.failed === 0}
+        {:else if searchPhase === "loading-tables" && tableStates.every((s) => s.status === "waiting")}
           <div class="p-12 text-center">
             <div class="mb-4 text-[4rem]">⏳</div>
             <p class="text-white/70">正在加载第一个难度表...</p>
           </div>
         {/if}
       {:else if hasNoResults}
-        {#if searchPhase === "done" && tableProgress.failed > 0 && tableProgress.loaded === 0}
-          <div class="mb-4 rounded-[10px] border-l-4 border-[#ff6b6b] bg-[rgba(255,107,107,0.1)] p-4 text-white/80">
+        {#if searchPhase === "done" && tableStates.some((s) => s.status === "error") && tableStates.every((s) => s.status === "done" || s.status === "error")}
+          <div
+            class="mb-4 rounded-[10px] border-l-4 border-[#ff6b6b] bg-[rgba(255,107,107,0.1)] p-4 text-white/80"
+          >
             所有难度表加载失败，请检查网络连接后重试。
           </div>
         {:else}
-          <EmptyState title="未找到结果" description="没有匹配的谱面，请尝试其他关键词。" emoji="🔍" />
+          <EmptyState
+            title="未找到结果"
+            description="没有匹配的谱面，请尝试其他关键词。"
+            emoji="🔍"
+          />
         {/if}
       {:else if resultsForDisplay.length > 0}
         <div>
@@ -630,7 +599,11 @@
           <p class="text-white/70">正在搜索...</p>
         </div>
       {:else if legacyNoResults}
-        <EmptyState title="未找到结果" description="没有匹配的谱面，请尝试其他关键词。" emoji="🔍" />
+        <EmptyState
+          title="未找到结果"
+          description="没有匹配的谱面，请尝试其他关键词。"
+          emoji="🔍"
+        />
       {:else if legacyResults.length > 0}
         <div>
           <p class="mb-4 text-white/70">找到 {legacyResults.length} 个谱面</p>

@@ -6,6 +6,22 @@ export type SearchIndex = Record<string, string[]>;
 /** 查询类型 */
 export type QueryType = "md5" | "sha256" | "text";
 
+/** 表加载状态 — discriminated union，每个变体仅携带该阶段相关字段 */
+export type TableLoadState =
+  | { status: "waiting"; tableId: string }
+  | { status: "loading-header"; tableId: string; name: string }
+  | {
+      status: "loading-data";
+      tableId: string;
+      name: string;
+      progress: number;
+      bytesLoaded: number;
+      bytesTotal: number;
+    }
+  | { status: "parsing"; tableId: string; name: string }
+  | { status: "done"; tableId: string; name: string }
+  | { status: "error"; tableId: string; name: string; errorMessage: string };
+
 /** 谱面在一个难度表中的出现信息 */
 export interface ChartAppearance {
   tableId: string;
@@ -95,6 +111,26 @@ export function searchIndices(
 /** 搜索索引对应的表数据基础路径 */
 const TABLE_BASE = "/bms/table/mirror";
 
+/** 根据 matchedKeys 和 queryType 过滤谱面列表的公共函数 */
+function filterChartsByKeys(
+  data: ChartData[],
+  matchedKeys: Set<string>,
+  queryType: QueryType
+): ChartData[] {
+  const lowerKeys = new Set([...matchedKeys].map((k) => k.toLowerCase()));
+  return data.filter((chart) => {
+    if (queryType === "md5") {
+      return chart.md5 && lowerKeys.has(chart.md5.toLowerCase());
+    }
+    if (queryType === "sha256") {
+      return chart.sha256 && lowerKeys.has(chart.sha256.toLowerCase());
+    }
+    const titleMatch = !!chart.title && lowerKeys.has(chart.title.toLowerCase());
+    const artistMatch = !!chart.artist && lowerKeys.has(chart.artist.toLowerCase());
+    return titleMatch || artistMatch;
+  });
+}
+
 /** 加载指定表的 data.json，根据 matchedKeys 筛选匹配的谱面。 */
 export async function loadAndFilterCharts(
   tableId: string,
@@ -104,27 +140,61 @@ export async function loadAndFilterCharts(
 ): Promise<ChartData[]> {
   const url = `${TABLE_BASE}/${tableId}/data.json`;
   const data = await fetchJson<ChartData[]>(url, { signal });
+  return filterChartsByKeys(data, matchedKeys, queryType);
+}
 
-  const lowerKeys = new Set([...matchedKeys].map((k) => k.toLowerCase()));
+/**
+ * 带字节级下载进度的谱面数据加载。
+ * 使用 ReadableStream 逐 chunk 读取 data.json，实时回调下载进度。
+ */
+export async function loadTableDataWithProgress(
+  tableId: string,
+  matchedKeys: Set<string>,
+  queryType: QueryType,
+  signal: AbortSignal | undefined,
+  onDownloadProgress: (loaded: number, total: number) => void
+): Promise<ChartData[]> {
+  const url = `${TABLE_BASE}/${tableId}/data.json`;
+  const response = await fetch(url, { signal });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-  return data.filter((chart) => {
-    if (queryType === "md5") {
-      return chart.md5 && lowerKeys.has(chart.md5.toLowerCase());
+  const contentLength = response.headers.get("Content-Length");
+  const total = contentLength ? parseInt(contentLength, 10) : 0;
+  const reader = response.body!.getReader();
+  const chunks: Uint8Array[] = [];
+  let loaded = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (value) {
+      chunks.push(value);
+      loaded += value.length;
+      onDownloadProgress(loaded, total);
     }
-    if (queryType === "sha256") {
-      return chart.sha256 && lowerKeys.has(chart.sha256.toLowerCase());
-    }
-    // text: 匹配 title 或 artist
-    const titleMatch = !!chart.title && lowerKeys.has(chart.title.toLowerCase());
-    const artistMatch = !!chart.artist && lowerKeys.has(chart.artist.toLowerCase());
-    return titleMatch || artistMatch;
-  });
+  }
+
+  const combined = new Uint8Array(loaded);
+  let pos = 0;
+  for (const chunk of chunks) {
+    combined.set(chunk, pos);
+    pos += chunk.length;
+  }
+  const text = new TextDecoder().decode(combined);
+  const data = JSON.parse(text) as ChartData[];
+
+  return filterChartsByKeys(data, matchedKeys, queryType);
 }
 
 /** 加载表的 header.json，返回表名；表不存在时返回 null */
-export async function loadTableHeader(tableId: string, signal?: AbortSignal): Promise<{ name: string } | null> {
+export async function loadTableHeader(
+  tableId: string,
+  signal?: AbortSignal
+): Promise<{ name: string } | null> {
   try {
-    const header = await fetchJson<{ name?: string }>(`${TABLE_BASE}/${tableId}/header.json`, { signal });
+    const header = await fetchJson<{ name?: string }>(`${TABLE_BASE}/${tableId}/header.json`, {
+      signal,
+    });
     return { name: header.name ?? tableId };
   } catch {
     return null;
