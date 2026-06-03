@@ -355,10 +355,10 @@
       </div>
       <div class="mt-2 flex items-center gap-4">
         {#if queryTypeHint}
-          <span class="text-[0.85rem] text-white/50">{queryTypeHint}</span>
+          <span class="text-[0.95rem] text-white/50">{queryTypeHint}</span>
         {/if}
       </div>
-      <p class="mt-3 text-[0.85rem] text-white/40">
+      <p class="mt-3 text-[0.95rem] text-white/40">
         按 <kbd class="rounded bg-white/10 px-1.5 py-0.5 text-white/60">Enter</kbd> 或点击搜索按钮执行搜索。
         输入 32 位十六进制自动识别为 MD5，64 位为 SHA256；其他内容按标题/艺术家模糊匹配，支持简体中文/繁体中文/日文汉字自动转换。
         搜索命中后按难度表分块展示，每块内嵌加载进度或谱面信息。
