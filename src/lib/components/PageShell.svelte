@@ -36,9 +36,7 @@
   }: Props = $props();
 
   const breadcrumbs = $derived(deriveBreadcrumbs(page.url.pathname, currentLabel));
-  const hasNav = $derived(
-    (navChildren?.length ?? 0) > 0 || (navShortcuts?.length ?? 0) > 0,
-  );
+  const hasNav = $derived((navChildren?.length ?? 0) > 0 || (navShortcuts?.length ?? 0) > 0);
 </script>
 
 <StarryBackground />
