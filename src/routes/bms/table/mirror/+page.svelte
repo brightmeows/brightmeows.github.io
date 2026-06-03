@@ -2,12 +2,10 @@
   import * as OpenCC from "opencc-js";
   import { onMount, tick } from "svelte";
 
-  import { resolve } from "$app/paths";
   import type { TocItem } from "$lib/components/FloatingToc.svelte";
   import PageShell from "$lib/components/PageShell.svelte";
   import GroupedTablesSection from "$lib/components/bms/GroupedTablesSection.svelte";
   import SelectedTablesPanel from "$lib/components/bms/SelectedTablesPanel.svelte";
-  import { GlassNavCard } from "$lib/components/ui";
   import { loadMirrorTables } from "$lib/data/mirror-table-loader";
   import type { MirrorTableItem } from "$lib/types/bms";
   import { writeToClipboard } from "$lib/utils/clipboard";
@@ -17,12 +15,6 @@
     groupByTags,
     buildGroupTocItems,
   } from "$lib/utils/mirror-tables";
-
-  interface LinkItem {
-    href: string;
-    title: string;
-    desc: string;
-  }
 
   const tablesJsonPath = "/bms/table/mirror/tables.json";
   const pageTitle = "BMS 难度表镜像";
@@ -53,14 +45,7 @@
     }
   })();
 
-  const links: LinkItem[] = [
-    { href: "/bms", title: "返回 BMS", desc: "返回 BMS 页面" },
-    {
-      href: "https://codeberg.org/brightmeows/bms-table-mirror",
-      title: "镜像仓库",
-      desc: "查看镜像项目",
-    },
-  ];
+  const mirrorRepoUrl = "https://codeberg.org/brightmeows/bms-table-mirror";
 
   async function copyTables(): Promise<void> {
     const tablesJsonUrl = new URL(tablesJsonPath, window.location.origin).toString();
@@ -111,12 +96,12 @@
   });
 </script>
 
-<PageShell {tocItems} panes={[titlePane, navPane, contentPane]} />
+<PageShell {tocItems} panes={[titlePane, contentPane]} />
 
 {#snippet titlePane()}
   <h1 id="bms-table-mirror" class="page-title mb-2 scroll-mt-5 text-center">{pageTitle}</h1>
 
-  <div class="mt-2 text-center text-[1.1rem] text-white/70 italic">
+  <div class="mt-1 text-center text-[1.1rem] text-white/70 italic">
     对于BeMusicSeeker用户，可以使用tables.json链接（
     <button class="link-accent" type="button" onclick={copyTables}> 点击复制 </button>
     ），导入难度表清单至BeMusicSeeker。
@@ -131,18 +116,10 @@
     {#if copied}
       <span class="ml-2 text-[#4caf50]">已复制</span>
     {/if}
-  </div>
-{/snippet}
-
-{#snippet navPane()}
-  <div class="flex flex-wrap items-stretch justify-center gap-4">
-    {#each links as link (link.href)}
-      <GlassNavCard
-        href={link.href.startsWith("/") ? resolve(link.href, {}) : link.href}
-        title={link.title}
-        description={link.desc}
-      />
-    {/each}
+    <span class="mx-1">|</span>
+    <a class="link-accent" href={mirrorRepoUrl} target="_blank" rel="noopener noreferrer">
+      镜像仓库
+    </a>
   </div>
 {/snippet}
 
