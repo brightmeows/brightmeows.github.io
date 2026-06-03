@@ -20,3 +20,4 @@ pnpm-lock.yaml
 
 # 自动生成的文件
 *.generated.ts
+project.inlang/
