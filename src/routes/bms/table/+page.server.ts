@@ -10,6 +10,7 @@ import { formatTitle } from "$lib/utils/title";
 interface TableEntry {
   id: string;
   name: string;
+  symbol?: string;
 }
 
 export const load: PageServerLoad = () => {
@@ -17,8 +18,11 @@ export const load: PageServerLoad = () => {
   const tables: TableEntry[] = tableIds.map((id) => {
     const headerPath = join("static", "bms", "table", id, "header.json");
     try {
-      const header = JSON.parse(readFileSync(headerPath, "utf-8")) as { name?: string };
-      return { id, name: header.name ?? id };
+      const header = JSON.parse(readFileSync(headerPath, "utf-8")) as {
+        name?: string;
+        symbol?: string;
+      };
+      return { id, name: header.name ?? id, symbol: header.symbol };
     } catch {
       return { id, name: id };
     }
