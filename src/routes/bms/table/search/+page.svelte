@@ -1,4 +1,5 @@
 <script lang="ts">
+  import * as OpenCC from "opencc-js";
   import { onMount } from "svelte";
 
   import EmptyState from "$lib/components/EmptyState.svelte";
@@ -13,6 +14,22 @@
     loadTableHeader,
     aggregateResults,
   } from "$lib/data/bms-search";
+  import { buildSearchNeedles } from "$lib/utils/mirror-tables";
+
+  type StringConverter = (input: string) => string;
+
+  const searchConverters: StringConverter[] = (() => {
+    try {
+      return [
+        OpenCC.Converter({ from: "cn", to: "jp" }),
+        OpenCC.Converter({ from: "jp", to: "cn" }),
+        OpenCC.Converter({ from: "cn", to: "tw" }),
+        OpenCC.Converter({ from: "tw", to: "cn" }),
+      ];
+    } catch {
+      return [];
+    }
+  })();
 
   let indices = $state<{
     title: SearchIndex;
@@ -44,7 +61,8 @@
 
     try {
       const type = detectQueryType(q);
-      const candidates = searchIndices(q, indices);
+      const needles = type === "text" ? buildSearchNeedles(q, searchConverters) : undefined;
+      const candidates = searchIndices(q, indices, needles);
 
       if (candidates.size === 0) {
         results = [];
@@ -116,7 +134,7 @@
             type="text"
             bind:value={query}
             onkeydown={onKeydown}
-            placeholder="输入谱面标题、艺术家、MD5 或 SHA256..."
+            placeholder="输入谱面标题、艺术家、MD5 或 SHA256，支持简繁日自动转换..."
             class="w-full rounded-[16px] border border-white/20 bg-white/10 px-6 py-4 text-[1.1rem] text-white placeholder-white/40 transition-colors outline-none focus:border-[#64b5f6] focus:bg-white/15"
           />
         </div>
@@ -143,7 +161,8 @@
       </div>
       <p class="mt-3 text-[0.85rem] text-white/40">
         按 <kbd class="rounded bg-white/10 px-1.5 py-0.5 text-white/60">Enter</kbd> 或点击搜索按钮执行搜索。
-        输入 32 位十六进制自动识别为 MD5，64 位为 SHA256；其他内容按标题/艺术家模糊匹配。 搜索结果按谱面聚合，展示该谱面在所有难度表中的出现情况。
+        输入 32 位十六进制自动识别为 MD5，64 位为 SHA256；其他内容按标题/艺术家模糊匹配，支持简体中文/繁体中文/日文汉字自动转换。
+        搜索结果按谱面聚合，展示该谱面在所有难度表中的出现情况。
       </p>
     </div>
 

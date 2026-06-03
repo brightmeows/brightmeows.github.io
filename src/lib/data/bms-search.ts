@@ -56,7 +56,8 @@ export function searchIndices(
     artist: SearchIndex;
     md5: SearchIndex;
     sha256: SearchIndex;
-  }
+  },
+  needles?: string[]
 ): Map<string, Set<string>> {
   const type = detectQueryType(query);
   const result = new Map<string, Set<string>>();
@@ -81,9 +82,9 @@ export function searchIndices(
   } else if (type === "sha256") {
     addMatches(indices.sha256, [query.trim().toLowerCase()]);
   } else {
-    const lower = query.trim().toLowerCase();
+    const searchTerms = needles ?? [query.trim().toLowerCase()];
     const matchingKeys = (index: SearchIndex): string[] =>
-      Object.keys(index).filter((k) => k.toLowerCase().includes(lower));
+      Object.keys(index).filter((k) => searchTerms.some((term) => k.toLowerCase().includes(term)));
     addMatches(indices.title, matchingKeys(indices.title));
     addMatches(indices.artist, matchingKeys(indices.artist));
   }
@@ -143,7 +144,12 @@ export function aggregateResults(
   const md5ToShas = new Map<string, Set<string>>();
   const md5Only: { tableId: string; tableName: string; chart: ChartData }[] = [];
 
-  function pushAppearance(result: SearchResult, tableId: string, tableName: string, chart: ChartData): void {
+  function pushAppearance(
+    result: SearchResult,
+    tableId: string,
+    tableName: string,
+    chart: ChartData
+  ): void {
     result.appearances.push({ tableId, tableName, chart });
   }
 

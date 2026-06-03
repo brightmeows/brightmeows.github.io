@@ -35,3 +35,7 @@
 - mdsvex + remark-math + rehype-katex（博客文章用 `.md`）
 - TypeScript 6（`rewriteRelativeImportExtensions: true`）
 - Paraglide JS（i18n，仅 demo 用）
+
+## 提交格式
+
+Conventional Commits。title 英文，body 中文（可选）。
