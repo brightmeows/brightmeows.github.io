@@ -10,12 +10,12 @@ export type QueryType = "md5" | "sha256" | "text";
 export interface ChartAppearance {
   tableId: string;
   tableName: string;
-  level: string;
-  comment: string;
+  chart: ChartData;
 }
 
 /** 聚合后的搜索结果（一个唯一谱面） */
 export interface SearchResult {
+  /** sha256 可能为空（仅有 md5 的旧谱面） */
   sha256: string;
   title: string;
   artist: string;
@@ -129,49 +129,89 @@ export async function loadTableHeader(tableId: string): Promise<{ name: string }
   }
 }
 
-/** 将多个表中的匹配结果按 sha256 聚合 */
+/**
+ * 跨表聚合谱面数据。
+ * 策略：sha256 优先聚合，md5 兜底。
+ * 1. 有 sha256 的条目按 sha256 分组，同时建立 md5 → Set<sha256> 反向索引
+ * 2. 无 sha256 的条目：若其 md5 仅对应唯一一个 sha256 组，则合并；否则独立成组
+ * 3. 仅有 md5 的条目按 md5 独立成组
+ */
 export function aggregateResults(
   chartsByTable: { tableId: string; tableName: string; charts: ChartData[] }[]
 ): SearchResult[] {
-  const map = new Map<
-    string,
-    {
-      title: string;
-      artist: string;
-      md5: string;
-      appearances: ChartAppearance[];
-    }
-  >();
+  const bySha = new Map<string, SearchResult>();
+  const md5ToShas = new Map<string, Set<string>>();
+  const md5Only: { tableId: string; tableName: string; chart: ChartData }[] = [];
+
+  function pushAppearance(result: SearchResult, tableId: string, tableName: string, chart: ChartData): void {
+    result.appearances.push({ tableId, tableName, chart });
+  }
+
+  function createResult(sha256: string, chart: ChartData): SearchResult {
+    return {
+      sha256,
+      title: chart.title ?? "",
+      artist: chart.artist ?? "",
+      md5: chart.md5 ?? "",
+      appearances: [],
+    };
+  }
 
   for (const { tableId, tableName, charts } of chartsByTable) {
     for (const chart of charts) {
-      const sha256 = (chart.sha256 ?? "").toLowerCase();
-      if (!sha256) continue;
+      const sha = (chart.sha256 ?? "").trim().toLowerCase();
+      const md5 = (chart.md5 ?? "").trim().toLowerCase();
 
-      let entry = map.get(sha256);
-      if (!entry) {
-        entry = {
-          title: chart.title ?? "",
-          artist: chart.artist ?? "",
-          md5: chart.md5 ?? "",
-          appearances: [],
-        };
-        map.set(sha256, entry);
+      if (sha) {
+        let result = bySha.get(sha);
+        if (!result) {
+          result = createResult(sha, chart);
+          bySha.set(sha, result);
+        }
+        pushAppearance(result, tableId, tableName, chart);
+        if (md5) {
+          let shas = md5ToShas.get(md5);
+          if (!shas) {
+            shas = new Set();
+            md5ToShas.set(md5, shas);
+          }
+          shas.add(sha);
+        }
+      } else if (md5) {
+        md5Only.push({ tableId, tableName, chart });
       }
-
-      entry.appearances.push({
-        tableId,
-        tableName,
-        level: chart.level ?? "unknown",
-        comment: chart.comment ?? "",
-      });
     }
   }
 
-  return [...map.entries()].map(([sha256, entry]) => ({
-    sha256,
-    ...entry,
-  }));
+  // 尝试将仅有 md5 的条目归入已有的 sha256 组
+  const remaining: typeof md5Only = [];
+  for (const item of md5Only) {
+    const md5 = (item.chart.md5 ?? "").trim().toLowerCase();
+    const shas = md5ToShas.get(md5);
+    // 仅当 md5 唯一对应一个 sha256 组时才合并，避免错误归并
+    if (shas?.size === 1) {
+      const sha = [...shas][0];
+      const result = bySha.get(sha);
+      if (result) {
+        pushAppearance(result, item.tableId, item.tableName, item.chart);
+        continue;
+      }
+    }
+    remaining.push(item);
+  }
+
+  // 剩余的按 md5 独立成组
+  for (const item of remaining) {
+    const md5 = (item.chart.md5 ?? "").trim().toLowerCase();
+    let result = bySha.get(md5);
+    if (!result) {
+      result = createResult("", item.chart);
+      bySha.set(md5, result);
+    }
+    pushAppearance(result, item.tableId, item.tableName, item.chart);
+  }
+
+  return [...bySha.values()];
 }
 
 async function fetchJson<T>(url: string): Promise<T> {
