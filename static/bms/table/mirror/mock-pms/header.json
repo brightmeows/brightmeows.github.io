@@ -1,0 +1,6 @@
+{
+  "name": "Mock PMS Table",
+  "symbol": "M☆☆☆",
+  "data_url": "./data.json",
+  "level_order": ["1", "2", "3", "4", "5"]
+}

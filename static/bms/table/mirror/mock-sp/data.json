@@ -1,0 +1,32 @@
+[
+  {
+    "md5": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "level": "5",
+    "title": "Mock Chart SP 1",
+    "artist": "Mock Artist A",
+    "url": "https://example.com/chart1",
+    "url_diff": "",
+    "comment": "Mock chart for local development"
+  },
+  {
+    "md5": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "level": "8",
+    "title": "Mock Chart SP 2",
+    "artist": "Mock Artist B",
+    "url": "https://example.com/chart2",
+    "url_diff": "",
+    "comment": "Another mock chart"
+  },
+  {
+    "md5": "cccccccccccccccccccccccccccccccc",
+    "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "level": "12",
+    "title": "Mock Chart SP 3",
+    "artist": "Mock Artist A",
+    "url": "https://example.com/chart3",
+    "url_diff": "",
+    "comment": "Higher level mock chart"
+  }
+]

@@ -25,6 +25,7 @@ jobs:
         run: curl -L -o /tmp/bms-mirror.zip https://codeberg.org/brightmeows/bms-table-mirror/archive/main.zip
       - name: Extract tables and indexes
         run: |
+          rm -rf static/bms/table/mirror static/bms/table/search
           mkdir -p static/bms/table/mirror static/bms/table/search
           unzip -o /tmp/bms-mirror.zip -d /tmp/bms-mirror
           cp -r /tmp/bms-mirror/bms-table-mirror/tables/* static/bms/table/mirror/

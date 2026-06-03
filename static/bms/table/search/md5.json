@@ -1,0 +1,8 @@
+{
+  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": ["mock-sp"],
+  "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb": ["mock-sp"],
+  "cccccccccccccccccccccccccccccccc": ["mock-sp"],
+  "dddddddddddddddddddddddddddddddd": ["mock-dp"],
+  "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee": ["mock-dp"],
+  "ffffffffffffffffffffffffffffffff": ["mock-pms"]
+}

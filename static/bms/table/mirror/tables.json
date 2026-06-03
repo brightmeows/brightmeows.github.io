@@ -1,0 +1,44 @@
+[
+  {
+    "name": "Mock SP Table",
+    "symbol": "M☆",
+    "url": "",
+    "comment": "Local development mock data",
+    "date": "",
+    "state": "",
+    "tag1": "SP",
+    "tag2": "General",
+    "tag_order": "1",
+    "dir_name": "mock-sp",
+    "url_data_json": "./data.json",
+    "url_header_json": "./header.json"
+  },
+  {
+    "name": "Mock DP Table",
+    "symbol": "M☆☆",
+    "url": "",
+    "comment": "Local development mock data",
+    "date": "",
+    "state": "",
+    "tag1": "DP",
+    "tag2": "General",
+    "tag_order": "2",
+    "dir_name": "mock-dp",
+    "url_data_json": "./data.json",
+    "url_header_json": "./header.json"
+  },
+  {
+    "name": "Mock PMS Table",
+    "symbol": "M☆☆☆",
+    "url": "",
+    "comment": "Local development mock data",
+    "date": "",
+    "state": "",
+    "tag1": "PMS",
+    "tag2": "General",
+    "tag_order": "3",
+    "dir_name": "mock-pms",
+    "url_data_json": "./data.json",
+    "url_header_json": "./header.json"
+  }
+]
