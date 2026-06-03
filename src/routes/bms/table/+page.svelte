@@ -1,9 +1,8 @@
 <script lang="ts">
   import type { PageData } from "./$types";
 
-  import { resolve } from "$app/paths";
   import PageShell from "$lib/components/PageShell.svelte";
-  import { GlassNavCard } from "$lib/components/ui";
+  import BmsTableList from "$lib/components/bms/BmsTableList.svelte";
 
   let { data }: { data: PageData } = $props();
 </script>
@@ -16,13 +15,5 @@
 {/snippet}
 
 {#snippet contentPane()}
-  <div class="flex flex-wrap items-stretch justify-center gap-4">
-    {#each data.tables as table (table.id)}
-      <GlassNavCard
-        href={resolve(`/bms/table/${table.id}`, {})}
-        title={table.name}
-        description="ID: {table.id}"
-      />
-    {/each}
-  </div>
+  <BmsTableList tables={data.tables} />
 {/snippet}
