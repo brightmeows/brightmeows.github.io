@@ -7,7 +7,6 @@
   import BlogPostCard from "$lib/components/BlogPostCard.svelte";
   import { buildTocFromHeadings, type TocItem } from "$lib/components/FloatingToc.svelte";
   import PageShell from "$lib/components/PageShell.svelte";
-  import { GlassButton } from "$lib/components/ui";
 
   let { data }: { data: PageData } = $props();
   let tocItems = $state<TocItem[]>([]);
@@ -18,19 +17,10 @@
   });
 </script>
 
-<PageShell {tocItems} panes={[titlePane, navPane, contentPane]} />
+<PageShell {tocItems} navChildren={data.navChildren} navShortcuts={data.navShortcuts} panes={[titlePane, contentPane]} />
 
 {#snippet titlePane()}
   <h1 class="page-title text-center">欢迎来到白喵斯的小屋！</h1>
-{/snippet}
-
-{#snippet navPane()}
-  <div class="flex flex-wrap items-center justify-center gap-4">
-    <GlassButton href={resolve("/bms", {})}>BMS 主页</GlassButton>
-    <GlassButton href={resolve("/bms/table/mirror", {})}>BMS 难度表镜像</GlassButton>
-    <GlassButton href={resolve("/bms/table/self-sp", {})}>个人难度表（SP）</GlassButton>
-    <GlassButton href={resolve("/bms/table/self-dp", {})}>个人难度表（DP）</GlassButton>
-  </div>
 {/snippet}
 
 {#snippet contentPane()}

@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import type { PageServerLoad } from "./$types";
+import { navChildren } from "./nav";
 
 import { getBmsTables } from "$lib/loaders";
 import { formatTitle } from "$lib/utils/title";
@@ -26,5 +27,6 @@ export const load: PageServerLoad = () => {
   return {
     title: formatTitle("BMS 难度表"),
     tables,
+    navChildren,
   };
 };
