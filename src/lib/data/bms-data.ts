@@ -1,4 +1,4 @@
-import type { ChartData, DifficultyGroup, HeaderData } from "$lib/types/bms";
+import type { ChartData, DifficultyGroup, HeaderData, ProgressCallback } from "$lib/types/bms";
 
 /**
  * JSONP 请求
@@ -34,15 +34,121 @@ export function fetchJsonp(url: string, timeoutMs = 10000): Promise<unknown> {
 }
 
 /**
+ * 字节大小格式化
+ */
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes}B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+}
+
+/**
+ * 带进度跟踪的 fetch。
+ * 当 response.body 可用时，通过 ReadableStream 逐 chunk 读取并报告字节级进度。
+ * Content-Length 缺失时仍跟踪字节但只显示"已下载 X MB"。
+ * 如果 body 不可用或未提供 onProgress，退化为普通 fetch。
+ */
+export async function fetchWithProgress(
+  url: string,
+  onProgress?: ProgressCallback
+): Promise<Response> {
+  const response = await fetch(url, { redirect: "follow" });
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+
+  if (!onProgress || !response.body) {
+    return response;
+  }
+
+  const contentLength = response.headers.get("Content-Length");
+  const total = contentLength ? parseInt(contentLength, 10) : 0;
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let loaded = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (value) {
+      chunks.push(value);
+      loaded += value.length;
+      if (total) {
+        const pct = Math.min(Math.round((loaded / total) * 100), 100);
+        onProgress({
+          percent: pct,
+          phase: "downloading",
+          message: "下载中...",
+          detail: `${formatBytes(loaded)} / ${formatBytes(total)}`,
+        });
+      } else {
+        onProgress({
+          percent: 50,
+          phase: "downloading",
+          message: "下载中...",
+          detail: `已下载 ${formatBytes(loaded)}`,
+        });
+      }
+    }
+  }
+
+  // 流读取完成，确保进度最终到达 100%
+  if (!total && onProgress) {
+    onProgress({
+      percent: 100,
+      phase: "downloading",
+      message: "下载完成",
+      detail: `已下载 ${formatBytes(loaded)}`,
+    });
+  }
+
+  // 合并所有 chunk 重建 Response
+  const combined = new Uint8Array(loaded);
+  let pos = 0;
+  for (const chunk of chunks) {
+    combined.set(chunk, pos);
+    pos += chunk.length;
+  }
+
+  return new Response(combined, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: response.headers,
+  });
+}
+
+/**
  * 获取 header.json
  */
-export async function fetchBmsHeader(headerUrl: string): Promise<HeaderData> {
+export async function fetchBmsHeader(headerUrl: string, onProgress?: ProgressCallback): Promise<HeaderData> {
   const headerUrlBase = new URL(headerUrl, window.location.href).toString();
-  const headerResponse = await fetch(headerUrlBase, { redirect: "follow" });
-  if (!headerResponse.ok) {
-    throw new Error(`无法加载表头信息: ${headerResponse.status}`);
+
+  onProgress?.({ percent: 0, phase: "connecting", message: "正在请求表头信息..." });
+
+  let headerResponse: Response;
+  try {
+    headerResponse = await fetchWithProgress(headerUrlBase, onProgress);
+  } catch (err) {
+    throw new Error(
+      `无法加载表头信息: ${err instanceof Error ? err.message : String(err)}`,
+      { cause: err }
+    );
   }
-  return (await headerResponse.json()) as HeaderData;
+
+  // percent=100 确保经 loadBmsTable 的 *0.35 映射后不低于下载阶段已达的 35%
+  onProgress?.({ percent: 100, phase: "parsing", message: "正在解析表头信息..." });
+  let data: HeaderData;
+  try {
+    data = (await headerResponse.json()) as HeaderData;
+  } catch (err) {
+    throw new Error(
+      `表头数据格式无效: ${err instanceof Error ? err.message : String(err)}`,
+      { cause: err }
+    );
+  }
+
+  onProgress?.({ percent: 100, phase: "done", message: "表头信息加载完成" });
+  return data;
 }
 
 export interface FetchTableDataResult {
@@ -55,7 +161,8 @@ export interface FetchTableDataResult {
  */
 export async function fetchBmsTableData(
   dataUrl: string,
-  baseUrl: string
+  baseUrl: string,
+  onProgress?: ProgressCallback
 ): Promise<FetchTableDataResult> {
   const resolvedDataUrl = new URL(dataUrl, baseUrl);
   const finalDataUrl = resolvedDataUrl.toString();
@@ -65,13 +172,41 @@ export async function fetchBmsTableData(
 
   let tableDataRaw: unknown;
   if (isJsonp) {
-    tableDataRaw = await fetchJsonp(finalDataUrl);
-  } else {
-    const dataResponse = await fetch(finalDataUrl, { redirect: "follow" });
-    if (!dataResponse.ok) {
-      throw new Error(`无法加载谱面数据: ${dataResponse.status}`);
+    onProgress?.({ percent: 0, phase: "connecting", message: "等待 JSONP 响应..." });
+    try {
+      tableDataRaw = await fetchJsonp(finalDataUrl);
+    } catch (err) {
+      throw new Error(
+        `JSONP 请求失败: ${err instanceof Error ? err.message : String(err)}`,
+        { cause: err }
+      );
     }
-    tableDataRaw = await dataResponse.json();
+    onProgress?.({ percent: 85, phase: "parsing", message: "JSONP 数据接收完成，解析中..." });
+  } else {
+    onProgress?.({ percent: 5, phase: "connecting", message: "连接谱面数据源..." });
+    let dataResponse: Response;
+    try {
+      dataResponse = await fetchWithProgress(finalDataUrl, (ev) => {
+        onProgress?.({
+          ...ev,
+          percent: 5 + Math.round(ev.percent * 0.8),
+        });
+      });
+    } catch (err) {
+      throw new Error(
+        `无法加载谱面数据: ${err instanceof Error ? err.message : String(err)}`,
+        { cause: err }
+      );
+    }
+    onProgress?.({ percent: 88, phase: "parsing", message: "解析谱面数据..." });
+    try {
+      tableDataRaw = await dataResponse.json();
+    } catch (err) {
+      throw new Error(
+        `谱面数据格式无效: ${err instanceof Error ? err.message : String(err)}`,
+        { cause: err }
+      );
+    }
   }
 
   if (!Array.isArray(tableDataRaw)) {
@@ -87,6 +222,7 @@ export async function fetchBmsTableData(
     throw new Error(`无法解析谱面数据: ${apiError}`);
   }
 
+  onProgress?.({ percent: 100, phase: "done", message: "谱面数据加载完成" });
   return { data: tableDataRaw as ChartData[], fetchUrl: finalDataUrl };
 }
 

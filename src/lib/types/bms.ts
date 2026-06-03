@@ -61,3 +61,14 @@ export interface LevelRefItem {
   level: string;
   ref: string;
 }
+
+/** 加载进度事件 */
+export interface LoadProgressEvent {
+  percent: number;
+  phase: "connecting" | "downloading" | "parsing" | "processing" | "done";
+  message: string;
+  detail?: string;
+}
+
+/** 加载进度回调 */
+export type ProgressCallback = (event: LoadProgressEvent) => void;

@@ -5,9 +5,10 @@
   import PageShell from "$lib/components/PageShell.svelte";
   import ChartsTableSection from "$lib/components/bms/ChartsTableSection.svelte";
   import LevelRefTable from "$lib/components/bms/LevelRefTable.svelte";
+  import LoadingProgress from "$lib/components/bms/LoadingProgress.svelte";
   import { groupChartsByLevel, computeTableStats } from "$lib/data/bms-data";
   import { loadBmsTable } from "$lib/data/bms-table-loader";
-  import type { ChartData, HeaderData } from "$lib/types/bms";
+  import type { ChartData, HeaderData, ProgressCallback } from "$lib/types/bms";
   import { sortDifficultyGroups } from "$lib/utils/bms-table";
   import { writeToClipboard } from "$lib/utils/clipboard";
   import { formatTitle } from "$lib/utils/title";
@@ -15,8 +16,8 @@
   interface LoadingState {
     isLoading: boolean;
     progress: number;
-    currentStep: string;
-    totalSteps: number;
+    message: string;
+    detail?: string;
   }
 
   interface Props {
@@ -31,8 +32,7 @@
   let loadingState = $state<LoadingState>({
     isLoading: true,
     progress: 0,
-    currentStep: "正在初始化...",
-    totalSteps: 4,
+    message: "正在初始化...",
   });
 
   let tableData = $state<ChartData[] | null>(null);
@@ -52,10 +52,6 @@
     }
   }
 
-  function updateProgress(step: string, progress: number): void {
-    loadingState = { ...loadingState, currentStep: step, progress };
-  }
-
   async function lazyLoadTableData(): Promise<void> {
     try {
       error = null;
@@ -64,26 +60,28 @@
       dataFetchUrl = null;
 
       loadingState = {
-        ...loadingState,
         isLoading: true,
         progress: 0,
-        currentStep: "正在初始化...",
+        message: "正在初始化...",
       };
 
       pageTitle = "加载难度表header中";
-      updateProgress("正在加载表头信息...", 25);
 
-      const result = await loadBmsTable(headerUrl);
+      const onProgress: ProgressCallback = (ev) => {
+        loadingState = {
+          ...loadingState,
+          progress: ev.percent,
+          message: ev.message,
+          detail: ev.detail,
+        };
+      };
+
+      const result = await loadBmsTable(headerUrl, onProgress);
 
       headerData = result.headerData;
       pageTitle = String(headerData?.name ?? "未命名");
-      updateProgress("表头信息加载完成", 50);
-      updateProgress("正在加载谱面数据...", 75);
-
       tableData = result.tableData;
       dataFetchUrl = result.dataFetchUrl;
-
-      updateProgress("数据加载完成", 100);
 
       setTimeout(() => {
         loadingState = { ...loadingState, isLoading: false };
@@ -202,32 +200,13 @@
 {#snippet contentPane()}
   {#if loadingState.isLoading}
     <div class="p-8">
-      <div class="glass-loading-container">
-        <div class="mb-6 flex items-center justify-between">
-          <h3 class="m-0 text-[1.5rem] text-white">正在加载BMS难度表数据...</h3>
-          <div
-            class="rounded-[20px] bg-[#64b5f6]/20 px-4 py-2 text-[1.2rem] font-bold text-[#64b5f6]"
-          >
-            {Math.round(loadingState.progress)}%
-          </div>
-        </div>
-        <div class="mb-6 h-3 overflow-hidden rounded-md bg-white/10">
-          <div
-            class="h-full rounded-md bg-[linear-gradient(90deg,#4caf50,#64b5f6)] transition-[width] duration-300 ease-out"
-            style={`width:${loadingState.progress}%;`}
-          ></div>
-        </div>
-        <div class="grid grid-cols-2 gap-4">
-          <div class="flex flex-col gap-2">
-            <span class="text-[0.9rem] text-white/60">当前步骤:</span>
-            <span class="font-medium text-white">{loadingState.currentStep}</span>
-          </div>
-          <div class="flex flex-col gap-2">
-            <span class="text-[0.9rem] text-white/60">总步骤数:</span>
-            <span class="font-medium text-white">{loadingState.totalSteps}</span>
-          </div>
-        </div>
-      </div>
+      <LoadingProgress
+        progress={loadingState.progress}
+        message={loadingState.message}
+        detail={loadingState.detail}
+        title="正在加载BMS难度表数据..."
+        variant="determinate"
+      />
     </div>
   {:else if error}
     <div class="p-12 text-center">

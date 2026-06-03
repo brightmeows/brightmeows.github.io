@@ -5,6 +5,7 @@
   import type { TocItem } from "$lib/components/FloatingToc.svelte";
   import PageShell from "$lib/components/PageShell.svelte";
   import GroupedTablesSection from "$lib/components/bms/GroupedTablesSection.svelte";
+  import LoadingProgress from "$lib/components/bms/LoadingProgress.svelte";
   import SelectedTablesPanel from "$lib/components/bms/SelectedTablesPanel.svelte";
   import { loadMirrorTables } from "$lib/data/mirror-table-loader";
   import type { MirrorTableItem } from "$lib/types/bms";
@@ -151,7 +152,13 @@
   </div>
 
   {#if loading}
-    <div class="mt-6 text-white/80">正在加载镜像列表...</div>
+    <div class="mt-6">
+      <LoadingProgress
+        variant="indeterminate"
+        message="正在加载镜像列表..."
+        title="BMS 难度表镜像"
+      />
+    </div>
   {:else if error}
     <div class="mt-6 text-red-300">加载失败：{error}</div>
   {:else if groupedByTags.length === 0}
