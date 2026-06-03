@@ -5,7 +5,7 @@
   import JsonPreview from "$lib/components/JsonPreview.svelte";
   import ScrollSyncGroup from "$lib/components/ScrollSyncGroup.svelte";
   import type { ChartData, DifficultyGroup } from "$lib/types/bms";
-  import { sortDifficultyGroups } from "$lib/utils/bms-table";
+  import { sortDifficultyGroups, getBmsLinks } from "$lib/utils/bms-table";
 
   let chartPreview = $state<
     | {
@@ -19,13 +19,6 @@
       }
     | undefined
   >();
-
-  interface BmsLinks {
-    bmsScoreViewer: string;
-    lr2ir: string;
-    mocha: string;
-    minir: string;
-  }
 
   let {
     groups = [] as DifficultyGroup[],
@@ -46,19 +39,6 @@
     const size = Math.ceil(total / bins);
     const ci = Math.min(bins - 1, Math.floor(index / size));
     return palette[ci];
-  }
-
-  function getBmsLinks(chart: ChartData): BmsLinks {
-    const md5 = typeof chart.md5 === "string" ? chart.md5.trim() : "";
-    const sha = typeof chart.sha256 === "string" ? chart.sha256.trim() : "";
-    return {
-      bmsScoreViewer: `https://bms-score-viewer.pages.dev/view?md5=${encodeURIComponent(md5)}`,
-      lr2ir: `http://www.dream-pro.info/~lavalse/LR2IR/search.cgi?mode=ranking&bmsmd5=${encodeURIComponent(
-        md5
-      )}`,
-      mocha: `https://mocha-repository.info/song.php?sha256=${encodeURIComponent(sha)}`,
-      minir: `https://www.gaftalk.com/minir/#/viewer/song/${encodeURIComponent(sha)}/0`,
-    };
   }
 
   function expandToValidLink(raw: string | undefined): string | undefined {

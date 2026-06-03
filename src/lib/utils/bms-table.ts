@@ -1,4 +1,26 @@
-import type { DifficultyGroup } from "$lib/types/bms";
+import type { ChartData, DifficultyGroup } from "$lib/types/bms";
+
+/** 外部 BMS 网站链接集合 */
+export interface BmsLinks {
+  bmsScoreViewer: string;
+  lr2ir: string;
+  mocha: string;
+  minir: string;
+}
+
+/**
+ * 根据谱面数据生成外部 BMS 网站链接
+ */
+export function getBmsLinks(chart: ChartData): BmsLinks {
+  const md5 = typeof chart.md5 === "string" ? chart.md5.trim() : "";
+  const sha = typeof chart.sha256 === "string" ? chart.sha256.trim() : "";
+  return {
+    bmsScoreViewer: `https://bms-score-viewer.pages.dev/view?md5=${encodeURIComponent(md5)}`,
+    lr2ir: `http://www.dream-pro.info/~lavalse/LR2IR/search.cgi?mode=ranking&bmsmd5=${encodeURIComponent(md5)}`,
+    mocha: `https://mocha-repository.info/song.php?sha256=${encodeURIComponent(sha)}`,
+    minir: `https://www.gaftalk.com/minir/#/viewer/song/${encodeURIComponent(sha)}/0`,
+  };
+}
 
 /**
  * 按 level_order 排序难度组，未定义的 level 按数字/字母 fallback 排序

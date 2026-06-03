@@ -19,6 +19,11 @@
   <h2 class="section-title text-center">更多难度表</h2>
   <div class="mt-4 flex flex-wrap items-stretch justify-center gap-4">
     <GlassNavCard
+      href={resolve("/bms/table/search", {})}
+      title="谱面搜索"
+      description="跨难度表搜索谱面"
+    />
+    <GlassNavCard
       href={resolve("/bms/table/mirror", {})}
       title="难度表镜像"
       description="BMS 难度表镜像列表（支持多语言搜索）"
