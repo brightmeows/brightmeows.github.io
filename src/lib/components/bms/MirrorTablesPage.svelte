@@ -7,7 +7,7 @@
   import PageShell from "$lib/components/PageShell.svelte";
   import GroupedTablesSection from "$lib/components/bms/GroupedTablesSection.svelte";
   import SelectedTablesPanel from "$lib/components/bms/SelectedTablesPanel.svelte";
-  import { GlassCard } from "$lib/components/ui";
+  import { GlassNavCard } from "$lib/components/ui";
   import { loadMirrorTables } from "$lib/data/mirror-table-loader";
   import type { MirrorTableItem } from "$lib/types/bms";
   import { writeToClipboard } from "$lib/utils/clipboard";
@@ -123,7 +123,7 @@
   <div class="mt-2 text-center text-[1.1rem] text-white/70 italic">
     对于BeMusicSeeker用户，可以使用tables.json链接（
     <button
-      class="m-0 cursor-pointer border-0 bg-transparent p-0 font-medium text-[#64b5f6] underline hover:text-[#42a5f5]"
+      class="link-accent"
       type="button"
       onclick={copyTables}
     >
@@ -131,7 +131,7 @@
     </button>
     ），导入难度表清单至BeMusicSeeker。
     <a
-      class="m-0 cursor-pointer border-0 bg-transparent p-0 font-medium text-[#64b5f6] underline hover:text-[#42a5f5]"
+      class="link-accent"
       href="https://darksabun.club/table/tablelist.html"
       target="_blank"
       rel="noopener noreferrer"
@@ -147,15 +147,11 @@
 {#snippet navPane()}
   <div class="flex flex-wrap items-stretch justify-center gap-4">
     {#each links as link (link.href)}
-      <GlassCard
+      <GlassNavCard
         href={link.href.startsWith("/") ? resolve(link.href, {}) : link.href}
-        class="flex w-80 flex-col"
-      >
-        <div class="mb-2 text-[1.2rem] font-bold text-[#64b5f6]">
-          {link.title}
-        </div>
-        <div class="text-[0.95rem] text-white/80">{link.desc}</div>
-      </GlassCard>
+        title={link.title}
+        description={link.desc}
+      />
     {/each}
   </div>
 {/snippet}

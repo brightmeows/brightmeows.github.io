@@ -43,40 +43,30 @@
     xl: "rounded-[20px]",
   };
 
-  const variantStyles = {
-    default: {
-      "background-color": "rgba(255, 255, 255, 0.1)",
-      border: "1px solid rgba(255, 255, 255, 0.1)",
-    },
-    light: {
-      "background-color": "rgba(255, 255, 255, 0.15)",
-      border: "1px solid rgba(255, 255, 255, 0.15)",
-    },
-    dark: {
-      "background-color": "rgba(0, 0, 0, 0.2)",
-      border: "1px solid rgba(255, 255, 255, 0.05)",
-    },
-  };
+  const variantClass = $derived(
+    variant === "default"
+      ? "bg-white/10 border border-white/10"
+      : variant === "light"
+        ? "bg-white/15 border border-white/15"
+        : "bg-black/20 border border-white/5"
+  );
 
-  const containerStyleString = $derived(
-    Object.entries({
-      "box-shadow": "0 8px 32px rgba(0, 0, 0, 0.3)",
-      transition: "background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease",
-      ...variantStyles[variant],
-      ...style,
-    })
-      .map(([key, value]) => `${key}:${value}`)
-      .join(";")
+  const styleString = $derived(
+    Object.keys(style).length > 0
+      ? Object.entries(style)
+          .map(([k, v]) => `${k}:${v}`)
+          .join(";")
+      : undefined
   );
 </script>
 
 <div
   {id}
-  class="relative block text-white backdrop-blur {paddingConfig[padding]} {roundedConfig[
+  class="glass-base glass-container-shadow block {variantClass} {paddingConfig[padding]} {roundedConfig[
     rounded
   ]} {className}"
   class:animate-fadeIn={animate}
-  style={containerStyleString}
+  style={styleString}
 >
   {#if children}
     {@render children()}

@@ -86,4 +86,45 @@
     @apply fixed z-2000 overflow-hidden rounded-xl border border-white/20 bg-white/10 shadow-[0_10px_24px_rgba(0,0,0,0.45)] backdrop-blur-sm;
   }
 
+  /* 分段标题下边框 */
+  .section-divider {
+    @apply mb-6 border-b-2 border-white/10 pb-4;
+  }
+
+  /* 表格外层容器 */
+  .table-wrapper {
+    @apply overflow-x-auto rounded-[10px] border border-white/10 bg-black/20;
+  }
+
+  /* 蓝色强调链接 */
+  .link-accent {
+    @apply m-0 cursor-pointer border-0 bg-transparent p-0 font-medium text-[#64b5f6] underline hover:text-[#42a5f5];
+  }
+
+  /* 蓝色强调标题 */
+  .accent-title {
+    @apply text-[1.2rem] font-bold text-[#64b5f6];
+  }
+
+  /* 玻璃效果基础类 —— 供 ui/ 组件使用 */
+  .glass-base {
+    @apply relative text-white backdrop-blur;
+    transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .glass-base-hover {
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  }
+
+  .glass-card-hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  .glass-container-shadow {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+
+  .glass-panel-shadow {
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  }
 }

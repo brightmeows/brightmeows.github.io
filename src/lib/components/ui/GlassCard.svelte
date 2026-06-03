@@ -47,37 +47,16 @@
     xl: "rounded-[18px]",
   };
 
-  const baseStyleString = $derived(
-    Object.entries({
-      "background-color": "rgba(255, 255, 255, 0.1)",
-      border: "1px solid rgba(255, 255, 255, 0.1)",
-      "box-shadow": "none",
-      transition:
-        "transform 0.3s ease, background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease",
-      ...style,
-    })
-      .map(([key, value]) => `${key}:${value}`)
-      .join(";")
+  const sharedClasses =
+    "glass-base bg-white/10 border border-white/10 hover:bg-white/5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)]";
+
+  const styleString = $derived(
+    Object.keys(style).length > 0
+      ? Object.entries(style)
+          .map(([k, v]) => `${k}:${v}`)
+          .join(";")
+      : undefined
   );
-
-  const hoverStyleString = $derived(
-    Object.entries({
-      "background-color": "rgba(255, 255, 255, 0.06)",
-      "box-shadow": "0 4px 12px rgba(0, 0, 0, 0.2)",
-    })
-      .map(([key, value]) => `${key}:${value}`)
-      .join(";")
-  );
-
-  function handleMouseEnter(event: MouseEvent) {
-    const target = event.currentTarget as HTMLElement;
-    target.setAttribute("style", baseStyleString + ";" + hoverStyleString);
-  }
-
-  function handleMouseLeave(event: MouseEvent) {
-    const target = event.currentTarget as HTMLElement;
-    target.setAttribute("style", baseStyleString);
-  }
 </script>
 
 {#if href}
@@ -85,15 +64,13 @@
     {href}
     {target}
     {rel}
-    class="relative block text-white no-underline backdrop-blur {paddingConfig[
+    class="relative block text-white no-underline {sharedClasses} {paddingConfig[
       padding
     ]} {roundedConfig[rounded]} {className}"
     class:hover:-translate-y-0.5={hoverLift}
     class:active:translate-y-0={clickShrink}
     class:active:scale-95={clickShrink}
-    style={baseStyleString}
-    onmouseenter={handleMouseEnter}
-    onmouseleave={handleMouseLeave}
+    style={styleString}
   >
     {#if children}
       {@render children()}
@@ -103,15 +80,13 @@
   <div
     role="button"
     tabindex="0"
-    class="relative text-white backdrop-blur {paddingConfig[padding]} {roundedConfig[
+    class="relative text-white {sharedClasses} {paddingConfig[padding]} {roundedConfig[
       rounded
     ]} {className}"
     class:hover:-translate-y-0.5={hoverLift}
     class:active:translate-y-0={clickShrink}
     class:active:scale-95={clickShrink}
-    style={baseStyleString}
-    onmouseenter={handleMouseEnter}
-    onmouseleave={handleMouseLeave}
+    style={styleString}
   >
     {#if children}
       {@render children()}

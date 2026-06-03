@@ -1,6 +1,7 @@
 <script lang="ts">
   import ChartTableRow from "./ChartTableRow.svelte";
 
+  import EmptyState from "$lib/components/EmptyState.svelte";
   import JsonPreview from "$lib/components/JsonPreview.svelte";
   import ScrollSyncGroup from "$lib/components/ScrollSyncGroup.svelte";
   import type { ChartData, DifficultyGroup } from "$lib/types/bms";
@@ -87,11 +88,7 @@
 </script>
 
 {#if groups.length === 0}
-  <div class="p-12 text-center">
-    <div class="mb-4 text-[4rem]">📊</div>
-    <h3 class="mb-4 text-white">暂无谱面数据</h3>
-    <p class="text-white/70">难度表中没有找到谱面数据。</p>
-  </div>
+  <EmptyState title="暂无谱面数据" description="难度表中没有找到谱面数据。" />
 {:else}
   <div class="mt-8">
     <h3 class="mb-4 text-white">谱面列表 ({totalCharts} 个)</h3>
@@ -126,7 +123,7 @@
         {#each displayGroups as group, gIndex (group.level)}
           {@const groupColor = segmentColor(gIndex, displayGroups.length)}
           <div id={`difficulty-group-${group.level}`} class="mb-12 scroll-mt-5">
-            <div class="mb-6 border-b-2 border-white/10 pb-4">
+            <div class="section-divider">
               <div class="flex items-center gap-4">
                 <span
                   class="shadow-[0_2px_8px rgba(0,0,0,0.2)] rounded-[20px] px-6 py-2 text-[1.2rem] font-bold text-white"
@@ -141,7 +138,7 @@
             </div>
 
             <div
-              class="overflow-x-auto rounded-[10px] border border-white/10 bg-black/20"
+              class="table-wrapper"
               use:setRef
             >
               <table class="w-full min-w-225 table-fixed border-collapse">

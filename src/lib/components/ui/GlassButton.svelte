@@ -47,39 +47,16 @@
     lg: "px-8 py-[1rem] text-lg",
   };
 
-  const baseStyleString = $derived(
-    Object.entries({
-      "background-color": "rgba(255, 255, 255, 0.1)",
-      border: "1px solid rgba(255, 255, 255, 0.2)",
-      "box-shadow": "none",
-      transition:
-        "background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease",
-      ...style,
-    })
-      .map(([key, value]) => `${key}:${value}`)
-      .join(";")
+  const sharedClasses =
+    "glass-base inline-block rounded-xl font-medium text-white no-underline bg-white/10 border border-white/20 hover:bg-white/20 hover:shadow-[0_5px_15px_rgba(0,0,0,0.2)]";
+
+  const styleString = $derived(
+    Object.keys(style).length > 0
+      ? Object.entries(style)
+          .map(([k, v]) => `${k}:${v}`)
+          .join(";")
+      : undefined
   );
-
-  const hoverStyleString = $derived(
-    Object.entries({
-      "background-color": "rgba(255, 255, 255, 0.2)",
-      "box-shadow": "0 5px 15px rgba(0, 0, 0, 0.2)",
-    })
-      .map(([key, value]) => `${key}:${value}`)
-      .join(";")
-  );
-
-  function handleMouseEnter(event: MouseEvent) {
-    if (disabled) return;
-    const target = event.currentTarget as HTMLElement;
-    target.setAttribute("style", baseStyleString + ";" + hoverStyleString);
-  }
-
-  function handleMouseLeave(event: MouseEvent) {
-    if (disabled) return;
-    const target = event.currentTarget as HTMLElement;
-    target.setAttribute("style", baseStyleString);
-  }
 </script>
 
 {#if href && !disabled}
@@ -87,15 +64,11 @@
     {href}
     {target}
     {rel}
-    class="relative inline-block cursor-pointer rounded-xl font-medium text-white no-underline backdrop-blur {sizeConfig[
-      size
-    ]} {className}"
+    class="{sharedClasses} cursor-pointer {sizeConfig[size]} {className}"
     class:hover:-translate-y-0.5={hoverLift}
     class:active:translate-y-0={clickShrink}
     class:active:scale-95={clickShrink}
-    style={baseStyleString}
-    onmouseenter={handleMouseEnter}
-    onmouseleave={handleMouseLeave}
+    style={styleString}
   >
     {#if children}
       {@render children()}
@@ -106,17 +79,14 @@
     {type}
     {disabled}
     {onclick}
-    class="relative inline-block cursor-pointer rounded-xl font-medium text-white backdrop-blur {sizeConfig[
-      size
-    ]} {className}"
+    class="{sharedClasses} {sizeConfig[size]} {className}"
     class:opacity-50={disabled}
     class:cursor-not-allowed={disabled}
+    class:cursor-pointer={!disabled}
     class:hover:-translate-y-0.5={hoverLift && !disabled}
     class:active:translate-y-0={clickShrink && !disabled}
     class:active:scale-95={clickShrink && !disabled}
-    style={baseStyleString}
-    onmouseenter={handleMouseEnter}
-    onmouseleave={handleMouseLeave}
+    style={styleString}
   >
     {#if children}
       {@render children()}

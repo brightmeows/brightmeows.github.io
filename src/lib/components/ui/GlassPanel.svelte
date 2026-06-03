@@ -44,26 +44,22 @@
     full: "rounded-full",
   };
 
-  const panelStyleString = $derived(
-    Object.entries({
-      "background-color": "rgba(255, 255, 255, 0.1)",
-      border: "1px solid rgba(255, 255, 255, 0.2)",
-      "box-shadow": "0 4px 30px rgba(0, 0, 0, 0.1)",
-      transition: "background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease",
-      ...style,
-    })
-      .map(([key, value]) => `${key}:${value}`)
-      .join(";")
+  const styleString = $derived(
+    Object.keys(style).length > 0
+      ? Object.entries(style)
+          .map(([k, v]) => `${k}:${v}`)
+          .join(";")
+      : undefined
   );
 </script>
 
 <div
   {id}
-  class="relative text-white backdrop-blur {paddingConfig[padding]} {roundedConfig[
+  class="glass-base glass-panel-shadow border border-white/20 bg-white/10 {paddingConfig[padding]} {roundedConfig[
     rounded
   ]} {className}"
   class:overflow-hidden={overflow}
-  style={panelStyleString}
+  style={styleString}
 >
   {#if children}
     {@render children()}

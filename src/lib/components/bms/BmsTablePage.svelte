@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
+  import EmptyState from "$lib/components/EmptyState.svelte";
   import PageShell from "$lib/components/PageShell.svelte";
   import ChartsTableSection from "$lib/components/bms/ChartsTableSection.svelte";
   import LevelRefTable from "$lib/components/bms/LevelRefTable.svelte";
@@ -167,7 +168,7 @@
     <div class="mt-2 text-[1.2rem] text-white/70 italic">
       使用方式：复制本网站链接（
       <button
-        class="m-0 cursor-pointer border-0 bg-transparent p-0 font-medium text-[#64b5f6] underline hover:text-[#42a5f5]"
+        class="link-accent"
         type="button"
         onclick={copySiteUrl}
       >
@@ -181,7 +182,7 @@
     <div class="mt-2 text-[1.2rem] text-white/70 italic">
       {#if originUrl}
         <a
-          class="m-0 cursor-pointer border-0 bg-transparent p-0 font-medium text-[#64b5f6] underline hover:text-[#42a5f5]"
+          class="link-accent"
           href={originUrl}
           target="_blank"
           rel="noopener noreferrer"
@@ -194,7 +195,7 @@
       {/if}
       {#if headerUrl}
         <a
-          class="m-0 cursor-pointer border-0 bg-transparent p-0 font-medium text-[#64b5f6] underline hover:text-[#42a5f5]"
+          class="link-accent"
           href={headerUrl}
           target="_blank"
           rel="noopener noreferrer"
@@ -207,7 +208,7 @@
       {/if}
       {#if dataFetchUrl}
         <a
-          class="m-0 cursor-pointer border-0 bg-transparent p-0 font-medium text-[#64b5f6] underline hover:text-[#42a5f5]"
+          class="link-accent"
           href={dataFetchUrl}
           target="_blank"
           rel="noopener noreferrer"
@@ -315,11 +316,7 @@
             levelOrder={headerData?.level_order ?? []}
           />
         {:else}
-          <div class="p-12 text-center">
-            <div class="mb-4 text-[4rem]">📊</div>
-            <h3 class="mb-4 text-white">暂无谱面数据</h3>
-            <p class="text-white/70">难度表中没有找到谱面数据。</p>
-          </div>
+          <EmptyState title="暂无谱面数据" description="难度表中没有找到谱面数据。" />
         {/if}
       </div>
     </div>

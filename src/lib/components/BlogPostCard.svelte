@@ -14,7 +14,7 @@
   href={resolve(post.url, {})}
 >
   <div class="mb-1 flex flex-wrap items-baseline justify-between gap-3">
-    <div class="text-[1.2rem] font-bold text-[#64b5f6]">{post.title}</div>
+    <div class="accent-title">{post.title}</div>
     {#if post.date}
       <div class="text-[0.85rem] text-white/60">{post.date}</div>
     {/if}
