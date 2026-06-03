@@ -30,6 +30,23 @@
   let displayPercent = $derived(isIndeterminate ? 0 : Math.round(progress));
 </script>
 
+<style>
+  .shimmer-bar {
+    background: linear-gradient(90deg, #4caf50 0%, #64b5f6 50%, #4caf50 100%);
+    background-size: 200% 100%;
+    animation: shimmer 2s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+</style>
+
 {#if variant === "compact"}
   <div class="flex items-center gap-3 {className}">
     <div class="h-2 flex-1 overflow-hidden rounded-md bg-white/10">
@@ -75,25 +92,3 @@
     </div>
   </div>
 {/if}
-
-<style>
-  .shimmer-bar {
-    background: linear-gradient(
-      90deg,
-      #4caf50 0%,
-      #64b5f6 50%,
-      #4caf50 100%
-    );
-    background-size: 200% 100%;
-    animation: shimmer 2s ease-in-out infinite;
-  }
-
-  @keyframes shimmer {
-    0% {
-      background-position: 200% 0;
-    }
-    100% {
-      background-position: -200% 0;
-    }
-  }
-</style>

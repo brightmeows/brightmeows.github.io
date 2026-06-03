@@ -2,12 +2,7 @@
 
 import { searchIndices } from "./bms-search";
 import type { SearchIndex } from "./bms-search";
-import {
-  getCachedIndices,
-  setCachedIndices,
-  getVersion,
-  setVersion,
-} from "./bms-search-idb";
+import { getCachedIndices, setCachedIndices, getVersion, setVersion } from "./bms-search-idb";
 import type { SearchIndexBundle } from "./bms-search-idb";
 
 // ---- types ----
@@ -69,7 +64,7 @@ function computeDigest(obj: Record<string, string[]>): string {
   let hash = 0;
   for (const k of keys) {
     for (let i = 0; i < k.length; i++) {
-      hash = ((hash << 5) - hash) + k.charCodeAt(i);
+      hash = (hash << 5) - hash + k.charCodeAt(i);
       hash |= 0;
     }
     const arr = obj[k];
@@ -77,7 +72,7 @@ function computeDigest(obj: Record<string, string[]>): string {
       hash += arr.length;
       for (const val of arr) {
         for (let j = 0; j < val.length; j++) {
-          hash = ((hash << 5) - hash) + val.charCodeAt(j);
+          hash = (hash << 5) - hash + val.charCodeAt(j);
           hash |= 0;
         }
       }
@@ -109,8 +104,12 @@ async function loadIndices(): Promise<void> {
       if (newDigest !== idbVersion) {
         // Index changed — update cache
         cachedIndices = fresh;
-        void setCachedIndices(fresh).catch(() => {/* IDB silent */});
-        void setVersion(newDigest).catch(() => {/* IDB silent */});
+        void setCachedIndices(fresh).catch(() => {
+          /* IDB silent */
+        });
+        void setVersion(newDigest).catch(() => {
+          /* IDB silent */
+        });
       }
     }
     // fetchAllIndices returned null → network error, keep stale cache as-is
@@ -128,8 +127,12 @@ async function loadIndices(): Promise<void> {
   const digest = computeCombinedDigest(fresh);
 
   // Store in IDB (fire-and-forget)
-  void setCachedIndices(fresh).catch(() => {/* IDB silent */});
-  void setVersion(digest).catch(() => {/* IDB silent */});
+  void setCachedIndices(fresh).catch(() => {
+    /* IDB silent */
+  });
+  void setVersion(digest).catch(() => {
+    /* IDB silent */
+  });
 
   post({ type: "ready", source: "network" });
 }

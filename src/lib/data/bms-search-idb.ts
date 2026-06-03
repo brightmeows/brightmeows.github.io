@@ -122,7 +122,12 @@ function getFromStore<T>(db: IDBDatabase, store: string, key: IDBValidKey): Prom
   });
 }
 
-function putInStore(db: IDBDatabase, store: string, value: unknown, key: IDBValidKey): Promise<void> {
+function putInStore(
+  db: IDBDatabase,
+  store: string,
+  value: unknown,
+  key: IDBValidKey
+): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     const tx = db.transaction(store, "readwrite");
     const req = tx.objectStore(store).put(value, key);

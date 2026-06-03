@@ -120,7 +120,10 @@ export async function fetchWithProgress(
 /**
  * 获取 header.json
  */
-export async function fetchBmsHeader(headerUrl: string, onProgress?: ProgressCallback): Promise<HeaderData> {
+export async function fetchBmsHeader(
+  headerUrl: string,
+  onProgress?: ProgressCallback
+): Promise<HeaderData> {
   const headerUrlBase = new URL(headerUrl, window.location.href).toString();
 
   onProgress?.({ percent: 0, phase: "connecting", message: "正在请求表头信息..." });
@@ -129,10 +132,9 @@ export async function fetchBmsHeader(headerUrl: string, onProgress?: ProgressCal
   try {
     headerResponse = await fetchWithProgress(headerUrlBase, onProgress);
   } catch (err) {
-    throw new Error(
-      `无法加载表头信息: ${err instanceof Error ? err.message : String(err)}`,
-      { cause: err }
-    );
+    throw new Error(`无法加载表头信息: ${err instanceof Error ? err.message : String(err)}`, {
+      cause: err,
+    });
   }
 
   // percent=100 确保经 loadBmsTable 的 *0.35 映射后不低于下载阶段已达的 35%
@@ -141,10 +143,9 @@ export async function fetchBmsHeader(headerUrl: string, onProgress?: ProgressCal
   try {
     data = (await headerResponse.json()) as HeaderData;
   } catch (err) {
-    throw new Error(
-      `表头数据格式无效: ${err instanceof Error ? err.message : String(err)}`,
-      { cause: err }
-    );
+    throw new Error(`表头数据格式无效: ${err instanceof Error ? err.message : String(err)}`, {
+      cause: err,
+    });
   }
 
   onProgress?.({ percent: 100, phase: "done", message: "表头信息加载完成" });
@@ -176,10 +177,9 @@ export async function fetchBmsTableData(
     try {
       tableDataRaw = await fetchJsonp(finalDataUrl);
     } catch (err) {
-      throw new Error(
-        `JSONP 请求失败: ${err instanceof Error ? err.message : String(err)}`,
-        { cause: err }
-      );
+      throw new Error(`JSONP 请求失败: ${err instanceof Error ? err.message : String(err)}`, {
+        cause: err,
+      });
     }
     onProgress?.({ percent: 85, phase: "parsing", message: "JSONP 数据接收完成，解析中..." });
   } else {
@@ -193,19 +193,17 @@ export async function fetchBmsTableData(
         });
       });
     } catch (err) {
-      throw new Error(
-        `无法加载谱面数据: ${err instanceof Error ? err.message : String(err)}`,
-        { cause: err }
-      );
+      throw new Error(`无法加载谱面数据: ${err instanceof Error ? err.message : String(err)}`, {
+        cause: err,
+      });
     }
     onProgress?.({ percent: 88, phase: "parsing", message: "解析谱面数据..." });
     try {
       tableDataRaw = await dataResponse.json();
     } catch (err) {
-      throw new Error(
-        `谱面数据格式无效: ${err instanceof Error ? err.message : String(err)}`,
-        { cause: err }
-      );
+      throw new Error(`谱面数据格式无效: ${err instanceof Error ? err.message : String(err)}`, {
+        cause: err,
+      });
     }
   }
 
