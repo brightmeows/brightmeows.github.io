@@ -26,10 +26,7 @@ const segmentLabelMap: Record<string, string> = {
  *   deriveBreadcrumbs("/bms/table/self-sp", "BrightMeowS譜面合集（SP）")
  *   → [{label:"主页",href:"/"}, {label:"BMS",href:"/bms"}, {label:"难度表",href:"/bms/table"}, {label:"BrightMeowS譜面合集（SP）"}]
  */
-export function deriveBreadcrumbs(
-  pathname: string,
-  currentLabel?: string,
-): BreadcrumbItem[] {
+export function deriveBreadcrumbs(pathname: string, currentLabel?: string): BreadcrumbItem[] {
   const segments = pathname.split("/").filter(Boolean);
   const items: BreadcrumbItem[] = [{ label: "主页", href: "/" }];
   let currentPath = "";

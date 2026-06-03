@@ -26,12 +26,7 @@
     ariaLabel?: string;
   }
 
-  const {
-    items,
-    containerClass = "",
-    separator = "→",
-    ariaLabel = "面包屑导航",
-  }: Props = $props();
+  const { items, containerClass = "", separator = "→", ariaLabel = "面包屑导航" }: Props = $props();
 
   let isVisible = $state(true);
   let lastScrollY = $state(0);
@@ -79,7 +74,9 @@
 
 <div
   class="fixed top-4 left-1/2 z-1000 {containerClass}"
-  style="transform: translateY({isVisible ? '0' : '-120%'}) translateX(-50%); transition: transform 150ms ease-out"
+  style="transform: translateY({isVisible
+    ? '0'
+    : '-120%'}) translateX(-50%); transition: transform 150ms ease-out"
   role="navigation"
   aria-label={ariaLabel}
 >

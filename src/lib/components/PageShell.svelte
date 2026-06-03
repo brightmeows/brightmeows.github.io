@@ -8,6 +8,7 @@
   import ProfileCard from "$lib/components/ProfileCard.svelte";
   import QuickActions from "$lib/components/QuickActions.svelte";
   import StarryBackground from "$lib/components/StarryBackground.svelte";
+  import { GlassContainer } from "$lib/components/ui";
   import { deriveBreadcrumbs } from "$lib/utils/breadcrumbs";
 
   interface Props {
@@ -15,15 +16,11 @@
     currentLabel?: string;
     tocItems?: TocItem[];
     mainClass?: string;
-    children: Snippet;
+    /** 玻璃面板列表（每个元素为一个独立玻璃面板） */
+    panes?: Snippet[];
   }
 
-  let {
-    currentLabel,
-    tocItems = [],
-    mainClass,
-    children,
-  }: Props = $props();
+  let { currentLabel, tocItems = [], mainClass, panes = [] }: Props = $props();
 
   const breadcrumbs = $derived(deriveBreadcrumbs(page.url.pathname, currentLabel));
 </script>
@@ -32,7 +29,13 @@
 <ProfileCard />
 <BreadcrumbNav items={breadcrumbs} />
 <main class={mainClass ?? "m-0 mx-auto box-border w-full max-w-350 p-8"}>
-  {@render children()}
+  {#if panes.length > 0}
+    {#each panes as pane, i (i)}
+      <GlassContainer animate={true} class="w-full {i < panes.length - 1 ? 'mb-8' : ''}">
+        {@render pane()}
+      </GlassContainer>
+    {/each}
+  {/if}
 </main>
 {#if tocItems.length > 0}
   <FloatingToc items={tocItems} />

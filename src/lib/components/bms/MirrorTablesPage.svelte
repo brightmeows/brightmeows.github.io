@@ -7,7 +7,7 @@
   import PageShell from "$lib/components/PageShell.svelte";
   import GroupedTablesSection from "$lib/components/bms/GroupedTablesSection.svelte";
   import SelectedTablesPanel from "$lib/components/bms/SelectedTablesPanel.svelte";
-  import { GlassCard, GlassContainer } from "$lib/components/ui";
+  import { GlassCard } from "$lib/components/ui";
   import { loadMirrorTables } from "$lib/data/mirror-table-loader";
   import type { MirrorTableItem } from "$lib/types/bms";
   import { writeToClipboard } from "$lib/utils/clipboard";
@@ -115,85 +115,87 @@
   });
 </script>
 
-<PageShell {tocItems}>
-  <GlassContainer animate={true} class="mt-8 w-full">
-    <h1 id="bms-table-mirror" class="page-title mb-2 scroll-mt-5 text-center">{pageTitle}</h1>
+<PageShell {tocItems} panes={[titlePane, navPane, contentPane]} />
 
-    <div class="mt-2 text-center text-[1.1rem] text-white/70 italic">
-      对于BeMusicSeeker用户，可以使用tables.json链接（
-      <button
-        class="m-0 cursor-pointer border-0 bg-transparent p-0 font-medium text-[#64b5f6] underline hover:text-[#42a5f5]"
-        type="button"
-        onclick={copyTables}
-      >
-        点击复制
-      </button>
-      ），导入难度表清单至BeMusicSeeker。
-      <a
-        class="m-0 cursor-pointer border-0 bg-transparent p-0 font-medium text-[#64b5f6] underline hover:text-[#42a5f5]"
-        href="https://darksabun.club/table/tablelist.html"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        使用教程
-      </a>
-      {#if copied}
-        <span class="ml-2 text-[#4caf50]">已复制</span>
-      {/if}
-    </div>
+{#snippet titlePane()}
+  <h1 id="bms-table-mirror" class="page-title mb-2 scroll-mt-5 text-center">{pageTitle}</h1>
 
-    <div class="mt-4 flex flex-wrap items-stretch justify-center gap-4">
-      {#each links as link (link.href)}
-        <GlassCard
-          href={link.href.startsWith("/") ? resolve(link.href, {}) : link.href}
-          class="flex w-80 flex-col"
-        >
-          <div class="mb-2 text-[1.2rem] font-bold text-[#64b5f6]">
-            {link.title}
-          </div>
-          <div class="text-[0.95rem] text-white/80">{link.desc}</div>
-        </GlassCard>
-      {/each}
-    </div>
-  </GlassContainer>
-
-  <GlassContainer id="mirror-list" animate={true} class="mt-8 w-full scroll-mt-5">
-    <div class="flex flex-col gap-3">
-      <div class="relative w-full">
-        <input
-          class="w-full rounded-xl border border-white/20 bg-black/20 px-4 py-3 pr-12 text-white outline-none placeholder:text-white/50 focus:border-[#64b5f6]/60 focus:ring-2 focus:ring-[#64b5f6]/30"
-          type="text"
-          placeholder="按 名称 / 符号 搜索，支持 简体中文 / 繁体中文 / 日文汉字 自动转换"
-          bind:value={searchQuery}
-        />
-        {#if searchQuery.trim().length > 0}
-          <button
-            class="absolute top-1/2 right-2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg border border-white/20 bg-white/10 p-0 text-[1.25rem] leading-none text-white transition-all duration-200 ease-in-out hover:bg-white/20"
-            type="button"
-            aria-label="清空搜索"
-            onclick={() => (searchQuery = "")}
-          >
-            ×
-          </button>
-        {/if}
-      </div>
-      {#if searchQuery.trim().length > 0}
-        <div class="text-[0.95rem] text-white/60">
-          匹配 {filteredTables.length} / {tables.length}
-        </div>
-      {/if}
-    </div>
-
-    {#if loading}
-      <div class="mt-6 text-white/80">正在加载镜像列表...</div>
-    {:else if error}
-      <div class="mt-6 text-red-300">加载失败：{error}</div>
-    {:else if groupedByTags.length === 0}
-      <div class="mt-6 text-white/70">没有匹配的难度表</div>
-    {:else}
-      <GroupedTablesSection bind:selectedMap groups={groupedByTags} />
+  <div class="mt-2 text-center text-[1.1rem] text-white/70 italic">
+    对于BeMusicSeeker用户，可以使用tables.json链接（
+    <button
+      class="m-0 cursor-pointer border-0 bg-transparent p-0 font-medium text-[#64b5f6] underline hover:text-[#42a5f5]"
+      type="button"
+      onclick={copyTables}
+    >
+      点击复制
+    </button>
+    ），导入难度表清单至BeMusicSeeker。
+    <a
+      class="m-0 cursor-pointer border-0 bg-transparent p-0 font-medium text-[#64b5f6] underline hover:text-[#42a5f5]"
+      href="https://darksabun.club/table/tablelist.html"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      使用教程
+    </a>
+    {#if copied}
+      <span class="ml-2 text-[#4caf50]">已复制</span>
     {/if}
-  </GlassContainer>
-</PageShell>
+  </div>
+{/snippet}
+
+{#snippet navPane()}
+  <div class="flex flex-wrap items-stretch justify-center gap-4">
+    {#each links as link (link.href)}
+      <GlassCard
+        href={link.href.startsWith("/") ? resolve(link.href, {}) : link.href}
+        class="flex w-80 flex-col"
+      >
+        <div class="mb-2 text-[1.2rem] font-bold text-[#64b5f6]">
+          {link.title}
+        </div>
+        <div class="text-[0.95rem] text-white/80">{link.desc}</div>
+      </GlassCard>
+    {/each}
+  </div>
+{/snippet}
+
+{#snippet contentPane()}
+  <div class="flex flex-col gap-3">
+    <div class="relative w-full">
+      <input
+        class="w-full rounded-xl border border-white/20 bg-black/20 px-4 py-3 pr-12 text-white outline-none placeholder:text-white/50 focus:border-[#64b5f6]/60 focus:ring-2 focus:ring-[#64b5f6]/30"
+        type="text"
+        placeholder="按 名称 / 符号 搜索，支持 简体中文 / 繁体中文 / 日文汉字 自动转换"
+        bind:value={searchQuery}
+      />
+      {#if searchQuery.trim().length > 0}
+        <button
+          class="absolute top-1/2 right-2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg border border-white/20 bg-white/10 p-0 text-[1.25rem] leading-none text-white transition-all duration-200 ease-in-out hover:bg-white/20"
+          type="button"
+          aria-label="清空搜索"
+          onclick={() => (searchQuery = "")}
+        >
+          ×
+        </button>
+      {/if}
+    </div>
+    {#if searchQuery.trim().length > 0}
+      <div class="text-[0.95rem] text-white/60">
+        匹配 {filteredTables.length} / {tables.length}
+      </div>
+    {/if}
+  </div>
+
+  {#if loading}
+    <div class="mt-6 text-white/80">正在加载镜像列表...</div>
+  {:else if error}
+    <div class="mt-6 text-red-300">加载失败：{error}</div>
+  {:else if groupedByTags.length === 0}
+    <div class="mt-6 text-white/70">没有匹配的难度表</div>
+  {:else}
+    <GroupedTablesSection bind:selectedMap groups={groupedByTags} />
+  {/if}
+{/snippet}
 
 <SelectedTablesPanel {tables} {selectedMap} />

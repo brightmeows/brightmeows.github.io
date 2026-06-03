@@ -32,15 +32,8 @@
       | undefined;
   }
 
-  let {
-    chart,
-    groupLevel,
-    groupColor,
-    bundleUrl,
-    diffUrl,
-    bmsLinks,
-    chartPreview,
-  }: Props = $props();
+  let { chart, groupLevel, groupColor, bundleUrl, diffUrl, bmsLinks, chartPreview }: Props =
+    $props();
 </script>
 
 <tr class="hover:bg-white/5">

@@ -56,11 +56,7 @@
     rel="noopener noreferrer"
     ariaLabel="Mocha"
   >
-    <img
-      src="/assets/logo/mocha_logo.gif"
-      alt="Mocha"
-      class="h-6 w-6 object-contain"
-    />
+    <img src="/assets/logo/mocha_logo.gif" alt="Mocha" class="h-6 w-6 object-contain" />
   </IconButton>
   <IconButton
     variant="cyan"
@@ -69,10 +65,6 @@
     rel="noopener noreferrer"
     ariaLabel="Minir"
   >
-    <img
-      src="/assets/logo/minir_logo.gif"
-      alt="Minir"
-      class="h-6 w-6 object-contain"
-    />
+    <img src="/assets/logo/minir_logo.gif" alt="Minir" class="h-6 w-6 object-contain" />
   </IconButton>
 {/if}
