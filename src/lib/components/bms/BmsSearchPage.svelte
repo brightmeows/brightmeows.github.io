@@ -69,6 +69,7 @@
     } catch (err) {
       console.error("搜索失败:", err);
       results = [];
+      noResults = false;
     } finally {
       isSearching = false;
     }

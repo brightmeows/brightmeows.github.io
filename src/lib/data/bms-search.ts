@@ -113,9 +113,9 @@ export async function loadAndFilterCharts(
       return chart.sha256 && lowerKeys.has(chart.sha256.toLowerCase());
     }
     // text: 匹配 title 或 artist
-    const titleMatch = chart.title && lowerKeys.has(chart.title.toLowerCase());
-    const artistMatch = chart.artist && lowerKeys.has(chart.artist.toLowerCase());
-    return titleMatch ?? artistMatch;
+    const titleMatch = !!chart.title && lowerKeys.has(chart.title.toLowerCase());
+    const artistMatch = !!chart.artist && lowerKeys.has(chart.artist.toLowerCase());
+    return titleMatch || artistMatch;
   });
 }
 
