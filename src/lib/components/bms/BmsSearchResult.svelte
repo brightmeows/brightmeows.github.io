@@ -59,9 +59,6 @@
     <div class="min-w-0">
       <h3 class="mb-1 text-[1.2rem] font-bold text-white">{result.title ?? "(无标题)"}</h3>
       <p class="text-white/70">{result.artist ?? "(未知艺术家)"}</p>
-      {#if !result.sha256}
-        <p class="mt-1 text-[0.8rem] text-white/40">（仅有 MD5，无 SHA256）</p>
-      {/if}
     </div>
     <div class="flex shrink-0 flex-wrap items-center justify-end gap-2">
       {#if result.md5}
