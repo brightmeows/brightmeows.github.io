@@ -22,6 +22,10 @@ export interface WorkerIndexProgress {
   type: "index-progress";
   name: string;
   status: "loading" | "done" | "error";
+  /** Worker 发送但页面侧未消费，保留用于调试 */
+  current: number;
+  /** Worker 发送但页面侧未消费，保留用于调试 */
+  total: number;
 }
 export interface WorkerReady {
   type: "ready";
@@ -115,6 +119,8 @@ export function searchIndices(
   } else if (type === "sha256") {
     addMatches(indices.sha256, [query.trim().toLowerCase()], "sha256");
   } else {
+    // O(needles × totalKeys × avgKeyLength)。当前索引规模（千级 key）下耗时毫秒级。
+    // 若索引增长到万级 key，可按首字符分桶降低常数因子。
     const searchTerms = needles ?? [query.trim().toLowerCase()];
     const matchingKeys = (index: SearchIndex): string[] =>
       Object.keys(index).filter((k) => searchTerms.some((term) => k.toLowerCase().includes(term)));
@@ -466,6 +472,16 @@ export class IncrementalAggregator {
     const result = this.idMap.get(resultId);
     if (!result) return;
     result.appearances = result.appearances.filter((a) => a.tableId !== tableId);
+  }
+
+  /** 移除指定 tableId 的所有 appearance（用于表加载失败后清理占位） */
+  removeTable(tableId: string): void {
+    const ids = this.processedEntries.get(tableId);
+    if (!ids) return;
+    for (const rid of ids) {
+      this.removeAppearancesForTable(rid, tableId);
+    }
+    this.processedEntries.delete(tableId);
   }
 
   // ---- finalize ----

@@ -56,7 +56,7 @@
   let searchResults = $state<SearchResult[]>([]);
   // eslint-disable-next-line svelte/no-unnecessary-state-wrap
   let tableStates = $state(new SvelteMap<string, TableLoadState>());
-  let candidateEntries = $state<CandidateEntry[]>([]);
+  let candidateMap = new Map<string, CandidateEntry>();
   let currentSearchId = 0;
   let currentSearchType: ReturnType<typeof detectQueryType> = "text";
   let abortController: AbortController | null = null;
@@ -108,7 +108,8 @@
     }
 
     const epoch = currentSearchId;
-    candidateEntries = candidates;
+    const cmap = new Map(candidates.map((c) => [c.tableId, c]));
+    candidateMap = cmap;
     const agg = new IncrementalAggregator();
     aggregator = agg;
 
@@ -154,7 +155,7 @@
   }
 
   async function loadSingleTable(tableId: string, epoch: number): Promise<void> {
-    const entry = candidateEntries.find((c) => c.tableId === tableId);
+    const entry = candidateMap.get(tableId);
     if (!entry) return;
     const keySet = new Set(entry.matchedKeys.map((mk) => mk.key));
 
@@ -197,6 +198,9 @@
       if (err instanceof DOMException && err.name === "AbortError") return;
       if (!isEpochValid(epoch)) return;
 
+      // 清理 aggregator 中该表的占位 appearance，避免残缺数据残留
+      aggregator?.removeTable(tableId);
+
       const errorMessage = err instanceof Error ? err.message : "未知错误";
       const current = tableStates.get(tableId);
       const name = current && "name" in current ? current.name : tableId;
@@ -209,7 +213,7 @@
     abortController = new AbortController();
     searchResults = [];
     tableStates = new SvelteMap();
-    candidateEntries = [];
+    candidateMap = new Map();
     searchPhase = "idle";
     aggregator = null;
   }
@@ -235,7 +239,7 @@
     searchPhase = "searching";
     searchResults = [];
     tableStates = new SvelteMap();
-    candidateEntries = [];
+    candidateMap = new Map();
     aggregator = null;
 
     const needles =
