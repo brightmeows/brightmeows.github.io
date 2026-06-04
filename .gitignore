@@ -34,3 +34,6 @@ project.inlang/cache/
 
 # Git Worktrees
 /.worktrees
+
+# BrightMeowS Workflow
+/docs/blueprint
