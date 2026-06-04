@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 
 import { searchIndices } from "./bms-search";
-import type { SearchIndex } from "./bms-search";
+import type { SearchIndex, CandidateEntry } from "./bms-search";
 import { getCachedIndices, setCachedIndices, getVersion, setVersion } from "./bms-search-idb";
 import type { SearchIndexBundle } from "./bms-search-idb";
 
@@ -24,7 +24,7 @@ interface ReadyMsg {
 interface SearchResultMsg {
   type: "search-result";
   searchId: number;
-  candidates: [string, string[]][];
+  candidates: CandidateEntry[];
 }
 
 type OutMsg = IndexProgressMsg | ReadyMsg | SearchResultMsg;
@@ -217,10 +217,10 @@ function handleSearch(req: SearchRequest): void {
 
   const candidates = searchIndices(query, cachedIndices, needles);
 
-  // Convert Map<string, Set<string>> to serializable format
-  const serialized: [string, string[]][] = [];
+  // Convert Map<string, KeyMatch[]> to serializable format
+  const serialized: CandidateEntry[] = [];
   for (const [tableId, keys] of candidates) {
-    serialized.push([tableId, [...keys]]);
+    serialized.push({ tableId, matchedKeys: keys });
   }
 
   post({ type: "search-result", searchId: req.searchId, candidates: serialized });
