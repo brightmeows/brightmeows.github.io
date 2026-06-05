@@ -15,11 +15,11 @@
 </script>
 
 <svelte:head>
-  <title>{page.data.title ?? "白喵斯的小屋"}</title>
-  <link rel="icon" href="https://codeberg.org/brightmeows.png" />
   {#if page.data.bmstableMeta}
     <meta name="bmstable" content={page.data.bmstableMeta} />
   {/if}
+  <title>{page.data.title ?? "白喵斯的小屋"}</title>
+  <link rel="icon" href="https://codeberg.org/brightmeows.png" />
 </svelte:head>
 
 {@render children()}
