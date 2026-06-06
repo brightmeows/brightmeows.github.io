@@ -46,6 +46,8 @@
     }
   })();
 
+  const mirrorRepoUrl = "https://codeberg.org/brightmeows/bms-table-mirror";
+
   async function copyTables(): Promise<void> {
     const tablesJsonUrl = new URL(tablesJsonPath, window.location.origin).toString();
     const ok = await writeToClipboard(tablesJsonUrl);
@@ -115,6 +117,10 @@
     {#if copied}
       <span class="ml-2 text-[#4caf50]">已复制</span>
     {/if}
+    <span class="mx-1">|</span>
+    <a class="link-accent" href={mirrorRepoUrl} target="_blank" rel="noopener noreferrer">
+      镜像仓库
+    </a>
   </div>
 {/snippet}
 

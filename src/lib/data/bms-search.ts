@@ -1,5 +1,3 @@
-import { R2_TABLES_BASE } from "./bms-constants";
-
 import type { ChartData } from "$lib/types/bms";
 
 /** 搜索索引类型 */
@@ -134,7 +132,7 @@ export function searchIndices(
 }
 
 /** 搜索索引对应的表数据基础路径 */
-const TABLE_BASE = R2_TABLES_BASE;
+const TABLE_BASE = "/bms/table/mirror";
 
 /** 根据 matchedKeys 和 queryType 过滤谱面列表的公共函数 */
 function filterChartsByKeys(
