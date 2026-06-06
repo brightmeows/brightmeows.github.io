@@ -19,8 +19,9 @@
 - **`static/bms/table/search/` 不存在** — 搜索索引已移至 R2，由 `bms-search.worker.ts` 在客户端运行时从 R2 拉取。不要尝试在仓库内重新创建此目录。
 - **Paraglide i18n 基础设施全局加载但仅 `/demo/paraglide/` 生效** — `hooks.ts` 和 `+layout.svelte` 无条件导入 runtime（SSG 构建无法 tree-shake），但 `reroute` 钩子只对 `/demo/paraglide/` 路径触发。不要将 paraglide 扩展到其他路由。
 - **无测试框架** — `build`/`check`/`lint`/`format` 通过即验证通过。不要加测试依赖或测试文件。
-- **`prebuild` 重写 `mirror/tables.json` 的 URL** — `package.json` 的 `prebuild` 脚本中 `jq` 命令将镜像表 URL 从原始格式转为 Codeberg Pages 路径。`pnpm build` 时自动触发。修改脚本时保持此转换逻辑。
-- **`bmstableMeta` 使用 R2 绝对 URL** — `+page.server.ts` 中 `bmstableMeta` 注入 `<meta name="bmstable">` 的 content 为 R2 上 `header.json` 的绝对 URL（如 `https://pub-...r2.dev/tables/<name>/header.json`），供 beatoraja 等客户端直接拉取。不要改回相对路径。
+- **`prebuild` 转换 `mirror/tables.json`** — `package.json` 的 `prebuild` 脚本中 `jq` 命令执行两项操作：① 添加 `dir_name` 字段（`[host] name` 格式，用作页面路由参数和 R2 目录名）；② 将 `url` 转为 Codeberg Pages 路径（保存原 URL 到 `url_from`）。`pnpm build` 时自动触发。修改脚本时保持此转换逻辑。
+- **`bmstableMeta` 使用 R2 绝对 URL** — `+page.server.ts` 中 `bmstableMeta` 注入 `<meta name="bmstable">` 的 content 为 R2 上 `header.json` 的绝对 URL（如 `https://pub-...r2.dev/tables/[host] name/header.json`），供 beatoraja 等客户端直接拉取。URL 含 `[`、`]`、空格等需编码字符，HTTP 客户端会自动编码。不要改回相对路径。
+- **镜像表路由参数为 `[host] name` 格式** — `entries()` 读取 `tables.json` 中 `dir_name` 字段（由 `prebuild` jq 生成），格式为 `[host] name`（如 `[4uri.web.fc2.com] Youri差分難易度表`）。SvelteKit 自动 URL 编码/解码此参数。不要改为纯数字或 UUID 标识符。
 - **`bms-constants.ts` 集中管理 R2 端点** — `src/lib/data/bms-constants.ts` 定义了 `R2_BASE`/`R2_TABLES_BASE`/`R2_INDEXES_BASE` 三个常量。修改 R2 地址时仅改此文件。
 
 ## 架构边界

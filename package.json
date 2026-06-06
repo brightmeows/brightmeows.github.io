@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "prebuild": "jq '[.[] | .url_from = .url | .url = (\"https://brightmeows.codeberg.page/bms/table/mirror/\" + (\"[\" + (.url | capture(\"://(?<h>[^/]+)\").h) + \"] \" + .name | @uri) + \"/\")]' static/bms/table/mirror/tables.json > /tmp/tables.json && mv /tmp/tables.json static/bms/table/mirror/tables.json",
+    "prebuild": "jq '[.[] | .url_from = .url | .dir_name = \"[\" + (.url | capture(\"://(?<h>[^/]+)\").h) + \"] \" + .name | .url = (\"https://brightmeows.codeberg.page/bms/table/mirror/\" + (.dir_name | @uri) + \"/\")]' static/bms/table/mirror/tables.json > /tmp/tables.json && mv /tmp/tables.json static/bms/table/mirror/tables.json",
     "build": "vite build",
     "preview": "vite preview",
     "prepare": "paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide && svelte-kit sync || echo ''",
