@@ -21,15 +21,11 @@ jobs:
         with:
           node-version: latest
       - run: pnpm install
-      - name: Download bms-table-mirror
-        run: curl -L -o /tmp/bms-mirror.zip https://codeberg.org/brightmeows/bms-table-mirror/archive/main.zip
-      - name: Extract tables and indexes
+      - name: Download tables.json from R2
         run: |
-          rm -rf static/bms/table/mirror static/bms/table/search
-          mkdir -p static/bms/table/mirror static/bms/table/search
-          unzip -o /tmp/bms-mirror.zip -d /tmp/bms-mirror
-          cp -r /tmp/bms-mirror/bms-table-mirror/tables/* static/bms/table/mirror/
-          cp -r /tmp/bms-mirror/bms-table-mirror/indexes/* static/bms/table/search/
+          mkdir -p static/bms/table/mirror
+          curl -o static/bms/table/mirror/tables.json \
+            https://pub-84cdf79347284e449ba30da571d91e41.r2.dev/tables/tables.json
       - name: Transform tables.json URLs
         run: |
           jq '[.[] | .url_from = .url | .url = ("https://brightmeows.codeberg.page/bms/table/mirror/" + ("[" + (.url | capture("://(?<h>[^/]+)").h) + "] " + .name | @uri) + "/")]' \

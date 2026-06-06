@@ -1,5 +1,6 @@
 /// <reference lib="webworker" />
 
+import { R2_INDEXES_BASE } from "./bms-constants";
 import { searchIndices } from "./bms-search";
 import type { SearchIndex, CandidateEntry } from "./bms-search";
 import { getCachedIndices, setCachedIndices, getVersion, setVersion } from "./bms-search-idb";
@@ -43,7 +44,7 @@ let cachedIndices: SearchIndexBundle | null = null;
 // ---- helpers ----
 
 const INDEX_NAMES = ["title", "artist", "md5", "sha256"] as const;
-const INDEX_BASE = "/bms/table/search/";
+const INDEX_BASE = R2_INDEXES_BASE + "/";
 
 /** 计算所有 4 个索引的联合摘要（用于版本比对） */
 function computeCombinedDigest(bundle: SearchIndexBundle): string {
