@@ -7,7 +7,6 @@
 
   interface BmsLinks {
     bmsScoreViewer: string;
-    lr2ir: string;
     mocha: string;
     minir: string;
   }
@@ -48,24 +47,12 @@
   <td class="table-td-glass wrap-break-word">
     <div class="flex flex-row flex-wrap gap-[0.3rem]">
       {#if bundleUrl}
-        <GradientButton
-          variant="green"
-          href={bundleUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="min-w-17 flex-1"
-        >
+        <GradientButton variant="green" href={bundleUrl} target="_blank" rel="noopener noreferrer">
           📦 同捆
         </GradientButton>
       {/if}
       {#if diffUrl}
-        <GradientButton
-          variant="blue"
-          href={diffUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          class="min-w-17 flex-1"
-        >
+        <GradientButton variant="blue" href={diffUrl} target="_blank" rel="noopener noreferrer">
           🔄 差分
         </GradientButton>
       {/if}

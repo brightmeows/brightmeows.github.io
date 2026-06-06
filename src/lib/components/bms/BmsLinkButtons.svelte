@@ -4,7 +4,6 @@
 
   interface BmsLinks {
     bmsScoreViewer: string;
-    lr2ir: string;
     mocha: string;
     minir: string;
   }
@@ -36,16 +35,6 @@
     ariaLabel="BMS Score Viewer"
   >
     📊
-  </IconButton>
-  <IconButton
-    variant="purple"
-    href={bmsLinks.lr2ir}
-    target="_blank"
-    rel="noopener noreferrer"
-    ariaLabel="LR2IR"
-    class="text-[0.85rem] font-bold"
-  >
-    LR2
   </IconButton>
 {/if}
 {#if hasSha256(chart)}
