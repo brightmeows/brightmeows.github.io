@@ -6,6 +6,7 @@
     hasData?: boolean;
   }
 
+  // eslint-disable-next-line no-useless-assignment
   let { headerUrl = undefined, hasData = $bindable(false) }: Props = $props();
 
   let levelRefData = $state<LevelRefItem[]>([]);
@@ -83,6 +84,7 @@
   });
 
   $effect(() => {
+    // $bindable 赋值回传父组件，此赋值将值同步回父组件
     hasData = shouldShow && levelRefData.length > 0;
   });
 </script>

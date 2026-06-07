@@ -182,6 +182,7 @@
         <span class="mx-2">|</span>
       {/if}
       {#if dataFetchUrl}
+        <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
         <a class="link-accent" href={dataFetchUrl} target="_blank" rel="noopener noreferrer">
           查看data.json
         </a>
