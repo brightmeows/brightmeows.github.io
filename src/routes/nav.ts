@@ -1,4 +1,4 @@
-import type { NavChild } from "$lib/components/NavPane.svelte";
+import type { NavChild } from "$lib/components/layout/NavPane.svelte";
 
 export const navChildren: NavChild[] = [
   { href: "/bms", title: "BMS 主页", description: "BMS 相关内容" },

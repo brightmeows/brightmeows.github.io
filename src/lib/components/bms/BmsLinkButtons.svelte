@@ -40,21 +40,23 @@
   >
     <svg viewBox="0 0 24 24" class="h-8 w-8">
       <text
-        x="12" y="11"
+        x="12"
+        y="11"
         text-anchor="middle"
         fill="white"
         font-size="10"
         font-family="sans-serif"
-        font-weight="700"
-      >BMS</text>
+        font-weight="700">BMS</text
+      >
       <text
-        x="12" y="20.5"
+        x="12"
+        y="20.5"
         text-anchor="middle"
         fill="white"
         font-size="10"
         font-family="sans-serif"
-        font-weight="700"
-      >-IR</text>
+        font-weight="700">-IR</text
+      >
     </svg>
   </IconButton>
 {/if}

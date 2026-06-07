@@ -106,9 +106,9 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import FloatingPanel from "./FloatingPanel.svelte";
-
   import { browser } from "$app/environment";
+  import FloatingPanel from "$lib/components/ui/FloatingPanel.svelte";
+
 
   interface FlatTocItem {
     id: string;

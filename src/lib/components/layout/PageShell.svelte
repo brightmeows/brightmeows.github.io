@@ -2,15 +2,15 @@
   import type { Snippet } from "svelte";
 
   import { page } from "$app/state";
-  import BreadcrumbNav from "$lib/components/BreadcrumbNav.svelte";
-  import type { TocItem } from "$lib/components/FloatingToc.svelte";
-  import FloatingToc from "$lib/components/FloatingToc.svelte";
-  import type { NavChild } from "$lib/components/NavPane.svelte";
-  import NavPane from "$lib/components/NavPane.svelte";
-  import ProfileCard from "$lib/components/ProfileCard.svelte";
-  import QuickActions from "$lib/components/QuickActions.svelte";
-  import StarryBackground from "$lib/components/StarryBackground.svelte";
+  import BreadcrumbNav from "$lib/components/layout/BreadcrumbNav.svelte";
+  import type { TocItem } from "$lib/components/layout/FloatingToc.svelte";
+  import FloatingToc from "$lib/components/layout/FloatingToc.svelte";
+  import type { NavChild } from "$lib/components/layout/NavPane.svelte";
+  import NavPane from "$lib/components/layout/NavPane.svelte";
+  import ProfileCard from "$lib/components/layout/ProfileCard.svelte";
+  import QuickActions from "$lib/components/layout/QuickActions.svelte";
   import { GlassContainer } from "$lib/components/ui";
+  import StarryBackground from "$lib/components/ui/StarryBackground.svelte";
   import { deriveBreadcrumbs } from "$lib/utils/breadcrumbs";
 
   interface Props {

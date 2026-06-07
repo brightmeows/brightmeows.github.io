@@ -2,7 +2,7 @@
   import { cubicIn, cubicOut } from "svelte/easing";
   import { fly } from "svelte/transition";
 
-  import JsonPreview, { jsonPreview } from "$lib/components/JsonPreview.svelte";
+  import JsonPreview, { jsonPreview } from "$lib/components/ui/JsonPreview.svelte";
   import type { MirrorTableItem } from "$lib/types/bms";
 
   interface Props {
@@ -15,7 +15,7 @@
   let mirrorPreview = $state<
     | {
         show: (
-          options: import("$lib/components/JsonPreview.svelte").JsonPreviewShowOptions,
+          options: import("$lib/components/ui/JsonPreview.svelte").JsonPreviewShowOptions,
           clientX: number,
           clientY: number
         ) => void | Promise<void>;
@@ -27,7 +27,7 @@
   let originPreview = $state<
     | {
         show: (
-          options: import("$lib/components/JsonPreview.svelte").JsonPreviewShowOptions,
+          options: import("$lib/components/ui/JsonPreview.svelte").JsonPreviewShowOptions,
           clientX: number,
           clientY: number
         ) => void | Promise<void>;

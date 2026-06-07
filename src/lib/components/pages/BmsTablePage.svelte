@@ -1,11 +1,11 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import EmptyState from "$lib/components/EmptyState.svelte";
-  import PageShell from "$lib/components/PageShell.svelte";
   import ChartsTableSection from "$lib/components/bms/ChartsTableSection.svelte";
   import LevelRefTable from "$lib/components/bms/LevelRefTable.svelte";
-  import LoadingProgress from "$lib/components/bms/LoadingProgress.svelte";
+  import PageShell from "$lib/components/layout/PageShell.svelte";
+  import EmptyState from "$lib/components/ui/EmptyState.svelte";
+  import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
   import { groupChartsByLevel, computeTableStats } from "$lib/data/bms-data";
   import { loadBmsTable } from "$lib/data/bms-table-loader";
   import type { ChartData, HeaderData, ProgressCallback } from "$lib/types/bms";

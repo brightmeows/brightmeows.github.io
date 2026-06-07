@@ -1,4 +1,4 @@
-import type { TocItem } from "$lib/components/FloatingToc.svelte";
+import type { TocItem } from "$lib/components/layout/FloatingToc.svelte";
 import type { MirrorTableItem, Tag1Group, Tag2Group } from "$lib/types/bms";
 
 type StringConverter = (input: string) => string;

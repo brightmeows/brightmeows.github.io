@@ -1,5 +1,5 @@
 <script lang="ts">
-  import GlassNavCard from "./ui/GlassNavCard.svelte";
+  import { GlassNavCard } from "$lib/components/ui";
 
   export interface NavChild {
     href: string;

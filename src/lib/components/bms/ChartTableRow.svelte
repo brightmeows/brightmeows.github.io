@@ -1,8 +1,8 @@
 <script lang="ts">
   import BmsLinkButtons from "./BmsLinkButtons.svelte";
 
-  import { jsonPreview } from "$lib/components/JsonPreview.svelte";
   import { GradientButton } from "$lib/components/ui";
+  import { jsonPreview } from "$lib/components/ui/JsonPreview.svelte";
   import type { ChartData } from "$lib/types/bms";
 
   interface Props {
@@ -14,7 +14,7 @@
     chartPreview:
       | {
           show: (
-            options: import("$lib/components/JsonPreview.svelte").JsonPreviewShowOptions,
+            options: import("$lib/components/ui/JsonPreview.svelte").JsonPreviewShowOptions,
             clientX: number,
             clientY: number
           ) => void | Promise<void>;
@@ -24,8 +24,7 @@
       | undefined;
   }
 
-  let { chart, groupLevel, groupColor, bundleUrl, diffUrl, chartPreview }: Props =
-    $props();
+  let { chart, groupLevel, groupColor, bundleUrl, diffUrl, chartPreview }: Props = $props();
 </script>
 
 <tr class="hover:bg-white/5">

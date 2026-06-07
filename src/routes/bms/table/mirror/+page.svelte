@@ -2,11 +2,11 @@
   import * as OpenCC from "opencc-js";
   import { onMount, tick } from "svelte";
 
-  import type { TocItem } from "$lib/components/FloatingToc.svelte";
-  import PageShell from "$lib/components/PageShell.svelte";
   import GroupedTablesSection from "$lib/components/bms/GroupedTablesSection.svelte";
-  import LoadingProgress from "$lib/components/bms/LoadingProgress.svelte";
   import SelectedTablesPanel from "$lib/components/bms/SelectedTablesPanel.svelte";
+  import type { TocItem } from "$lib/components/layout/FloatingToc.svelte";
+  import PageShell from "$lib/components/layout/PageShell.svelte";
+  import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
   import { loadMirrorTables } from "$lib/data/mirror-table-loader";
   import type { MirrorTableItem } from "$lib/types/bms";
   import { writeToClipboard } from "$lib/utils/clipboard";

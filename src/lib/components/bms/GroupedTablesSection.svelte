@@ -1,9 +1,9 @@
 <script lang="ts">
   import MirrorTableRow from "./MirrorTableRow.svelte";
 
-  import EmptyState from "$lib/components/EmptyState.svelte";
-  import JsonPreview from "$lib/components/JsonPreview.svelte";
-  import ScrollSyncGroup from "$lib/components/ScrollSyncGroup.svelte";
+  import EmptyState from "$lib/components/ui/EmptyState.svelte";
+  import JsonPreview from "$lib/components/ui/JsonPreview.svelte";
+  import ScrollSyncGroup from "$lib/components/ui/ScrollSyncGroup.svelte";
   import type { MirrorTableItem, Tag1Group, Tag2Group } from "$lib/types/bms";
   import { slugifyTag } from "$lib/utils/mirror-tables";
 
@@ -25,7 +25,7 @@
   let tablePreview = $state<
     | {
         show: (
-          options: import("$lib/components/JsonPreview.svelte").JsonPreviewShowOptions,
+          options: import("$lib/components/ui/JsonPreview.svelte").JsonPreviewShowOptions,
           clientX: number,
           clientY: number
         ) => void | Promise<void>;

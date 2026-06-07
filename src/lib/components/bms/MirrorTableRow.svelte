@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { jsonPreview } from "$lib/components/JsonPreview.svelte";
+  import { jsonPreview } from "$lib/components/ui/JsonPreview.svelte";
   import type { MirrorTableItem } from "$lib/types/bms";
 
   interface Props {
@@ -9,7 +9,7 @@
     tablePreview:
       | {
           show: (
-            options: import("$lib/components/JsonPreview.svelte").JsonPreviewShowOptions,
+            options: import("$lib/components/ui/JsonPreview.svelte").JsonPreviewShowOptions,
             clientX: number,
             clientY: number
           ) => void | Promise<void>;

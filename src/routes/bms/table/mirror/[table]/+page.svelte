@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from "$app/state";
-  import BmsTablePage from "$lib/components/bms/BmsTablePage.svelte";
+  import BmsTablePage from "$lib/components/pages/BmsTablePage.svelte";
   import { R2_TABLES_BASE } from "$lib/data/bms-constants";
 
   let table = $derived(page.params.table);

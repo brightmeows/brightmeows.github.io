@@ -1,15 +1,15 @@
 <script lang="ts">
   import ChartTableRow from "./ChartTableRow.svelte";
 
-  import EmptyState from "$lib/components/EmptyState.svelte";
-  import JsonPreview from "$lib/components/JsonPreview.svelte";
+  import EmptyState from "$lib/components/ui/EmptyState.svelte";
+  import JsonPreview from "$lib/components/ui/JsonPreview.svelte";
   import type { ChartData, DifficultyGroup } from "$lib/types/bms";
   import { sortDifficultyGroups } from "$lib/utils/bms-table";
 
   let chartPreview = $state<
     | {
         show: (
-          options: import("$lib/components/JsonPreview.svelte").JsonPreviewShowOptions,
+          options: import("$lib/components/ui/JsonPreview.svelte").JsonPreviewShowOptions,
           clientX: number,
           clientY: number
         ) => void | Promise<void>;
