@@ -109,7 +109,6 @@
   import { browser } from "$app/environment";
   import FloatingPanel from "$lib/components/ui/FloatingPanel.svelte";
 
-
   interface FlatTocItem {
     id: string;
     title: string;
