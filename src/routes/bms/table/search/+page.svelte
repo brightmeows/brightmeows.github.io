@@ -71,6 +71,21 @@
   const isSearching = $derived(searchPhase === "searching" || searchPhase === "loading-tables");
   const hasNoResults = $derived(searchPhase === "done" && searchResults.length === 0);
 
+  const sortedSearchResults = $derived(
+    [...searchResults].sort((a, b) => {
+      const loadedA = a.appearances.some((entry) => {
+        const state = tableStates.get(entry.tableId);
+        return state?.status === "done";
+      });
+      const loadedB = b.appearances.some((entry) => {
+        const state = tableStates.get(entry.tableId);
+        return state?.status === "done";
+      });
+      if (loadedA !== loadedB) return loadedA ? -1 : 1;
+      return (a.title ?? "").localeCompare(b.title ?? "", "zh-CN");
+    })
+  );
+
   // ---- Worker 消息处理 ----
 
   function setupWorker(w: Worker): void {
@@ -395,7 +410,7 @@
     {#if searchResults.length > 0}
       <div>
         <p class="mb-4 text-white/70">找到 {searchResults.length} 个谱面</p>
-        {#each searchResults as result (result.id)}
+        {#each sortedSearchResults as result (result.id)}
           <BmsSearchResult {result} {tableStates} onretry={retryTable} />
         {/each}
       </div>

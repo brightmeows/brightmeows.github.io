@@ -21,6 +21,17 @@
     artist: result.artist ?? undefined,
   });
 
+  const sortedAppearances = $derived(
+    [...result.appearances].sort((a, b) => {
+      const stateA = tableStates.get(a.tableId);
+      const stateB = tableStates.get(b.tableId);
+      const doneA = stateA?.status === "done";
+      const doneB = stateB?.status === "done";
+      if (doneA !== doneB) return doneA ? -1 : 1;
+      return (a.tableName ?? "").localeCompare(b.tableName ?? "", "zh-CN");
+    })
+  );
+
   let copiedField = $state<string | null>(null);
 
   async function copyHash(field: string, value: string): Promise<void> {
@@ -93,7 +104,7 @@
     <h4 class="text-[1rem] font-semibold text-[#64b5f6]">
       出现在 {result.appearances.length} 个难度表中
     </h4>
-    {#each result.appearances as entry (entry.tableId)}
+    {#each sortedAppearances as entry (entry.tableId)}
       {@const loadState = tableStates.get(entry.tableId)}
       {@const tableHref = `/bms/table/mirror/${entry.tableId}`}
 
