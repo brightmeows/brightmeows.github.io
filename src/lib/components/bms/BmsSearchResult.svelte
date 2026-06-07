@@ -4,7 +4,6 @@
   import { GlassContainer, GradientButton } from "$lib/components/ui";
   import type { SearchResult, TableLoadState } from "$lib/data/bms-search";
   import type { ChartData } from "$lib/types/bms";
-  import { getBmsLinks } from "$lib/utils/bms-table";
   import { writeToClipboard } from "$lib/utils/clipboard";
 
   interface Props {
@@ -21,8 +20,6 @@
     title: result.title ?? undefined,
     artist: result.artist ?? undefined,
   });
-
-  const bmsLinks = $derived(getBmsLinks(chartLike));
 
   let copiedField = $state<string | null>(null);
 
@@ -87,7 +84,7 @@
           {copiedField === "sha256" ? "已复制" : "复制SHA256"}
         </button>
       {/if}
-      <BmsLinkButtons chart={chartLike} {bmsLinks} />
+      <BmsLinkButtons chart={chartLike} />
     </div>
   </div>
 

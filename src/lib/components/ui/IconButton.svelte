@@ -7,7 +7,7 @@
     /** 点击类型 */
     type?: "button" | "submit" | "reset";
     /** 颜色变体 */
-    variant?: "orange" | "purple" | "brown" | "cyan" | "custom";
+    variant?: "orange" | "purple" | "brown" | "cyan" | "blue" | "custom";
     /** 自定义渐变颜色（仅当 variant="custom" 时使用） */
     customGradient?: {
       start: string;
@@ -80,6 +80,10 @@
     cyan: {
       default: "linear-gradient(135deg, #00bcd4, #0097a7)",
       hover: "linear-gradient(135deg, #4dd0e1, #00bcd4)",
+    },
+    blue: {
+      default: "linear-gradient(135deg, #1e88e5, #0d47a1)",
+      hover: "linear-gradient(135deg, #42a5f5, #1e88e5)",
     },
   };
 

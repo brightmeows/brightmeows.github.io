@@ -5,19 +5,12 @@
   import { GradientButton } from "$lib/components/ui";
   import type { ChartData } from "$lib/types/bms";
 
-  interface BmsLinks {
-    bmsScoreViewer: string;
-    mocha: string;
-    minir: string;
-  }
-
   interface Props {
     chart: ChartData;
     groupLevel: string;
     groupColor: string;
     bundleUrl: string | undefined;
     diffUrl: string | undefined;
-    bmsLinks: BmsLinks;
     chartPreview:
       | {
           show: (
@@ -31,7 +24,7 @@
       | undefined;
   }
 
-  let { chart, groupLevel, groupColor, bundleUrl, diffUrl, bmsLinks, chartPreview }: Props =
+  let { chart, groupLevel, groupColor, bundleUrl, diffUrl, chartPreview }: Props =
     $props();
 </script>
 
@@ -60,7 +53,7 @@
   </td>
   <td class="table-td-glass whitespace-nowrap">
     <div class="flex flex-nowrap justify-center gap-[0.4rem]">
-      <BmsLinkButtons {chart} {bmsLinks} />
+      <BmsLinkButtons {chart} />
     </div>
   </td>
   <td class="table-td-glass wrap-break-word">

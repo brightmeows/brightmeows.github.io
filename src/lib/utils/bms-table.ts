@@ -3,6 +3,7 @@ import type { ChartData, DifficultyGroup } from "$lib/types/bms";
 /** 外部 BMS 网站链接集合 */
 export interface BmsLinks {
   bmsScoreViewer: string;
+  bmsIr: string;
   mocha: string;
   minir: string;
 }
@@ -15,6 +16,7 @@ export function getBmsLinks(chart: ChartData): BmsLinks {
   const sha = typeof chart.sha256 === "string" ? chart.sha256.trim() : "";
   return {
     bmsScoreViewer: `https://bms-score-viewer.pages.dev/view?md5=${encodeURIComponent(md5)}`,
+    bmsIr: `https://bms-ir.org/new/song?songmd5=${encodeURIComponent(md5)}`,
     mocha: `https://mocha-repository.info/song.php?sha256=${encodeURIComponent(sha)}`,
     minir: `https://www.gaftalk.com/minir/#/viewer/song/${encodeURIComponent(sha)}/0`,
   };

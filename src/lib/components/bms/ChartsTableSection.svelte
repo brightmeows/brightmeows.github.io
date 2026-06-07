@@ -4,7 +4,7 @@
   import EmptyState from "$lib/components/EmptyState.svelte";
   import JsonPreview from "$lib/components/JsonPreview.svelte";
   import type { ChartData, DifficultyGroup } from "$lib/types/bms";
-  import { sortDifficultyGroups, getBmsLinks } from "$lib/utils/bms-table";
+  import { sortDifficultyGroups } from "$lib/utils/bms-table";
 
   let chartPreview = $state<
     | {
@@ -135,14 +135,12 @@
           {#each group.charts as chart, index (index)}
             {@const bundleUrl = resolvedBundleUrl(chart)}
             {@const diffUrl = resolvedDiffUrl(chart)}
-            {@const bmsLinks = getBmsLinks(chart)}
             <ChartTableRow
               {chart}
               groupLevel={group.level}
               {groupColor}
               {bundleUrl}
               {diffUrl}
-              {bmsLinks}
               {chartPreview}
             />
           {/each}

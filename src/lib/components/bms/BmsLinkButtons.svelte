@@ -1,19 +1,14 @@
 <script lang="ts">
   import { IconButton } from "$lib/components/ui";
   import type { ChartData } from "$lib/types/bms";
-
-  interface BmsLinks {
-    bmsScoreViewer: string;
-    mocha: string;
-    minir: string;
-  }
+  import { getBmsLinks } from "$lib/utils/bms-table";
 
   interface Props {
     chart: ChartData;
-    bmsLinks: BmsLinks;
   }
 
-  let { chart, bmsLinks }: Props = $props();
+  let { chart }: Props = $props();
+  const bmsLinks = $derived(getBmsLinks(chart));
 
   function hasMd5(chart: ChartData): boolean {
     const v = chart.md5;
@@ -35,6 +30,32 @@
     ariaLabel="BMS Score Viewer"
   >
     📊
+  </IconButton>
+  <IconButton
+    variant="blue"
+    href={bmsLinks.bmsIr}
+    target="_blank"
+    rel="noopener noreferrer"
+    ariaLabel="BMS-IR"
+  >
+    <svg viewBox="0 0 24 24" class="h-8 w-8">
+      <text
+        x="12" y="11"
+        text-anchor="middle"
+        fill="white"
+        font-size="10"
+        font-family="sans-serif"
+        font-weight="700"
+      >BMS</text>
+      <text
+        x="12" y="20.5"
+        text-anchor="middle"
+        fill="white"
+        font-size="10"
+        font-family="sans-serif"
+        font-weight="700"
+      >-IR</text>
+    </svg>
   </IconButton>
 {/if}
 {#if hasSha256(chart)}
