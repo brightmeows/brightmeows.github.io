@@ -112,7 +112,10 @@
               >
                 {entry.symbol ?? ""}{entry.chart.level ?? "?"}
               </span>
-              <a class="text-white no-underline transition-colors hover:text-[#64b5f6]" href={tableHref}>
+              <a
+                class="text-white no-underline transition-colors hover:text-[#64b5f6]"
+                href={tableHref}
+              >
                 {entry.tableName}
               </a>
             </div>
@@ -123,25 +126,39 @@
           {#if bundleUrl ?? diffUrl}
             <div class="flex shrink-0 flex-row gap-[0.3rem]">
               {#if bundleUrl}
-                <GradientButton variant="green" href={bundleUrl} target="_blank" rel="noopener noreferrer" size="sm">
+                <GradientButton
+                  variant="green"
+                  href={bundleUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="sm"
+                >
                   📦 同捆
                 </GradientButton>
               {/if}
               {#if diffUrl}
-                <GradientButton variant="blue" href={diffUrl} target="_blank" rel="noopener noreferrer" size="sm">
+                <GradientButton
+                  variant="blue"
+                  href={diffUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  size="sm"
+                >
                   🔄 差分
                 </GradientButton>
               {/if}
             </div>
           {/if}
         </div>
-
       {:else if loadState?.status === "loading-data"}
         <!-- 加载中（带进度）：显示进度条 -->
         {@const displayName = loadState.name}
         <div class="flex flex-col gap-2 rounded-[10px] bg-black/20 px-4 py-3">
           <div class="flex items-center justify-between">
-            <a class="text-white/80 no-underline transition-colors hover:text-[#64b5f6]" href={tableHref}>
+            <a
+              class="text-white/80 no-underline transition-colors hover:text-[#64b5f6]"
+              href={tableHref}
+            >
               {displayName}
             </a>
             <span class="text-[0.8rem] text-white/50">
@@ -160,19 +177,22 @@
             <span class="shrink-0 text-[0.8rem] text-white/50">{loadState.progress}%</span>
           </div>
         </div>
-
       {:else if loadState?.status === "loading-header" || loadState?.status === "parsing"}
         <!-- 表头加载/解析中 -->
         <div class="flex items-center gap-3 rounded-[10px] bg-black/20 px-4 py-3">
-          <div class="h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-white/30 border-t-[#64b5f6]"></div>
-          <a class="flex-1 text-white/60 no-underline transition-colors hover:text-[#64b5f6]" href={tableHref}>
+          <div
+            class="h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-white/30 border-t-[#64b5f6]"
+          ></div>
+          <a
+            class="flex-1 text-white/60 no-underline transition-colors hover:text-[#64b5f6]"
+            href={tableHref}
+          >
             {loadState.name}
           </a>
           <span class="shrink-0 text-[0.8rem] text-white/40">
             {loadState.status === "loading-header" ? "加载表头..." : "解析中..."}
           </span>
         </div>
-
       {:else if loadState?.status === "error"}
         <!-- 加载失败 -->
         <div class="flex items-center gap-3 rounded-[10px] bg-black/20 px-4 py-3">
@@ -189,12 +209,14 @@
             重试
           </button>
         </div>
-
       {:else}
         <!-- 等待中或状态未知 -->
         <div class="flex items-center gap-3 rounded-[10px] bg-black/20 px-4 py-3">
           <span class="shrink-0 text-white/30">○</span>
-          <a class="flex-1 text-white/50 no-underline transition-colors hover:text-[#64b5f6]" href={tableHref}>
+          <a
+            class="flex-1 text-white/50 no-underline transition-colors hover:text-[#64b5f6]"
+            href={tableHref}
+          >
             {entry.tableName}
           </a>
           <span class="shrink-0 text-[0.8rem] text-white/30">等待中...</span>

@@ -36,7 +36,7 @@
 </script>
 
 <tr class="hover:bg-white/5">
-  <td class="table-td-glass wrap-break-word">
+  <td class="table-td-glass whitespace-nowrap">
     <span
       class="inline-block min-w-7.5 rounded-xl px-2 py-1 text-center text-[0.85rem] font-semibold text-white"
       style={`background-color:${groupColor};`}
@@ -44,8 +44,8 @@
       {groupLevel}
     </span>
   </td>
-  <td class="table-td-glass wrap-break-word">
-    <div class="flex flex-row flex-wrap gap-[0.3rem]">
+  <td class="table-td-glass whitespace-nowrap">
+    <div class="flex flex-row flex-nowrap justify-center gap-[0.3rem]">
       {#if bundleUrl}
         <GradientButton variant="green" href={bundleUrl} target="_blank" rel="noopener noreferrer">
           📦 同捆
@@ -58,8 +58,8 @@
       {/if}
     </div>
   </td>
-  <td class="table-td-glass wrap-break-word">
-    <div class="flex flex-wrap justify-center gap-[0.4rem]">
+  <td class="table-td-glass whitespace-nowrap">
+    <div class="flex flex-nowrap justify-center gap-[0.4rem]">
       <BmsLinkButtons {chart} {bmsLinks} />
     </div>
   </td>

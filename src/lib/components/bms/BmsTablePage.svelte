@@ -41,6 +41,7 @@
   let error = $state<string | null>(null);
 
   let copied = $state(false);
+  let levelRefHasData = $state(false);
 
   async function copySiteUrl(): Promise<void> {
     const ok = await writeToClipboard(window.location.href);
@@ -116,18 +117,6 @@
 
   const tocItems = $derived.by(() => {
     return [
-      {
-        id: "table-info",
-        title: "难度表信息",
-        href: "#table-info",
-        children: [
-          {
-            id: "table-stats",
-            title: "统计摘要",
-            href: "#table-stats",
-          },
-        ],
-      },
       { id: "level-ref", title: "等级参考", href: "#level-ref" },
       {
         id: "charts-list",
@@ -150,7 +139,11 @@
 <PageShell
   currentLabel={headerData?.name ?? "加载难度表header中"}
   {tocItems}
-  panes={[titlePane, contentPane]}
+  panes={loadingState.isLoading || error
+    ? [titlePane, contentPane]
+    : levelRefHasData
+      ? [titlePane, levelRefPane, chartsPane]
+      : [titlePane, chartsPane]}
 />
 
 {#snippet titlePane()}
@@ -194,6 +187,11 @@
         </a>
       {/if}
     </div>
+    {#if tableStats && !loadingState.isLoading}
+      <div class="mt-2 text-[1.2rem] text-white/70 italic">
+        总谱面数: {tableStats.totalCharts} | 难度等级数: {tableStats.difficulties.length}
+      </div>
+    {/if}
   </div>
 {/snippet}
 
@@ -224,59 +222,25 @@
         重新加载
       </button>
     </div>
-  {:else}
-    <div class="py-4">
-      <div class="mb-8 flex flex-wrap gap-8 rounded-[15px] bg-black/20 p-6">
-        <div class="min-w-[18rem] flex-1">
-          <h2 id="table-info" class="section-title mt-0 mb-4 scroll-mt-5">难度表信息</h2>
-          <div>
-            {#if headerData}
-              <p class="my-2 text-white/80">
-                <strong class="text-[#64b5f6]">难度表名称:</strong>
-                {headerData.name ?? "未命名"}
-              </p>
-              <p class="my-2 text-white/80">
-                <strong class="text-[#64b5f6]">难度表符号:</strong>
-                {headerData.symbol ?? "未定义"}
-              </p>
-            {/if}
-          </div>
-        </div>
-
-        <div class="min-w-[18rem] flex-1">
-          <h3 id="table-stats" class="section-title mt-0 mb-4 scroll-mt-5">统计摘要</h3>
-          <div class="grid grid-cols-3 gap-4">
-            <div class="stat-card">
-              <div class="mb-2 text-[2rem] font-bold text-[#64b5f6]">
-                {tableStats.totalCharts}
-              </div>
-              <div class="text-[0.9rem] text-white/70">总谱面数</div>
-            </div>
-            <div class="stat-card">
-              <div class="mb-2 text-[2rem] font-bold text-[#64b5f6]">
-                {tableStats.difficulties.length}
-              </div>
-              <div class="text-[0.9rem] text-white/70">难度等级数</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div id="level-ref" class="scroll-mt-5">
-        <LevelRefTable {headerUrl} />
-      </div>
-
-      <div id="charts-list" class="scroll-mt-5">
-        {#if sortedDifficultyGroups.length > 0}
-          <ChartsTableSection
-            groups={sortedDifficultyGroups}
-            totalCharts={tableData?.length ?? 0}
-            levelOrder={headerData?.level_order ?? []}
-          />
-        {:else}
-          <EmptyState title="暂无谱面数据" description="难度表中没有找到谱面数据。" />
-        {/if}
-      </div>
-    </div>
   {/if}
+{/snippet}
+
+{#snippet levelRefPane()}
+  <div id="level-ref" class="scroll-mt-5">
+    <LevelRefTable {headerUrl} bind:hasData={levelRefHasData} />
+  </div>
+{/snippet}
+
+{#snippet chartsPane()}
+  <div id="charts-list" class="scroll-mt-5">
+    {#if sortedDifficultyGroups.length > 0}
+      <ChartsTableSection
+        groups={sortedDifficultyGroups}
+        totalCharts={tableData?.length ?? 0}
+        levelOrder={headerData?.level_order ?? []}
+      />
+    {:else}
+      <EmptyState title="暂无谱面数据" description="难度表中没有找到谱面数据。" />
+    {/if}
+  </div>
 {/snippet}

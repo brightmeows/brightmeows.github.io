@@ -373,12 +373,7 @@ export class IncrementalAggregator {
    * 根据 chart 身份确定应加入哪个 SearchResult 组。
    * 处理身份升级（title/artist → hash）。
    */
-  private resolveGroup(
-    sha: string,
-    md5: string,
-    title: string,
-    artist: string
-  ): SearchResult {
+  private resolveGroup(sha: string, md5: string, title: string, artist: string): SearchResult {
     // 1) 有 sha256 → hash 组
     if (sha) {
       const existing = this.byHash.get(sha);

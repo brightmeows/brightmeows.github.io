@@ -3,9 +3,10 @@
 
   interface Props {
     headerUrl?: string;
+    hasData?: boolean;
   }
 
-  let { headerUrl = undefined }: Props = $props();
+  let { headerUrl = undefined, hasData = $bindable(false) }: Props = $props();
 
   let levelRefData = $state<LevelRefItem[]>([]);
   let shouldShow = $state(false);
@@ -80,44 +81,46 @@
   $effect(() => {
     void loadLevelRefData(headerUrl);
   });
+
+  $effect(() => {
+    hasData = shouldShow && levelRefData.length > 0;
+  });
 </script>
 
 {#if shouldShow && levelRefData.length > 0}
-  <div class="mt-8 mb-8 rounded-[15px] border border-white/10 bg-black/20 p-6">
-    <h3 class="section-title mt-0 mb-6 text-center">难度对照表</h3>
-    <div class="flex flex-wrap items-start justify-center gap-8">
-      {#each tableHalves as half (half.id)}
-        <div class="min-w-[18rem] flex-1">
-          <table class="table-glass">
-            <colgroup>
-              {#each ["40%", "60%"] as w (w)}
-                <col style={`width: ${w}`} />
+  <h3 class="section-title mt-0 mb-6 text-center">难度对照表</h3>
+  <div class="flex flex-wrap items-start justify-center gap-8">
+    {#each tableHalves as half (half.id)}
+      <div class="min-w-[18rem] flex-1">
+        <table class="table-glass">
+          <colgroup>
+            {#each ["40%", "60%"] as w (w)}
+              <col style={`width: ${w}`} />
+            {/each}
+          </colgroup>
+          <thead>
+            <tr>
+              {#each ["难度等级", "对应难度"] as label (label)}
+                <th class="table-th-glass text-center">
+                  {label}
+                </th>
               {/each}
-            </colgroup>
-            <thead>
-              <tr>
-                {#each ["难度等级", "对应难度"] as label (label)}
-                  <th class="table-th-glass">
-                    {label}
-                  </th>
-                {/each}
+            </tr>
+          </thead>
+          <tbody>
+            {#each half.items as item (item.level)}
+              <tr class="hover:bg-white/5 last:[&>td]:border-b-0">
+                <td class="table-td-glass text-center">
+                  {item.level}
+                </td>
+                <td class="table-td-glass text-center">
+                  {item.ref}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {#each half.items as item (item.level)}
-                <tr class="hover:bg-white/5 last:[&>td]:border-b-0">
-                  <td class="table-td-glass">
-                    {item.level}
-                  </td>
-                  <td class="table-td-glass">
-                    {item.ref}
-                  </td>
-                </tr>
-              {/each}
-            </tbody>
-          </table>
-        </div>
-      {/each}
-    </div>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    {/each}
   </div>
 {/if}

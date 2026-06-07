@@ -6,7 +6,12 @@
   import EmptyState from "$lib/components/EmptyState.svelte";
   import PageShell from "$lib/components/PageShell.svelte";
   import BmsSearchResult from "$lib/components/bms/BmsSearchResult.svelte";
-  import type { SearchResult, CandidateEntry, TableLoadState, WorkerMessage } from "$lib/data/bms-search";
+  import type {
+    SearchResult,
+    CandidateEntry,
+    TableLoadState,
+    WorkerMessage,
+  } from "$lib/data/bms-search";
   import {
     detectQueryType,
     loadTableHeader,
@@ -143,13 +148,34 @@
 
   // ---- tableStates 更新辅助函数 ----
 
-  function setWaiting(tid: string): void { tableStates.set(tid, { status: "waiting", tableId: tid }); }
-  function setLoadingHeader(tid: string, name: string): void { tableStates.set(tid, { status: "loading-header", tableId: tid, name }); }
-  function setLoadingData(tid: string, name: string, progress: number, bytesLoaded: number, bytesTotal: number): void {
-    tableStates.set(tid, { status: "loading-data", tableId: tid, name, progress, bytesLoaded, bytesTotal });
+  function setWaiting(tid: string): void {
+    tableStates.set(tid, { status: "waiting", tableId: tid });
   }
-  function setParsing(tid: string, name: string): void { tableStates.set(tid, { status: "parsing", tableId: tid, name }); }
-  function setDone(tid: string, name: string): void { tableStates.set(tid, { status: "done", tableId: tid, name }); }
+  function setLoadingHeader(tid: string, name: string): void {
+    tableStates.set(tid, { status: "loading-header", tableId: tid, name });
+  }
+  function setLoadingData(
+    tid: string,
+    name: string,
+    progress: number,
+    bytesLoaded: number,
+    bytesTotal: number
+  ): void {
+    tableStates.set(tid, {
+      status: "loading-data",
+      tableId: tid,
+      name,
+      progress,
+      bytesLoaded,
+      bytesTotal,
+    });
+  }
+  function setParsing(tid: string, name: string): void {
+    tableStates.set(tid, { status: "parsing", tableId: tid, name });
+  }
+  function setDone(tid: string, name: string): void {
+    tableStates.set(tid, { status: "done", tableId: tid, name });
+  }
   function setError(tid: string, name: string, errorMessage: string): void {
     tableStates.set(tid, { status: "error", tableId: tid, name, errorMessage });
   }
@@ -370,7 +396,7 @@
       <div>
         <p class="mb-4 text-white/70">找到 {searchResults.length} 个谱面</p>
         {#each searchResults as result (result.id)}
-          <BmsSearchResult result={result} tableStates={tableStates} onretry={retryTable} />
+          <BmsSearchResult {result} {tableStates} onretry={retryTable} />
         {/each}
       </div>
     {:else if searchPhase === "searching"}
@@ -384,11 +410,7 @@
         <p class="text-white/70">正在加载难度表...</p>
       </div>
     {:else if hasNoResults}
-      <EmptyState
-        title="未找到结果"
-        description="没有匹配的谱面，请尝试其他关键词。"
-        emoji="🔍"
-      />
+      <EmptyState title="未找到结果" description="没有匹配的谱面，请尝试其他关键词。" emoji="🔍" />
     {:else if searchPhase === "idle"}
       <EmptyState
         title="输入关键词开始搜索"

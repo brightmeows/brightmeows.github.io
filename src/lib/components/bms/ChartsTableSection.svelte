@@ -3,7 +3,6 @@
 
   import EmptyState from "$lib/components/EmptyState.svelte";
   import JsonPreview from "$lib/components/JsonPreview.svelte";
-  import ScrollSyncGroup from "$lib/components/ScrollSyncGroup.svelte";
   import type { ChartData, DifficultyGroup } from "$lib/types/bms";
   import { sortDifficultyGroups, getBmsLinks } from "$lib/utils/bms-table";
 
@@ -70,40 +69,56 @@
 {#if groups.length === 0}
   <EmptyState title="暂无谱面数据" description="难度表中没有找到谱面数据。" />
 {:else}
-  <div class="mt-8">
-    <h3 class="mb-4 text-white">谱面列表 ({totalCharts} 个)</h3>
+  <h3 class="section-title mb-6 text-center">谱面列表 ({totalCharts} 个)</h3>
 
-    <ScrollSyncGroup watchKeys={groups}>
-      {#snippet children({ setRef })}
-        {#if groups.length > 1}
-          <div class="mb-8">
-            <div class="mb-6 flex flex-wrap gap-3">
-              {#each displayGroups as group, idx (group.level)}
-                <button
-                  class="flex cursor-pointer items-center justify-center gap-2 rounded-[25px] border-2 border-transparent px-6 py-3 text-[1.1rem] font-bold text-white opacity-70 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:opacity-90 hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)] active:-translate-y-px active:opacity-90"
-                  type="button"
-                  onclick={() => scrollToDifficultyGroup(group.level)}
-                  style={`background-color:${segmentColor(
-                    idx,
-                    displayGroups.length
-                  )};border-color:${segmentColor(idx, displayGroups.length)};`}
-                >
-                  {group.level}
-                  <span
-                    class="rounded-[10px] bg-black/20 px-2 py-[0.1rem] text-[0.9rem] opacity-90"
-                  >
-                    ({group.charts.length})
-                  </span>
-                </button>
-              {/each}
-            </div>
-          </div>
-        {/if}
+  {#if groups.length > 1}
+    <div class="mb-8">
+      <div class="mb-6 flex flex-wrap gap-3">
+        {#each displayGroups as group, idx (group.level)}
+          <button
+            class="flex cursor-pointer items-center justify-center gap-2 rounded-[25px] border-2 border-transparent px-6 py-3 text-[1.1rem] font-bold text-white opacity-70 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:opacity-90 hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)] active:-translate-y-px active:opacity-90"
+            type="button"
+            onclick={() => scrollToDifficultyGroup(group.level)}
+            style={`background-color:${segmentColor(
+              idx,
+              displayGroups.length
+            )};border-color:${segmentColor(idx, displayGroups.length)};`}
+          >
+            {group.level}
+            <span class="rounded-[10px] bg-black/20 px-2 py-[0.1rem] text-[0.9rem] opacity-90">
+              ({group.charts.length})
+            </span>
+          </button>
+        {/each}
+      </div>
+    </div>
+  {/if}
 
-        {#each displayGroups as group, gIndex (group.level)}
-          {@const groupColor = segmentColor(gIndex, displayGroups.length)}
-          <div id={`difficulty-group-${group.level}`} class="mb-12 scroll-mt-5">
-            <div class="section-divider">
+  <div class="table-wrapper">
+    <table class="w-full min-w-225 border-collapse">
+      <colgroup>
+        <col style="width: 1%" />
+        <col style="width: 1%" />
+        <col style="width: 1%" />
+        <col />
+        <col />
+        <col />
+      </colgroup>
+      <thead>
+        <tr>
+          <th class="table-th-glass text-center whitespace-nowrap"> 等级 </th>
+          <th class="table-th-glass text-center whitespace-nowrap"> 下载 </th>
+          <th class="table-th-glass text-center whitespace-nowrap"> BMS网站 </th>
+          <th class="table-th-glass text-center whitespace-nowrap"> 标题 </th>
+          <th class="table-th-glass text-center whitespace-nowrap"> 艺术家 </th>
+          <th class="table-th-glass text-center whitespace-nowrap"> 备注 </th>
+        </tr>
+      </thead>
+      {#each displayGroups as group, gIndex (group.level)}
+        {@const groupColor = segmentColor(gIndex, displayGroups.length)}
+        <tbody id={`difficulty-group-${group.level}`} class="scroll-mt-5">
+          <tr>
+            <td colspan="6" class="border-b-2 border-white/10 px-4 py-3">
               <div class="flex items-center gap-4">
                 <span
                   class="shadow-[0_2px_8px rgba(0,0,0,0.2)] rounded-[20px] px-6 py-2 text-[1.2rem] font-bold text-white"
@@ -115,50 +130,25 @@
                   {group.charts.length} 个谱面
                 </span>
               </div>
-            </div>
-
-            <div class="table-wrapper" use:setRef>
-              <table class="w-full min-w-225 table-fixed border-collapse">
-                <colgroup>
-                  <col style="width: 7%" />
-                  <col style="width: 13%" />
-                  <col style="width: 14%" />
-                  <col style="width: 26%" />
-                  <col style="width: 22%" />
-                  <col style="width: 18%" />
-                </colgroup>
-                <thead>
-                  <tr>
-                    <th class="table-th-glass"> 等级 </th>
-                    <th class="table-th-glass"> 下载 </th>
-                    <th class="table-th-glass"> BMS网站 </th>
-                    <th class="table-th-glass"> 标题 </th>
-                    <th class="table-th-glass"> 艺术家 </th>
-                    <th class="table-th-glass"> 备注 </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {#each group.charts as chart, index (index)}
-                    {@const bundleUrl = resolvedBundleUrl(chart)}
-                    {@const diffUrl = resolvedDiffUrl(chart)}
-                    {@const bmsLinks = getBmsLinks(chart)}
-                    <ChartTableRow
-                      {chart}
-                      groupLevel={group.level}
-                      {groupColor}
-                      {bundleUrl}
-                      {diffUrl}
-                      {bmsLinks}
-                      {chartPreview}
-                    />
-                  {/each}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        {/each}
-      {/snippet}
-    </ScrollSyncGroup>
+            </td>
+          </tr>
+          {#each group.charts as chart, index (index)}
+            {@const bundleUrl = resolvedBundleUrl(chart)}
+            {@const diffUrl = resolvedDiffUrl(chart)}
+            {@const bmsLinks = getBmsLinks(chart)}
+            <ChartTableRow
+              {chart}
+              groupLevel={group.level}
+              {groupColor}
+              {bundleUrl}
+              {diffUrl}
+              {bmsLinks}
+              {chartPreview}
+            />
+          {/each}
+        </tbody>
+      {/each}
+    </table>
   </div>
 {/if}
 
