@@ -3,9 +3,10 @@
 
   interface Props {
     groups: ResolvedCourseGroup[];
+    symbol?: string;
   }
 
-  let { groups = [] as ResolvedCourseGroup[] }: Props = $props();
+  let { groups = [] as ResolvedCourseGroup[], symbol = "" }: Props = $props();
 
   let collapsed = $state(false);
   let groupMode = $state(false);
@@ -152,7 +153,7 @@
                         {/if}
                         {#if chart.level}
                           <span class="ml-1.5 inline-block rounded-[4px] bg-white/10 px-1.5 py-0.5 font-mono text-[0.75rem] text-white/60">
-                            ★{chart.level}
+                            {symbol}{chart.level}
                           </span>
                         {/if}
                       {:else}

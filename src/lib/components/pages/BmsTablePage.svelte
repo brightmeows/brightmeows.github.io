@@ -268,7 +268,7 @@
 
 {#snippet coursePane()}
   <div id="course-list" class="scroll-mt-5">
-    <CourseSection groups={courseGroups} />
+    <CourseSection groups={courseGroups} symbol={headerData?.symbol ?? ""} />
   </div>
 {/snippet}
 
@@ -316,6 +316,7 @@
         groups={sortedDifficultyGroups}
         totalCharts={tableData?.length ?? 0}
         levelOrder={headerData?.level_order ?? []}
+        symbol={headerData?.symbol ?? ""}
       />
     {:else}
       <EmptyState title="暂无谱面数据" description="难度表中没有找到谱面数据。" />

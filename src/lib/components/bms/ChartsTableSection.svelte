@@ -23,10 +23,12 @@
     groups = [] as DifficultyGroup[],
     totalCharts,
     levelOrder = undefined as string[] | undefined,
+    symbol = "",
   }: {
     groups?: DifficultyGroup[];
     totalCharts: number;
     levelOrder?: string[] | undefined;
+    symbol?: string;
   } = $props();
 
   let displayGroups: DifficultyGroup[] = $derived(sortDifficultyGroups(groups, levelOrder ?? []));
@@ -84,7 +86,7 @@
               displayGroups.length
             )};border-color:${segmentColor(idx, displayGroups.length)};`}
           >
-            {group.level}
+            {symbol}{group.level}
             <span class="rounded-[10px] bg-black/20 px-2 py-[0.1rem] text-[0.9rem] opacity-90">
               ({group.charts.length})
             </span>
@@ -124,7 +126,7 @@
                   class="shadow-[0_2px_8px rgba(0,0,0,0.2)] rounded-[20px] px-6 py-2 text-[1.2rem] font-bold text-white"
                   style={`background-color:${groupColor};`}
                 >
-                  难度 {group.level}
+                  {symbol}{group.level}
                 </span>
                 <span class="text-[1.1rem] text-white/80">
                   {group.charts.length} 个谱面
@@ -142,6 +144,7 @@
               {bundleUrl}
               {diffUrl}
               {chartPreview}
+              {symbol}
             />
           {/each}
         </tbody>
