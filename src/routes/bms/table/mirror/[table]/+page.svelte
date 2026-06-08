@@ -4,7 +4,7 @@
   import { R2_TABLES_BASE } from "$lib/data/bms-constants";
 
   let table = $derived(page.params.table);
-  let headerUrl = $derived(`${R2_TABLES_BASE}/${table}/header.json`);
+  let headerUrl = $derived(`${R2_TABLES_BASE}/${encodeURIComponent(table)}/header.json`);
 </script>
 
 <BmsTablePage {headerUrl} />

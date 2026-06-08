@@ -22,6 +22,6 @@ export const load: PageServerLoad = ({ params }) => {
 
   return {
     title: formatTitle(`BMS ${table}`),
-    bmstableMeta: `${R2_TABLES_BASE}/${table}/header.json`,
+    bmstableMeta: `${R2_TABLES_BASE}/${encodeURIComponent(table)}/header.json`,
   };
 };
