@@ -47,12 +47,41 @@ export interface DifficultyGroup {
   charts: ChartData[];
 }
 
+/** 段位奖牌条件 */
+export interface Trophy {
+  name: string; // 'goldmedal' | 'silvermedal' | 'bronzemedal'
+  missrate?: number;
+  scorerate?: number;
+}
+
+/** 段位内单谱面（已解析） */
+export interface CourseChartInfo {
+  md5?: string;
+  sha256?: string;
+  title?: string;
+  artist?: string;
+  level?: string;
+  resolved: boolean;
+}
+
+/** 段位（Course 对象） */
+export interface Course {
+  name: string;
+  constraint?: string[];
+  trophy?: Trophy[];
+  charts: CourseChartInfo[];
+}
+
+/** 段位列表分组（始终归一化为嵌套数组的外层元素） */
+export type ResolvedCourseGroup = Course[];
+
 /** 表头数据 */
 export interface HeaderData {
   name?: string;
   symbol?: string;
   data_url?: string;
   level_order?: string[];
+  course?: unknown; // 原始值，由 resolveCourses 处理
   [key: string]: unknown;
 }
 

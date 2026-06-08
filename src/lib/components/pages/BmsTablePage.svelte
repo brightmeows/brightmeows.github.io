@@ -2,23 +2,22 @@
   import { onMount } from "svelte";
 
   import ChartsTableSection from "$lib/components/bms/ChartsTableSection.svelte";
+  import CourseSection from "$lib/components/bms/CourseSection.svelte";
   import LevelRefTable from "$lib/components/bms/LevelRefTable.svelte";
   import PageShell from "$lib/components/layout/PageShell.svelte";
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
-  import { groupChartsByLevel, computeTableStats } from "$lib/data/bms-data";
-  import { loadBmsTable } from "$lib/data/bms-table-loader";
-  import type { ChartData, HeaderData, ProgressCallback } from "$lib/types/bms";
+  import {
+    fetchBmsHeader,
+    fetchBmsTableData,
+    groupChartsByLevel,
+    computeTableStats,
+    resolveCourses,
+  } from "$lib/data/bms-data";
+  import type { ChartData, HeaderData } from "$lib/types/bms";
   import { sortDifficultyGroups } from "$lib/utils/bms-table";
   import { writeToClipboard } from "$lib/utils/clipboard";
   import { formatTitle } from "$lib/utils/title";
-
-  interface LoadingState {
-    isLoading: boolean;
-    progress: number;
-    message: string;
-    detail?: string;
-  }
 
   interface Props {
     headerUrl: string;
@@ -27,21 +26,76 @@
 
   let { headerUrl, originUrl = null }: Props = $props();
 
-  let pageTitle = $state("加载难度表header中");
-
-  let loadingState = $state<LoadingState>({
-    isLoading: true,
-    progress: 0,
-    message: "正在初始化...",
-  });
-
-  let tableData = $state<ChartData[] | null>(null);
+  // ---- Header 加载状态 ----
+  let headerLoadState = $state<"loading" | "loaded" | "error">("loading");
   let headerData = $state<HeaderData | null>(null);
-  let dataFetchUrl = $state<string | null>(null);
-  let error = $state<string | null>(null);
+  let headerError = $state<string | null>(null);
 
+  // ---- Data 加载状态（独立于 header） ----
+  let dataLoadState = $state<"idle" | "loading" | "loaded" | "error">("idle");
+  let tableData = $state<ChartData[] | null>(null);
+  let dataFetchUrl = $state<string | null>(null);
+  let dataError = $state<string | null>(null);
+
+  let pageTitle = $state("加载难度表header中");
   let copied = $state(false);
   let levelRefHasData = $state(false);
+
+  // ---- Header 加载 ----
+  async function loadHeader(): Promise<void> {
+    try {
+      headerLoadState = "loading";
+      headerError = null;
+      headerData = null;
+      pageTitle = "加载难度表header中";
+
+      const result = await fetchBmsHeader(headerUrl);
+      headerData = result;
+      pageTitle = String(result.name ?? "未命名");
+      headerLoadState = "loaded";
+
+      // header 加载完成后自动启动 data 加载
+      void loadData(result.data_url);
+    } catch (err) {
+      headerError = err instanceof Error ? err.message : "未知错误";
+      headerLoadState = "error";
+      console.error("加载BMS难度表header失败:", err);
+    }
+  }
+
+  // ---- Data 加载（独立错误处理，不影响 header/段位显示） ----
+  async function loadData(dataUrl: string | undefined): Promise<void> {
+    if (!dataUrl) {
+      dataError = "表头信息中未找到 data_url";
+      dataLoadState = "error";
+      return;
+    }
+
+    try {
+      dataLoadState = "loading";
+      dataError = null;
+      tableData = null;
+
+      const headerUrlBase = new URL(headerUrl, window.location.href).toString();
+      const result = await fetchBmsTableData(dataUrl, headerUrlBase);
+
+      tableData = result.data;
+      dataFetchUrl = result.fetchUrl;
+      dataLoadState = "loaded";
+    } catch (err) {
+      dataError = err instanceof Error ? err.message : "未知错误";
+      dataLoadState = "error";
+      console.error("加载BMS谱面数据失败:", err);
+    }
+  }
+
+  function retryData(): void {
+    void loadData(headerData?.data_url);
+  }
+
+  async function retryAll(): Promise<void> {
+    await loadHeader();
+  }
 
   async function copySiteUrl(): Promise<void> {
     const ok = await writeToClipboard(window.location.href);
@@ -53,52 +107,14 @@
     }
   }
 
-  async function lazyLoadTableData(): Promise<void> {
-    try {
-      error = null;
-      tableData = null;
-      headerData = null;
-      dataFetchUrl = null;
-
-      loadingState = {
-        isLoading: true,
-        progress: 0,
-        message: "正在初始化...",
-      };
-
-      pageTitle = "加载难度表header中";
-
-      const onProgress: ProgressCallback = (ev) => {
-        loadingState = {
-          ...loadingState,
-          progress: ev.percent,
-          message: ev.message,
-          detail: ev.detail,
-        };
-      };
-
-      const result = await loadBmsTable(headerUrl, onProgress);
-
-      headerData = result.headerData;
-      pageTitle = String(headerData?.name ?? "未命名");
-      tableData = result.tableData;
-      dataFetchUrl = result.dataFetchUrl;
-
-      setTimeout(() => {
-        loadingState = { ...loadingState, isLoading: false };
-      }, 500);
-    } catch (err) {
-      error = err instanceof Error ? err.message : "未知错误";
-      loadingState = { ...loadingState, isLoading: false };
-      console.error("加载BMS难度表数据失败:", err);
-    }
-  }
-
+  // ---- 派生数据 ----
   const groups = $derived(groupChartsByLevel(tableData ?? []));
   const tableStats = $derived(computeTableStats(groups));
   const sortedDifficultyGroups = $derived(
     sortDifficultyGroups(groups, headerData?.level_order ?? [])
   );
+
+  const courseGroups = $derived(resolveCourses(headerData?.course, tableData ?? []));
 
   const difficultyTocItems = $derived.by(() => {
     const sorted = sortedDifficultyGroups;
@@ -116,19 +132,37 @@
   });
 
   const tocItems = $derived.by(() => {
-    return [
-      { id: "level-ref", title: "等级参考", href: "#level-ref" },
-      {
-        id: "charts-list",
-        title: "谱面列表",
-        href: "#charts-list",
-        children: difficultyTocItems,
-      },
-    ];
+    const items: {
+      id: string;
+      title: string;
+      href?: string;
+      children?: { id: string; title: string; href: string }[];
+    }[] = [];
+
+    if (levelRefHasData) {
+      items.push({ id: "level-ref", title: "等级参考", href: "#level-ref" });
+    }
+
+    if (courseGroups.length > 0) {
+      items.push({ id: "course-list", title: "段位认定", href: "#course-list" });
+    }
+
+    items.push({
+      id: "charts-list",
+      title: "谱面列表",
+      href: "#charts-list",
+      children: difficultyTocItems,
+    });
+
+    return items;
   });
 
+  // ---- Pane 组合逻辑 ----
+  const dataLoaded = $derived(dataLoadState === "loaded");
+  const dataLoading = $derived(dataLoadState === "idle" || dataLoadState === "loading");
+
   onMount(() => {
-    void lazyLoadTableData();
+    void loadHeader();
   });
 </script>
 
@@ -139,11 +173,18 @@
 <PageShell
   currentLabel={headerData?.name ?? "加载难度表header中"}
   {tocItems}
-  panes={loadingState.isLoading || error
-    ? [titlePane, contentPane]
-    : levelRefHasData
-      ? [titlePane, levelRefPane, chartsPane]
-      : [titlePane, chartsPane]}
+  panes={headerLoadState === "loading"
+    ? [titlePane, headerLoadingPane]
+    : headerLoadState === "error"
+      ? [titlePane, headerErrorPane]
+      : [
+          titlePane,
+          ...(courseGroups.length > 0 ? [coursePane] : []),
+          ...(levelRefHasData ? [levelRefPane] : []),
+          ...(dataLoading ? [dataLoadingPane] : []),
+          ...(dataLoaded ? [chartsPane] : []),
+          ...(dataLoadState === "error" ? [dataErrorPane] : []),
+        ]}
 />
 
 {#snippet titlePane()}
@@ -188,7 +229,7 @@
         </a>
       {/if}
     </div>
-    {#if tableStats && !loadingState.isLoading}
+    {#if dataLoaded && tableStats}
       <div class="mt-2 text-[1.2rem] text-white/70 italic">
         总谱面数: {tableStats.totalCharts} | 难度等级数: {tableStats.difficulties.length}
       </div>
@@ -196,39 +237,75 @@
   </div>
 {/snippet}
 
-{#snippet contentPane()}
-  {#if loadingState.isLoading}
-    <div class="p-8">
-      <LoadingProgress
-        progress={loadingState.progress}
-        message={loadingState.message}
-        detail={loadingState.detail}
-        title="正在加载BMS难度表数据..."
-        variant="determinate"
-      />
-    </div>
-  {:else if error}
-    <div class="p-12 text-center">
-      <div class="mb-4 text-[4rem]">⚠️</div>
-      <h3 class="mb-4 text-[#ff6b6b]">加载失败</h3>
-      <p class="my-6 rounded-[10px] border-l-4 border-[#ff6b6b] bg-[rgba(255,107,107,0.1)] p-4">
-        {error}
-      </p>
-      <p>请检查网络连接或稍后重试。</p>
-      <button
-        class="mt-4 cursor-pointer rounded-[25px] border-none bg-[#64b5f6] px-8 py-3 text-[1rem] font-semibold text-white transition-colors duration-300 ease-out hover:bg-[#42a5f5]"
-        type="button"
-        onclick={lazyLoadTableData}
-      >
-        重新加载
-      </button>
-    </div>
-  {/if}
+{#snippet headerLoadingPane()}
+  <div class="p-8">
+    <LoadingProgress
+      progress={0}
+      message="正在请求表头信息..."
+      title="正在加载BMS难度表数据..."
+      variant="indeterminate"
+    />
+  </div>
+{/snippet}
+
+{#snippet headerErrorPane()}
+  <div class="p-12 text-center">
+    <div class="mb-4 text-[4rem]">⚠️</div>
+    <h3 class="mb-4 text-[#ff6b6b]">加载失败</h3>
+    <p class="my-6 rounded-[10px] border-l-4 border-[#ff6b6b] bg-[rgba(255,107,107,0.1)] p-4">
+      {headerError}
+    </p>
+    <p class="mb-6 text-white/70">请检查网络连接或稍后重试。</p>
+    <button
+      class="cursor-pointer rounded-[25px] border-none bg-[#64b5f6] px-8 py-3 text-[1rem] font-semibold text-white transition-colors duration-300 ease-out hover:bg-[#42a5f5]"
+      type="button"
+      onclick={retryAll}
+    >
+      重新加载
+    </button>
+  </div>
+{/snippet}
+
+{#snippet coursePane()}
+  <div id="course-list" class="scroll-mt-5">
+    <CourseSection groups={courseGroups} />
+  </div>
 {/snippet}
 
 {#snippet levelRefPane()}
   <div id="level-ref" class="scroll-mt-5">
     <LevelRefTable {headerUrl} bind:hasData={levelRefHasData} />
+  </div>
+{/snippet}
+
+{#snippet dataLoadingPane()}
+  <div class="p-8">
+    <LoadingProgress
+      progress={0}
+      message="正在加载谱面数据..."
+      title="正在加载谱面数据..."
+      variant="indeterminate"
+    />
+  </div>
+{/snippet}
+
+{#snippet dataErrorPane()}
+  <div class="p-12 text-center">
+    <div class="mb-4 text-[4rem]">⚠️</div>
+    <h3 class="mb-4 text-[#ff6b6b]">谱面数据加载失败</h3>
+    <p class="my-6 rounded-[10px] border-l-4 border-[#ff6b6b] bg-[rgba(255,107,107,0.1)] p-4">
+      {dataError}
+    </p>
+    <p class="mb-6 text-white/70">
+      段位数据已显示，谱面列表加载失败。您可以重试或稍后刷新页面。
+    </p>
+    <button
+      class="cursor-pointer rounded-[25px] border-none bg-[#64b5f6] px-8 py-3 text-[1rem] font-semibold text-white transition-colors duration-300 ease-out hover:bg-[#42a5f5]"
+      type="button"
+      onclick={retryData}
+    >
+      重试加载谱面数据
+    </button>
   </div>
 {/snippet}
 
