@@ -296,9 +296,7 @@
     <p class="my-6 rounded-[10px] border-l-4 border-[#ff6b6b] bg-[rgba(255,107,107,0.1)] p-4">
       {dataError}
     </p>
-    <p class="mb-6 text-white/70">
-      段位数据已显示，谱面列表加载失败。您可以重试或稍后刷新页面。
-    </p>
+    <p class="mb-6 text-white/70">段位数据已显示，谱面列表加载失败。您可以重试或稍后刷新页面。</p>
     <button
       class="cursor-pointer rounded-[25px] border-none bg-[#64b5f6] px-8 py-3 text-[1rem] font-semibold text-white transition-colors duration-300 ease-out hover:bg-[#42a5f5]"
       type="button"

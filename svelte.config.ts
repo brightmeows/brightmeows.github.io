@@ -41,7 +41,7 @@ const config: Config = {
       base: "",
     },
     alias: {
-      $content: path.resolve("./src/content"),
+      $blog: path.resolve("./content/blog"),
     },
     prerender: {
       handleMissingId: "ignore",

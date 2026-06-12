@@ -8,6 +8,45 @@ import type { BlogPost, BlogPostMetadata } from "../types/blog";
 import { extractFirstSentence } from "./blog-metadata";
 
 /**
+ * 从 Markdown 内容中提取第一个 ATX 标题（# Title）
+ */
+function extractFirstHeading(content: string): string | undefined {
+  const match = /^#\s+(.+)$/m.exec(content);
+  return match?.[1]?.trim();
+}
+
+/**
+ * 从 slug 路径中推测日期
+ * 支持模式：
+ *   - "20251225/xxx"       → "2025-12-25"（目录名 YYYYMMDD）
+ *   - "2025-12-25/xxx"     → "2025-12-25"（目录名 YYYY-MM-DD）
+ *   - "2025/12/25/xxx"     → "2025-12-25"（三级目录）
+ */
+function extractDateFromSlug(slug: string): string | undefined {
+  const segments = slug.split("/");
+
+  for (const seg of segments) {
+    // YYYYMMDD
+    const m = /^(\d{4})(\d{2})(\d{2})$/.exec(seg);
+    if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+    // YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(seg)) return seg;
+  }
+
+  // YYYY/MM/DD 跨三段
+  if (segments.length >= 4) {
+    const [y, mm, dd] = segments;
+    if (/^\d{4}$/.test(y) && /^\d{2}$/.test(mm) && /^\d{2}$/.test(dd)) {
+      return `${y}-${mm}-${dd}`;
+    }
+  }
+
+  return undefined;
+}
+
+const EPOCH_DATE = "1970-01-01";
+
+/**
  * 扫描博客目录并生成索引
  * @param blogDir - 博客目录路径
  * @param basePath - URL 基础路径（通常为空或 BASE_PATH 环境变量）
@@ -31,10 +70,15 @@ export function scanBlogDirectory(blogDir: string, basePath = ""): BlogPost[] {
     const filename = entry.replace(/\.(md|svx)$/, "");
     const slug = metadata.slug ?? filename;
 
+    // title：优先 frontmatter，其次第一个标题，最后用 slug
+    const title = metadata.title ?? extractFirstHeading(parsed.content) ?? slug;
+    // date：优先 frontmatter，其次目录路径，最后 UTC epoch
+    const date = metadata.date ?? extractDateFromSlug(slug) ?? EPOCH_DATE;
+
     posts.push({
       slug,
-      title: metadata.title,
-      date: metadata.date,
+      title,
+      date,
       order: metadata.order,
       firstSentence: metadata.description ?? extractFirstSentence(content),
       url: `${basePath}/blog/${slug}`,

@@ -6,6 +6,11 @@ import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
 
 export default defineConfig({
+  server: {
+    fs: {
+      allow: ["content"],
+    },
+  },
   plugins: [
     tailwindcss(),
     sveltekit(),
@@ -16,7 +21,7 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      $content: path.resolve("./src/content"),
+      $blog: path.resolve("./content/blog"),
     },
   },
 });

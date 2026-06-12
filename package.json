@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "prebuild && vite dev",
+    "dev": "pnpm prebuild && vite dev",
     "prebuild": "jq '[.[] | .url_from = .url | .dir_name = \"[\" + (.url | capture(\"://(?<h>[^/]+)\").h) + \"] \" + .name | .url = (\"https://brightmeows.codeberg.page/bms/table/mirror/\" + (.dir_name | @uri) + \"/\")]' static/bms/table/mirror/tables.raw.json > static/bms/table/mirror/tables.json",
     "build": "vite build",
     "preview": "vite preview",

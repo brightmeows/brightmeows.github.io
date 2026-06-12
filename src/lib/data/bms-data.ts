@@ -281,10 +281,7 @@ export function computeTableStats(groups: DifficultyGroup[]): {
  * 每个 course 内的 md5/sha256 引用会尝试在 charts 中查找匹配的 title/artist/level。
  * 匹配失败时 resolved=false，保留 hash 前缀用于显示。
  */
-export function resolveCourses(
-  courseRaw: unknown,
-  charts: ChartData[]
-): ResolvedCourseGroup[] {
+export function resolveCourses(courseRaw: unknown, charts: ChartData[]): ResolvedCourseGroup[] {
   if (!courseRaw) return [];
 
   // 构建 hash→chart 索引
@@ -307,7 +304,11 @@ export function resolveCourses(
         resolved: true,
       };
     }
-    return { md5: hash.length === 32 ? hash : undefined, sha256: hash.length === 64 ? hash : undefined, resolved: false };
+    return {
+      md5: hash.length === 32 ? hash : undefined,
+      sha256: hash.length === 64 ? hash : undefined,
+      resolved: false,
+    };
   }
 
   // 解析单个 course 对象的谱面列表（合并 charts → md5 → sha256）

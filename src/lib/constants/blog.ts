@@ -1,1 +1,1 @@
-export const BLOG_DIR = "src/content/blog";
+export const BLOG_DIR = "content/blog";

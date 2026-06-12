@@ -25,7 +25,15 @@
     symbol?: string;
   }
 
-  let { chart, groupLevel, groupColor, bundleUrl, diffUrl, chartPreview, symbol = "" }: Props = $props();
+  let {
+    chart,
+    groupLevel,
+    groupColor,
+    bundleUrl,
+    diffUrl,
+    chartPreview,
+    symbol = "",
+  }: Props = $props();
 </script>
 
 <tr class="hover:bg-white/5">

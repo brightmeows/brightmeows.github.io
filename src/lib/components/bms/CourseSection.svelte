@@ -67,7 +67,11 @@
       aria-expanded={!collapsed}
     >
       段位认定
-      <span class="text-[0.8rem] text-white/50 transition-transform duration-200 {collapsed ? '' : 'rotate-180'}">
+      <span
+        class="text-[0.8rem] text-white/50 transition-transform duration-200 {collapsed
+          ? ''
+          : 'rotate-180'}"
+      >
         ▼
       </span>
     </button>
@@ -80,7 +84,7 @@
         type="button"
         onclick={() => (groupMode = !groupMode)}
       >
-        {groupMode ? '分组显示' : '合并显示'}
+        {groupMode ? "分组显示" : "合并显示"}
       </button>
     {/if}
   </div>
@@ -152,7 +156,9 @@
                           <span class="text-white/50"> / {chart.artist}</span>
                         {/if}
                         {#if chart.level}
-                          <span class="ml-1.5 inline-block rounded-[4px] bg-white/10 px-1.5 py-0.5 font-mono text-[0.75rem] text-white/60">
+                          <span
+                            class="ml-1.5 inline-block rounded-[4px] bg-white/10 px-1.5 py-0.5 font-mono text-[0.75rem] text-white/60"
+                          >
                             {symbol}{chart.level}
                           </span>
                         {/if}

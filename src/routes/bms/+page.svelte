@@ -2,8 +2,8 @@
   import { onMount, tick } from "svelte";
 
   import type { PageData } from "./$types";
+  import BmsContent from "./index.md";
 
-  import BmsContent from "$content/bms/index.md";
   import MarkdownContent from "$lib/components/content/MarkdownContent.svelte";
   import { buildTocFromHeadings, type TocItem } from "$lib/components/layout/FloatingToc.svelte";
   import PageShell from "$lib/components/layout/PageShell.svelte";
