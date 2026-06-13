@@ -47,6 +47,46 @@ export function filterTables(tables: MirrorTableItem[], needles: string[]): Mirr
 }
 
 /**
+ * 获取条目的特征排序键（用于 FEATURED_TABLES 顺序匹配）。
+ * 优先 url_from，然后 url。
+ */
+function featuredKey(item: MirrorTableItem): string {
+  return item.url_from ?? item.url;
+}
+
+/**
+ * 按 name → url 的 fallback 排序比较两个条目（localeCompare）。
+ */
+function compareByName(itemA: MirrorTableItem, itemB: MirrorTableItem): number {
+  const byName = (itemA.name ?? "").localeCompare(itemB.name ?? "");
+  if (byName !== 0) return byName;
+  return (itemA.url ?? "").localeCompare(itemB.url ?? "");
+}
+
+/**
+ * 按精选列表顺序 + name/url fallback 排序镜像表列表。
+ *
+ * - sortFeatured=true 时，在 featuredUrls 中的条目按定义顺序排列，其余按名称排
+ * - sortFeatured=false 时仅按名称排序
+ */
+export function sortMirrorTablesByFeatured(
+  items: MirrorTableItem[],
+  featuredUrls: string[],
+  sortFeatured: boolean
+): MirrorTableItem[] {
+  return [...items].sort((a, b) => {
+    if (sortFeatured && featuredUrls.length > 0) {
+      const idxA = featuredUrls.indexOf(featuredKey(a));
+      const idxB = featuredUrls.indexOf(featuredKey(b));
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+    }
+    return compareByName(a, b);
+  });
+}
+
+/**
  * 将标签字符串 slug 化
  */
 export function slugifyTag(tag: string): string {

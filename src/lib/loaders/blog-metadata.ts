@@ -1,6 +1,6 @@
 import matter from "gray-matter";
 
-import type { BlogPostMetadata } from "../types/blog";
+import type { BlogPostMetadata } from "$lib/types/blog";
 
 /**
  * 解析 Markdown 文件的 frontmatter 和内容

@@ -5,7 +5,7 @@
   import type { TableLoadState } from "$lib/data/bms-search";
   import type { SearchResult } from "$lib/data/search-aggregator";
   import type { ChartData } from "$lib/types/bms";
-  import { writeToClipboard } from "$lib/utils/clipboard";
+  import { clipboardFieldFeedback } from "$lib/utils/clipboard.svelte";
   import { formatBytes } from "$lib/utils/format";
   import { validateUrl } from "$lib/utils/url";
 
@@ -35,17 +35,7 @@
     })
   );
 
-  let copiedField = $state<string | null>(null);
-
-  async function copyHash(field: string, value: string): Promise<void> {
-    const ok = await writeToClipboard(value);
-    if (ok) {
-      copiedField = field;
-      setTimeout(() => {
-        copiedField = null;
-      }, 1500);
-    }
-  }
+  let { copiedField, copy: copyHash } = clipboardFieldFeedback();
 </script>
 
 <GlassContainer padding="lg" rounded="lg" class="mb-6">

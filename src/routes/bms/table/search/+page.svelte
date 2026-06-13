@@ -5,7 +5,12 @@
   import { BmsSearchResult } from "$lib/components/bms";
   import { PageShell } from "$lib/components/layout";
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
-  import type { CandidateEntry, TableLoadState, WorkerMessage } from "$lib/data/bms-search";
+  import type {
+    CandidateEntry,
+    TableLoadState,
+    WorkerMessage,
+    WorkerSearchRequest,
+  } from "$lib/data/bms-search";
   import {
     detectQueryType,
     loadTableHeader,
@@ -44,6 +49,7 @@
   let searchResults = $state<SearchResult[]>([]);
   // eslint-disable-next-line svelte/no-unnecessary-state-wrap
   let tableStates = $state(new SvelteMap<string, TableLoadState>());
+  // 普通 Map（非 SvelteMap）：仅在 loadSingleTable 异步回调中读取，不参与模板响应式追踪
   let candidateMap = new Map<string, CandidateEntry>();
   let currentSearchId = 0;
   let currentSearchType: ReturnType<typeof detectQueryType> = "text";
@@ -269,7 +275,8 @@
     const needles =
       currentSearchType === "text" ? buildSearchNeedles(q, searchConverters) : undefined;
 
-    worker.postMessage({ type: "search", searchId, query: q, needles } as never);
+    const msg: WorkerSearchRequest = { type: "search", searchId, query: q, needles };
+    worker.postMessage(msg);
   }
 
   function onKeydown(e: KeyboardEvent): void {

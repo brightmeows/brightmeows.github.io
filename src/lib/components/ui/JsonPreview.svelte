@@ -63,7 +63,7 @@
   import { cubicOut } from "svelte/easing";
   import { fade, fly } from "svelte/transition";
 
-  import { writeToClipboard } from "$lib/utils/clipboard";
+  import { writeToClipboard } from "$lib/utils/clipboard.svelte";
 
   let open = $state(false);
   let value = $state<unknown>(undefined);

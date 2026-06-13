@@ -5,6 +5,14 @@ import { fetchStream } from "$lib/utils/fetch-stream";
 /** 搜索索引类型 */
 export type SearchIndex = Record<string, string[]>;
 
+/** 四个搜索索引的捆绑类型 */
+export interface SearchIndexBundle {
+  title: SearchIndex;
+  artist: SearchIndex;
+  md5: SearchIndex;
+  sha256: SearchIndex;
+}
+
 /** 索引匹配条目，携带来源信息 */
 export interface KeyMatch {
   /** 匹配到的索引条目原始值（如标题文本、艺术家名、hash 值），非搜索关键词 */
@@ -18,8 +26,17 @@ export interface CandidateEntry {
   matchedKeys: KeyMatch[];
 }
 
-// ---- Worker 消息类型（页面侧） ----
+// ---- Worker 消息类型 ----
 
+/** Worker 收到的搜索请求 */
+export interface WorkerSearchRequest {
+  type: "search";
+  searchId: number;
+  query: string;
+  needles?: string[];
+}
+
+/** Worker → 主线程：索引加载进度 */
 export interface WorkerIndexProgress {
   type: "index-progress";
   name: string;
@@ -71,12 +88,7 @@ export function detectQueryType(query: string): QueryType {
 /** 在索引中搜索，返回候选 tableId → 匹配键集合（含来源信息） */
 export function searchIndices(
   query: string,
-  indices: {
-    title: SearchIndex;
-    artist: SearchIndex;
-    md5: SearchIndex;
-    sha256: SearchIndex;
-  },
+  indices: SearchIndexBundle,
   needles?: string[]
 ): Map<string, KeyMatch[]> {
   const type = detectQueryType(query);

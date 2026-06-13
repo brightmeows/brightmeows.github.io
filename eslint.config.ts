@@ -119,7 +119,7 @@ export default tseslint.config(
   svelteConfigs["flat/prettier"],
 
   {
-    files: ["**/*.svelte", "**/*.svx"],
+    files: ["**/*.svelte", "**/*.svx", "**/*.svelte.ts"],
     languageOptions: {
       parserOptions: {
         parser: tseslint.parser, // Svelte 模板内 <script> 用 TS 解析

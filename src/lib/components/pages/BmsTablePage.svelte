@@ -9,7 +9,7 @@
   import type { ChartData, HeaderData } from "$lib/types/bms";
   import { sortDifficultyGroups } from "$lib/utils/bms-table";
   import { groupChartsByLevel, computeTableStats, resolveCourses } from "$lib/utils/bms-transform";
-  import { writeToClipboard } from "$lib/utils/clipboard";
+  import { clipboardFeedback } from "$lib/utils/clipboard.svelte";
   import { formatTitle } from "$lib/utils/title";
   import { resolveUrl } from "$lib/utils/url";
 
@@ -32,7 +32,7 @@
   let dataError = $state<string | null>(null);
 
   let pageTitle = $state("加载难度表header中");
-  let copied = $state(false);
+  let { copied, copy: copyUrl } = clipboardFeedback();
   let levelRefHasData = $state(false);
 
   // ---- Header 加载 ----
@@ -89,16 +89,6 @@
 
   async function retryAll(): Promise<void> {
     await loadHeader();
-  }
-
-  async function copySiteUrl(): Promise<void> {
-    const ok = await writeToClipboard(window.location.href);
-    if (ok) {
-      copied = true;
-      setTimeout(() => {
-        copied = false;
-      }, 1500);
-    }
   }
 
   // ---- 派生数据 ----
@@ -193,7 +183,9 @@
     {/if}
     <div class="mt-2 text-[1.2rem] text-white/70 italic">
       使用方式：复制本网站链接（
-      <button class="link-accent" type="button" onclick={copySiteUrl}> 点击复制 </button>
+      <button class="link-accent" type="button" onclick={() => copyUrl(window.location.href)}>
+        点击复制
+      </button>
       ），然后在BeMusicSeeker或beatoraja中，粘贴至对应选项处。
       {#if copied}
         <span class="ml-2 text-[#4caf50]">已复制</span>
@@ -231,33 +223,48 @@
   </div>
 {/snippet}
 
-{#snippet headerLoadingPane()}
+{#snippet loadingDisplayPane(message: string, title = "正在加载数据...")}
   <div class="p-8">
-    <LoadingProgress
-      progress={0}
-      message="正在请求表头信息..."
-      title="正在加载BMS难度表数据..."
-      variant="indeterminate"
-    />
+    <LoadingProgress {message} {title} progress={0} variant="indeterminate" />
   </div>
 {/snippet}
 
-{#snippet headerErrorPane()}
+{#snippet errorDisplayPane(
+  title: string,
+  message: string,
+  tip: string,
+  buttonLabel: string,
+  onRetry: () => void | Promise<void>
+)}
   <div class="p-12 text-center">
     <div class="mb-4 text-[4rem]">⚠️</div>
-    <h3 class="mb-4 text-[#ff6b6b]">加载失败</h3>
+    <h3 class="mb-4 text-[#ff6b6b]">{title}</h3>
     <p class="my-6 rounded-[10px] border-l-4 border-[#ff6b6b] bg-[rgba(255,107,107,0.1)] p-4">
-      {headerError}
+      {message}
     </p>
-    <p class="mb-6 text-white/70">请检查网络连接或稍后重试。</p>
+    <p class="mb-6 text-white/70">{tip}</p>
     <button
       class="cursor-pointer rounded-[25px] border-none bg-[#64b5f6] px-8 py-3 text-[1rem] font-semibold text-white transition-colors duration-300 ease-out hover:bg-[#42a5f5]"
       type="button"
-      onclick={retryAll}
+      onclick={() => void onRetry()}
     >
-      重新加载
+      {buttonLabel}
     </button>
   </div>
+{/snippet}
+
+{#snippet headerLoadingPane()}
+  {@render loadingDisplayPane("正在请求表头信息...", "正在加载BMS难度表数据...")}
+{/snippet}
+
+{#snippet headerErrorPane()}
+  {@render errorDisplayPane(
+    "加载失败",
+    headerError ?? "未知错误",
+    "请检查网络连接或稍后重试。",
+    "重新加载",
+    retryAll
+  )}
 {/snippet}
 
 {#snippet coursePane()}
@@ -273,32 +280,17 @@
 {/snippet}
 
 {#snippet dataLoadingPane()}
-  <div class="p-8">
-    <LoadingProgress
-      progress={0}
-      message="正在加载谱面数据..."
-      title="正在加载谱面数据..."
-      variant="indeterminate"
-    />
-  </div>
+  {@render loadingDisplayPane("正在加载谱面数据...", "正在加载谱面数据...")}
 {/snippet}
 
 {#snippet dataErrorPane()}
-  <div class="p-12 text-center">
-    <div class="mb-4 text-[4rem]">⚠️</div>
-    <h3 class="mb-4 text-[#ff6b6b]">谱面数据加载失败</h3>
-    <p class="my-6 rounded-[10px] border-l-4 border-[#ff6b6b] bg-[rgba(255,107,107,0.1)] p-4">
-      {dataError}
-    </p>
-    <p class="mb-6 text-white/70">段位数据已显示，谱面列表加载失败。您可以重试或稍后刷新页面。</p>
-    <button
-      class="cursor-pointer rounded-[25px] border-none bg-[#64b5f6] px-8 py-3 text-[1rem] font-semibold text-white transition-colors duration-300 ease-out hover:bg-[#42a5f5]"
-      type="button"
-      onclick={retryData}
-    >
-      重试加载谱面数据
-    </button>
-  </div>
+  {@render errorDisplayPane(
+    "谱面数据加载失败",
+    dataError ?? "未知错误",
+    "段位数据已显示，谱面列表加载失败。您可以重试或稍后刷新页面。",
+    "重试加载谱面数据",
+    retryData
+  )}
 {/snippet}
 
 {#snippet chartsPane()}

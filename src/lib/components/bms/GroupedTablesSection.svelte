@@ -4,9 +4,9 @@
   import Checkbox from "$lib/components/ui/Checkbox.svelte";
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
   import ScrollSyncGroup from "$lib/components/ui/ScrollSyncGroup.svelte";
-  import type { MirrorTableItem, Tag1Group, Tag2Group } from "$lib/types/bms";
+  import type { Tag1Group, Tag2Group } from "$lib/types/bms";
   import type { JsonPreviewHandle } from "$lib/types/ui";
-  import { slugifyTag } from "$lib/utils/mirror-tables";
+  import { slugifyTag, sortMirrorTablesByFeatured } from "$lib/utils/mirror-tables";
 
   const CheckboxState = {
     Unchecked: 0,
@@ -33,35 +33,6 @@
     featuredUrls = [],
     sortFeatured = false,
   }: Props = $props();
-
-  function compareAscii(a: string, b: string): number {
-    if (a === b) return 0;
-    return a < b ? -1 : 1;
-  }
-
-  /** 排序：启用精选顺序时按 featuredUrls 定义顺序排，否则按名称排 */
-  function sortedItems(items: MirrorTableItem[]): MirrorTableItem[] {
-    if (sortFeatured && featuredUrls.length > 0) {
-      return [...items].sort((a, b) => {
-        const idxA = featuredUrls.indexOf(a.url_from ?? a.url);
-        const idxB = featuredUrls.indexOf(b.url_from ?? b.url);
-        // 均在列表中 → 按定义顺序
-        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-        // 一个在列表中 → 优先
-        if (idxA !== -1) return -1;
-        if (idxB !== -1) return 1;
-        // 均不在列表中 → 按名称排序
-        const byName = compareAscii(a.name, b.name);
-        if (byName !== 0) return byName;
-        return compareAscii(a.url, b.url);
-      });
-    }
-    return [...items].sort((a, b) => {
-      const byName = compareAscii(a.name, b.name);
-      if (byName !== 0) return byName;
-      return compareAscii(a.url, b.url);
-    });
-  }
 
   function scrollToTag1(tag1: string): void {
     const id = `tag1-group-${slugifyTag(tag1)}`;
@@ -238,7 +209,7 @@
                       </tr>
                     </thead>
                     <tbody>
-                      {#each sortedItems(sg.items) as item (item.url)}
+                      {#each sortMirrorTablesByFeatured(sg.items, featuredUrls, sortFeatured) as item (item.url)}
                         <MirrorTableRow
                           {item}
                           selected={!!selectedMap[item.url]}

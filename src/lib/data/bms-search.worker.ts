@@ -1,42 +1,16 @@
 /// <reference lib="webworker" />
 
 import { searchIndices } from "./bms-search";
-import type { SearchIndex, CandidateEntry } from "./bms-search";
+import type {
+  SearchIndex,
+  SearchIndexBundle,
+  CandidateEntry,
+  WorkerMessage,
+  WorkerSearchRequest,
+} from "./bms-search";
 import { getCachedIndices, setCachedIndices, getVersion, setVersion } from "./bms-search-idb";
-import type { SearchIndexBundle } from "./bms-search-idb";
 
 import { R2_INDEXES_BASE } from "$lib/constants/r2";
-
-// ---- types ----
-
-interface IndexProgressMsg {
-  type: "index-progress";
-  name: string;
-  status: "loading" | "done" | "error";
-  current: number;
-  total: number;
-}
-
-interface ReadyMsg {
-  type: "ready";
-  source: "idb" | "network";
-  error?: string;
-}
-
-interface SearchResultMsg {
-  type: "search-result";
-  searchId: number;
-  candidates: CandidateEntry[];
-}
-
-type OutMsg = IndexProgressMsg | ReadyMsg | SearchResultMsg;
-
-interface SearchRequest {
-  type: "search";
-  searchId: number;
-  query: string;
-  needles?: string[];
-}
 
 // ---- state ----
 
@@ -85,7 +59,7 @@ function computeDigest(obj: Record<string, string[]>): string {
 
 // ---- index loading ----
 
-function post(out: OutMsg): void {
+function post(out: WorkerMessage): void {
   self.postMessage(out);
 }
 
@@ -208,7 +182,7 @@ async function fetchAllIndices(): Promise<SearchIndexBundle | null> {
 
 // ---- search ----
 
-function handleSearch(req: SearchRequest): void {
+function handleSearch(req: WorkerSearchRequest): void {
   if (!cachedIndices) {
     post({ type: "search-result", searchId: req.searchId, candidates: [] });
     return;
@@ -230,7 +204,7 @@ function handleSearch(req: SearchRequest): void {
 
 // ---- message handler ----
 
-self.onmessage = (e: MessageEvent<SearchRequest>) => {
+self.onmessage = (e: MessageEvent<WorkerSearchRequest>) => {
   const msg = e.data;
 
   if (msg.type === "search") {

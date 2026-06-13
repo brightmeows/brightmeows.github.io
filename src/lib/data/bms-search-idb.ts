@@ -1,16 +1,9 @@
-import type { SearchIndex } from "./bms-search";
+import type { SearchIndex, SearchIndexBundle } from "./bms-search";
 
 const DB_NAME = "bms-search-v1";
 const DB_VERSION = 1;
 const INDEX_STORE = "indices";
 const META_STORE = "metadata";
-
-export interface SearchIndexBundle {
-  title: SearchIndex;
-  artist: SearchIndex;
-  md5: SearchIndex;
-  sha256: SearchIndex;
-}
 
 // 惰性单例：复用 IndexedDB 连接，open/close 仅在必要时做
 let dbPromise: Promise<IDBDatabase | null> | null = null;
