@@ -203,11 +203,24 @@
       canvas.height = height;
     };
 
+    function handleVisibility(): void {
+      if (document.hidden) {
+        if (animationId !== null) {
+          cancelAnimationFrame(animationId);
+          animationId = null;
+        }
+      } else if (!animationId) {
+        animate();
+      }
+    }
+
     window.addEventListener("resize", handleResize);
+    document.addEventListener("visibilitychange", handleVisibility);
     animate();
 
     return () => {
       window.removeEventListener("resize", handleResize);
+      document.removeEventListener("visibilitychange", handleVisibility);
       if (animationId !== null) {
         cancelAnimationFrame(animationId);
       }

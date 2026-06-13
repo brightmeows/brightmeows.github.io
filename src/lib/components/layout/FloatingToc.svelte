@@ -105,6 +105,7 @@
 
 <script lang="ts">
   import { onMount } from "svelte";
+  import { SvelteMap } from "svelte/reactivity";
 
   import { browser } from "$app/environment";
   import FloatingPanel from "$lib/components/ui/FloatingPanel.svelte";
@@ -143,6 +144,19 @@
     return out;
   }
 
+  // 缓存 element 引用，避免每次 scroll 都 getElementById
+  let elementCache = new SvelteMap<string, Element>();
+
+  function updateElementCache(): void {
+    const newCache = new SvelteMap<string, Element>();
+    for (const item of flatItems) {
+      const id = item.href.startsWith("#") ? item.href.slice(1) : item.id;
+      const el = document.getElementById(id);
+      if (el) newCache.set(id, el);
+    }
+    elementCache = newCache;
+  }
+
   function updateActive(): void {
     const list = flatItems;
     if (list.length === 0) {
@@ -154,7 +168,7 @@
     let current: string | null = null;
     for (const item of list) {
       const id = item.href.startsWith("#") ? item.href.slice(1) : item.id;
-      const el = document.getElementById(id);
+      const el = elementCache.get(id);
       if (!el) continue;
       const top = el.getBoundingClientRect().top;
       if (top - offset <= 0) current = id;
@@ -192,6 +206,7 @@
     window.addEventListener("resize", onScrollOrResize);
     window.addEventListener("hashchange", onScrollOrResize);
 
+    updateElementCache();
     scheduleUpdateActive();
 
     return () => {
@@ -202,7 +217,10 @@
   });
 
   $effect(() => {
-    if (browser && flatItems) scheduleUpdateActive();
+    if (browser && flatItems) {
+      updateElementCache();
+      scheduleUpdateActive();
+    }
   });
 </script>
 

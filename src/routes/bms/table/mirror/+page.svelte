@@ -1,5 +1,4 @@
 <script lang="ts">
-  import * as OpenCC from "opencc-js";
   import { onMount, tick } from "svelte";
 
   import GroupedTablesSection from "$lib/components/bms/GroupedTablesSection.svelte";
@@ -16,6 +15,7 @@
     groupByTags,
     buildGroupTocItems,
   } from "$lib/utils/mirror-tables";
+  import { getSearchConverters } from "$lib/utils/opencc-loader";
 
   const tablesJsonPath = "/bms/table/mirror/tables.json";
   const pageTitle = "BMS 难度表镜像";
@@ -31,20 +31,7 @@
   let searchQuery = $state("");
   let tocItems = $state<TocItem[]>([]);
 
-  type StringConverter = (input: string) => string;
-
-  const searchConverters: StringConverter[] = (() => {
-    try {
-      return [
-        OpenCC.Converter({ from: "cn", to: "jp" }),
-        OpenCC.Converter({ from: "jp", to: "cn" }),
-        OpenCC.Converter({ from: "cn", to: "tw" }),
-        OpenCC.Converter({ from: "tw", to: "cn" }),
-      ];
-    } catch {
-      return [];
-    }
-  })();
+  let searchConverters = $state<((input: string) => string)[]>([]);
 
   async function copyTables(): Promise<void> {
     const tablesJsonUrl = new URL(tablesJsonPath, window.location.origin).toString();
@@ -92,6 +79,7 @@
   onMount(() => {
     void loadTables();
     void tick();
+    void getSearchConverters().then((c) => (searchConverters = c));
   });
 </script>
 

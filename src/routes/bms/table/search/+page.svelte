@@ -1,5 +1,4 @@
 <script lang="ts">
-  import * as OpenCC from "opencc-js";
   import { onMount, onDestroy } from "svelte";
   import { SvelteMap } from "svelte/reactivity";
 
@@ -19,21 +18,9 @@
     IncrementalAggregator,
   } from "$lib/data/bms-search";
   import { buildSearchNeedles } from "$lib/utils/mirror-tables";
+  import { getSearchConverters } from "$lib/utils/opencc-loader";
 
-  type StringConverter = (input: string) => string;
-
-  const searchConverters: StringConverter[] = (() => {
-    try {
-      return [
-        OpenCC.Converter({ from: "cn", to: "jp" }),
-        OpenCC.Converter({ from: "jp", to: "cn" }),
-        OpenCC.Converter({ from: "cn", to: "tw" }),
-        OpenCC.Converter({ from: "tw", to: "cn" }),
-      ];
-    } catch {
-      return [];
-    }
-  })();
+  let searchConverters = $state<((input: string) => string)[]>([]);
 
   // ---- 通用状态 ----
   let query = $state("");
@@ -307,6 +294,7 @@
       indexPhase = "error";
       indexErrorMessage = `Worker 创建失败: ${err instanceof Error ? err.message : String(err)}`;
     }
+    void getSearchConverters().then((c) => (searchConverters = c));
   });
 
   onDestroy(() => {
