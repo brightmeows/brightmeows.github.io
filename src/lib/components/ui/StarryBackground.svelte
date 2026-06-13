@@ -183,13 +183,6 @@
       if (!ctx) return;
       ctx.clearRect(0, 0, width, height);
 
-      const gradient = ctx.createLinearGradient(0, 0, 0, height);
-      gradient.addColorStop(0, "#0f0c29");
-      gradient.addColorStop(0.5, "#302b63");
-      gradient.addColorStop(1, "#24243e");
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, width, height);
-
       stars.forEach((star) => {
         star.update(width, height);
         star.draw(ctx);
@@ -222,5 +215,8 @@
   });
 </script>
 
-<canvas bind:this={canvasRef} class="pointer-events-none fixed top-0 left-0 z-0 h-full w-full">
+<canvas
+  bind:this={canvasRef}
+  class="pointer-events-none fixed top-0 left-0 z-0 h-full w-full bg-[linear-gradient(180deg,#0f0c29,#302b63_50%,#24243e)]"
+>
 </canvas>
