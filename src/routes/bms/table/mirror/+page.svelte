@@ -162,4 +162,4 @@
   {/if}
 {/snippet}
 
-<SelectedTablesPanel {tables} {selectedMap} />
+<SelectedTablesPanel {tables} bind:selectedMap />

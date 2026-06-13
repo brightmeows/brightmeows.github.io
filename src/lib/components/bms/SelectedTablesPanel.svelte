@@ -2,6 +2,7 @@
   import { cubicIn, cubicOut } from "svelte/easing";
   import { fly } from "svelte/transition";
 
+  import Checkbox from "$lib/components/ui/Checkbox.svelte";
   import JsonPreview, { jsonPreview } from "$lib/components/ui/JsonPreview.svelte";
   import type { MirrorTableItem } from "$lib/types/bms";
 
@@ -10,7 +11,7 @@
     selectedMap?: Record<string, boolean>;
   }
 
-  let { tables = [], selectedMap = {} }: Props = $props();
+  let { tables = [], selectedMap = $bindable({}) }: Props = $props();
 
   let mirrorPreview = $state<
     | {
@@ -39,6 +40,16 @@
 
   let totalCount = $derived(tables.length);
   let selectedCount = $derived(Object.values(selectedMap).filter(Boolean).length);
+  let allSelected = $derived(selectedCount === totalCount && totalCount > 0);
+  let someSelected = $derived(selectedCount > 0 && selectedCount < totalCount);
+
+  function handleSelectAll(checked: boolean): void {
+    const next: Record<string, boolean> = {};
+    for (const t of tables) {
+      next[t.url] = checked;
+    }
+    selectedMap = next;
+  }
 
   let selectedMirrorArray = $derived(
     Object.entries(selectedMap)
@@ -72,6 +83,11 @@
     <div
       class="flex w-max flex-nowrap items-center gap-4 rounded-xl border border-white/20 bg-white/10 p-3 px-4 shadow-[0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur-[6px]"
     >
+      <Checkbox
+        checked={allSelected}
+        indeterminate={someSelected}
+        onchange={(v: boolean) => handleSelectAll(v)}
+      />
       <div class="font-semibold whitespace-nowrap text-white">
         已选中 {selectedCount} / {totalCount}
       </div>

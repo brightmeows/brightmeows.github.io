@@ -166,21 +166,23 @@
                 <span
                   class="rounded-[20px] bg-[rgba(100,181,246,0.3)] px-6 py-2 text-[1.2rem] font-bold text-white shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
                 >
-                  分类 {g.tag1}
+                   {g.tag1}
                 </span>
               </div>
             </div>
 
             {#each g.subgroups as sg (sg.tag2)}
               <div id={`tag2-group-${slugifyTag(g.tag1)}-${slugifyTag(sg.tag2)}`} class="mt-4">
-                <h3 class="mt-2 mb-2 flex items-center gap-2 text-[1.1rem] text-white">
+                <div class="mt-2 mb-2 flex items-center gap-2">
                   <Checkbox
                     checked={tag2State(sg, selectedMap) === CheckboxState.Checked}
                     indeterminate={tag2State(sg, selectedMap) === CheckboxState.Indeterminate}
                     onchange={(v: boolean) => onTag2Change(v, sg)}
                   />
-                  {sg.tag2}
-                </h3>
+                  <h3 class="w-fit rounded-[20px] bg-[rgba(100,181,246,0.3)] px-5 py-1.5 text-[1rem] font-bold text-white shadow-[0_2px_8px_rgba(0,0,0,0.2)]">
+                    {sg.tag2}
+                  </h3>
+                </div>
                 <div class="table-wrapper" use:setRef>
                   <table class="w-full min-w-200 table-fixed border-collapse">
                     <colgroup>
