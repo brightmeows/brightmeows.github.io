@@ -60,6 +60,29 @@
   );
   // 分组 + 排序：启用精选时 GroupedTablesSection 按 FEATURED_TABLES 定义顺序排列
   let groupedByTags = $derived(groupByTags(commonFilteredTables));
+  // 展示顺序 URL 列表（用于浮动面板 JSON 排序，与 GroupedTablesSection.sortedItems 一致）
+  let displayOrderUrls = $derived.by<string[]>(() => {
+    const items = [...commonFilteredTables];
+    if (showCommonOnly && FEATURED_TABLES.length > 0) {
+      items.sort((a, b) => {
+        const idxA = FEATURED_TABLES.indexOf(a.url_from ?? a.url);
+        const idxB = FEATURED_TABLES.indexOf(b.url_from ?? b.url);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        const byName = (a.name ?? "").localeCompare(b.name ?? "");
+        if (byName !== 0) return byName;
+        return (a.url ?? "").localeCompare(b.url ?? "");
+      });
+    } else {
+      items.sort((a, b) => {
+        const byName = (a.name ?? "").localeCompare(b.name ?? "");
+        if (byName !== 0) return byName;
+        return (a.url ?? "").localeCompare(b.url ?? "");
+      });
+    }
+    return items.map((i) => i.url);
+  });
 
   $effect(() => {
     const tagItems = buildGroupTocItems(groupedByTags);
@@ -189,5 +212,5 @@
   {/if}
 {/snippet}
 
-<SelectedTablesPanel {tables} bind:selectedMap {mirrorPreview} />
+<SelectedTablesPanel {tables} bind:selectedMap {mirrorPreview} {displayOrderUrls} />
 <JsonPreview bind:this={mirrorPreview} />

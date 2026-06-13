@@ -11,9 +11,16 @@
     tables?: MirrorTableItem[];
     selectedMap?: Record<string, boolean>;
     mirrorPreview?: JsonPreviewHandle;
+    /** 显示顺序 URL 列表，用于 JSON 输出排序 */
+    displayOrderUrls?: string[];
   }
 
-  let { tables = [], selectedMap = $bindable({}), mirrorPreview }: Props = $props();
+  let {
+    tables = [],
+    selectedMap = $bindable({}),
+    mirrorPreview,
+    displayOrderUrls = [],
+  }: Props = $props();
 
   let totalCount = $derived(tables.length);
   let selectedCount = $derived(Object.values(selectedMap).filter(Boolean).length);
@@ -28,10 +35,23 @@
     selectedMap = next;
   }
 
+  /** 按 displayOrderUrls 排序的选中镜像 URL 列表 */
   let selectedMirrorArray = $derived(
     Object.entries(selectedMap)
       .filter(([, v]) => !!v)
-      .map(([url]) => new URL(url, window.location.origin).toString())
+      .map(([url]) => url)
+      .sort((a, b) => {
+        const idxA = displayOrderUrls.indexOf(a);
+        const idxB = displayOrderUrls.indexOf(b);
+        // 均在 displayOrderUrls 中 → 按展示顺序
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        // 一个在展示列表中 → 优先
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        // 均不在 → 保持原顺序
+        return 0;
+      })
+      .map((url) => new URL(url, window.location.origin).toString())
   );
 
   let urlToOrigin = $derived.by(() => {
