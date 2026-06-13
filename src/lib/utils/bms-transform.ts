@@ -29,20 +29,13 @@ export function computeTableStats(groups: DifficultyGroup[]): {
   totalCharts: number;
   difficulties: string[];
 } {
-  if (!groups || groups.length === 0) {
-    return { totalCharts: 0, difficulties: [] };
+  let totalCharts = 0;
+  const seen = new Set<string>();
+  for (const group of groups) {
+    totalCharts += group.charts.length;
+    seen.add(group.level);
   }
-  const { totalCharts, difficulties } = groups.reduce(
-    (acc, group) => {
-      if (!acc.difficulties.includes(group.level)) {
-        acc.difficulties.push(group.level);
-      }
-      acc.totalCharts += group.charts.length;
-      return acc;
-    },
-    { totalCharts: 0, difficulties: [] as string[] }
-  );
-  return { totalCharts, difficulties: Array.from(difficulties) };
+  return { totalCharts, difficulties: [...seen] };
 }
 
 /**

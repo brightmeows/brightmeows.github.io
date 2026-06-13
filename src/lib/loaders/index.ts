@@ -1,2 +1,2 @@
 export { getBlogPosts } from "./blog";
-export { getBmsTables } from "./bms-table";
+export { getBmsTables } from "./table-list";

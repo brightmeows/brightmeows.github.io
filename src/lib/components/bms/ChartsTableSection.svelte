@@ -4,7 +4,7 @@
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
   import JsonPreview from "$lib/components/ui/JsonPreview.svelte";
   import type { ChartData, DifficultyGroup } from "$lib/types/bms";
-  import { sortDifficultyGroups } from "$lib/utils/bms-table";
+  import { validateUrl } from "$lib/utils/url";
 
   let chartPreview = $state<
     | {
@@ -22,16 +22,15 @@
   let {
     groups = [] as DifficultyGroup[],
     totalCharts,
-    levelOrder = undefined as string[] | undefined,
     symbol = "",
   }: {
     groups?: DifficultyGroup[];
     totalCharts: number;
-    levelOrder?: string[] | undefined;
     symbol?: string;
   } = $props();
 
-  let displayGroups: DifficultyGroup[] = $derived(sortDifficultyGroups(groups, levelOrder ?? []));
+  // groups 由父组件 BmsTablePage 已排序，此处直接使用
+  let displayGroups: DifficultyGroup[] = $derived(groups);
 
   function segmentColor(index: number, total: number): string {
     const palette = ["#4caf50", "#2196f3", "#ff9800", "#f44336", "#ce50d8", "#9c27b0"];
@@ -42,22 +41,12 @@
     return palette[ci];
   }
 
-  function expandToValidLink(raw: string | undefined): string | undefined {
-    const s = (raw ?? "").trim();
-    if (!s) return undefined;
-    if (/^https?:\/\//i.test(s)) return s;
-    if (s.startsWith("//")) return `https:${s}`;
-    if (s.startsWith("/")) return s;
-    if (/^[\w.-]+\.[A-Za-z]{2,}(?:\/.*)?$/.test(s)) return `https://${s}`;
-    return undefined;
-  }
-
   function resolvedBundleUrl(chart: ChartData): string | undefined {
-    return expandToValidLink(chart.url);
+    return validateUrl(chart.url);
   }
 
   function resolvedDiffUrl(chart: ChartData): string | undefined {
-    return expandToValidLink(chart.url_diff);
+    return validateUrl(chart.url_diff);
   }
 
   function scrollToDifficultyGroup(level: string): void {

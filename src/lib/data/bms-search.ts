@@ -1,4 +1,4 @@
-import { R2_TABLES_BASE } from "$lib/constants/r2";
+import { r2TableHeaderUrl, r2TableDataUrl } from "$lib/constants/r2";
 import type { ChartData } from "$lib/types/bms";
 import { fetchStream } from "$lib/utils/fetch-stream";
 
@@ -114,9 +114,6 @@ export function searchIndices(
   return result;
 }
 
-/** 搜索索引对应的表数据基础路径 */
-const TABLE_BASE = R2_TABLES_BASE;
-
 /** 根据 matchedKeys 和 queryType 过滤谱面列表的公共函数 */
 function filterChartsByKeys(
   data: ChartData[],
@@ -148,10 +145,14 @@ export async function loadTableDataWithProgress(
   signal: AbortSignal | undefined,
   onDownloadProgress: (loaded: number, total: number) => void
 ): Promise<ChartData[]> {
-  const url = `${TABLE_BASE}/${tableId}/data.json`;
+  const url = r2TableDataUrl(tableId);
   const { bytes } = await fetchStream(url, signal, (p) => onDownloadProgress(p.loaded, p.total));
   const text = new TextDecoder().decode(bytes);
-  const data = JSON.parse(text) as ChartData[];
+  const parsed: unknown = JSON.parse(text);
+  if (!Array.isArray(parsed)) {
+    throw new Error(`谱面数据格式无效：期望数组，实际 ${typeof parsed}`);
+  }
+  const data = parsed as ChartData[];
   return filterChartsByKeys(data, matchedKeys, queryType);
 }
 
@@ -161,10 +162,9 @@ export async function loadTableHeader(
   signal?: AbortSignal
 ): Promise<{ name: string; symbol?: string } | null> {
   try {
-    const header = await fetchJson<{ name?: string; symbol?: string }>(
-      `${TABLE_BASE}/${tableId}/header.json`,
-      { signal }
-    );
+    const header = await fetchJson<{ name?: string; symbol?: string }>(r2TableHeaderUrl(tableId), {
+      signal,
+    });
     return { name: header.name ?? tableId, symbol: header.symbol };
   } catch {
     return null;

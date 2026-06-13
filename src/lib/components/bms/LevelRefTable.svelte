@@ -11,16 +11,16 @@
   let { headerUrl = undefined, hasData = $bindable(false) }: Props = $props();
 
   let levelRefData = $state<LevelRefItem[]>([]);
-  let shouldShow = $state(false);
 
   let requestToken = 0;
 
+  let hasContent = $derived(levelRefData.length > 0);
+
   let tableHalves = $derived.by(() => {
-    const data = levelRefData;
-    const midIndex = Math.ceil(data.length / 2);
+    const midIndex = Math.ceil(levelRefData.length / 2);
     return [
-      { id: "left" as const, items: data.slice(0, midIndex) },
-      { id: "right" as const, items: data.slice(midIndex) },
+      { id: "left" as const, items: levelRefData.slice(0, midIndex) },
+      { id: "right" as const, items: levelRefData.slice(midIndex) },
     ];
   });
 
@@ -40,20 +40,14 @@
   }
 
   async function loadLevelRefData(header: string | undefined): Promise<void> {
-    if (!header) {
-      shouldShow = false;
-      return;
-    }
+    if (!header) return;
 
     requestToken += 1;
     const token = requestToken;
 
     try {
       const levelRefUrl = buildLevelRefUrl(header);
-      if (!levelRefUrl) {
-        shouldShow = false;
-        return;
-      }
+      if (!levelRefUrl) return;
 
       const response = await fetch(levelRefUrl);
       if (token !== requestToken) return;
@@ -64,19 +58,14 @@
 
         if (Array.isArray(data)) {
           levelRefData = data;
-          shouldShow = true;
         } else {
           console.warn("level-ref.json 格式不正确，应为数组");
-          shouldShow = false;
         }
-      } else if (response.status === 404) {
-        shouldShow = false;
-      } else {
+      } else if (response.status !== 404) {
         throw new Error(`加载失败: ${response.status} ${response.statusText}`);
       }
     } catch (err) {
       console.error("加载难度对照表数据失败:", err);
-      shouldShow = false;
     }
   }
 
@@ -85,12 +74,11 @@
   });
 
   $effect(() => {
-    // $bindable 赋值回传父组件，此赋值将值同步回父组件
-    hasData = shouldShow && levelRefData.length > 0;
+    hasData = hasContent;
   });
 </script>
 
-{#if shouldShow && levelRefData.length > 0}
+{#if hasContent}
   <h3 class="section-title mt-0 mb-6 text-center">难度对照表</h3>
   <div class="flex flex-wrap items-start justify-center gap-8">
     {#each tableHalves as half (half.id)}

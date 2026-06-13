@@ -7,6 +7,7 @@
   import type { ChartData } from "$lib/types/bms";
   import { writeToClipboard } from "$lib/utils/clipboard";
   import { formatBytes } from "$lib/utils/format";
+  import { validateUrl } from "$lib/utils/url";
 
   interface Props {
     result: SearchResult;
@@ -44,16 +45,6 @@
         copiedField = null;
       }, 1500);
     }
-  }
-
-  function toValidUrl(raw: string | undefined): string | undefined {
-    const s = (raw ?? "").trim();
-    if (!s) return undefined;
-    if (/^https?:\/\//i.test(s)) return s;
-    if (s.startsWith("//")) return `https:${s}`;
-    if (s.startsWith("/")) return s;
-    if (/^[\w.-]+\.[A-Za-z]{2,}(?:\/.*)?$/.test(s)) return `https://${s}`;
-    return undefined;
   }
 </script>
 
@@ -106,8 +97,8 @@
 
       {#if loadState?.status === "done"}
         <!-- 已完成：显示完整数据 -->
-        {@const bundleUrl = toValidUrl(entry.chart.url)}
-        {@const diffUrl = toValidUrl(entry.chart.url_diff)}
+        {@const bundleUrl = validateUrl(entry.chart.url)}
+        {@const diffUrl = validateUrl(entry.chart.url_diff)}
         <div class="flex items-center justify-between gap-3 rounded-[10px] bg-black/20 px-4 py-3">
           <div class="min-w-0">
             <div class="flex items-center gap-3">

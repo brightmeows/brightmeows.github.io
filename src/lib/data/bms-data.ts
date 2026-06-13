@@ -100,7 +100,7 @@ export async function fetchBmsHeader(
     });
   }
 
-  // percent=100 确保经 loadBmsTable 的 *0.35 映射后不低于下载阶段已达的 35%
+  // percent=100 确保经上级 *0.35 映射后不低于下载阶段已达的 35%
   onProgress?.({ percent: 100, phase: "parsing", message: "正在解析表头信息..." });
   let data: unknown;
   try {

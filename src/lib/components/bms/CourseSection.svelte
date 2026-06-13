@@ -1,5 +1,6 @@
 <script lang="ts">
   import Checkbox from "$lib/components/ui/Checkbox.svelte";
+  import { formatConstraint, trophyEmoji } from "$lib/constants/bms";
   import type { ResolvedCourseGroup } from "$lib/types/bms";
 
   interface Props {
@@ -14,33 +15,6 @@
 
   /** 是否有多组可切换 */
   let hasMultipleGroups = $derived(groups.length > 1);
-
-  /** 约束值→显示文案 */
-  function formatConstraint(c: string): string {
-    const map: Record<string, string> = {
-      grade_random: "RANDOM 許可",
-      grade_mirror: "MIRROR 許可",
-      no_speed: "HI-SPEED 禁止",
-      no_good: "GOOD 无效",
-      no_great: "GREAT 无效",
-      gauge_lr2: "LR2 段位槽",
-      gauge_5k: "5K 段位槽",
-      gauge_7k: "7K 段位槽",
-      gauge_9k: "9K 段位槽",
-      gauge_24k: "24K 段位槽",
-    };
-    return map[c] ?? c;
-  }
-
-  /** 奖牌 emoji */
-  function trophyEmoji(name: string): string {
-    const map: Record<string, string> = {
-      goldmedal: "🥇",
-      silvermedal: "🥈",
-      bronzemedal: "🥉",
-    };
-    return map[name] ?? "🏅";
-  }
 
   /** 截取 hash 前 8 位用于显示 */
   function hashPrefix(hash: string | undefined): string {

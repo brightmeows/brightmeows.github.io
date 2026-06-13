@@ -5,7 +5,8 @@
   import BmsContent from "./index.md";
 
   import { MarkdownContent } from "$lib/components/content";
-  import { PageShell, buildTocFromHeadings } from "$lib/components/layout";
+  import { PageShell } from "$lib/components/layout";
+  import { buildTocFromHeadings } from "$lib/components/layout/FloatingToc.svelte";
   import type { TocItem } from "$lib/types/ui";
 
   let { data }: { data: PageData } = $props();

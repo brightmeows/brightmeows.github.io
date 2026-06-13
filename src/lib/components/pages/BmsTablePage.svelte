@@ -307,7 +307,6 @@
       <ChartsTableSection
         groups={sortedDifficultyGroups}
         totalCharts={tableData?.length ?? 0}
-        levelOrder={headerData?.level_order ?? []}
         symbol={headerData?.symbol ?? ""}
       />
     {:else}

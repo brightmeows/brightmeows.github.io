@@ -2,7 +2,7 @@
   import { onMount, tick } from "svelte";
 
   import { GroupedTablesSection, SelectedTablesPanel } from "$lib/components/bms";
-  import { PageShell, buildGroupTocItems } from "$lib/components/layout";
+  import { PageShell } from "$lib/components/layout";
   import Checkbox from "$lib/components/ui/Checkbox.svelte";
   import JsonPreview from "$lib/components/ui/JsonPreview.svelte";
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
@@ -13,6 +13,7 @@
   import { writeToClipboard } from "$lib/utils/clipboard";
   import { buildSearchNeedles, filterTables, groupByTags } from "$lib/utils/mirror-tables";
   import { getSearchConverters } from "$lib/utils/opencc-loader";
+  import { buildGroupTocItems } from "$lib/utils/toc";
 
   const tablesJsonPath = "/bms/table/mirror/tables.json";
   const pageTitle = "BMS 难度表镜像";

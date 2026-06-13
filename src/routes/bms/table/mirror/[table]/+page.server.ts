@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 
 import type { PageServerLoad } from "./$types";
 
-import { R2_TABLES_BASE } from "$lib/constants/r2";
+import { r2TableHeaderUrl } from "$lib/constants/r2";
 import { formatTitle } from "$lib/utils/title";
 
 export const prerender = true;
@@ -22,6 +22,6 @@ export const load: PageServerLoad = ({ params }) => {
 
   return {
     title: formatTitle(`BMS ${table}`),
-    bmstableMeta: `${R2_TABLES_BASE}/${encodeURIComponent(table)}/header.json`,
+    bmstableMeta: r2TableHeaderUrl(table),
   };
 };
