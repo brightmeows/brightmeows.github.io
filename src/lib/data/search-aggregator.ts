@@ -26,33 +26,40 @@ function nextId(): string {
   return `r${_nextId++}`;
 }
 
+/** 身份信息集合，用于统一索引管理 */
+interface IdentityInput {
+  sha256?: string;
+  md5?: string;
+  title?: string;
+  artist?: string;
+}
+
 /**
- * 增量聚合器：多键身份管理 + 预创建支持。
+ * 增量聚合器：单一身份解析入口 + 多重索引策略。
  *
  * 身份优先级：sha256 > md5 > title+artist > title > artist
  *
- * 预创建（preCreate）根据索引数据（含来源）快速创建占位条目。
- * 加载后（addTable）根据真实数据升级/拆分/细化条目。
+ * 索引策略（分离 bySha256 + byMd5）：
+ *   - hash maps —— 索引所有已知 hash 身份，只增不删（多重索引）
+ *   - fallback maps —— 仅用做初次匹配的 title/artist 占位，promote 后删除
+ *
+ * preCreate 和 addTable 共用 resolveGroup 进行身份解析，保证一致性。
  */
 export class IncrementalAggregator {
-  private byHash = new Map<string, SearchResult>();
+  private bySha256 = new Map<string, SearchResult>();
+  private byMd5 = new Map<string, SearchResult>();
   private byTitle = new Map<string, SearchResult>();
   private byArtist = new Map<string, SearchResult>();
   private processedEntries = new Map<string, Set<string>>();
   private idMap = new Map<string, SearchResult>();
 
-  private createResult(props?: {
-    sha256?: string | null;
-    title?: string | null;
-    artist?: string | null;
-    md5?: string | null;
-  }): SearchResult {
+  private createResult(ids: IdentityInput): SearchResult {
     const r: SearchResult = {
       id: nextId(),
-      sha256: props?.sha256 ?? null,
-      title: props?.title ?? null,
-      artist: props?.artist ?? null,
-      md5: props?.md5 ?? null,
+      sha256: ids.sha256 ?? null,
+      md5: ids.md5 ?? null,
+      title: ids.title ?? null,
+      artist: ids.artist ?? null,
       appearances: [],
     };
     this.idMap.set(r.id, r);
@@ -69,8 +76,190 @@ export class IncrementalAggregator {
   }
 
   /**
+   * 确保 SearchResult 在身份映射中被索引。
+   * 当发现新身份时（如 addTable 带来了之前未知的 sha256），
+   * 补全 SearchResult 的身份字段并添加到对应映射。
+   * hash maps 只增不删（多重索引），promote 后仅在 title/artist fallback 中删除。
+   */
+  private ensureIndexed(result: SearchResult, ids: IdentityInput): void {
+    if (ids.sha256) {
+      result.sha256 = ids.sha256;
+      if (!this.bySha256.has(ids.sha256)) {
+        this.bySha256.set(ids.sha256, result);
+      }
+    }
+    if (ids.md5) {
+      result.md5 = ids.md5;
+      if (!this.byMd5.has(ids.md5)) {
+        this.byMd5.set(ids.md5, result);
+      }
+    }
+    if (ids.title) {
+      result.title = ids.title;
+    }
+    if (ids.artist) {
+      result.artist = ids.artist;
+    }
+  }
+
+  /**
+   * 单一身份解析入口：按优先级查找已有条目，创建或复用。
+   *
+   * 查找顺序：
+   *   1. bySha256（最强身份）
+   *   2. byMd5
+   *   3. byTitle（fallback，找到后 promote 并删除 fallback 索引）
+   *   4. byArtist（fallback，找到后 promote 并删除 fallback 索引）
+   *   5. 创建新条目
+   *
+   * 在 title/artist fallback 查找时，会额外扫描 hash maps 中已有的条目
+   * 是否具有相同 title/artist，以应对 promote 后 byTitle 已被删除的场景。
+   *
+   * 策略说明：
+   *   - hash 匹配路径（步骤 1-2）只补全 hash 索引，不覆盖 title/artist。
+   *     首次注册的值（来自 search index 或首次 promote）被保留，避免后加载
+   *     的不完整数据破坏已有准确值。
+   *   - fallback promote 路径（步骤 3-4）会更新 title/artist，因为这是从
+   *     弱身份到强身份升级的必经路径。
+   */
+  private resolveGroup(
+    rawSha: string,
+    rawMd5: string,
+    rawTitle: string,
+    rawArtist: string
+  ): SearchResult {
+    const sha = rawSha.trim().toLowerCase();
+    const md = rawMd5.trim().toLowerCase();
+    const title = rawTitle.trim();
+    const artist = rawArtist.trim();
+
+    // 1. 检查 hash maps（sha256 > md5）
+    let result: SearchResult | undefined;
+    if (sha) result = this.bySha256.get(sha);
+    if (!result && md) result = this.byMd5.get(md);
+
+    if (result) {
+      // 只补全 hash 身份索引（通过 hash 匹配到的条目，title/artist
+      // 已在首次注册时设置，不做覆盖以避免后加载的不完整数据破坏先前值）
+      this.ensureIndexed(result, { sha256: sha || undefined, md5: md || undefined });
+      return result;
+    }
+
+    // 2. 检查 title fallback
+    if (title) {
+      const key = title.toLowerCase();
+      result = this.byTitle.get(key);
+
+      // 若 byTitle 中无匹配，扫描 hash maps 中已有的条目（处理 promote 后被删除的场景）
+      if (!result) {
+        for (const r of this.bySha256.values()) {
+          if (r.title?.toLowerCase() === key) {
+            result = r;
+            break;
+          }
+        }
+      }
+      if (!result) {
+        for (const r of this.byMd5.values()) {
+          if (r.title?.toLowerCase() === key) {
+            result = r;
+            break;
+          }
+        }
+      }
+
+      if (result) {
+        this.ensureIndexed(result, {
+          sha256: sha || undefined,
+          md5: md || undefined,
+          title,
+          artist: artist || undefined,
+        });
+        // promote: 从 fallback 删除，hash maps 已由 ensureIndexed 添加
+        this.byTitle.delete(key);
+        return result;
+      }
+
+      // 未找到，创建新条目
+      result = this.createResult({
+        sha256: sha || undefined,
+        md5: md || undefined,
+        title,
+        artist: artist || undefined,
+      });
+      // 有 hash identity 时索引到 hash maps，否则仅索引到 byTitle
+      if (sha) this.bySha256.set(sha, result);
+      if (md) this.byMd5.set(md, result);
+      if (!sha && !md) this.byTitle.set(key, result);
+      return result;
+    }
+
+    // 3. 检查 artist fallback
+    if (artist) {
+      const key = artist.toLowerCase();
+      result = this.byArtist.get(key);
+
+      // 若 byArtist 中无匹配，扫描 hash maps 中已有的条目
+      if (!result) {
+        for (const r of this.bySha256.values()) {
+          if (r.artist?.toLowerCase() === key) {
+            result = r;
+            break;
+          }
+        }
+      }
+      if (!result) {
+        for (const r of this.byMd5.values()) {
+          if (r.artist?.toLowerCase() === key) {
+            result = r;
+            break;
+          }
+        }
+      }
+
+      if (result) {
+        this.ensureIndexed(result, {
+          sha256: sha || undefined,
+          md5: md || undefined,
+          title: title || undefined,
+          artist,
+        });
+        this.byArtist.delete(key);
+        return result;
+      }
+
+      result = this.createResult({
+        sha256: sha || undefined,
+        md5: md || undefined,
+        artist,
+      });
+      if (sha) this.bySha256.set(sha, result);
+      if (md) this.byMd5.set(md, result);
+      if (!sha && !md) this.byArtist.set(key, result);
+      return result;
+    }
+
+    // 4. 仅有 hash identity（sha 或 md5）且未找到匹配
+    if (!sha && !md) {
+      throw new Error("Chart has no identity information");
+    }
+    result = this.createResult({
+      sha256: sha || undefined,
+      md5: md || undefined,
+    });
+    if (sha) this.bySha256.set(sha, result);
+    if (md) this.byMd5.set(md, result);
+    return result;
+  }
+
+  /**
    * 从索引搜索结果预建占位条目。
-   * 每个 CandidateEntry 只生成一个 SearchResult，按优先级取最高级 source。
+   *
+   * 与 addTable 共用 resolveGroup 进行身份解析，因此也可能触发 promote
+   *（如将已有 byTitle 中的条目升级到 hash maps）。语义上不再是纯粹的
+   * "创建占位"，也是身份索引的初次填充。
+   *
+   * 由于 Aggregator 新实例下 preCreate 是第一个调用，不存在跨阶段冲突。
    */
   preCreate(candidates: CandidateEntry[]): SearchResult[] {
     for (const entry of candidates) {
@@ -81,30 +270,14 @@ export class IncrementalAggregator {
       const titleKey = matchedKeys.find((k) => k.source === "title");
       const artistKey = matchedKeys.find((k) => k.source === "artist");
 
-      let result: SearchResult;
+      if (!shaKey && !md5Key && !titleKey && !artistKey) continue;
 
-      if (shaKey) {
-        const key = shaKey.key.toLowerCase();
-        result = this.byHash.get(key) ?? this.createResult({ sha256: key });
-        this.byHash.set(key, result);
-      } else if (md5Key) {
-        const key = md5Key.key.toLowerCase();
-        result = this.byHash.get(key) ?? this.createResult({ md5: key });
-        this.byHash.set(key, result);
-      } else if (titleKey) {
-        const key = titleKey.key.toLowerCase();
-        result = this.byTitle.get(key) ?? this.createResult({ title: titleKey.key });
-        this.byTitle.set(key, result);
-        if (artistKey && !result.artist) {
-          result.artist = artistKey.key;
-        }
-      } else if (artistKey) {
-        const key = artistKey.key.toLowerCase();
-        result = this.byArtist.get(key) ?? this.createResult({ artist: artistKey.key });
-        this.byArtist.set(key, result);
-      } else {
-        continue;
-      }
+      const result = this.resolveGroup(
+        shaKey?.key ?? "",
+        md5Key?.key ?? "",
+        titleKey?.key ?? "",
+        artistKey?.key ?? ""
+      );
 
       const partialChart: ChartData = {};
       if (shaKey) partialChart.sha256 = shaKey.key;
@@ -157,87 +330,6 @@ export class IncrementalAggregator {
     }
 
     return this.allResults;
-  }
-
-  private resolveGroup(sha: string, md5: string, title: string, artist: string): SearchResult {
-    if (sha) {
-      const existing = this.byHash.get(sha);
-      if (existing) return existing;
-
-      const titleKey = title.toLowerCase();
-      const titleEntry = titleKey ? this.byTitle.get(titleKey) : undefined;
-      if (titleEntry) {
-        titleEntry.sha256 = sha;
-        if (md5) titleEntry.md5 = md5;
-        if (title) titleEntry.title = title;
-        if (artist) titleEntry.artist = artist;
-        this.byHash.set(sha, titleEntry);
-        this.byTitle.delete(titleKey);
-        return titleEntry;
-      }
-
-      const artistKey = artist.toLowerCase();
-      const artistEntry = artistKey ? this.byArtist.get(artistKey) : undefined;
-      if (artistEntry) {
-        artistEntry.sha256 = sha;
-        if (md5) artistEntry.md5 = md5;
-        if (title) artistEntry.title = title;
-        if (artist) artistEntry.artist = artist;
-        this.byHash.set(sha, artistEntry);
-        this.byArtist.delete(artistKey);
-        return artistEntry;
-      }
-
-      const r = this.createResult({ sha256: sha, title, artist, md5: md5 || null });
-      this.byHash.set(sha, r);
-      return r;
-    }
-
-    if (md5) {
-      const existing = this.byHash.get(md5);
-      if (existing) return existing;
-
-      const titleKey = title.toLowerCase();
-      const titleEntry = titleKey ? this.byTitle.get(titleKey) : undefined;
-      if (titleEntry) {
-        titleEntry.md5 = md5;
-        if (title) titleEntry.title = title;
-        if (artist) titleEntry.artist = artist;
-        this.byHash.set(md5, titleEntry);
-        this.byTitle.delete(titleKey);
-        return titleEntry;
-      }
-
-      const r = this.createResult({ sha256: null, title, artist, md5 });
-      this.byHash.set(md5, r);
-      return r;
-    }
-
-    if (title) {
-      const key = title.toLowerCase();
-      const existing = this.byTitle.get(key);
-      if (existing) return existing;
-
-      for (const r of this.byHash.values()) {
-        if (r.title?.toLowerCase() === key) return r;
-      }
-
-      const r = this.createResult({ sha256: null, title, artist, md5: null });
-      this.byTitle.set(key, r);
-      return r;
-    }
-
-    if (artist) {
-      const key = artist.toLowerCase();
-      const existing = this.byArtist.get(key);
-      if (existing) return existing;
-
-      const r = this.createResult({ sha256: null, title: null, artist, md5: null });
-      this.byArtist.set(key, r);
-      return r;
-    }
-
-    throw new Error("Chart has no identity information");
   }
 
   private removeAppearancesForTable(resultId: string, tableId: string): void {
