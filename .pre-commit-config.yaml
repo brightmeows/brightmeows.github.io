@@ -1,0 +1,61 @@
+# Each hook in its own `- repo: local` block so pre-commit runs them
+# concurrently (same-repo hooks are serial).
+#
+# All pnpm hooks use pass_filenames: false because the command operates
+# on the project as a whole, not individual files.
+# All pnpm hooks specify types: [text] so pre-commit can skip early when
+# no text files are staged (only binary changes).
+
+repos:
+  - repo: local
+    hooks:
+      - id: format-check
+        name: pnpm format:check
+        # --check via Prettier: exit non-zero if any file differs
+        entry: pnpm format:check
+        language: system
+        types: [text]
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: lint
+        name: pnpm lint
+        entry: pnpm lint
+        language: system
+        types: [text]
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: svelte-check
+        name: pnpm check
+        entry: pnpm check
+        language: system
+        types: [text]
+        pass_filenames: false
+
+  # Detect invisible or confusable Unicode characters that look like
+  # ASCII equivalents, which can hide in string literals, comments, or
+  # documentation and cause subtle bugs or security issues.
+  #
+  # Codepoints checked (all UTF-8 encoded via printf \xNN):
+  #   U+2010/2011/2012  HYPHEN / NB HYPHEN / FIGURE DASH  →  looks like -
+  #   U+2212  MINUS SIGN                                   →  looks like -
+  #   U+00A0  NO-BREAK SPACE                               →  looks like space
+  #   U+202F  NARROW NB SPACE                              →  looks like space
+  #   U+200B  ZERO WIDTH SPACE                             →  invisible
+  #   U+FEFF  BOM                                          →  invisible
+  - repo: local
+    hooks:
+      - id: no-confusable-unicode
+        name: no confusable Unicode dashes/spaces (use ASCII instead)
+        entry: >
+          bash -c '! rg -l
+          -e "$(printf "\xe2\x80\x90")" -e "$(printf "\xe2\x80\x91")"
+          -e "$(printf "\xe2\x80\x92")" -e "$(printf "\xe2\x88\x92")"
+          -e "$(printf "\xc2\xa0")"    -e "$(printf "\xe2\x80\xaf")"
+          -e "$(printf "\xe2\x80\x8b")" -e "$(printf "\xef\xbb\xbf")"
+          "$@"' _
+        language: system
+        types: [text]

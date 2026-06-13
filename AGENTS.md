@@ -2,11 +2,18 @@
 
 ## Commands
 
-- `pnpm dev` — 开发服务器
-- `pnpm build` — 构建（也是唯一质量门禁，无测试基础设施）
-- `pnpm check` — svelte-check 类型检查
-- `pnpm lint` — ESLint
-- `pnpm format` — Prettier 格式化
+### Pre-commit（提交时自动执行）
+
+```bash
+pre-commit run --all-files --quiet    # 手动触发全部 hooks
+```
+
+Hooks 配置：`pnpm format:check`、`pnpm lint`、`pnpm check`、no-confusable-unicode。
+
+### 手动命令
+
+- `pnpm dev`
+- `pnpm build`
 
 ## 反直觉决策
 
