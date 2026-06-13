@@ -9,7 +9,7 @@
   let { groups = [] as ResolvedCourseGroup[], symbol = "" }: Props = $props();
 
   let collapsed = $state(false);
-  let groupMode = $state(false);
+  let groupMode = $state(true);
 
   /** 是否有多组可切换 */
   let hasMultipleGroups = $derived(groups.length > 1);
@@ -59,7 +59,7 @@
 
 {#if groups.length > 0}
   <!-- 可折叠标题 -->
-  <div class="mb-6 flex flex-wrap items-center justify-center gap-3">
+  <div class="flex flex-wrap items-center justify-center gap-3 {collapsed ? '' : 'mb-6'}">
     <button
       class="section-title flex cursor-pointer items-center gap-2 border-none bg-transparent text-white"
       type="button"
@@ -76,16 +76,20 @@
       </span>
     </button>
 
-    {#if hasMultipleGroups}
-      <button
-        class="cursor-pointer rounded-[6px] border px-2.5 py-0.5 text-[0.8rem] transition-colors duration-200 {groupMode
+    {#if !collapsed && hasMultipleGroups}
+      <label
+        class="flex cursor-pointer items-center gap-1.5 rounded-[6px] border px-2.5 py-0.5 text-[0.8rem] transition-colors duration-200 select-none {groupMode
           ? 'border-[#64b5f6] bg-[#64b5f6]/20 text-[#64b5f6]'
           : 'border-white/20 text-white/50 hover:border-white/40 hover:text-white/70'}"
-        type="button"
-        onclick={() => (groupMode = !groupMode)}
       >
-        {groupMode ? "分组显示" : "合并显示"}
-      </button>
+        <input
+          type="checkbox"
+          class="h-3.5 w-3.5 accent-[#64b5f6]"
+          checked={groupMode}
+          onchange={() => (groupMode = !groupMode)}
+        />
+        分组显示
+      </label>
     {/if}
   </div>
 
