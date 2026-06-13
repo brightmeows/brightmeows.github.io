@@ -40,16 +40,6 @@
   }
 </script>
 
-<input
-  type="checkbox"
-  bind:this={inputEl}
-  {checked}
-  {disabled}
-  class="checkbox-custom {size === 'sm' ? 'checkbox-sm' : 'checkbox-md'} {className}"
-  onchange={handleChange}
-  aria-checked={indeterminate ? "mixed" : undefined}
-/>
-
 <style>
   /* === 基础样式: 移除原生外观，统一暗色玻璃态风格 === */
   .checkbox-custom {
@@ -179,3 +169,13 @@
     height: 2px;
   }
 </style>
+
+<input
+  type="checkbox"
+  bind:this={inputEl}
+  {checked}
+  {disabled}
+  class="checkbox-custom {size === 'sm' ? 'checkbox-sm' : 'checkbox-md'} {className}"
+  onchange={handleChange}
+  aria-checked={indeterminate ? "mixed" : undefined}
+/>
