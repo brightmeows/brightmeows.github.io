@@ -37,7 +37,7 @@ interface IdentityInput {
 /**
  * 增量聚合器：单一身份解析入口 + 多重索引策略。
  *
- * 身份优先级：sha256 > md5 > title+artist > title > artist
+ * 身份优先级：sha256 > md5 > title > artist
  *
  * 索引策略（分离 bySha256 + byMd5）：
  *   - hash maps —— 索引所有已知 hash 身份，只增不删（多重索引）
@@ -52,6 +52,16 @@ export class IncrementalAggregator {
   private byArtist = new Map<string, SearchResult>();
   private processedEntries = new Map<string, Set<string>>();
   private idMap = new Map<string, SearchResult>();
+
+  /**
+   * 检查现有条目与传入数据是否存在 hash 冲突。
+   * 当两者都有同一个类型的 hash 但不相等时，判定为不同谱面。
+   */
+  private static hasHashConflict(existing: SearchResult, inSha: string, inMd: string): boolean {
+    if (existing.sha256 && inSha && existing.sha256 !== inSha) return true;
+    if (existing.md5 && inMd && existing.md5 !== inMd) return true;
+    return false;
+  }
 
   private createResult(ids: IdentityInput): SearchResult {
     const r: SearchResult = {
@@ -150,10 +160,15 @@ export class IncrementalAggregator {
       const key = title.toLowerCase();
       result = this.byTitle.get(key);
 
-      // 若 byTitle 中无匹配，扫描 hash maps 中已有的条目（处理 promote 后被删除的场景）
+      // 若 byTitle 中无匹配，扫描 hash maps 中已有的条目（处理 promote 后被删除的场景）。
+      // 注意：hash maps 中的条目已有 hash 身份，须校验 hash 冲突。
+      // 若发现冲突（同一个 title 对应不同的 hash），视为不同谱面，不复用。
       if (!result) {
         for (const r of this.bySha256.values()) {
-          if (r.title?.toLowerCase() === key) {
+          if (
+            r.title?.toLowerCase() === key &&
+            !IncrementalAggregator.hasHashConflict(r, sha, md)
+          ) {
             result = r;
             break;
           }
@@ -161,7 +176,10 @@ export class IncrementalAggregator {
       }
       if (!result) {
         for (const r of this.byMd5.values()) {
-          if (r.title?.toLowerCase() === key) {
+          if (
+            r.title?.toLowerCase() === key &&
+            !IncrementalAggregator.hasHashConflict(r, sha, md)
+          ) {
             result = r;
             break;
           }
@@ -199,10 +217,14 @@ export class IncrementalAggregator {
       const key = artist.toLowerCase();
       result = this.byArtist.get(key);
 
-      // 若 byArtist 中无匹配，扫描 hash maps 中已有的条目
+      // 若 byArtist 中无匹配，扫描 hash maps 中已有的条目。
+      // 同样校验 hash 冲突，避免同名艺术家不同谱面被错误合并。
       if (!result) {
         for (const r of this.bySha256.values()) {
-          if (r.artist?.toLowerCase() === key) {
+          if (
+            r.artist?.toLowerCase() === key &&
+            !IncrementalAggregator.hasHashConflict(r, sha, md)
+          ) {
             result = r;
             break;
           }
@@ -210,7 +232,10 @@ export class IncrementalAggregator {
       }
       if (!result) {
         for (const r of this.byMd5.values()) {
-          if (r.artist?.toLowerCase() === key) {
+          if (
+            r.artist?.toLowerCase() === key &&
+            !IncrementalAggregator.hasHashConflict(r, sha, md)
+          ) {
             result = r;
             break;
           }
@@ -241,7 +266,9 @@ export class IncrementalAggregator {
 
     // 4. 仅有 hash identity（sha 或 md5）且未找到匹配
     if (!sha && !md) {
-      throw new Error("Chart has no identity information");
+      throw new Error(
+        `Chart has no identity information: sha256=${JSON.stringify(rawSha)}, md5=${JSON.stringify(rawMd5)}, title=${JSON.stringify(rawTitle)}, artist=${JSON.stringify(rawArtist)}`
+      );
     }
     result = this.createResult({
       sha256: sha || undefined,
