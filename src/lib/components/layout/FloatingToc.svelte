@@ -1,13 +1,7 @@
 <script module lang="ts">
   import { resolve } from "$app/paths";
+  import type { TocItem } from "$lib/types/ui";
   import { slugifyHeadingText } from "$lib/utils/slugify";
-
-  export interface TocItem {
-    id: string;
-    title: string;
-    href?: string;
-    children?: TocItem[];
-  }
 
   interface HeadingInfo {
     id: string;

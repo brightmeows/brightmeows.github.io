@@ -1,11 +1,6 @@
 <script lang="ts">
   import { GlassNavCard } from "$lib/components/ui";
-
-  export interface NavChild {
-    href: string;
-    title: string;
-    description: string;
-  }
+  import type { NavChild } from "$lib/types/ui";
 
   interface Props {
     /** 自动生成的子页面导航 */

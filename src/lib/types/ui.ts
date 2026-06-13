@@ -15,3 +15,18 @@ export interface JsonPreviewHandle {
   scheduleHide: () => void;
   hideNow: () => void;
 }
+
+/** 导航子项 */
+export interface NavChild {
+  href: string;
+  title: string;
+  description: string;
+}
+
+/** 目录项 */
+export interface TocItem {
+  id: string;
+  title: string;
+  href?: string;
+  children?: TocItem[];
+}

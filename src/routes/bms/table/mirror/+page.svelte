@@ -1,24 +1,17 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
 
-  import GroupedTablesSection from "$lib/components/bms/GroupedTablesSection.svelte";
-  import SelectedTablesPanel from "$lib/components/bms/SelectedTablesPanel.svelte";
-  import type { TocItem } from "$lib/components/layout/FloatingToc.svelte";
-  import PageShell from "$lib/components/layout/PageShell.svelte";
+  import { GroupedTablesSection, SelectedTablesPanel } from "$lib/components/bms";
+  import { PageShell, buildGroupTocItems } from "$lib/components/layout";
   import Checkbox from "$lib/components/ui/Checkbox.svelte";
   import JsonPreview from "$lib/components/ui/JsonPreview.svelte";
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
   import { FEATURED_TABLES } from "$lib/constants/featured-tables";
   import { loadMirrorTables } from "$lib/data/mirror-table-loader";
   import type { MirrorTableItem } from "$lib/types/bms";
-  import type { JsonPreviewHandle } from "$lib/types/ui";
+  import type { JsonPreviewHandle, TocItem } from "$lib/types/ui";
   import { writeToClipboard } from "$lib/utils/clipboard";
-  import {
-    buildSearchNeedles,
-    filterTables,
-    groupByTags,
-    buildGroupTocItems,
-  } from "$lib/utils/mirror-tables";
+  import { buildSearchNeedles, filterTables, groupByTags } from "$lib/utils/mirror-tables";
   import { getSearchConverters } from "$lib/utils/opencc-loader";
 
   const tablesJsonPath = "/bms/table/mirror/tables.json";

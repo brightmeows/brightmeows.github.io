@@ -2,9 +2,11 @@
   import BmsLinkButtons from "./BmsLinkButtons.svelte";
 
   import { GlassContainer, GradientButton } from "$lib/components/ui";
-  import type { SearchResult, TableLoadState } from "$lib/data/bms-search";
+  import type { TableLoadState } from "$lib/data/bms-search";
+  import type { SearchResult } from "$lib/data/search-aggregator";
   import type { ChartData } from "$lib/types/bms";
   import { writeToClipboard } from "$lib/utils/clipboard";
+  import { formatBytes } from "$lib/utils/format";
 
   interface Props {
     result: SearchResult;
@@ -52,12 +54,6 @@
     if (s.startsWith("/")) return s;
     if (/^[\w.-]+\.[A-Za-z]{2,}(?:\/.*)?$/.test(s)) return `https://${s}`;
     return undefined;
-  }
-
-  function formatBytes(bytes: number): string {
-    if (bytes < 1024) return `${bytes}B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
   }
 </script>
 

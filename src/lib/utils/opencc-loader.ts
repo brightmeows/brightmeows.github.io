@@ -9,7 +9,7 @@
  * 首次调用时加载一次，后续复用。
  */
 
-type StringConverter = (input: string) => string;
+import type { StringConverter } from "$lib/types/common";
 
 let cached: StringConverter[] | null = null;
 let loading: Promise<StringConverter[]> | null = null;

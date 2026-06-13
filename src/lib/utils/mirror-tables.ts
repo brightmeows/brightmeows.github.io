@@ -1,7 +1,5 @@
-import type { TocItem } from "$lib/components/layout/FloatingToc.svelte";
 import type { MirrorTableItem, Tag1Group, Tag2Group } from "$lib/types/bms";
-
-type StringConverter = (input: string) => string;
+import type { StringConverter } from "$lib/types/common";
 
 /**
  * 构建搜索词（含 OpenCC 简繁日转换）
@@ -102,20 +100,4 @@ export function groupByTags(tables: MirrorTableItem[]): Tag1Group[] {
 
   tag1Groups.sort((a, b) => a.order - b.order || a.tag1.localeCompare(b.tag1));
   return tag1Groups;
-}
-
-/**
- * 为分组构建 TOC 项
- */
-export function buildGroupTocItems(groups: Tag1Group[]): TocItem[] {
-  return groups.map((g) => ({
-    id: `tag1-group-${slugifyTag(g.tag1) || "untagged"}`,
-    title: `分类 ${g.tag1}`,
-    href: `#tag1-group-${slugifyTag(g.tag1) || "untagged"}`,
-    children: g.subgroups.map((sg) => ({
-      id: `tag2-group-${slugifyTag(g.tag1) || "untagged"}-${slugifyTag(sg.tag2) || "untagged"}`,
-      title: `${sg.tag2} (${sg.items.length})`,
-      href: `#tag2-group-${slugifyTag(g.tag1) || "untagged"}-${slugifyTag(sg.tag2) || "untagged"}`,
-    })),
-  }));
 }

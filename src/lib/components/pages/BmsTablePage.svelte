@@ -1,21 +1,14 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import ChartsTableSection from "$lib/components/bms/ChartsTableSection.svelte";
-  import CourseSection from "$lib/components/bms/CourseSection.svelte";
-  import LevelRefTable from "$lib/components/bms/LevelRefTable.svelte";
-  import PageShell from "$lib/components/layout/PageShell.svelte";
+  import { ChartsTableSection, CourseSection, LevelRefTable } from "$lib/components/bms";
+  import { PageShell } from "$lib/components/layout";
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
-  import {
-    fetchBmsHeader,
-    fetchBmsTableData,
-    groupChartsByLevel,
-    computeTableStats,
-    resolveCourses,
-  } from "$lib/data/bms-data";
+  import { fetchBmsHeader, fetchBmsTableData } from "$lib/data/bms-data";
   import type { ChartData, HeaderData } from "$lib/types/bms";
   import { sortDifficultyGroups } from "$lib/utils/bms-table";
+  import { groupChartsByLevel, computeTableStats, resolveCourses } from "$lib/utils/bms-transform";
   import { writeToClipboard } from "$lib/utils/clipboard";
   import { formatTitle } from "$lib/utils/title";
   import { resolveUrl } from "$lib/utils/url";

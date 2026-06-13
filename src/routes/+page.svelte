@@ -4,9 +4,9 @@
   import type { PageData } from "./$types";
 
   import { resolve } from "$app/paths";
-  import BlogPostCard from "$lib/components/content/BlogPostCard.svelte";
-  import { buildTocFromHeadings, type TocItem } from "$lib/components/layout/FloatingToc.svelte";
-  import PageShell from "$lib/components/layout/PageShell.svelte";
+  import { BlogPostCard } from "$lib/components/content";
+  import { PageShell, buildTocFromHeadings } from "$lib/components/layout";
+  import type { TocItem } from "$lib/types/ui";
 
   let { data }: { data: PageData } = $props();
   let tocItems = $state<TocItem[]>([]);

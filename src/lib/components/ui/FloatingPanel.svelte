@@ -3,7 +3,7 @@
   import { cubicInOut } from "svelte/easing";
   import { fade } from "svelte/transition";
 
-  import { GlassPanel } from "$lib/components/ui";
+  import GlassPanel from "./GlassPanel.svelte";
 
   interface Props {
     sessionKey: string;

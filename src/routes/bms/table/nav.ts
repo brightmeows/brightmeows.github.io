@@ -1,4 +1,4 @@
-import type { NavChild } from "$lib/components/layout/NavPane.svelte";
+import type { NavChild } from "$lib/types/ui";
 
 export const navChildren: NavChild[] = [
   {
