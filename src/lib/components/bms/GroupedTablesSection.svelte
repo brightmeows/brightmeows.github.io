@@ -20,16 +20,42 @@
     groups?: Tag1Group[];
     selectedMap?: Record<string, boolean>;
     mirrorPreview?: JsonPreviewHandle;
+    /** 精选列表 URL 顺序，用于排序 */
+    featuredUrls?: string[];
+    /** 是否按 featuredUrls 顺序排序 */
+    sortFeatured?: boolean;
   }
 
-  let { groups = [], selectedMap = $bindable({}), mirrorPreview }: Props = $props();
+  let {
+    groups = [],
+    selectedMap = $bindable({}),
+    mirrorPreview,
+    featuredUrls = [],
+    sortFeatured = false,
+  }: Props = $props();
 
   function compareAscii(a: string, b: string): number {
     if (a === b) return 0;
     return a < b ? -1 : 1;
   }
 
+  /** 排序：启用精选顺序时按 featuredUrls 定义顺序排，否则按名称排 */
   function sortedItems(items: MirrorTableItem[]): MirrorTableItem[] {
+    if (sortFeatured && featuredUrls.length > 0) {
+      return [...items].sort((a, b) => {
+        const idxA = featuredUrls.indexOf(a.url_from ?? a.url);
+        const idxB = featuredUrls.indexOf(b.url_from ?? b.url);
+        // 均在列表中 → 按定义顺序
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        // 一个在列表中 → 优先
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        // 均不在列表中 → 按名称排序
+        const byName = compareAscii(a.name, b.name);
+        if (byName !== 0) return byName;
+        return compareAscii(a.url, b.url);
+      });
+    }
     return [...items].sort((a, b) => {
       const byName = compareAscii(a.name, b.name);
       if (byName !== 0) return byName;

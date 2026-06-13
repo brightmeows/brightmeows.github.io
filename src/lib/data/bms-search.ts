@@ -168,9 +168,7 @@ export async function loadTableDataWithProgress(
   onDownloadProgress: (loaded: number, total: number) => void
 ): Promise<ChartData[]> {
   const url = `${TABLE_BASE}/${tableId}/data.json`;
-  const { bytes } = await fetchStream(url, signal, (p) =>
-    onDownloadProgress(p.loaded, p.total)
-  );
+  const { bytes } = await fetchStream(url, signal, (p) => onDownloadProgress(p.loaded, p.total));
   const text = new TextDecoder().decode(bytes);
   const data = JSON.parse(text) as ChartData[];
   return filterChartsByKeys(data, matchedKeys, queryType);

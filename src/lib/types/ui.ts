@@ -11,11 +11,7 @@ export interface JsonPreviewShowOptions {
 }
 
 export interface JsonPreviewHandle {
-  show: (
-    options: JsonPreviewShowOptions,
-    clientX: number,
-    clientY: number
-  ) => void | Promise<void>;
+  show: (options: JsonPreviewShowOptions, clientX: number, clientY: number) => void | Promise<void>;
   scheduleHide: () => void;
   hideNow: () => void;
 }

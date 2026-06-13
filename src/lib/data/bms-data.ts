@@ -61,27 +61,26 @@ export async function fetchWithProgress(
   url: string,
   onProgress?: ProgressCallback
 ): Promise<Response> {
-  const onStreamProgress =
-    onProgress
-      ? ({ loaded, total }: { loaded: number; total: number }) => {
-          if (total) {
-            const pct = Math.min(Math.round((loaded / total) * 100), 100);
-            onProgress({
-              percent: pct,
-              phase: "downloading",
-              message: "下载中...",
-              detail: `${formatBytes(loaded)} / ${formatBytes(total)}`,
-            });
-          } else {
-            onProgress({
-              percent: 50,
-              phase: "downloading",
-              message: "下载中...",
-              detail: `已下载 ${formatBytes(loaded)}`,
-            });
-          }
+  const onStreamProgress = onProgress
+    ? ({ loaded, total }: { loaded: number; total: number }) => {
+        if (total) {
+          const pct = Math.min(Math.round((loaded / total) * 100), 100);
+          onProgress({
+            percent: pct,
+            phase: "downloading",
+            message: "下载中...",
+            detail: `${formatBytes(loaded)} / ${formatBytes(total)}`,
+          });
+        } else {
+          onProgress({
+            percent: 50,
+            phase: "downloading",
+            message: "下载中...",
+            detail: `已下载 ${formatBytes(loaded)}`,
+          });
         }
-      : undefined;
+      }
+    : undefined;
 
   const { response } = await fetchStream(url, undefined, onStreamProgress);
 
@@ -131,7 +130,9 @@ export async function fetchBmsHeader(
 
   // 运行时校验：确保 header.json 是对象而非数组或其他类型
   if (typeof data !== "object" || data === null || Array.isArray(data)) {
-    throw new Error("表头数据格式无效：期望 JSON 对象，实际接收 " + (Array.isArray(data) ? "数组" : typeof data));
+    throw new Error(
+      "表头数据格式无效：期望 JSON 对象，实际接收 " + (Array.isArray(data) ? "数组" : typeof data)
+    );
   }
 
   onProgress?.({ percent: 100, phase: "done", message: "表头信息加载完成" });
@@ -176,9 +177,7 @@ export async function fetchBmsTableData(
         undefined,
         onProgress
           ? ({ loaded, total }) => {
-              const pct = total
-                ? Math.min(Math.round((loaded / total) * 100), 100)
-                : 50;
+              const pct = total ? Math.min(Math.round((loaded / total) * 100), 100) : 50;
               onProgress({
                 percent: 5 + Math.round(pct * 0.8),
                 phase: "downloading",

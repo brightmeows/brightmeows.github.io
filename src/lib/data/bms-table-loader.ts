@@ -3,7 +3,6 @@ import { fetchBmsHeader, fetchBmsTableData } from "./bms-data";
 import type { ChartData, HeaderData, ProgressCallback } from "$lib/types/bms";
 import { resolveUrl } from "$lib/utils/url";
 
-
 export interface TableLoadResult {
   tableData: ChartData[];
   headerData: HeaderData;

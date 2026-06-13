@@ -5,8 +5,10 @@
   import SelectedTablesPanel from "$lib/components/bms/SelectedTablesPanel.svelte";
   import type { TocItem } from "$lib/components/layout/FloatingToc.svelte";
   import PageShell from "$lib/components/layout/PageShell.svelte";
+  import Checkbox from "$lib/components/ui/Checkbox.svelte";
   import JsonPreview from "$lib/components/ui/JsonPreview.svelte";
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
+  import { FEATURED_TABLES } from "$lib/constants/featured-tables";
   import { loadMirrorTables } from "$lib/data/mirror-table-loader";
   import type { MirrorTableItem } from "$lib/types/bms";
   import type { JsonPreviewHandle } from "$lib/types/ui";
@@ -31,6 +33,7 @@
   let tables = $state<MirrorTableItem[]>([]);
   let selectedMap = $state<Record<string, boolean>>({});
   let searchQuery = $state("");
+  let showCommonOnly = $state(false);
   let tocItems = $state<TocItem[]>([]);
 
   let mirrorPreview = $state<JsonPreviewHandle | undefined>(undefined);
@@ -49,7 +52,14 @@
 
   let searchNeedles = $derived(buildSearchNeedles(searchQuery, searchConverters));
   let filteredTables = $derived(filterTables(tables, searchNeedles));
-  let groupedByTags = $derived(groupByTags(filteredTables));
+  // 筛选：启用精选时仅保留 FEATURED_TABLES 中的条目
+  let commonFilteredTables = $derived(
+    showCommonOnly
+      ? filteredTables.filter((t) => FEATURED_TABLES.includes(t.url_from ?? t.url))
+      : filteredTables
+  );
+  // 分组 + 排序：启用精选时 GroupedTablesSection 按 FEATURED_TABLES 定义顺序排列
+  let groupedByTags = $derived(groupByTags(commonFilteredTables));
 
   $effect(() => {
     const tagItems = buildGroupTocItems(groupedByTags);
@@ -112,6 +122,22 @@
 
 {#snippet contentPane()}
   <div class="flex flex-col gap-3">
+    <div class="flex flex-wrap items-center justify-center gap-3">
+      <h2 class="section-title">全部难度表</h2>
+      <label
+        class="flex cursor-pointer items-center gap-1.5 rounded-[6px] border px-2.5 py-0.5 text-[0.8rem] transition-colors duration-200 select-none {showCommonOnly
+          ? 'border-[#64b5f6] bg-[#64b5f6]/20 text-[#64b5f6]'
+          : 'border-white/20 text-white/50 hover:border-white/40 hover:text-white/70'}"
+      >
+        <Checkbox
+          size="sm"
+          checked={showCommonOnly}
+          onchange={(v: boolean) => (showCommonOnly = v)}
+        />
+        精选难度表
+      </label>
+    </div>
+
     <div class="relative w-full">
       <input
         class="w-full rounded-xl border border-white/20 bg-black/20 px-4 py-3 pr-12 text-white outline-none placeholder:text-white/50 focus:border-[#64b5f6]/60 focus:ring-2 focus:ring-[#64b5f6]/30"
@@ -130,9 +156,9 @@
         </button>
       {/if}
     </div>
-    {#if searchQuery.trim().length > 0}
+    {#if searchQuery.trim().length > 0 || showCommonOnly}
       <div class="text-[0.95rem] text-white/60">
-        匹配 {filteredTables.length} / {tables.length}
+        匹配 {commonFilteredTables.length} / {tables.length}
       </div>
     {/if}
   </div>
@@ -148,9 +174,18 @@
   {:else if error}
     <div class="mt-6 text-red-300">加载失败：{error}</div>
   {:else if groupedByTags.length === 0}
-    <div class="mt-6 text-white/70">没有匹配的难度表</div>
+    <div class="mt-6 text-white/70">
+      {showCommonOnly ? "没有匹配的精选难度表" : "没有匹配的难度表"}
+    </div>
   {:else}
-    <GroupedTablesSection bind:selectedMap groups={groupedByTags} {mirrorPreview} />
+    <!-- sortFeatured=true 时按 FEATURED_TABLES 数组顺序排列各组内条目 -->
+    <GroupedTablesSection
+      bind:selectedMap
+      groups={groupedByTags}
+      {mirrorPreview}
+      featuredUrls={FEATURED_TABLES}
+      sortFeatured={showCommonOnly}
+    />
   {/if}
 {/snippet}
 
