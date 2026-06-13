@@ -1,4 +1,5 @@
 <script lang="ts">
+  import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
   import type { LevelRefItem } from "$lib/types/bms";
   import { resolveUrl } from "$lib/utils/url";
 
@@ -11,6 +12,8 @@
   let { headerUrl = undefined, hasData = $bindable(false) }: Props = $props();
 
   let levelRefData = $state<LevelRefItem[]>([]);
+  let loadState = $state<"idle" | "loading" | "done" | "not-found" | "error">("idle");
+  let loadErrorMessage = $state("");
 
   let requestToken = 0;
 
@@ -45,6 +48,9 @@
     requestToken += 1;
     const token = requestToken;
 
+    loadState = "loading";
+    loadErrorMessage = "";
+
     try {
       const levelRefUrl = buildLevelRefUrl(header);
       if (!levelRefUrl) return;
@@ -58,14 +64,21 @@
 
         if (Array.isArray(data)) {
           levelRefData = data;
+          loadState = "done";
         } else {
           console.warn("level-ref.json 格式不正确，应为数组");
+          loadState = "error";
+          loadErrorMessage = "数据格式错误";
         }
-      } else if (response.status !== 404) {
+      } else if (response.status === 404) {
+        loadState = "not-found";
+      } else {
         throw new Error(`加载失败: ${response.status} ${response.statusText}`);
       }
     } catch (err) {
       console.error("加载难度对照表数据失败:", err);
+      loadState = "error";
+      loadErrorMessage = err instanceof Error ? err.message : "未知错误";
     }
   }
 
@@ -78,7 +91,17 @@
   });
 </script>
 
-{#if hasContent}
+{#if loadState === "loading"}
+  <h3 class="section-title mt-0 mb-6 text-center">难度对照表</h3>
+  <LoadingProgress variant="compact" message="正在加载难度对照表..." />
+{:else if loadState === "error"}
+  <h3 class="section-title mt-0 mb-6 text-center">难度对照表</h3>
+  <div
+    class="rounded-[10px] border-l-4 border-[#ff6b6b] bg-[rgba(255,107,107,0.1)] p-4 text-[0.9rem] text-[#ff6b6b]"
+  >
+    加载失败：{loadErrorMessage}
+  </div>
+{:else if hasContent}
   <h3 class="section-title mt-0 mb-6 text-center">难度对照表</h3>
   <div class="flex flex-wrap items-start justify-center gap-8">
     {#each tableHalves as half (half.id)}

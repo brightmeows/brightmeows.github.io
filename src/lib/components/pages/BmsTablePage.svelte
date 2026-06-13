@@ -6,7 +6,7 @@
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
   import { fetchBmsHeader, fetchBmsTableData } from "$lib/data/bms-data";
-  import type { ChartData, HeaderData } from "$lib/types/bms";
+  import type { ChartData, HeaderData, ProgressCallback } from "$lib/types/bms";
   import { sortDifficultyGroups } from "$lib/utils/bms-table";
   import { groupChartsByLevel, computeTableStats, resolveCourses } from "$lib/utils/bms-transform";
   import { clipboardFeedback } from "$lib/utils/clipboard.svelte";
@@ -30,6 +30,9 @@
   let tableData = $state<ChartData[] | null>(null);
   let dataFetchUrl = $state<string | null>(null);
   let dataError = $state<string | null>(null);
+  let dataProgressPercent = $state(0);
+  let dataProgressMessage = $state("正在加载谱面数据...");
+  let dataProgressDetail = $state("");
 
   let pageTitle = $state("加载难度表header中");
   let { copied, copy: copyUrl } = clipboardFeedback();
@@ -69,9 +72,18 @@
       dataLoadState = "loading";
       dataError = null;
       tableData = null;
+      dataProgressPercent = 0;
+      dataProgressMessage = "正在加载谱面数据...";
+      dataProgressDetail = "";
+
+      const onProgress: ProgressCallback = (event) => {
+        dataProgressPercent = event.percent;
+        dataProgressMessage = event.message;
+        dataProgressDetail = event.detail ?? "";
+      };
 
       const headerUrlBase = resolveUrl(headerUrl);
-      const result = await fetchBmsTableData(dataUrl, headerUrlBase);
+      const result = await fetchBmsTableData(dataUrl, headerUrlBase, onProgress);
 
       tableData = result.data;
       dataFetchUrl = result.fetchUrl;
@@ -84,6 +96,9 @@
   }
 
   function retryData(): void {
+    dataProgressPercent = 0;
+    dataProgressMessage = "正在加载谱面数据...";
+    dataProgressDetail = "";
     void loadData(headerData?.data_url);
   }
 
@@ -164,7 +179,7 @@
       : [
           titlePane,
           ...(courseGroups.length > 0 ? [coursePane] : []),
-          ...(levelRefHasData ? [levelRefPane] : []),
+          levelRefPane,
           ...(dataLoading ? [dataLoadingPane] : []),
           ...(dataLoaded ? [chartsPane] : []),
           ...(dataLoadState === "error" ? [dataErrorPane] : []),
@@ -280,7 +295,15 @@
 {/snippet}
 
 {#snippet dataLoadingPane()}
-  {@render loadingDisplayPane("正在加载谱面数据...", "正在加载谱面数据...")}
+  <div class="p-8">
+    <LoadingProgress
+      title="正在加载谱面数据..."
+      message={dataProgressMessage}
+      progress={dataProgressPercent}
+      detail={dataProgressDetail}
+      variant="determinate"
+    />
+  </div>
 {/snippet}
 
 {#snippet dataErrorPane()}

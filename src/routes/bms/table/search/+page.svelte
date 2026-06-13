@@ -297,6 +297,8 @@
       indexPhase = "error";
       indexErrorMessage = `Worker 创建失败: ${err instanceof Error ? err.message : String(err)}`;
     }
+    // 注：getSearchConverters() 动态导入 opencc-js（约 1.1MB），
+    // ES 动态导入不暴露下载进度事件，无法添加字节级进度条。
     void getSearchConverters().then((c) => (searchConverters = c));
   });
 

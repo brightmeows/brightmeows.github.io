@@ -7,6 +7,10 @@
  *
  * 此模块将 opencc-js 的 dynamic import 封装为共享缓存，
  * 首次调用时加载一次，后续复用。
+ *
+ * 注意：ES 动态导入（`import("opencc-js")`）不暴露下载进度事件，
+ * 因此此约 1.1MB 的加载无法添加字节级进度条。两个消费页面的搜索
+ * 功能在加载完成前不可用，但用户无进度反馈。
  */
 
 import type { StringConverter } from "$lib/types/common";
