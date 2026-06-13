@@ -1,3 +1,4 @@
+import Checkbox from "./Checkbox.svelte";
 import EmptyState from "./EmptyState.svelte";
 import FloatingPanel from "./FloatingPanel.svelte";
 import GlassButton from "./GlassButton.svelte";
@@ -13,6 +14,7 @@ import ScrollSyncGroup from "./ScrollSyncGroup.svelte";
 import StarryBackground from "./StarryBackground.svelte";
 
 export {
+  Checkbox,
   EmptyState,
   FloatingPanel,
   GlassButton,

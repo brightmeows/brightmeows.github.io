@@ -1,6 +1,7 @@
 <script lang="ts">
   import MirrorTableRow from "./MirrorTableRow.svelte";
 
+  import Checkbox from "$lib/components/ui/Checkbox.svelte";
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
   import JsonPreview from "$lib/components/ui/JsonPreview.svelte";
   import ScrollSyncGroup from "$lib/components/ui/ScrollSyncGroup.svelte";
@@ -114,15 +115,6 @@
   function onRowChange(checked: boolean, url: string): void {
     selectedMap = { ...selectedMap, [url]: checked };
   }
-
-  function indeterminate(node: HTMLInputElement, value: boolean) {
-    node.indeterminate = !!value;
-    return {
-      update(v: boolean) {
-        node.indeterminate = !!v;
-      },
-    };
-  }
 </script>
 
 {#if groups.length === 0}
@@ -166,12 +158,10 @@
           <div id={`tag1-group-${slugifyTag(g.tag1)}`} class="mb-12 scroll-mt-5">
             <div class="section-divider">
               <div class="flex items-center gap-4">
-                <input
-                  type="checkbox"
-                  class="h-5.5 w-5.5 scale-[1.2]"
-                  use:indeterminate={tag1State(g, selectedMap) === CheckboxState.Indeterminate}
+                <Checkbox
                   checked={tag1State(g, selectedMap) === CheckboxState.Checked}
-                  onchange={(e) => onTag1Change(e.currentTarget.checked, g)}
+                  indeterminate={tag1State(g, selectedMap) === CheckboxState.Indeterminate}
+                  onchange={(v: boolean) => onTag1Change(v, g)}
                 />
                 <span
                   class="rounded-[20px] bg-[rgba(100,181,246,0.3)] px-6 py-2 text-[1.2rem] font-bold text-white shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
@@ -184,12 +174,10 @@
             {#each g.subgroups as sg (sg.tag2)}
               <div id={`tag2-group-${slugifyTag(g.tag1)}-${slugifyTag(sg.tag2)}`} class="mt-4">
                 <h3 class="mt-2 mb-2 flex items-center gap-2 text-[1.1rem] text-white">
-                  <input
-                    type="checkbox"
-                    class="h-5.5 w-5.5 scale-[1.2]"
-                    use:indeterminate={tag2State(sg, selectedMap) === CheckboxState.Indeterminate}
+                  <Checkbox
                     checked={tag2State(sg, selectedMap) === CheckboxState.Checked}
-                    onchange={(e) => onTag2Change(e.currentTarget.checked, sg)}
+                    indeterminate={tag2State(sg, selectedMap) === CheckboxState.Indeterminate}
+                    onchange={(v: boolean) => onTag2Change(v, sg)}
                   />
                   {sg.tag2}
                 </h3>

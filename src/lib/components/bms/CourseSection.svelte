@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Checkbox from "$lib/components/ui/Checkbox.svelte";
   import type { ResolvedCourseGroup } from "$lib/types/bms";
 
   interface Props {
@@ -82,12 +83,7 @@
           ? 'border-[#64b5f6] bg-[#64b5f6]/20 text-[#64b5f6]'
           : 'border-white/20 text-white/50 hover:border-white/40 hover:text-white/70'}"
       >
-        <input
-          type="checkbox"
-          class="h-3.5 w-3.5 accent-[#64b5f6]"
-          checked={groupMode}
-          onchange={() => (groupMode = !groupMode)}
-        />
+        <Checkbox size="sm" checked={groupMode} onchange={(v: boolean) => (groupMode = v)} />
         分组显示
       </label>
     {/if}

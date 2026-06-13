@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Checkbox from "$lib/components/ui/Checkbox.svelte";
   import { jsonPreview } from "$lib/components/ui/JsonPreview.svelte";
   import type { MirrorTableItem } from "$lib/types/bms";
 
@@ -24,12 +25,7 @@
 
 <tr class="hover:bg-white/5 last:[&>td]:border-b-0">
   <td class="table-td-glass wrap-break-word">
-    <input
-      type="checkbox"
-      class="h-5.5 w-5.5 scale-[1.2]"
-      checked={selected}
-      onchange={(e) => onchange(e.currentTarget.checked)}
-    />
+    <Checkbox checked={selected} onchange={(v: boolean) => onchange(v)} />
   </td>
   <td class="table-td-glass wrap-break-word">
     {item.symbol ?? ""}
