@@ -5,7 +5,7 @@ import type { SearchIndex, CandidateEntry } from "./bms-search";
 import { getCachedIndices, setCachedIndices, getVersion, setVersion } from "./bms-search-idb";
 import type { SearchIndexBundle } from "./bms-search-idb";
 
-import { R2_INDEXES_BASE } from "$lib/data/bms-constants";
+import { R2_INDEXES_BASE } from "$lib/constants/r2";
 
 // ---- types ----
 

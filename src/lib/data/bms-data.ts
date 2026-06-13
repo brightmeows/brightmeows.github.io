@@ -8,6 +8,8 @@ import type {
   ResolvedCourseGroup,
   Trophy,
 } from "$lib/types/bms";
+import { fetchStream } from "$lib/utils/fetch-stream";
+import { resolveUrl, resolveUrlAs } from "$lib/utils/url";
 
 /**
  * JSONP 请求
@@ -25,7 +27,7 @@ export function fetchJsonp(url: string, timeoutMs = 10000): Promise<unknown> {
       cleanup();
       reject(new Error("JSONP request timed out"));
     }, timeoutMs);
-    const requestUrl = new URL(url, window.location.href);
+    const requestUrl = resolveUrlAs(url);
     requestUrl.searchParams.set("callback", callbackName);
     script.src = requestUrl.toString();
     win[callbackName] = (data: unknown) => {
@@ -53,77 +55,47 @@ function formatBytes(bytes: number): string {
 
 /**
  * 带进度跟踪的 fetch。
- * 当 response.body 可用时，通过 ReadableStream 逐 chunk 读取并报告字节级进度。
- * Content-Length 缺失时仍跟踪字节但只显示"已下载 X MB"。
- * 如果 body 不可用或未提供 onProgress，退化为普通 fetch。
+ * 委托 fetchStream 处理流式读取，将字节级进度转换为 ProgressCallback 格式。
  */
 export async function fetchWithProgress(
   url: string,
   onProgress?: ProgressCallback
 ): Promise<Response> {
-  const response = await fetch(url, { redirect: "follow" });
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
-  }
+  const onStreamProgress =
+    onProgress
+      ? ({ loaded, total }: { loaded: number; total: number }) => {
+          if (total) {
+            const pct = Math.min(Math.round((loaded / total) * 100), 100);
+            onProgress({
+              percent: pct,
+              phase: "downloading",
+              message: "下载中...",
+              detail: `${formatBytes(loaded)} / ${formatBytes(total)}`,
+            });
+          } else {
+            onProgress({
+              percent: 50,
+              phase: "downloading",
+              message: "下载中...",
+              detail: `已下载 ${formatBytes(loaded)}`,
+            });
+          }
+        }
+      : undefined;
 
-  if (!onProgress || !response.body) {
-    return response;
-  }
+  const { response } = await fetchStream(url, undefined, onStreamProgress);
 
-  const contentLength = response.headers.get("Content-Length");
-  const total = contentLength ? parseInt(contentLength, 10) : 0;
-  const reader = response.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let loaded = 0;
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (value) {
-      chunks.push(value);
-      loaded += value.length;
-      if (total) {
-        const pct = Math.min(Math.round((loaded / total) * 100), 100);
-        onProgress({
-          percent: pct,
-          phase: "downloading",
-          message: "下载中...",
-          detail: `${formatBytes(loaded)} / ${formatBytes(total)}`,
-        });
-      } else {
-        onProgress({
-          percent: 50,
-          phase: "downloading",
-          message: "下载中...",
-          detail: `已下载 ${formatBytes(loaded)}`,
-        });
-      }
-    }
-  }
-
-  // 流读取完成，确保进度最终到达 100%
-  if (!total && onProgress) {
+  // 无 Content-Length 时，fetchStream 完成即表示下载完毕
+  if (onProgress && !response.headers.get("Content-Length")) {
     onProgress({
       percent: 100,
       phase: "downloading",
       message: "下载完成",
-      detail: `已下载 ${formatBytes(loaded)}`,
+      detail: "",
     });
   }
 
-  // 合并所有 chunk 重建 Response
-  const combined = new Uint8Array(loaded);
-  let pos = 0;
-  for (const chunk of chunks) {
-    combined.set(chunk, pos);
-    pos += chunk.length;
-  }
-
-  return new Response(combined, {
-    status: response.status,
-    statusText: response.statusText,
-    headers: response.headers,
-  });
+  return response;
 }
 
 /**
@@ -133,7 +105,7 @@ export async function fetchBmsHeader(
   headerUrl: string,
   onProgress?: ProgressCallback
 ): Promise<HeaderData> {
-  const headerUrlBase = new URL(headerUrl, window.location.href).toString();
+  const headerUrlBase = resolveUrl(headerUrl);
 
   onProgress?.({ percent: 0, phase: "connecting", message: "正在请求表头信息..." });
 
@@ -148,17 +120,22 @@ export async function fetchBmsHeader(
 
   // percent=100 确保经 loadBmsTable 的 *0.35 映射后不低于下载阶段已达的 35%
   onProgress?.({ percent: 100, phase: "parsing", message: "正在解析表头信息..." });
-  let data: HeaderData;
+  let data: unknown;
   try {
-    data = (await headerResponse.json()) as HeaderData;
+    data = await headerResponse.json();
   } catch (err) {
     throw new Error(`表头数据格式无效: ${err instanceof Error ? err.message : String(err)}`, {
       cause: err,
     });
   }
 
+  // 运行时校验：确保 header.json 是对象而非数组或其他类型
+  if (typeof data !== "object" || data === null || Array.isArray(data)) {
+    throw new Error("表头数据格式无效：期望 JSON 对象，实际接收 " + (Array.isArray(data) ? "数组" : typeof data));
+  }
+
   onProgress?.({ percent: 100, phase: "done", message: "表头信息加载完成" });
-  return data;
+  return data as HeaderData;
 }
 
 export interface FetchTableDataResult {
@@ -193,24 +170,33 @@ export async function fetchBmsTableData(
     onProgress?.({ percent: 85, phase: "parsing", message: "JSONP 数据接收完成，解析中..." });
   } else {
     onProgress?.({ percent: 5, phase: "connecting", message: "连接谱面数据源..." });
-    let dataResponse: Response;
     try {
-      dataResponse = await fetchWithProgress(finalDataUrl, (ev) => {
-        onProgress?.({
-          ...ev,
-          percent: 5 + Math.round(ev.percent * 0.8),
+      const { response: dataResponse } = await fetchStream(
+        finalDataUrl,
+        undefined,
+        onProgress
+          ? ({ loaded, total }) => {
+              const pct = total
+                ? Math.min(Math.round((loaded / total) * 100), 100)
+                : 50;
+              onProgress({
+                percent: 5 + Math.round(pct * 0.8),
+                phase: "downloading",
+                message: "下载中...",
+              });
+            }
+          : undefined
+      );
+      onProgress?.({ percent: 88, phase: "parsing", message: "解析谱面数据..." });
+      try {
+        tableDataRaw = await dataResponse.json();
+      } catch (err) {
+        throw new Error(`谱面数据格式无效: ${err instanceof Error ? err.message : String(err)}`, {
+          cause: err,
         });
-      });
+      }
     } catch (err) {
       throw new Error(`无法加载谱面数据: ${err instanceof Error ? err.message : String(err)}`, {
-        cause: err,
-      });
-    }
-    onProgress?.({ percent: 88, phase: "parsing", message: "解析谱面数据..." });
-    try {
-      tableDataRaw = await dataResponse.json();
-    } catch (err) {
-      throw new Error(`谱面数据格式无效: ${err instanceof Error ? err.message : String(err)}`, {
         cause: err,
       });
     }

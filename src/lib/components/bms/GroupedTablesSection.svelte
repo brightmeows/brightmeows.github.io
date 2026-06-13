@@ -3,9 +3,9 @@
 
   import Checkbox from "$lib/components/ui/Checkbox.svelte";
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
-  import JsonPreview from "$lib/components/ui/JsonPreview.svelte";
   import ScrollSyncGroup from "$lib/components/ui/ScrollSyncGroup.svelte";
   import type { MirrorTableItem, Tag1Group, Tag2Group } from "$lib/types/bms";
+  import type { JsonPreviewHandle } from "$lib/types/ui";
   import { slugifyTag } from "$lib/utils/mirror-tables";
 
   const CheckboxState = {
@@ -19,22 +19,10 @@
   interface Props {
     groups?: Tag1Group[];
     selectedMap?: Record<string, boolean>;
+    mirrorPreview?: JsonPreviewHandle;
   }
 
-  let { groups = [], selectedMap = $bindable({}) }: Props = $props();
-
-  let tablePreview = $state<
-    | {
-        show: (
-          options: import("$lib/components/ui/JsonPreview.svelte").JsonPreviewShowOptions,
-          clientX: number,
-          clientY: number
-        ) => void | Promise<void>;
-        scheduleHide: () => void;
-        hideNow: () => void;
-      }
-    | undefined
-  >();
+  let { groups = [], selectedMap = $bindable({}), mirrorPreview }: Props = $props();
 
   function compareAscii(a: string, b: string): number {
     if (a === b) return 0;
@@ -229,7 +217,7 @@
                           {item}
                           selected={!!selectedMap[item.url]}
                           onchange={(checked: boolean) => onRowChange(checked, item.url)}
-                          {tablePreview}
+                          {mirrorPreview}
                         />
                       {/each}
                     </tbody>
@@ -243,5 +231,3 @@
     </ScrollSyncGroup>
   </div>
 {/if}
-
-<JsonPreview bind:this={tablePreview} />

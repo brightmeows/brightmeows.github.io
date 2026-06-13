@@ -2,25 +2,16 @@
   import Checkbox from "$lib/components/ui/Checkbox.svelte";
   import { jsonPreview } from "$lib/components/ui/JsonPreview.svelte";
   import type { MirrorTableItem } from "$lib/types/bms";
+  import type { JsonPreviewHandle } from "$lib/types/ui";
 
   interface Props {
     item: MirrorTableItem;
     selected: boolean;
     onchange: (checked: boolean) => void;
-    tablePreview:
-      | {
-          show: (
-            options: import("$lib/components/ui/JsonPreview.svelte").JsonPreviewShowOptions,
-            clientX: number,
-            clientY: number
-          ) => void | Promise<void>;
-          scheduleHide: () => void;
-          hideNow: () => void;
-        }
-      | undefined;
+    mirrorPreview?: JsonPreviewHandle;
   }
 
-  let { item, selected, onchange, tablePreview }: Props = $props();
+  let { item, selected, onchange, mirrorPreview }: Props = $props();
 </script>
 
 <tr class="hover:bg-white/5 last:[&>td]:border-b-0">
@@ -34,7 +25,7 @@
     <strong
       class="cursor-default"
       use:jsonPreview={{
-        preview: tablePreview,
+        preview: mirrorPreview,
         options: {
           value: item,
           label: `${item.name ?? "难度表"} JSON`,

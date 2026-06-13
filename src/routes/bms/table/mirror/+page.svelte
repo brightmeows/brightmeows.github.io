@@ -5,9 +5,11 @@
   import SelectedTablesPanel from "$lib/components/bms/SelectedTablesPanel.svelte";
   import type { TocItem } from "$lib/components/layout/FloatingToc.svelte";
   import PageShell from "$lib/components/layout/PageShell.svelte";
+  import JsonPreview from "$lib/components/ui/JsonPreview.svelte";
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
   import { loadMirrorTables } from "$lib/data/mirror-table-loader";
   import type { MirrorTableItem } from "$lib/types/bms";
+  import type { JsonPreviewHandle } from "$lib/types/ui";
   import { writeToClipboard } from "$lib/utils/clipboard";
   import {
     buildSearchNeedles,
@@ -30,6 +32,8 @@
   let selectedMap = $state<Record<string, boolean>>({});
   let searchQuery = $state("");
   let tocItems = $state<TocItem[]>([]);
+
+  let mirrorPreview = $state<JsonPreviewHandle | undefined>(undefined);
 
   let searchConverters = $state<((input: string) => string)[]>([]);
 
@@ -146,8 +150,9 @@
   {:else if groupedByTags.length === 0}
     <div class="mt-6 text-white/70">没有匹配的难度表</div>
   {:else}
-    <GroupedTablesSection bind:selectedMap groups={groupedByTags} />
+    <GroupedTablesSection bind:selectedMap groups={groupedByTags} {mirrorPreview} />
   {/if}
 {/snippet}
 
-<SelectedTablesPanel {tables} bind:selectedMap />
+<SelectedTablesPanel {tables} bind:selectedMap {mirrorPreview} />
+<JsonPreview bind:this={mirrorPreview} />

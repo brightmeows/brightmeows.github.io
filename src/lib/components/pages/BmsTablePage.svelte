@@ -18,6 +18,7 @@
   import { sortDifficultyGroups } from "$lib/utils/bms-table";
   import { writeToClipboard } from "$lib/utils/clipboard";
   import { formatTitle } from "$lib/utils/title";
+  import { resolveUrl } from "$lib/utils/url";
 
   interface Props {
     headerUrl: string;
@@ -76,7 +77,7 @@
       dataError = null;
       tableData = null;
 
-      const headerUrlBase = new URL(headerUrl, window.location.href).toString();
+      const headerUrlBase = resolveUrl(headerUrl);
       const result = await fetchBmsTableData(dataUrl, headerUrlBase);
 
       tableData = result.data;

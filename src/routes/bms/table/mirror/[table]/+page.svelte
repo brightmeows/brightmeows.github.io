@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from "$app/state";
   import BmsTablePage from "$lib/components/pages/BmsTablePage.svelte";
-  import { R2_TABLES_BASE } from "$lib/data/bms-constants";
+  import { R2_TABLES_BASE } from "$lib/constants/r2";
 
   let table = $derived(page.params.table);
   let headerUrl = $derived(`${R2_TABLES_BASE}/${encodeURIComponent(table)}/header.json`);

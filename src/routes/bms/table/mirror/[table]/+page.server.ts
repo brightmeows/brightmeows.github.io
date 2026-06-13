@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 
 import type { PageServerLoad } from "./$types";
 
-import { R2_TABLES_BASE } from "$lib/data/bms-constants";
+import { R2_TABLES_BASE } from "$lib/constants/r2";
 import { formatTitle } from "$lib/utils/title";
 
 export const prerender = true;

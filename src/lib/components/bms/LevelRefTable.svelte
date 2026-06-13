@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { LevelRefItem } from "$lib/types/bms";
+  import { resolveUrl } from "$lib/utils/url";
 
   interface Props {
     headerUrl?: string;
@@ -27,7 +28,7 @@
     try {
       let url = headerUrlRaw;
       if (!/^https?:\/\//i.test(url)) {
-        url = new URL(headerUrlRaw, window.location.href).toString();
+        url = resolveUrl(headerUrlRaw);
       }
       const parts = url.split("/");
       parts[parts.length - 1] = "level-ref.json";

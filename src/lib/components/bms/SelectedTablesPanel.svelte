@@ -3,40 +3,17 @@
   import { fly } from "svelte/transition";
 
   import Checkbox from "$lib/components/ui/Checkbox.svelte";
-  import JsonPreview, { jsonPreview } from "$lib/components/ui/JsonPreview.svelte";
+  import { jsonPreview } from "$lib/components/ui/JsonPreview.svelte";
   import type { MirrorTableItem } from "$lib/types/bms";
+  import type { JsonPreviewHandle } from "$lib/types/ui";
 
   interface Props {
     tables?: MirrorTableItem[];
     selectedMap?: Record<string, boolean>;
+    mirrorPreview?: JsonPreviewHandle;
   }
 
-  let { tables = [], selectedMap = $bindable({}) }: Props = $props();
-
-  let mirrorPreview = $state<
-    | {
-        show: (
-          options: import("$lib/components/ui/JsonPreview.svelte").JsonPreviewShowOptions,
-          clientX: number,
-          clientY: number
-        ) => void | Promise<void>;
-        scheduleHide: () => void;
-        hideNow: () => void;
-      }
-    | undefined
-  >();
-  let originPreview = $state<
-    | {
-        show: (
-          options: import("$lib/components/ui/JsonPreview.svelte").JsonPreviewShowOptions,
-          clientX: number,
-          clientY: number
-        ) => void | Promise<void>;
-        scheduleHide: () => void;
-        hideNow: () => void;
-      }
-    | undefined
-  >();
+  let { tables = [], selectedMap = $bindable({}), mirrorPreview }: Props = $props();
 
   let totalCount = $derived(tables.length);
   let selectedCount = $derived(Object.values(selectedMap).filter(Boolean).length);
@@ -110,7 +87,7 @@
           class="cursor-pointer rounded-lg border-none bg-[linear-gradient(135deg,#ff9800,#f57c00)] px-[0.8rem] py-2 text-[0.9rem] font-semibold text-white transition-all duration-200 ease-in-out"
           type="button"
           use:jsonPreview={{
-            preview: originPreview,
+            preview: mirrorPreview,
             options: {
               value: selectedOriginArray,
               label: "原链接 JSON",
@@ -124,6 +101,3 @@
     </div>
   </div>
 {/if}
-
-<JsonPreview bind:this={mirrorPreview} />
-<JsonPreview bind:this={originPreview} />

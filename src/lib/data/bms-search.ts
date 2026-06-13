@@ -1,5 +1,6 @@
-import { R2_TABLES_BASE } from "$lib/data/bms-constants";
+import { R2_TABLES_BASE } from "$lib/constants/r2";
 import type { ChartData } from "$lib/types/bms";
+import { fetchStream } from "$lib/utils/fetch-stream";
 
 /** 搜索索引类型 */
 export type SearchIndex = Record<string, string[]>;
@@ -167,34 +168,11 @@ export async function loadTableDataWithProgress(
   onDownloadProgress: (loaded: number, total: number) => void
 ): Promise<ChartData[]> {
   const url = `${TABLE_BASE}/${tableId}/data.json`;
-  const response = await fetch(url, { signal });
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-  const contentLength = response.headers.get("Content-Length");
-  const total = contentLength ? parseInt(contentLength, 10) : 0;
-  const reader = response.body!.getReader();
-  const chunks: Uint8Array[] = [];
-  let loaded = 0;
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (value) {
-      chunks.push(value);
-      loaded += value.length;
-      onDownloadProgress(loaded, total);
-    }
-  }
-
-  const combined = new Uint8Array(loaded);
-  let pos = 0;
-  for (const chunk of chunks) {
-    combined.set(chunk, pos);
-    pos += chunk.length;
-  }
-  const text = new TextDecoder().decode(combined);
+  const { bytes } = await fetchStream(url, signal, (p) =>
+    onDownloadProgress(p.loaded, p.total)
+  );
+  const text = new TextDecoder().decode(bytes);
   const data = JSON.parse(text) as ChartData[];
-
   return filterChartsByKeys(data, matchedKeys, queryType);
 }
 

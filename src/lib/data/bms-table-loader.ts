@@ -1,6 +1,8 @@
 import { fetchBmsHeader, fetchBmsTableData } from "./bms-data";
 
 import type { ChartData, HeaderData, ProgressCallback } from "$lib/types/bms";
+import { resolveUrl } from "$lib/utils/url";
+
 
 export interface TableLoadResult {
   tableData: ChartData[];
@@ -35,7 +37,7 @@ export async function loadBmsTable(
   // Phase 2: Prepare (gap)
   onProgress?.({ percent: 38, phase: "connecting", message: "准备连接谱面数据源..." });
 
-  const headerUrlBase = new URL(headerUrl, window.location.href).toString();
+  const headerUrlBase = resolveUrl(headerUrl);
 
   // Phase 3: Data (sub 0-100% → global 40-95%)
   const result = await fetchBmsTableData(dataUrl, headerUrlBase, (subEvent) => {
