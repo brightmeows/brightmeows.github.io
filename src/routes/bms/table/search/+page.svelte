@@ -111,7 +111,7 @@
     signal?: AbortSignal
   ): Promise<void> {
     if (candidates.length === 0) {
-      searchPhase = "idle";
+      searchPhase = "done";
       searchResults = [];
       return;
     }
@@ -142,7 +142,7 @@
 
     // finalize
     searchResults = agg.finalize();
-    searchPhase = searchResults.length === 0 ? "idle" : "done";
+    searchPhase = "done";
   }
 
   /** 检查当前操作是否仍属于当前搜索，未被取消或新搜索取代 */
