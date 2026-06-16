@@ -23,6 +23,14 @@
 
   let searchConverters = $state<((input: string) => string)[]>([]);
 
+  // opencc-js 约 1.1MB，延迟到用户首次聚焦搜索框时加载，避免与索引加载争抢带宽
+  let convertersLoaded = false;
+  function ensureConverters(): void {
+    if (convertersLoaded) return;
+    convertersLoaded = true;
+    void getSearchConverters().then((c) => (searchConverters = c));
+  }
+
   // ---- 通用状态 ----
   let query = $state("");
   let queryTypeHint = $derived.by(() => {
@@ -47,6 +55,7 @@
   // ---- 搜索状态 ----
   let searchPhase = $state<"idle" | "searching" | "loading-tables" | "done">("idle");
   let searchResults = $state<SearchResult[]>([]);
+  // $state 包裹是必要的：tableStates 在后续被整体重赋值（不只是 .set/.delete）
   // eslint-disable-next-line svelte/no-unnecessary-state-wrap
   let tableStates = $state(new SvelteMap<string, TableLoadState>());
   // 普通 Map（非 SvelteMap）：仅在 loadSingleTable 异步回调中读取，不参与模板响应式追踪
@@ -297,9 +306,6 @@
       indexPhase = "error";
       indexErrorMessage = `Worker 创建失败: ${err instanceof Error ? err.message : String(err)}`;
     }
-    // 注：getSearchConverters() 动态导入 opencc-js（约 1.1MB），
-    // ES 动态导入不暴露下载进度事件，无法添加字节级进度条。
-    void getSearchConverters().then((c) => (searchConverters = c));
   });
 
   onDestroy(() => {
@@ -358,6 +364,7 @@
             type="text"
             bind:value={query}
             onkeydown={onKeydown}
+            onfocus={ensureConverters}
             placeholder="输入谱面标题、艺术家、MD5 或 SHA256，支持简繁日自动转换..."
             disabled={isSearching}
             class="w-full rounded-[16px] border border-white/20 bg-white/10 px-6 py-4 text-[1.1rem] text-white placeholder-white/40 transition-colors outline-none focus:border-[#64b5f6] focus:bg-white/15 disabled:cursor-not-allowed disabled:opacity-40"

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { BlogPostCard } from "$lib/components/content";
+  import BlogPostCard from "$lib/components/content/BlogPostCard.svelte";
   import { PageShell } from "$lib/components/layout";
   import type { BlogPost } from "$lib/types/blog";
 

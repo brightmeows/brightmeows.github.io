@@ -39,6 +39,14 @@
 
   let searchConverters = $state<((input: string) => string)[]>([]);
 
+  // opencc-js 约 1.1MB，延迟到用户首次聚焦搜索框时加载，避免进入页面即下载
+  let convertersLoaded = false;
+  function ensureConverters(): void {
+    if (convertersLoaded) return;
+    convertersLoaded = true;
+    void getSearchConverters().then((c) => (searchConverters = c));
+  }
+
   function copyTables(): void {
     const url = new URL(tablesJsonPath, window.location.origin).toString();
     void copyTablesJsonUrl(url);
@@ -93,9 +101,6 @@
   onMount(() => {
     void loadTables();
     void tick();
-    // 注：getSearchConverters() 动态导入 opencc-js（约 1.1MB），
-    // ES 动态导入不暴露下载进度事件，无法添加字节级进度条。
-    void getSearchConverters().then((c) => (searchConverters = c));
   });
 </script>
 
@@ -146,6 +151,7 @@
         type="text"
         placeholder="按 名称 / 符号 搜索，支持 简体中文 / 繁体中文 / 日文汉字 自动转换"
         bind:value={searchQuery}
+        onfocus={ensureConverters}
       />
       {#if searchQuery.trim().length > 0}
         <button
