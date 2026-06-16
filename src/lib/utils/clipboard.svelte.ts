@@ -11,6 +11,7 @@ export async function writeToClipboard(text: string): Promise<boolean> {
     // clipboard API unavailable
   }
 
+  // Clipboard API 不可用时，fallback 到 execCommand("copy")
   const textarea = document.createElement("textarea");
   textarea.value = text;
   textarea.style.position = "fixed";
@@ -19,7 +20,7 @@ export async function writeToClipboard(text: string): Promise<boolean> {
   textarea.focus();
   textarea.select();
   try {
-    await navigator.clipboard.writeText(textarea.value);
+    document.execCommand("copy");
     document.body.removeChild(textarea);
     return true;
   } catch {

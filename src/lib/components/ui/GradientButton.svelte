@@ -1,7 +1,9 @@
 <script lang="ts">
+  import type { Snippet } from "svelte";
+
   interface Props {
     /** 按钮文本或内容 */
-    children?: import("svelte").Snippet;
+    children?: Snippet;
     /** 点击链接（可选，提供后渲染为 <a>） */
     href?: string;
     /** 点击类型 */
@@ -121,7 +123,7 @@
     {rel}
     class="inline-flex items-center justify-center rounded-md font-semibold text-white no-underline {sizeConfig[
       size
-    ]} {className} {hoverClass} active-translate-y-0"
+    ]} {className} {hoverClass} active:translate-y-0"
     style={baseStyleString}
     onmouseenter={handleMouseEnter}
     onmouseleave={handleMouseLeave}
@@ -137,7 +139,7 @@
     {onclick}
     class="inline-flex items-center justify-center rounded-md font-semibold text-white {sizeConfig[
       size
-    ]} {className} {disabledClass} {hoverClass} active-translate-y-0"
+    ]} {className} {disabledClass} {hoverClass} active:translate-y-0"
     style={baseStyleString}
     onmouseenter={handleMouseEnter}
     onmouseleave={handleMouseLeave}

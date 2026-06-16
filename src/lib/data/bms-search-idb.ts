@@ -39,10 +39,11 @@ function getDB(): Promise<IDBDatabase | null> {
 }
 
 function closeDB(): void {
-  void dbPromise?.then((db) => {
+  const p = dbPromise;
+  dbPromise = null;
+  void p?.then((db) => {
     if (db) db.close();
   });
-  dbPromise = null;
 }
 
 /** 从 IDB 读取缓存的索引，缺失任何一个 key 时返回 null */

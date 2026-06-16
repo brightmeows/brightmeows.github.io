@@ -53,7 +53,11 @@
 
     try {
       const levelRefUrl = buildLevelRefUrl(header);
-      if (!levelRefUrl) return;
+      if (!levelRefUrl) {
+        loadState = "error";
+        loadErrorMessage = "无法构建 level-ref URL";
+        return;
+      }
 
       const response = await fetch(levelRefUrl);
       if (token !== requestToken) return;
