@@ -15,10 +15,9 @@
 
   interface Props {
     headerUrl: string;
-    originUrl?: string | null;
   }
 
-  let { headerUrl, originUrl = null }: Props = $props();
+  let { headerUrl }: Props = $props();
 
   // ---- Header 加载状态 ----
   let headerLoadState = $state<"loading" | "loaded" | "error">("loading");
@@ -207,24 +206,15 @@
       {/if}
     </div>
     <div class="mt-2 text-[1.2rem] text-white/70 italic">
-      {#if originUrl}
-        <a class="link-accent" href={originUrl} target="_blank" rel="noopener noreferrer">
-          原链接
-        </a>
-      {/if}
-      {#if originUrl && headerUrl}
-        <span class="mx-2"> | </span>
-      {/if}
       {#if headerUrl}
         <a class="link-accent" href={headerUrl} target="_blank" rel="noopener noreferrer">
           查看header.json
         </a>
       {/if}
-      {#if (headerUrl || originUrl) && dataFetchUrl}
+      {#if headerUrl && dataFetchUrl}
         <span class="mx-2">|</span>
       {/if}
       {#if dataFetchUrl}
-        <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
         <a class="link-accent" href={dataFetchUrl} target="_blank" rel="noopener noreferrer">
           查看data.json
         </a>

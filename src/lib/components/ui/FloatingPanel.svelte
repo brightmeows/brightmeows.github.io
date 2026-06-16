@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, type Snippet } from "svelte";
   import { cubicInOut } from "svelte/easing";
   import { fade } from "svelte/transition";
 
@@ -15,8 +15,8 @@
     ariaLabel?: string;
     containerClass?: string;
     panelClass?: string;
-    children?: import("svelte").Snippet;
-    icon?: import("svelte").Snippet;
+    children?: Snippet;
+    icon?: Snippet;
   }
 
   const {
@@ -104,8 +104,8 @@
   onMount(() => {
     try {
       window.sessionStorage.setItem(sessionKey, "1");
-    } catch (e) {
-      void e;
+    } catch {
+      // sessionStorage 不可用时忽略
     }
 
     const onOutsidePointerDown = (event: PointerEvent) => {

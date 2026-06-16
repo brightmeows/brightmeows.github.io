@@ -150,14 +150,14 @@ export default tseslint.config(
   // 不需要 svelte/no-navigation-without-resolve 校验。
   {
     files: [
-      "src/lib/components/bms/BmsTablePage.svelte",
+      "src/lib/components/pages/BmsTablePage.svelte",
       "src/lib/components/bms/GroupedTablesSection.svelte",
       "src/lib/components/ui/IconButton.svelte",
       "src/lib/components/ui/GradientButton.svelte",
       "src/lib/components/ui/GlassCard.svelte",
       "src/lib/components/ui/GlassButton.svelte",
-      "src/lib/components/BreadcrumbNav.svelte",
-      "src/lib/components/FloatingToc.svelte",
+      "src/lib/components/layout/BreadcrumbNav.svelte",
+      "src/lib/components/layout/FloatingToc.svelte",
     ],
     rules: {
       "svelte/no-navigation-without-resolve": "off",

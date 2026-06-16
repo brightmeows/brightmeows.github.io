@@ -1,7 +1,9 @@
 <script lang="ts">
+  import type { Snippet } from "svelte";
+
   interface Props {
     /** 图标内容 */
-    children?: import("svelte").Snippet;
+    children?: Snippet;
     /** 点击链接（可选） */
     href?: string;
     /** 点击类型 */

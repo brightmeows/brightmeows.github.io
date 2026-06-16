@@ -1,7 +1,9 @@
 <script lang="ts">
+  import type { Snippet } from "svelte";
+
   interface Props {
     /** 子元素内容 */
-    children?: import("svelte").Snippet;
+    children?: Snippet;
     /** 点击链接（可选，提供后变为可点击卡片） */
     href?: string;
     /** 自定义类名 */

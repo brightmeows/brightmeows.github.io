@@ -1,7 +1,9 @@
 <script lang="ts">
+  import type { Snippet } from "svelte";
+
   interface Props {
     /** 子元素内容 */
-    children?: import("svelte").Snippet;
+    children?: Snippet;
     /** 自定义类名 */
     class?: string;
     /** 内边距变体 */

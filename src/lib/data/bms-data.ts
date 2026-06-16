@@ -40,10 +40,7 @@ export function fetchJsonp(url: string, timeoutMs = 10000): Promise<unknown> {
  * 带进度跟踪的 fetch。
  * 委托 fetchStream 处理流式读取，将字节级进度转换为 ProgressCallback 格式。
  */
-export async function fetchWithProgress(
-  url: string,
-  onProgress?: ProgressCallback
-): Promise<Response> {
+async function fetchWithProgress(url: string, onProgress?: ProgressCallback): Promise<Response> {
   const onStreamProgress = onProgress
     ? ({ loaded, total }: { loaded: number; total: number }) => {
         if (total) {
