@@ -1,0 +1,39 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "singleQuote": false,
+  "semi": true,
+  "tabWidth": 2,
+  "useTabs": false,
+  "trailingComma": "es5",
+  "printWidth": 100,
+  "svelte": {
+    "sortOrder": "options-scripts-styles-markup",
+    "allowShorthand": true,
+    "indentScriptAndStyle": true
+  },
+  "sortTailwindcss": {
+    "stylesheet": "./src/routes/layout.css",
+    "functions": ["clsx", "cn"]
+  },
+  "sortImports": {
+    "groups": ["builtin", "external", "parent", "sibling", "index", "internal", "unknown"],
+    "newlinesBetween": true,
+    "internalPattern": ["$", "~/", "#"]
+  },
+  "sortPackageJson": false,
+  "ignorePatterns": [
+    "node_modules/",
+    ".pnpm-store/",
+    ".svelte-kit/",
+    "build/",
+    "dist/",
+    "*.log",
+    ".env*",
+    ".DS_Store",
+    "coverage/",
+    "pnpm-lock.yaml",
+    "*.generated.ts",
+    "project.inlang/",
+    "static/bms/"
+  ]
+}

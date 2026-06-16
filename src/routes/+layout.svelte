@@ -3,6 +3,7 @@
 
   import { page } from "$app/state";
   import { getLocale } from "$lib/paraglide/runtime";
+
   import "./layout.css";
 
   let { children }: { children: Snippet } = $props();

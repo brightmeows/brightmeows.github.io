@@ -1,0 +1,15 @@
+{
+  "rules": {
+    "svelte/button-has-type": "warn",
+    "svelte/no-target-blank": "warn"
+  },
+  "settings": {
+    "svelte": {
+      "kit": {
+        "files": {
+          "routes": "src/routes"
+        }
+      }
+    }
+  }
+}
