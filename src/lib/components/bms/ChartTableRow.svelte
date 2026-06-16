@@ -4,6 +4,7 @@
   import { GradientButton } from "$lib/components/ui";
   import { jsonPreview } from "$lib/components/ui/JsonPreview.svelte";
   import type { ChartData } from "$lib/types/bms";
+  import type { JsonPreviewHandle } from "$lib/types/ui";
 
   interface Props {
     chart: ChartData;
@@ -11,17 +12,7 @@
     groupColor: string;
     bundleUrl: string | undefined;
     diffUrl: string | undefined;
-    chartPreview:
-      | {
-          show: (
-            options: import("$lib/components/ui/JsonPreview.svelte").JsonPreviewShowOptions,
-            clientX: number,
-            clientY: number
-          ) => void | Promise<void>;
-          scheduleHide: () => void;
-          hideNow: () => void;
-        }
-      | undefined;
+    chartPreview: JsonPreviewHandle | undefined;
     symbol?: string;
   }
 

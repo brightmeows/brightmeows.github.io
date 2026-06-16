@@ -1,3 +1,4 @@
+import { error } from "@sveltejs/kit";
 import type { Component } from "svelte";
 
 import type { PageLoad } from "./$types";
@@ -26,6 +27,8 @@ export const load: PageLoad = async ({ params }) => {
       title: formatTitle(title),
     };
   } catch {
-    throw new Error(`Post not found: ${slug}`);
+    // SvelteKit error() 是官方 404 模式，返回 never（内部 throw HttpError）
+    // eslint-disable-next-line @typescript-eslint/only-throw-error
+    throw error(404, `Post not found: ${slug}`);
   }
 };

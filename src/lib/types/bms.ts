@@ -1,3 +1,10 @@
+/** 难度表列表项 */
+export interface TableEntry {
+  id: string;
+  name: string;
+  symbol?: string;
+}
+
 /** 镜像表格项 */
 export interface MirrorTableItem {
   name: string;

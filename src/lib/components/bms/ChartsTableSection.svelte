@@ -4,20 +4,10 @@
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
   import JsonPreview from "$lib/components/ui/JsonPreview.svelte";
   import type { ChartData, DifficultyGroup } from "$lib/types/bms";
+  import type { JsonPreviewHandle } from "$lib/types/ui";
   import { validateUrl } from "$lib/utils/url";
 
-  let chartPreview = $state<
-    | {
-        show: (
-          options: import("$lib/components/ui/JsonPreview.svelte").JsonPreviewShowOptions,
-          clientX: number,
-          clientY: number
-        ) => void | Promise<void>;
-        scheduleHide: () => void;
-        hideNow: () => void;
-      }
-    | undefined
-  >();
+  let chartPreview = $state<JsonPreviewHandle | undefined>();
 
   let {
     groups = [] as DifficultyGroup[],
@@ -28,9 +18,6 @@
     totalCharts: number;
     symbol?: string;
   } = $props();
-
-  // groups 由父组件 BmsTablePage 已排序，此处直接使用
-  let displayGroups: DifficultyGroup[] = $derived(groups);
 
   function segmentColor(index: number, total: number): string {
     const palette = ["#4caf50", "#2196f3", "#ff9800", "#f44336", "#ce50d8", "#9c27b0"];
@@ -65,15 +52,15 @@
   {#if groups.length > 1}
     <div class="mb-8">
       <div class="mb-6 flex flex-wrap gap-3">
-        {#each displayGroups as group, idx (group.level)}
+        {#each groups as group, idx (group.level)}
           <button
             class="flex cursor-pointer items-center justify-center gap-2 rounded-[25px] border-2 border-transparent px-6 py-3 text-[1.1rem] font-bold text-white opacity-70 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:opacity-90 hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)] active:-translate-y-px active:opacity-90"
             type="button"
             onclick={() => scrollToDifficultyGroup(group.level)}
             style={`background-color:${segmentColor(
               idx,
-              displayGroups.length
-            )};border-color:${segmentColor(idx, displayGroups.length)};`}
+              groups.length
+            )};border-color:${segmentColor(idx, groups.length)};`}
           >
             {symbol}{group.level}
             <span class="rounded-[10px] bg-black/20 px-2 py-[0.1rem] text-[0.9rem] opacity-90">
@@ -105,8 +92,8 @@
           <th class="table-th-glass text-center whitespace-nowrap"> 备注 </th>
         </tr>
       </thead>
-      {#each displayGroups as group, gIndex (group.level)}
-        {@const groupColor = segmentColor(gIndex, displayGroups.length)}
+      {#each groups as group, gIndex (group.level)}
+        {@const groupColor = segmentColor(gIndex, groups.length)}
         <tbody id={`difficulty-group-${group.level}`} class="scroll-mt-5">
           <tr>
             <td colspan="6" class="border-b-2 border-white/10 px-4 py-3">

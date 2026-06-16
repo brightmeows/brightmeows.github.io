@@ -1,11 +1,6 @@
 <script lang="ts">
   import { resolve } from "$app/paths";
-
-  interface TableEntry {
-    id: string;
-    name: string;
-    symbol?: string;
-  }
+  import type { TableEntry } from "$lib/types/bms";
 
   interface Props {
     tables: TableEntry[];

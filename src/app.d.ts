@@ -5,6 +5,7 @@ declare global {
     // interface Error {}
     interface PageData {
       bmstableMeta?: string;
+      title?: string;
     }
     // interface PageState {}
     // interface Platform {}

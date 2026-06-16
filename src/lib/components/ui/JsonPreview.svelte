@@ -1,22 +1,7 @@
 <script module lang="ts">
+  import type { JsonPreviewShowOptions, JsonPreviewHandle } from "$lib/types/ui";
+
   export type JsonPreviewCopyHandler = (text: string) => Promise<void> | void;
-
-  export interface JsonPreviewShowOptions {
-    value: unknown;
-    label?: string;
-    maxHeightRem?: number;
-    onCopy?: JsonPreviewCopyHandler;
-  }
-
-  export interface JsonPreviewHandle {
-    show: (
-      options: JsonPreviewShowOptions,
-      clientX: number,
-      clientY: number
-    ) => void | Promise<void>;
-    scheduleHide: () => void;
-    hideNow: () => void;
-  }
 
   export interface JsonPreviewActionParams {
     preview: JsonPreviewHandle | undefined;
