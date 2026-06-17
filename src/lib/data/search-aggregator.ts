@@ -334,14 +334,8 @@ export class IncrementalAggregator {
     charts: ChartData[],
     symbol?: string
   ): SearchResult[] {
-    const oldIds = this.processedEntries.get(tableId);
-    if (oldIds) {
-      for (const rid of oldIds) {
-        this.removeAppearancesForTable(rid, tableId);
-      }
-      this.processedEntries.delete(tableId);
-    }
-
+    // Phase 1 — 批量身份解析：收集所有 resolveGroup 结果，暂不操作 appearance
+    const batch: { result: SearchResult; chart: ChartData }[] = [];
     for (const chart of charts) {
       const sha = (chart.sha256 ?? "").trim().toLowerCase();
       const md5 = (chart.md5 ?? "").trim().toLowerCase();
@@ -349,10 +343,26 @@ export class IncrementalAggregator {
       const artist = (chart.artist ?? "").trim();
 
       const result = this.resolveGroup(sha, md5, title, artist);
+      batch.push({ result, chart });
+    }
 
-      this.removeAppearancesForTable(result.id, tableId);
+    // Phase 2 — 收集所有受影响的结果 ID（旧追踪 + 新解析结果，去重）
+    const affectedIds = new Set<string>();
+    const oldIds = this.processedEntries.get(tableId);
+    if (oldIds) {
+      for (const rid of oldIds) affectedIds.add(rid);
+    }
+    for (const { result } of batch) affectedIds.add(result.id);
+
+    // Phase 3 — 统一清理：从所有受影响的 result 中移除该 tableId 的旧 appearance
+    for (const rid of affectedIds) {
+      this.removeAppearancesForTable(rid, tableId);
+    }
+    this.processedEntries.delete(tableId);
+
+    // Phase 4 — 原子添加：一次性写入全部新 appearance
+    for (const { result, chart } of batch) {
       result.appearances.push({ tableId, tableName, symbol, chart });
-
       this.trackProcessed(tableId, result.id);
     }
 
