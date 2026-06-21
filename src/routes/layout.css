@@ -8,18 +8,72 @@
 @source "../content/**/*.md";
 
 @theme {
+  /* 字体 */
   --font-family-sans: "Inter", system-ui, Avenir, Helvetica, Arial, sans-serif;
+
+  /* 基础色 */
   --color-background: #24243e;
   --color-text: rgba(255, 255, 255, 0.87);
   --color-link: #646cff;
   --color-link-hover: #535bf2;
+
+  /* 品牌强调色 */
+  --color-accent: #64b5f6;
+  --color-accent-hover: #42a5f5;
+  --color-accent-light: #90caf9;
+
+  /* 语义色 */
+  --color-success: #4caf50;
+  --color-success-hover: #66bb6a;
+  --color-success-dark: #2e7d32;
+  --color-error: #ff6b6b;
+  --color-warning: #ff9800;
+  --color-warning-hover: #f57c00;
+  --color-warning-light: #ffb74d;
+
+  /* 渐变按钮预设色 */
+  --color-blue-from: #2196f3;
+  --color-blue-to: #1565c0;
+  --color-blue-hover-from: #42a5f5;
+  --color-blue-hover-to: #1976d2;
+
+  --color-orange-from: #ff9800;
+  --color-orange-to: #f57c00;
+  --color-orange-hover-from: #ffb74d;
+  --color-orange-hover-to: #ff9800;
+
+  --color-green-from: #4caf50;
+  --color-green-to: #2e7d32;
+  --color-green-hover-from: #66bb6a;
+  --color-green-hover-to: #388e3c;
+
+  --color-purple-from: #9c27b0;
+  --color-purple-to: #7b1fa2;
+  --color-purple-hover-from: #ba68c8;
+  --color-purple-hover-to: #9c27b0;
+
+  --color-brown-from: #795548;
+  --color-brown-to: #5d4037;
+  --color-brown-hover-from: #a1887f;
+  --color-brown-hover-to: #795548;
+
+  --color-cyan-from: #00bcd4;
+  --color-cyan-to: #0097a7;
+  --color-cyan-hover-from: #4dd0e1;
+  --color-cyan-hover-to: #00bcd4;
+
+  /* 玻璃圆角体系 */
+  --radius-glass-sm: 10px;
+  --radius-glass-md: 14px;
+  --radius-glass-lg: 18px;
+  --radius-glass-xl: 20px;
 }
 
 @layer base {
   :root {
     color-scheme: dark;
     @apply font-sans leading-[1.5] font-normal;
-    @apply bg-[#24243e] text-[rgba(255,255,255,0.87)];
+    @apply bg-background text-text;
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -57,56 +111,7 @@
 }
 
 @layer components {
-  /* 加载状态容器 */
-  .glass-loading-container {
-    @apply rounded-[15px] p-8;
-    @apply border-white/10 bg-black/20;
-  }
-
-  /* 表格样式 */
-  .table-glass {
-    @apply w-full table-fixed border-collapse overflow-hidden rounded-[10px] bg-white/5;
-  }
-
-  .table-th-glass {
-    @apply border-b-2 border-white/10 bg-[rgba(100,181,246,0.2)] px-4 py-3 text-left font-semibold text-white;
-  }
-
-  .table-td-glass {
-    @apply border-b border-white/5 px-4 py-3 text-white/90;
-  }
-
-  /* 统计卡片 */
-  .stat-card {
-    @apply rounded-[10px] border border-white/10 bg-white/5 p-4 text-center;
-  }
-
-  /* 弹出框 */
-  .popover-glass {
-    @apply fixed z-2000 overflow-hidden rounded-xl border border-white/20 bg-white/10 shadow-[0_10px_24px_rgba(0,0,0,0.45)] backdrop-blur-sm;
-  }
-
-  /* 分段标题下边框 */
-  .section-divider {
-    @apply mb-6 border-b-2 border-white/10 pb-4;
-  }
-
-  /* 表格外层容器 */
-  .table-wrapper {
-    @apply overflow-x-auto rounded-[10px] border border-white/10 bg-black/20;
-  }
-
-  /* 蓝色强调链接 */
-  .link-accent {
-    @apply m-0 cursor-pointer border-0 bg-transparent p-0 font-medium text-[#64b5f6] underline hover:text-[#42a5f5];
-  }
-
-  /* 蓝色强调标题 */
-  .accent-title {
-    @apply text-[1.2rem] font-bold text-[#64b5f6];
-  }
-
-  /* 玻璃效果基础类 —— 供 ui/ 组件使用 */
+  /* ===== 玻璃效果基础类 ===== */
   .glass-base {
     @apply relative text-white backdrop-blur;
     transition:
@@ -116,11 +121,150 @@
       transform 0.3s ease;
   }
 
-  .glass-container-shadow {
+  .glass-shadow-sm {
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  }
+
+  .glass-shadow-md {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   }
 
-  .glass-panel-shadow {
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  /* ===== 加载状态容器 ===== */
+  .glass-loading-container {
+    @apply rounded-[15px] border-white/10 bg-black/20 p-8;
+  }
+
+  /* ===== 表格样式 ===== */
+  .table-glass {
+    @apply w-full table-fixed border-collapse overflow-hidden rounded-[10px] bg-white/5;
+  }
+
+  .table-th-glass {
+    @apply border-b-2 border-white/10 bg-accent/20 px-4 py-3 text-left font-semibold text-white;
+  }
+
+  .table-td-glass {
+    @apply border-b border-white/5 px-4 py-3 text-white/90;
+  }
+
+  /* ===== 统计卡片 ===== */
+  .stat-card {
+    @apply rounded-[10px] border border-white/10 bg-white/5 p-4 text-center;
+  }
+
+  /* ===== 弹出框 ===== */
+  .popover-glass {
+    @apply fixed z-2000 overflow-hidden rounded-xl border border-white/20 bg-white/10 shadow-[0_10px_24px_rgba(0,0,0,0.45)] backdrop-blur-sm;
+  }
+
+  /* ===== 分段标题下边框 ===== */
+  .section-divider {
+    @apply mb-6 border-b-2 border-white/10 pb-4;
+  }
+
+  /* ===== 表格外层容器 ===== */
+  .table-wrapper {
+    @apply overflow-x-auto rounded-[10px] border border-white/10 bg-black/20;
+  }
+
+  /* ===== 蓝色强调链接 ===== */
+  .link-accent {
+    @apply m-0 cursor-pointer border-0 bg-transparent p-0 font-medium text-accent underline hover:text-accent-hover;
+  }
+
+  /* ===== 蓝色强调标题 ===== */
+  .accent-title {
+    @apply text-[1.2rem] font-bold text-accent;
+  }
+
+  /* ===== 蓝色强调徽章 ===== */
+  .tag-accent {
+    @apply rounded-[20px] bg-accent/30 px-6 py-2 text-[1.2rem] font-bold text-white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .tag-accent-sm {
+    @apply rounded-[20px] bg-accent/30 px-5 py-1.5 text-[1rem] font-bold text-white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  /* ===== 错误信息块 ===== */
+  .message-error {
+    @apply rounded-[10px] border-l-4 border-error bg-error/10 p-4 text-[0.9rem] text-error;
+  }
+
+  /* ===== 滚动导航标签 ===== */
+  .tag-scroll {
+    @apply cursor-pointer rounded-[18px] bg-white/10 px-4 py-2 font-bold text-white opacity-80 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:opacity-90;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  /* ===== 进度条 ===== */
+  .progress-track {
+    @apply h-2 flex-1 overflow-hidden rounded-full bg-white/10;
+  }
+
+  .progress-fill {
+    @apply h-full rounded-full transition-[width] duration-300 ease-out;
+    background: linear-gradient(90deg, var(--color-success), var(--color-accent));
+  }
+
+  /* ===== 深色卡片 ===== */
+  .card-dark {
+    @apply rounded-[10px] bg-black/20 px-4 py-3;
+  }
+
+  /* ===== 渐变按钮基础类（供不受组件包装的场合使用） ===== */
+  .gradient-btn {
+    @apply inline-flex cursor-pointer items-center justify-center gap-[0.2rem] rounded-md border-none px-2 py-[0.35rem] text-[0.85rem] font-semibold text-white no-underline;
+    transition: all 0.2s ease-in-out;
+  }
+  .gradient-btn:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .gradient-btn-blue {
+    background: linear-gradient(135deg, var(--color-blue-from), var(--color-blue-to));
+  }
+  .gradient-btn-blue:hover {
+    background: linear-gradient(135deg, var(--color-blue-hover-from), var(--color-blue-hover-to));
+  }
+
+  .gradient-btn-orange {
+    background: linear-gradient(135deg, var(--color-orange-from), var(--color-orange-to));
+  }
+  .gradient-btn-orange:hover {
+    background: linear-gradient(
+      135deg,
+      var(--color-orange-hover-from),
+      var(--color-orange-hover-to)
+    );
+  }
+
+  .gradient-btn-green {
+    background: linear-gradient(135deg, var(--color-green-from), var(--color-green-to));
+  }
+  .gradient-btn-green:hover {
+    background: linear-gradient(135deg, var(--color-green-hover-from), var(--color-green-hover-to));
+  }
+
+  /* ===== 已复制状态徽章 ===== */
+  .badge-copied {
+    @apply flex-none rounded-md border border-success/30 bg-success/10 px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-green-300;
+  }
+
+  /* ===== 等级徽章 ===== */
+  .badge-level {
+    @apply inline-block rounded-[8px] px-3 py-1 text-[0.9rem] font-bold;
+  }
+
+  /* ===== 标题组合行（flex 换行 + 间距） ===== */
+  .header-row {
+    @apply mb-6 flex flex-wrap items-baseline justify-between gap-3;
+  }
+
+  /* ===== 空状态容器 ===== */
+  .empty-state {
+    @apply p-12 text-center;
   }
 }

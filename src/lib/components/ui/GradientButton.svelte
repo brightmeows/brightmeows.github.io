@@ -1,6 +1,8 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
 
+  import { styleToString } from "$lib/utils/style";
+
   interface Props {
     /** 按钮文本或内容 */
     children?: Snippet;
@@ -9,7 +11,7 @@
     /** 点击类型 */
     type?: "button" | "submit" | "reset";
     /** 颜色变体 */
-    variant?: "green" | "blue" | "custom";
+    variant?: "green" | "blue" | "orange" | "custom";
     /** 自定义渐变颜色（仅当 variant="custom" 时使用） */
     customGradient?: {
       start: string;
@@ -52,81 +54,93 @@
   }: Props = $props();
 
   const sizeConfig = {
-    sm: "px-2 py-[0.35rem] text-[0.85rem]",
-    md: "px-4 py-[0.6rem] text-base",
-    lg: "px-6 py-[0.8rem] text-lg",
+    sm: "px-3 py-[0.5rem] text-sm",
+    md: "px-5 py-[0.7rem] text-base",
+    lg: "px-7 py-[0.9rem] text-lg",
   };
 
-  const hoverClass = $derived(hoverLift ? "-translate-y-0.5" : "");
-  const disabledClass = $derived(disabled ? "opacity-50 cursor-not-allowed" : "");
+  const variantClass = $derived(
+    variant === "custom" ? "gradient-btn-custom" : `gradient-btn-${variant}`
+  );
 
-  const gradientConfig: Record<string, { default: string; hover: string }> = {
-    green: {
-      default: "linear-gradient(135deg, #4caf50, #2e7d32)",
-      hover: "linear-gradient(135deg, #66bb6a, #388e3c)",
-    },
-    blue: {
-      default: "linear-gradient(135deg, #2196f3, #1565c0)",
-      hover: "linear-gradient(135deg, #42a5f5, #1976d2)",
-    },
-  };
-
-  const currentGradient = $derived(
+  const resolvedStyle = $derived(
     variant === "custom" && customGradient
       ? {
-          default: `linear-gradient(135deg, ${customGradient.start}, ${customGradient.end})`,
-          hover: `linear-gradient(135deg, ${
-            customGradient.hoverStart ?? customGradient.start
-          }, ${customGradient.hoverEnd ?? customGradient.end})`,
+          "--grad-start": customGradient.start,
+          "--grad-end": customGradient.end,
+          "--grad-hover-start": customGradient.hoverStart ?? customGradient.start,
+          "--grad-hover-end": customGradient.hoverEnd ?? customGradient.end,
+          ...style,
         }
-      : gradientConfig[variant]
+      : style
   );
 
-  const baseStyleString = $derived(
-    Object.entries({
-      background: currentGradient.default,
-      border: "none",
-      boxShadow: "none",
-      transition: "all 0.2s ease-in-out",
-      ...style,
-    })
-      .map(([key, value]) => `${key}:${value}`)
-      .join(";")
-  );
-
-  const hoverStyleString = $derived(
-    Object.entries({
-      background: currentGradient.hover,
-      boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
-    })
-      .map(([key, value]) => `${key}:${value}`)
-      .join(";")
-  );
-
-  function handleMouseEnter(event: MouseEvent) {
-    if (disabled) return;
-    const target = event.currentTarget as HTMLElement;
-    target.setAttribute("style", baseStyleString + ";" + hoverStyleString);
-  }
-
-  function handleMouseLeave(event: MouseEvent) {
-    if (disabled) return;
-    const target = event.currentTarget as HTMLElement;
-    target.setAttribute("style", baseStyleString);
-  }
+  const liftClass = $derived(hoverLift && !disabled ? "-translate-y-0.5" : "");
 </script>
+
+<style>
+  .gradient-btn-base {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 0.375rem;
+    font-weight: 600;
+    color: white;
+    text-decoration: none;
+    transition: all 0.2s ease-in-out;
+  }
+  .gradient-btn-base:hover:not(.no-hover) {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .gradient-btn-green {
+    background: linear-gradient(135deg, var(--color-green-from), var(--color-green-to));
+  }
+  .gradient-btn-green:hover:not(.no-hover) {
+    background: linear-gradient(135deg, var(--color-green-hover-from), var(--color-green-hover-to));
+  }
+
+  .gradient-btn-blue {
+    background: linear-gradient(135deg, var(--color-blue-from), var(--color-blue-to));
+  }
+  .gradient-btn-blue:hover:not(.no-hover) {
+    background: linear-gradient(135deg, var(--color-blue-hover-from), var(--color-blue-hover-to));
+  }
+
+  .gradient-btn-orange {
+    background: linear-gradient(135deg, var(--color-orange-from), var(--color-orange-to));
+  }
+  .gradient-btn-orange:hover:not(.no-hover) {
+    background: linear-gradient(
+      135deg,
+      var(--color-orange-hover-from),
+      var(--color-orange-hover-to)
+    );
+  }
+
+  .gradient-btn-custom {
+    background: linear-gradient(135deg, var(--grad-start), var(--grad-end));
+  }
+  .gradient-btn-custom:hover:not(.no-hover) {
+    background: linear-gradient(
+      135deg,
+      var(--grad-hover-start, var(--grad-start)),
+      var(--grad-hover-end, var(--grad-end))
+    );
+  }
+</style>
 
 {#if href && !disabled}
   <a
     {href}
     {target}
     {rel}
-    class="inline-flex items-center justify-center rounded-md font-semibold text-white no-underline {sizeConfig[
-      size
-    ]} {className} {hoverClass} active:translate-y-0"
-    style={baseStyleString}
-    onmouseenter={handleMouseEnter}
-    onmouseleave={handleMouseLeave}
+    class="gradient-btn-base {variantClass} {sizeConfig[size]} {liftClass} {!disabled
+      ? 'active:translate-y-0 active:scale-95'
+      : ''} {className}"
+    class:no-hover={disabled}
+    style={styleToString(resolvedStyle)}
   >
     {#if children}
       {@render children()}
@@ -137,12 +151,14 @@
     {type}
     {disabled}
     {onclick}
-    class="inline-flex items-center justify-center rounded-md font-semibold text-white {sizeConfig[
-      size
-    ]} {className} {disabledClass} {hoverClass} active:translate-y-0"
-    style={baseStyleString}
-    onmouseenter={handleMouseEnter}
-    onmouseleave={handleMouseLeave}
+    class="gradient-btn-base {variantClass} {sizeConfig[size]} {hoverLift && !disabled
+      ? 'hover:-translate-y-0.5'
+      : ''} {!disabled ? 'active:translate-y-0 active:scale-95' : ''} {className}"
+    class:opacity-50={disabled}
+    class:cursor-not-allowed={disabled}
+    class:cursor-pointer={!disabled}
+    class:no-hover={disabled}
+    style={styleToString(resolvedStyle)}
   >
     {#if children}
       {@render children()}

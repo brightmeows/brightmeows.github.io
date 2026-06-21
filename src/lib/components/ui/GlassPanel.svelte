@@ -1,6 +1,8 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
 
+  import { styleToString } from "$lib/utils/style";
+
   interface Props {
     /** 子元素内容 */
     children?: Snippet;
@@ -30,36 +32,28 @@
 
   const paddingConfig = {
     none: "",
-    sm: "p-3",
-    md: "p-4",
+    sm: "p-4",
+    md: "p-5",
     lg: "p-6",
   };
 
   const roundedConfig = {
     none: "",
-    sm: "rounded-lg",
-    md: "rounded-xl",
-    lg: "rounded-2xl",
-    xl: "rounded-[20px]",
+    sm: "rounded-glass-sm",
+    md: "rounded-glass-md",
+    lg: "rounded-glass-lg",
+    xl: "rounded-glass-xl",
     full: "rounded-full",
   };
-
-  const styleString = $derived(
-    Object.keys(style).length > 0
-      ? Object.entries(style)
-          .map(([k, v]) => `${k}:${v}`)
-          .join(";")
-      : undefined
-  );
 </script>
 
 <div
   {id}
-  class="glass-base glass-panel-shadow border border-white/20 bg-white/10 {paddingConfig[
+  class="glass-base glass-shadow-sm border border-white/20 bg-white/10 {paddingConfig[
     padding
   ]} {roundedConfig[rounded]} {className}"
   class:overflow-hidden={overflow}
-  style={styleString}
+  style={styleToString(style)}
 >
   {#if children}
     {@render children()}

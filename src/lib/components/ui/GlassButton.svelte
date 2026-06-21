@@ -1,6 +1,8 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
 
+  import { styleToString } from "$lib/utils/style";
+
   interface Props {
     /** 按钮文本或内容 */
     children?: Snippet;
@@ -44,21 +46,13 @@
   }: Props = $props();
 
   const sizeConfig = {
-    sm: "px-4 py-[0.6rem] text-sm",
-    md: "px-6 py-[0.8rem] text-base",
-    lg: "px-8 py-[1rem] text-lg",
+    sm: "px-3 py-[0.5rem] text-sm",
+    md: "px-5 py-[0.7rem] text-base",
+    lg: "px-7 py-[0.9rem] text-lg",
   };
 
   const sharedClasses =
     "glass-base inline-block rounded-xl font-medium text-white no-underline bg-white/10 border border-white/20 hover:bg-white/20 hover:shadow-[0_5px_15px_rgba(0,0,0,0.2)]";
-
-  const styleString = $derived(
-    Object.keys(style).length > 0
-      ? Object.entries(style)
-          .map(([k, v]) => `${k}:${v}`)
-          .join(";")
-      : undefined
-  );
 </script>
 
 {#if href && !disabled}
@@ -66,11 +60,10 @@
     {href}
     {target}
     {rel}
-    class="{sharedClasses} cursor-pointer {sizeConfig[size]} {className}"
-    class:hover:-translate-y-0.5={hoverLift}
-    class:active:translate-y-0={clickShrink}
-    class:active:scale-95={clickShrink}
-    style={styleString}
+    class="{sharedClasses} cursor-pointer {sizeConfig[size]} {hoverLift
+      ? 'hover:-translate-y-0.5'
+      : ''} {clickShrink ? 'active:translate-y-0 active:scale-95' : ''} {className}"
+    style={styleToString(style)}
   >
     {#if children}
       {@render children()}
@@ -81,14 +74,13 @@
     {type}
     {disabled}
     {onclick}
-    class="{sharedClasses} {sizeConfig[size]} {className}"
+    class="{sharedClasses} {sizeConfig[size]} {hoverLift && !disabled
+      ? 'hover:-translate-y-0.5'
+      : ''} {clickShrink && !disabled ? 'active:translate-y-0 active:scale-95' : ''} {className}"
     class:opacity-50={disabled}
     class:cursor-not-allowed={disabled}
     class:cursor-pointer={!disabled}
-    class:hover:-translate-y-0.5={hoverLift && !disabled}
-    class:active:translate-y-0={clickShrink && !disabled}
-    class:active:scale-95={clickShrink && !disabled}
-    style={styleString}
+    style={styleToString(style)}
   >
     {#if children}
       {@render children()}

@@ -230,6 +230,6 @@
 
 <canvas
   bind:this={canvasRef}
-  class="pointer-events-none fixed top-0 left-0 z-0 h-full w-full bg-[linear-gradient(180deg,#0f0c29,#302b63_50%,#24243e)]"
+  class="pointer-events-none fixed top-0 left-0 z-0 h-full w-full bg-[linear-gradient(180deg,#0f0c29,#302b63_50%,var(--color-background))]"
 >
 </canvas>

@@ -51,9 +51,7 @@
   <div class="flex items-center gap-3 {className}">
     <div class="h-2 flex-1 overflow-hidden rounded-md bg-white/10">
       <div
-        class="h-full rounded-md {isIndeterminate
-          ? 'shimmer-bar'
-          : 'bg-[linear-gradient(90deg,#4caf50,#64b5f6)] transition-[width] duration-300 ease-out'}"
+        class="h-full rounded-md {isIndeterminate ? 'shimmer-bar' : 'progress-fill'}"
         style="width:{isIndeterminate ? 100 : progress}%"
       ></div>
     </div>
@@ -64,22 +62,17 @@
     <div class="mb-6 flex items-center justify-between">
       <h3 class="m-0 text-[1.5rem] text-white">{title}</h3>
       {#if showPercentage && !isIndeterminate}
-        <div
-          class="rounded-[20px] bg-[#64b5f6]/20 px-4 py-2 text-[1.2rem] font-bold text-[#64b5f6]"
-        >
+        <div class="rounded-[20px] bg-accent/20 px-4 py-2 text-[1.2rem] font-bold text-accent">
           {displayPercent}%
         </div>
       {/if}
     </div>
 
-    <div class="mb-6 h-3 overflow-hidden rounded-md bg-white/10">
+    <div class="progress-track mb-6 h-3">
       {#if isIndeterminate}
         <div class="shimmer-bar h-full w-full rounded-md"></div>
       {:else}
-        <div
-          class="h-full rounded-md bg-[linear-gradient(90deg,#4caf50,#64b5f6)] transition-[width] duration-300 ease-out"
-          style="width:{progress}%"
-        ></div>
+        <div class="progress-fill" style="width:{progress}%"></div>
       {/if}
     </div>
 

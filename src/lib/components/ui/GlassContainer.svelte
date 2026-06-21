@@ -1,13 +1,15 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
 
+  import { styleToString } from "$lib/utils/style";
+
   interface Props {
     /** 子元素内容 */
     children?: Snippet;
     /** 自定义类名 */
     class?: string;
     /** 内边距变体 */
-    padding?: "none" | "sm" | "md" | "lg";
+    padding?: "none" | "sm" | "md" | "lg" | "xl";
     /** 圆角变体 */
     rounded?: "sm" | "md" | "lg" | "xl";
     /** 是否添加动画 */
@@ -34,15 +36,16 @@
   const paddingConfig = {
     none: "p-0",
     sm: "p-4",
-    md: "p-6",
-    lg: "p-8",
+    md: "p-5",
+    lg: "p-6",
+    xl: "p-8",
   };
 
   const roundedConfig = {
-    sm: "rounded-[10px]",
-    md: "rounded-[14px]",
-    lg: "rounded-[18px]",
-    xl: "rounded-[20px]",
+    sm: "rounded-glass-sm",
+    md: "rounded-glass-md",
+    lg: "rounded-glass-lg",
+    xl: "rounded-glass-xl",
   };
 
   const variantClass = $derived(
@@ -52,23 +55,15 @@
         ? "bg-white/15 border border-white/15"
         : "bg-black/20 border border-white/5"
   );
-
-  const styleString = $derived(
-    Object.keys(style).length > 0
-      ? Object.entries(style)
-          .map(([k, v]) => `${k}:${v}`)
-          .join(";")
-      : undefined
-  );
 </script>
 
 <div
   {id}
-  class="glass-base glass-container-shadow block {variantClass} {paddingConfig[
-    padding
-  ]} {roundedConfig[rounded]} {className}"
+  class="glass-base glass-shadow-md block {variantClass} {paddingConfig[padding]} {roundedConfig[
+    rounded
+  ]} {className}"
   class:animate-fadeIn={animate}
-  style={styleString}
+  style={styleToString(style)}
 >
   {#if children}
     {@render children()}

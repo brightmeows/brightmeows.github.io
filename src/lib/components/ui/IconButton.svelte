@@ -1,6 +1,8 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
 
+  import { styleToString } from "$lib/utils/style";
+
   interface Props {
     /** 图标内容 */
     children?: Snippet;
@@ -66,72 +68,91 @@
     lg: "h-10 w-10 text-[1.4rem]",
   };
 
-  const iconGradientConfig: Record<string, { default: string; hover: string }> = {
-    orange: {
-      default: "linear-gradient(135deg, #ff9800, #f57c00)",
-      hover: "linear-gradient(135deg, #ffb74d, #ff9800)",
-    },
-    purple: {
-      default: "linear-gradient(135deg, #9c27b0, #7b1fa2)",
-      hover: "linear-gradient(135deg, #ba68c8, #9c27b0)",
-    },
-    brown: {
-      default: "linear-gradient(135deg, #795548, #5d4037)",
-      hover: "linear-gradient(135deg, #a1887f, #795548)",
-    },
-    cyan: {
-      default: "linear-gradient(135deg, #00bcd4, #0097a7)",
-      hover: "linear-gradient(135deg, #4dd0e1, #00bcd4)",
-    },
-    blue: {
-      default: "linear-gradient(135deg, #1e88e5, #0d47a1)",
-      hover: "linear-gradient(135deg, #42a5f5, #1e88e5)",
-    },
-  };
+  const variantClass = $derived(variant === "custom" ? "icon-btn-custom" : `icon-btn-${variant}`);
 
-  const currentGradient = $derived(
+  const resolvedStyle = $derived(
     variant === "custom" && customGradient
       ? {
-          default: `linear-gradient(135deg, ${customGradient.start}, ${customGradient.end})`,
-          hover: `linear-gradient(135deg, ${
-            customGradient.hoverStart ?? customGradient.start
-          }, ${customGradient.hoverEnd ?? customGradient.end})`,
+          "--grad-start": customGradient.start,
+          "--grad-end": customGradient.end,
+          "--grad-hover-start": customGradient.hoverStart ?? customGradient.start,
+          "--grad-hover-end": customGradient.hoverEnd ?? customGradient.end,
+          ...style,
         }
-      : iconGradientConfig[variant]
+      : style
   );
-
-  const baseStyleString = $derived(
-    Object.entries({
-      background: currentGradient.default,
-      border: "none",
-      boxShadow: "none",
-      ...style,
-    })
-      .map(([key, value]) => `${key}:${value}`)
-      .join(";")
-  );
-
-  const hoverStyleString = $derived(
-    Object.entries({
-      background: currentGradient.hover,
-      boxShadow: "0 4px 8px rgba(0,0,0,0.3)",
-    })
-      .map(([key, value]) => `${key}:${value}`)
-      .join(";")
-  );
-
-  function handleMouseEnter(event: MouseEvent) {
-    if (disabled) return;
-    const target = event.currentTarget as HTMLElement;
-    target.setAttribute("style", baseStyleString + ";" + hoverStyleString);
-  }
-
-  function handleMouseLeave(event: MouseEvent) {
-    if (disabled) return;
-    const target = event.currentTarget as HTMLElement;
-    target.setAttribute("style", baseStyleString);
-  }
 </script>
+
+<style>
+  .icon-btn-base {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-radius: 9999px;
+    padding: 0;
+    color: white;
+    border: none;
+    transition: all 0.2s ease-in-out;
+  }
+  .icon-btn-base:hover:not(.no-hover) {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .icon-btn-orange {
+    background: linear-gradient(135deg, var(--color-orange-from), var(--color-orange-to));
+  }
+  .icon-btn-orange:hover:not(.no-hover) {
+    background: linear-gradient(
+      135deg,
+      var(--color-orange-hover-from),
+      var(--color-orange-hover-to)
+    );
+  }
+
+  .icon-btn-purple {
+    background: linear-gradient(135deg, var(--color-purple-from), var(--color-purple-to));
+  }
+  .icon-btn-purple:hover:not(.no-hover) {
+    background: linear-gradient(
+      135deg,
+      var(--color-purple-hover-from),
+      var(--color-purple-hover-to)
+    );
+  }
+
+  .icon-btn-brown {
+    background: linear-gradient(135deg, var(--color-brown-from), var(--color-brown-to));
+  }
+  .icon-btn-brown:hover:not(.no-hover) {
+    background: linear-gradient(135deg, var(--color-brown-hover-from), var(--color-brown-hover-to));
+  }
+
+  .icon-btn-cyan {
+    background: linear-gradient(135deg, var(--color-cyan-from), var(--color-cyan-to));
+  }
+  .icon-btn-cyan:hover:not(.no-hover) {
+    background: linear-gradient(135deg, var(--color-cyan-hover-from), var(--color-cyan-hover-to));
+  }
+
+  .icon-btn-blue {
+    background: linear-gradient(135deg, var(--color-blue-from), var(--color-blue-to));
+  }
+  .icon-btn-blue:hover:not(.no-hover) {
+    background: linear-gradient(135deg, var(--color-blue-hover-from), var(--color-blue-hover-to));
+  }
+
+  .icon-btn-custom {
+    background: linear-gradient(135deg, var(--grad-start), var(--grad-end));
+  }
+  .icon-btn-custom:hover:not(.no-hover) {
+    background: linear-gradient(
+      135deg,
+      var(--grad-hover-start, var(--grad-start)),
+      var(--grad-hover-end, var(--grad-end))
+    );
+  }
+</style>
 
 {#if href && !disabled}
   <a
@@ -140,14 +161,11 @@
     {rel}
     aria-label={ariaLabel}
     {title}
-    class="flex cursor-pointer items-center justify-center overflow-hidden rounded-full p-0 text-white {sizeConfig[
-      size
-    ]} {className}"
-    class:hover:scale-110={hoverScale}
-    class:active:scale-95={clickShrink}
-    style={baseStyleString}
-    onmouseenter={handleMouseEnter}
-    onmouseleave={handleMouseLeave}
+    class="icon-btn-base cursor-pointer {variantClass} {sizeConfig[size]} {hoverScale && !disabled
+      ? 'hover:scale-110'
+      : ''} {clickShrink && !disabled ? 'active:scale-95' : ''} {className}"
+    class:no-hover={disabled}
+    style={styleToString(resolvedStyle)}
   >
     {#if children}
       {@render children()}
@@ -160,16 +178,14 @@
     {onclick}
     aria-label={ariaLabel}
     {title}
-    class="flex cursor-pointer items-center justify-center overflow-hidden rounded-full border-none p-0 text-white {sizeConfig[
-      size
-    ]} {className}"
+    class="icon-btn-base {variantClass} {sizeConfig[size]} {hoverScale && !disabled
+      ? 'hover:scale-110'
+      : ''} {clickShrink && !disabled ? 'active:scale-95' : ''} {className}"
     class:opacity-50={disabled}
     class:cursor-not-allowed={disabled}
-    class:hover:scale-110={hoverScale && !disabled}
-    class:active:scale-95={clickShrink && !disabled}
-    style={baseStyleString}
-    onmouseenter={handleMouseEnter}
-    onmouseleave={handleMouseLeave}
+    class:cursor-pointer={!disabled}
+    class:no-hover={disabled}
+    style={styleToString(resolvedStyle)}
   >
     {#if children}
       {@render children()}
