@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
+  import { page } from "$app/state";
   import { ChartsTableSection, CourseSection, LevelRefTable } from "$lib/components/bms";
   import { PageShell } from "$lib/components/layout";
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
@@ -36,6 +37,11 @@
   let pageTitle = $state("加载难度表header中");
   let cb = clipboardFeedback();
   let levelRefHasData = $state(false);
+  let levelRefLoadState = $state<"idle" | "loading" | "done" | "not-found" | "error">("idle");
+
+  const showLevelRefPane = $derived(
+    levelRefLoadState === "idle" || levelRefLoadState === "loading" || levelRefHasData
+  );
 
   // ---- Header 加载 ----
   async function loadHeader(): Promise<void> {
@@ -178,7 +184,7 @@
       : [
           titlePane,
           ...(courseGroups.length > 0 ? [coursePane] : []),
-          levelRefPane,
+          ...(showLevelRefPane ? [levelRefPane] : []),
           ...(dataLoading ? [dataLoadingPane] : []),
           ...(dataLoaded ? [chartsPane] : []),
           ...(dataLoadState === "error" ? [dataErrorPane] : []),
@@ -197,7 +203,7 @@
     {/if}
     <div class="mt-2 text-[1.2rem] text-white/70 italic">
       使用方式：复制本网站链接（
-      <button class="link-accent" type="button" onclick={() => cb.copy(resolveUrl(headerUrl))}>
+      <button class="link-accent" type="button" onclick={() => cb.copy(page.url.href)}>
         点击复制
       </button>
       ），然后在BeMusicSeeker或beatoraja中，粘贴至对应选项处。
@@ -280,7 +286,7 @@
 
 {#snippet levelRefPane()}
   <div id="level-ref" class="scroll-mt-5">
-    <LevelRefTable {headerUrl} bind:hasData={levelRefHasData} />
+    <LevelRefTable {headerUrl} bind:hasData={levelRefHasData} bind:loadState={levelRefLoadState} />
   </div>
 {/snippet}
 

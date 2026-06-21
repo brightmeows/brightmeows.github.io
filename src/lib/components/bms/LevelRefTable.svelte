@@ -6,13 +6,17 @@
   interface Props {
     headerUrl?: string;
     hasData?: boolean;
+    loadState?: "idle" | "loading" | "done" | "not-found" | "error";
   }
 
   // eslint-disable-next-line no-useless-assignment
-  let { headerUrl = undefined, hasData = $bindable(false) }: Props = $props();
+  let {
+    headerUrl = undefined,
+    hasData = $bindable(false),
+    loadState = $bindable("idle"),
+  }: Props = $props();
 
   let levelRefData = $state<LevelRefItem[]>([]);
-  let loadState = $state<"idle" | "loading" | "done" | "not-found" | "error">("idle");
   let loadErrorMessage = $state("");
 
   let requestToken = 0;
