@@ -54,7 +54,7 @@
     {#if !collapsed && hasMultipleGroups}
       <label
         class="flex cursor-pointer items-center gap-1.5 rounded-[6px] border px-2.5 py-0.5 text-[0.8rem] transition-colors duration-200 select-none {groupMode
-          ? 'border-[#64b5f6] bg-[#64b5f6]/20 text-[#64b5f6]'
+          ? 'border-accent bg-accent/20 text-accent'
           : 'border-white/20 text-white/50 hover:border-white/40 hover:text-white/70'}"
       >
         <Checkbox size="sm" checked={groupMode} onchange={(v: boolean) => (groupMode = v)} />
@@ -84,7 +84,7 @@
               <div class="mb-3 flex flex-wrap gap-2">
                 {#each course.constraint as c (c)}
                   <span
-                    class="inline-block rounded-[6px] border border-[#ff9800]/40 bg-[#ff9800]/10 px-2.5 py-0.5 text-[0.8rem] text-[#ff9800]"
+                    class="inline-block rounded-[6px] border border-warning/40 bg-warning/10 px-2.5 py-0.5 text-[0.8rem] text-warning"
                   >
                     {formatConstraint(c)}
                   </span>
@@ -140,7 +140,7 @@
                         <span class="font-mono text-white/40">
                           {hashPrefix(chart.md5 ?? chart.sha256)}
                         </span>
-                        <span class="ml-1.5 text-[0.75rem] text-[#ff9800]/60">（未匹配）</span>
+                        <span class="ml-1.5 text-[0.75rem] text-warning/60">（未匹配）</span>
                       {/if}
                     </span>
                   </li>

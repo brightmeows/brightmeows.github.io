@@ -32,7 +32,7 @@
             <td class="table-td-glass wrap-break-word">
               <a
                 href={resolve(`/bms/table/${table.id}`, {})}
-                class="text-[#64b5f6] no-underline transition-colors hover:text-[#90caf9]"
+                class="text-accent no-underline transition-colors hover:text-accent-light"
               >
                 {table.name}
               </a>

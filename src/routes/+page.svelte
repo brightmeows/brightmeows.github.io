@@ -30,10 +30,10 @@
 {/snippet}
 
 {#snippet contentPane()}
-  <div class="mb-6 flex flex-wrap items-baseline justify-between gap-3">
+  <div class="header-row">
     <h2 class="section-title m-0">博客</h2>
     <a
-      class="text-sm text-sky-300 no-underline transition hover:text-sky-200"
+      class="text-sm text-accent-light no-underline transition hover:text-accent"
       href={resolve("/blog", {})}
     >
       查看全部 →

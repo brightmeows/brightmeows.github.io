@@ -249,13 +249,13 @@
 )}
   <div class="p-12 text-center">
     <div class="mb-4 text-[4rem]">⚠️</div>
-    <h3 class="mb-4 text-[#ff6b6b]">{title}</h3>
-    <p class="my-6 rounded-[10px] border-l-4 border-[#ff6b6b] bg-[rgba(255,107,107,0.1)] p-4">
+    <h3 class="mb-4 text-error">{title}</h3>
+    <p class="message-error my-6">
       {message}
     </p>
     <p class="mb-6 text-white/70">{tip}</p>
     <button
-      class="cursor-pointer rounded-[25px] border-none bg-[#64b5f6] px-8 py-3 text-[1rem] font-semibold text-white transition-colors duration-300 ease-out hover:bg-[#42a5f5]"
+      class="cursor-pointer rounded-[25px] border-none bg-accent px-8 py-3 text-[1rem] font-semibold text-white transition-colors duration-300 ease-out hover:bg-accent-hover"
       type="button"
       onclick={() => void onRetry()}
     >

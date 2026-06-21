@@ -53,7 +53,7 @@
           title={cb.copiedField === "md5" ? "已复制" : `MD5: ${result.md5}`}
           class="cursor-pointer rounded-[6px] px-2 py-1 text-[0.75rem] font-medium text-white transition-colors {cb.copiedField ===
           'md5'
-            ? 'bg-[#4caf50]'
+            ? 'bg-success'
             : 'bg-[#607d8b] hover:bg-[#78909c]'}"
         >
           {cb.copiedField === "md5" ? "已复制" : "复制MD5"}
@@ -68,7 +68,7 @@
             : `SHA256: ${result.sha256.slice(0, 16)}...`}
           class="cursor-pointer rounded-[6px] px-2 py-1 text-[0.75rem] font-medium text-white transition-colors {cb.copiedField ===
           'sha256'
-            ? 'bg-[#4caf50]'
+            ? 'bg-success'
             : 'bg-[#607d8b] hover:bg-[#78909c]'}"
         >
           {cb.copiedField === "sha256" ? "已复制" : "复制SHA256"}
@@ -80,7 +80,7 @@
 
   <!-- 跨表信息 -->
   <div class="space-y-3">
-    <h4 class="text-[1rem] font-semibold text-[#64b5f6]">
+    <h4 class="text-[1rem] font-semibold text-accent">
       出现在 {result.appearances.length} 个难度表中
     </h4>
     {#each sortedAppearances as entry (entry.tableId)}
@@ -91,16 +91,16 @@
         <!-- 已完成：显示完整数据 -->
         {@const bundleUrl = validateUrl(entry.chart.url)}
         {@const diffUrl = validateUrl(entry.chart.url_diff)}
-        <div class="flex items-center justify-between gap-3 rounded-[10px] bg-black/20 px-4 py-3">
+        <div class="card-dark flex items-center justify-between gap-3">
           <div class="min-w-0">
             <div class="flex items-center gap-3">
               <span
-                class="inline-block rounded-[8px] bg-[#4caf50]/20 px-3 py-1 text-[0.9rem] font-bold text-[#4caf50]"
+                class="inline-block rounded-[8px] bg-success/20 px-3 py-1 text-[0.9rem] font-bold text-success"
               >
                 {entry.symbol ?? ""}{entry.chart.level ?? "?"}
               </span>
               <a
-                class="text-white no-underline transition-colors hover:text-[#64b5f6]"
+                class="text-white no-underline transition-colors hover:text-accent"
                 href={tableHref}
               >
                 {entry.tableName}
@@ -140,10 +140,10 @@
       {:else if loadState?.status === "loading-data"}
         <!-- 加载中（带进度）：显示进度条 -->
         {@const displayName = loadState.name}
-        <div class="flex flex-col gap-2 rounded-[10px] bg-black/20 px-4 py-3">
+        <div class="card-dark flex flex-col gap-2">
           <div class="flex items-center justify-between">
             <a
-              class="text-white/80 no-underline transition-colors hover:text-[#64b5f6]"
+              class="text-white/80 no-underline transition-colors hover:text-accent"
               href={tableHref}
             >
               {displayName}
@@ -155,23 +155,20 @@
             </span>
           </div>
           <div class="flex items-center gap-3">
-            <div class="h-2 flex-1 overflow-hidden rounded-full bg-white/10">
-              <div
-                class="h-full rounded-full bg-[linear-gradient(90deg,#4caf50,#64b5f6)] transition-[width] duration-300 ease-out"
-                style="width:{loadState.progress}%"
-              ></div>
+            <div class="progress-track">
+              <div class="progress-fill" style="width:{loadState.progress}%"></div>
             </div>
             <span class="shrink-0 text-[0.8rem] text-white/50">{loadState.progress}%</span>
           </div>
         </div>
       {:else if loadState?.status === "loading-header" || loadState?.status === "parsing"}
         <!-- 表头加载/解析中 -->
-        <div class="flex items-center gap-3 rounded-[10px] bg-black/20 px-4 py-3">
+        <div class="card-dark flex items-center gap-3">
           <div
-            class="h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-white/30 border-t-[#64b5f6]"
+            class="h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-white/30 border-t-accent"
           ></div>
           <a
-            class="flex-1 text-white/60 no-underline transition-colors hover:text-[#64b5f6]"
+            class="flex-1 text-white/60 no-underline transition-colors hover:text-accent"
             href={tableHref}
           >
             {loadState.name}
@@ -182,11 +179,11 @@
         </div>
       {:else if loadState?.status === "error"}
         <!-- 加载失败 -->
-        <div class="flex items-center gap-3 rounded-[10px] bg-black/20 px-4 py-3">
-          <span class="shrink-0 text-[#ff6b6b]">✗</span>
+        <div class="card-dark flex items-center gap-3">
+          <span class="shrink-0 text-error">✗</span>
           <div class="flex flex-1 flex-col gap-0.5">
             <span class="text-white/80">{loadState.name}</span>
-            <span class="text-[0.8rem] text-[#ff6b6b]/70">{loadState.errorMessage}</span>
+            <span class="text-[0.8rem] text-error/70">{loadState.errorMessage}</span>
           </div>
           <button
             type="button"
@@ -198,10 +195,10 @@
         </div>
       {:else}
         <!-- 等待中或状态未知 -->
-        <div class="flex items-center gap-3 rounded-[10px] bg-black/20 px-4 py-3">
+        <div class="card-dark flex items-center gap-3">
           <span class="shrink-0 text-white/30">○</span>
           <a
-            class="flex-1 text-white/50 no-underline transition-colors hover:text-[#64b5f6]"
+            class="flex-1 text-white/50 no-underline transition-colors hover:text-accent"
             href={tableHref}
           >
             {entry.tableName}

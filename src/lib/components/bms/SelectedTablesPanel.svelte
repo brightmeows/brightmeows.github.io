@@ -90,7 +90,7 @@
       </div>
       <div class="flex flex-nowrap gap-3">
         <button
-          class="cursor-pointer rounded-lg border-none bg-[linear-gradient(135deg,#2196f3,#1565c0)] px-[0.8rem] py-2 text-[0.9rem] font-semibold text-white transition-all duration-200 ease-in-out"
+          class="gradient-btn gradient-btn-blue rounded-lg px-[0.8rem] py-2 text-[0.9rem]"
           type="button"
           use:jsonPreview={{
             preview: mirrorPreview,
@@ -104,7 +104,7 @@
           镜像链接 JSON
         </button>
         <button
-          class="cursor-pointer rounded-lg border-none bg-[linear-gradient(135deg,#ff9800,#f57c00)] px-[0.8rem] py-2 text-[0.9rem] font-semibold text-white transition-all duration-200 ease-in-out"
+          class="gradient-btn gradient-btn-orange rounded-lg px-[0.8rem] py-2 text-[0.9rem]"
           type="button"
           use:jsonPreview={{
             preview: mirrorPreview,

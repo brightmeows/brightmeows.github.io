@@ -111,11 +111,7 @@
         <div class="mt-6 mb-8">
           {#each groups as g (g.tag1)}
             <div class="mb-4 flex flex-wrap items-center gap-2">
-              <button
-                class="cursor-pointer rounded-[18px] bg-white/10 px-4 py-2 font-bold text-white opacity-80 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:opacity-90 hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)]"
-                type="button"
-                onclick={() => scrollToTag1(g.tag1)}
-              >
+              <button class="tag-scroll" type="button" onclick={() => scrollToTag1(g.tag1)}>
                 {g.tag1}
               </button>
               {#if g.subgroups.length > 0}
@@ -123,7 +119,7 @@
               {/if}
               {#each g.subgroups as sg (sg.tag2)}
                 <button
-                  class="cursor-pointer rounded-[18px] bg-white/10 px-4 py-2 font-bold text-white opacity-80 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:opacity-90 hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)]"
+                  class="tag-scroll"
                   type="button"
                   onclick={() => scrollToTag2(g.tag1, sg.tag2)}
                 >
@@ -148,9 +144,7 @@
                   indeterminate={tag1State(g, selectedMap) === CheckboxState.Indeterminate}
                   onchange={(v: boolean) => onTag1Change(v, g)}
                 />
-                <span
-                  class="rounded-[20px] bg-[rgba(100,181,246,0.3)] px-6 py-2 text-[1.2rem] font-bold text-white shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
-                >
+                <span class="tag-accent">
                   {g.tag1}
                 </span>
               </div>
@@ -164,9 +158,7 @@
                     indeterminate={tag2State(sg, selectedMap) === CheckboxState.Indeterminate}
                     onchange={(v: boolean) => onTag2Change(v, sg)}
                   />
-                  <h3
-                    class="w-fit rounded-[20px] bg-[rgba(100,181,246,0.3)] px-5 py-1.5 text-[1rem] font-bold text-white shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
-                  >
+                  <h3 class="tag-accent-sm">
                     {sg.tag2}
                   </h3>
                 </div>
@@ -181,31 +173,11 @@
                     </colgroup>
                     <thead>
                       <tr>
-                        <th
-                          class="border-b-2 border-white/10 bg-[rgba(100,181,246,0.2)] p-4 text-left font-semibold text-white"
-                        >
-                          选择
-                        </th>
-                        <th
-                          class="border-b-2 border-white/10 bg-[rgba(100,181,246,0.2)] p-4 text-left font-semibold text-white"
-                        >
-                          符号
-                        </th>
-                        <th
-                          class="border-b-2 border-white/10 bg-[rgba(100,181,246,0.2)] p-4 text-left font-semibold text-white"
-                        >
-                          名称
-                        </th>
-                        <th
-                          class="border-b-2 border-white/10 bg-[rgba(100,181,246,0.2)] p-4 text-left font-semibold text-white"
-                        >
-                          镜像
-                        </th>
-                        <th
-                          class="border-b-2 border-white/10 bg-[rgba(100,181,246,0.2)] p-4 text-left font-semibold text-white"
-                        >
-                          原链接
-                        </th>
+                        <th class="table-th-glass">选择</th>
+                        <th class="table-th-glass">符号</th>
+                        <th class="table-th-glass">名称</th>
+                        <th class="table-th-glass">镜像</th>
+                        <th class="table-th-glass">原链接</th>
                       </tr>
                     </thead>
                     <tbody>

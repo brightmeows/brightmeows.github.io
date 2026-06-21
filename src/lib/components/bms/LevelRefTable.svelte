@@ -104,9 +104,7 @@
   <LoadingProgress variant="compact" message="正在加载难度对照表..." />
 {:else if loadState === "error"}
   <h3 class="section-title mt-0 mb-6 text-center">难度对照表</h3>
-  <div
-    class="rounded-[10px] border-l-4 border-[#ff6b6b] bg-[rgba(255,107,107,0.1)] p-4 text-[0.9rem] text-[#ff6b6b]"
-  >
+  <div class="message-error">
     加载失败：{loadErrorMessage}
   </div>
 {:else if hasContent}
