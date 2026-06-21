@@ -21,7 +21,15 @@ export async function fetchStream(
 
   if (!onProgress || !response.body) {
     const text = await response.text();
-    return { response, bytes: new TextEncoder().encode(text) };
+    const bytes = new TextEncoder().encode(text);
+    return {
+      response: new Response(bytes, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers,
+      }),
+      bytes,
+    };
   }
 
   const contentLength = response.headers.get("Content-Length");
