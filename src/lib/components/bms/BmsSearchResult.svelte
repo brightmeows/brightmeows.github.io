@@ -35,7 +35,7 @@
     })
   );
 
-  let { copiedField, copy: copyHash } = clipboardFieldFeedback();
+  let cb = clipboardFieldFeedback();
 </script>
 
 <GlassContainer padding="lg" rounded="lg" class="mb-6">
@@ -49,27 +49,29 @@
       {#if result.md5}
         <button
           type="button"
-          onclick={() => void copyHash("md5", result.md5!)}
-          title={copiedField === "md5" ? "已复制" : `MD5: ${result.md5}`}
-          class="cursor-pointer rounded-[6px] px-2 py-1 text-[0.75rem] font-medium text-white transition-colors {copiedField ===
+          onclick={() => void cb.copy("md5", result.md5!)}
+          title={cb.copiedField === "md5" ? "已复制" : `MD5: ${result.md5}`}
+          class="cursor-pointer rounded-[6px] px-2 py-1 text-[0.75rem] font-medium text-white transition-colors {cb.copiedField ===
           'md5'
             ? 'bg-[#4caf50]'
             : 'bg-[#607d8b] hover:bg-[#78909c]'}"
         >
-          {copiedField === "md5" ? "已复制" : "复制MD5"}
+          {cb.copiedField === "md5" ? "已复制" : "复制MD5"}
         </button>
       {/if}
       {#if result.sha256}
         <button
           type="button"
-          onclick={() => void copyHash("sha256", result.sha256!)}
-          title={copiedField === "sha256" ? "已复制" : `SHA256: ${result.sha256.slice(0, 16)}...`}
-          class="cursor-pointer rounded-[6px] px-2 py-1 text-[0.75rem] font-medium text-white transition-colors {copiedField ===
+          onclick={() => void cb.copy("sha256", result.sha256!)}
+          title={cb.copiedField === "sha256"
+            ? "已复制"
+            : `SHA256: ${result.sha256.slice(0, 16)}...`}
+          class="cursor-pointer rounded-[6px] px-2 py-1 text-[0.75rem] font-medium text-white transition-colors {cb.copiedField ===
           'sha256'
             ? 'bg-[#4caf50]'
             : 'bg-[#607d8b] hover:bg-[#78909c]'}"
         >
-          {copiedField === "sha256" ? "已复制" : "复制SHA256"}
+          {cb.copiedField === "sha256" ? "已复制" : "复制SHA256"}
         </button>
       {/if}
       <BmsLinkButtons chart={chartLike} />

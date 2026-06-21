@@ -101,7 +101,7 @@
           </span>
         {:else}
           <a
-            href={item.href?.startsWith("#") ? item.href : resolve(item.href ?? "#", {})}
+            href={resolve(item.href ?? "/", {})}
             class="flex items-center gap-2 text-white/90 no-underline transition-colors duration-150 hover:text-white"
             onclick={(event) => event.stopPropagation()}
           >

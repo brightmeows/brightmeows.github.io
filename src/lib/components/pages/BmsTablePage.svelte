@@ -34,7 +34,7 @@
   let dataProgressDetail = $state("");
 
   let pageTitle = $state("加载难度表header中");
-  let { copied, copy: copyUrl } = clipboardFeedback();
+  let cb = clipboardFeedback();
   let levelRefHasData = $state(false);
 
   // ---- Header 加载 ----
@@ -197,11 +197,11 @@
     {/if}
     <div class="mt-2 text-[1.2rem] text-white/70 italic">
       使用方式：复制本网站链接（
-      <button class="link-accent" type="button" onclick={() => copyUrl(window.location.href)}>
+      <button class="link-accent" type="button" onclick={() => cb.copy(resolveUrl(headerUrl))}>
         点击复制
       </button>
       ），然后在BeMusicSeeker或beatoraja中，粘贴至对应选项处。
-      {#if copied}
+      {#if cb.copied}
         <span class="ml-2 text-[#4caf50]">已复制</span>
       {/if}
     </div>

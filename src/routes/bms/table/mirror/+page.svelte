@@ -27,7 +27,7 @@
   let loading = $state(true);
   let error = $state<string | null>(null);
 
-  let { copied, copy: copyTablesJsonUrl } = clipboardFeedback();
+  let cb = clipboardFeedback();
 
   let tables = $state<MirrorTableItem[]>([]);
   let selectedMap = $state<Record<string, boolean>>({});
@@ -49,7 +49,7 @@
 
   function copyTables(): void {
     const url = new URL(tablesJsonPath, window.location.origin).toString();
-    void copyTablesJsonUrl(url);
+    void cb.copy(url);
   }
 
   let searchNeedles = $derived(buildSearchNeedles(searchQuery, searchConverters));
@@ -121,7 +121,7 @@
     >
       使用教程
     </a>
-    {#if copied}
+    {#if cb.copied}
       <span class="ml-2 text-[#4caf50]">已复制</span>
     {/if}
   </div>
@@ -132,7 +132,7 @@
     <div class="flex flex-wrap items-center justify-center gap-3">
       <h2 class="section-title">全部难度表</h2>
       <label
-        class="flex cursor-pointer items-center gap-1.5 rounded-[6px] border px-2.5 py-0.5 text-[0.8rem] transition-colors duration-200 select-none {showCommonOnly
+        class="flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-[0.35rem] text-[0.85rem] transition-colors duration-200 select-none {showCommonOnly
           ? 'border-[#64b5f6] bg-[#64b5f6]/20 text-[#64b5f6]'
           : 'border-white/20 text-white/50 hover:border-white/40 hover:text-white/70'}"
       >
