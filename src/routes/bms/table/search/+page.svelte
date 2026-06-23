@@ -319,6 +319,11 @@
 {#snippet titlePane()}
   <h1 class="page-title text-center">BMS 谱面搜索</h1>
   <p class="mt-2 text-center text-[1.1rem] text-white/70">搜索谱面并查看其在所有难度表中的信息</p>
+  <p class="mt-3 text-center text-[0.95rem] text-white/40">
+    <a class="text-accent underline-offset-2 hover:underline" href="/bms/table/search/batch">
+      批量搜索并导出 JSON →
+    </a>
+  </p>
 {/snippet}
 
 {#snippet contentPane()}

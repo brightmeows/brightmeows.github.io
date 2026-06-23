@@ -126,8 +126,8 @@ export function searchIndices(
   return result;
 }
 
-/** 根据 matchedKeys 和 queryType 过滤谱面列表的公共函数 */
-function filterChartsByKeys(
+/** 根据 matchedKeys 和 queryType 过滤谱面列表 */
+export function filterChartsByKeys(
   data: ChartData[],
   matchedKeys: Set<string>,
   queryType: QueryType
@@ -147,13 +147,11 @@ function filterChartsByKeys(
 }
 
 /**
- * 带字节级下载进度的谱面数据加载。
- * 使用 ReadableStream 逐 chunk 读取 data.json，实时回调下载进度。
+ * 下载并解析全量 data.json，不过滤。
+ * 供批量搜索场景使用：每张表只下载一次，后续在内存中按各搜索词独立过滤。
  */
-export async function loadTableDataWithProgress(
+export async function loadFullTableData(
   tableId: string,
-  matchedKeys: Set<string>,
-  queryType: QueryType,
   signal: AbortSignal | undefined,
   onDownloadProgress: (loaded: number, total: number) => void
 ): Promise<ChartData[]> {
@@ -164,7 +162,22 @@ export async function loadTableDataWithProgress(
   if (!Array.isArray(parsed)) {
     throw new Error(`谱面数据格式无效：期望数组，实际 ${typeof parsed}`);
   }
-  const data = parsed as ChartData[];
+  return parsed as ChartData[];
+}
+
+/**
+ * 带字节级下载进度的谱面数据加载（含过滤）。
+ * 使用 ReadableStream 逐 chunk 读取 data.json，实时回调下载进度。
+ * 下载+解析逻辑委托给 loadFullTableData，本函数仅追加按 matchedKeys 过滤。
+ */
+export async function loadTableDataWithProgress(
+  tableId: string,
+  matchedKeys: Set<string>,
+  queryType: QueryType,
+  signal: AbortSignal | undefined,
+  onDownloadProgress: (loaded: number, total: number) => void
+): Promise<ChartData[]> {
+  const data = await loadFullTableData(tableId, signal, onDownloadProgress);
   return filterChartsByKeys(data, matchedKeys, queryType);
 }
 
