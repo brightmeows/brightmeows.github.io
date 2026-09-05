@@ -8,6 +8,8 @@
   import type { JsonPreviewHandle } from "$lib/types/ui";
   import { slugifyTag, sortMirrorTablesByFeatured } from "$lib/utils/mirror-tables";
 
+  // 值域与类型域同名合并是标准 TS 惯用法；oxlint 误报 no-redeclare（typescript-eslint 不报）
+  // oxlint-disable-next-line no-redeclare
   const CheckboxState = {
     Unchecked: 0,
     Indeterminate: 1,
