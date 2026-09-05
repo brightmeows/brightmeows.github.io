@@ -63,6 +63,15 @@ Hooks 配置：`pnpm format:check`、`pnpm lint`、`pnpm check`、no-confusable-
 - TypeScript 6（`rewriteRelativeImportExtensions: true`）
 - Paraglide JS（i18n，仅 demo 用）
 
+## 依赖升级挂起项
+
+以下升级经评估后刻意挂起，勿随批升级，各等触发条件：
+
+- **typescript 6 到 7** — TS 7 为 Go 原生移植。svelte-check 需 `--tsgo` 旗标且 TS 6/7 双装；SvelteKit 依赖的 `rootDirs` 适配已被官方关闭为 not planned，长期方案是 Kit 3 扁平化配置。触发条件：Kit 3 stable 后一起动。oxlint-tsgolint 7 自带 TS 7 语义的类型检查引擎，与项目 typescript 版本解耦，互不阻塞。
+- **katex 0.17 到 0.18** — 0.18.0 对 CSS class 加前缀（破坏性变更）；且渲染引擎（rehype-katex@5 内置 katex 0.13）与独立安装的 CSS 版本本就分裂。触发条件：升级后目检博客数学页，确认 `[&_.katex]` 系选择器仍命中。
+- **remark-math 3 / rehype-katex 5** — 被 mdsvex 0.12 内置的 unified 9 时代管线锁定，remark-math 6 / rehype-katex 7 需 unified 11，直升必坏。触发条件：mdsvex v1（宣称放弃 unified 与 remark/rehype 插件）或更换 markdown 方案时一起决策。
+- **SvelteKit 3** — RC 中。触发条件：stable 后用 `sv migrate sveltekit-3` 迁移，要点：`$lib` 改 `#lib`、配置扁平化、跨页 form actions 导航行为变更。
+
 ## 提交格式
 
 Conventional Commits。title 英文，body 中文（可选）。
