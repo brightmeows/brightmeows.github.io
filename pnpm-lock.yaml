@@ -32,9 +32,6 @@ importers:
       '@types/node':
         specifier: ^26.4.1
         version: 26.4.1
-      cookie:
-        specifier: ^1.1.1
-        version: 1.1.1
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
@@ -780,10 +777,6 @@ packages:
   cookie@0.6.0:
     resolution: {integrity: sha512-U71cyTamuh1CRNCfpGY6to28lxvNwPG4Guz/EVjgf3Jmzv0vlDp1atT9eS5dDjMYHucpHbWns6Lwf3BKz6svdw==}
     engines: {node: '>= 0.6'}
-
-  cookie@1.1.1:
-    resolution: {integrity: sha512-ei8Aos7ja0weRpFzJnEA9UHJ/7XQmqglbRwnf2ATjcB9Wq874VKH9kfjjirM6UhU2/E5fFYadylyhFldcqSidQ==}
-    engines: {node: '>=18'}
 
   cssesc@3.0.0:
     resolution: {integrity: sha512-/Tb/JcjK111nNScGob5MNtsntNM1aCNUDipB/TkwZFhyDrrE47SOx/18wF2bbjgc3ZzCSKW1T5nt5EbFoAz/Vg==}
@@ -2041,8 +2034,6 @@ snapshots:
   consola@3.4.0: {}
 
   cookie@0.6.0: {}
-
-  cookie@1.1.1: {}
 
   cssesc@3.0.0: {}
 

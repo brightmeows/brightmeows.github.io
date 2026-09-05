@@ -32,7 +32,6 @@
     "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^26.4.1",
-    "cookie": "^1.1.1",
     "gray-matter": "^4.0.3",
     "katex": "^0.17.0",
     "mdsvex": "^0.12.8",
