@@ -34,7 +34,7 @@ Hooks 配置：`pnpm format:check`、`pnpm lint`、`pnpm check`、no-confusable-
 ### BMS
 
 - **`<meta name="bmstable">` 不删** — 虽然无客户端 JS 读取，但刻意保留用作外部标记。注入路径：`+page.server.ts` → `PageData.bmstableMeta` → `+layout.svelte` 的 `<svelte:head>`。
-- **`static/bms/table/mirror/tables.json` 为构建产物（gitignored）** — 源文件为 `tables.raw.json`（git 跟踪，含原始数据），由 `prebuild` 脚本的 jq 命令变换生成 `tables.json`（添加 `dir_name`、`url_from`，替换 `url` 为镜像页面地址）。CI（`.forgejo/workflows/deploy.yml`）每 6 小时从 R2 拉取真实数据到 `tables.raw.json`。两次构建之间 `tables.json` 始终为最新变换结果。表数据（`header.json`/`data.json`）和搜索索引全在客户端运行时从 R2 拉取，构建时不依赖。
+- **`static/bms/table/mirror/tables.json` 为构建产物（gitignored）** — 源文件为 `tables.raw.json`（git 跟踪，含原始数据），由 `prebuild` 脚本的 jq 命令变换生成 `tables.json`（添加 `dir_name`、`url_from`，替换 `url` 为镜像页面地址）。CI（`.github/workflows/deploy.yml`）每 6 小时从 R2 拉取真实数据到 `tables.raw.json`。两次构建之间 `tables.json` 始终为最新变换结果。表数据（`header.json`/`data.json`）和搜索索引全在客户端运行时从 R2 拉取，构建时不依赖。
 - **`static/bms/table/search/` 不存在** — 搜索索引已移至 R2，由 `bms-search.worker.ts` 在客户端运行时从 R2 拉取。不要尝试在仓库内重新创建此目录。
 - **`bmstableMeta` 使用 R2 绝对 URL** — `+page.server.ts` 中 `bmstableMeta` 注入 `<meta name="bmstable">` 的 content 为 R2 上 `header.json` 的绝对 URL（如 `https://pub-...r2.dev/tables/[host] name/header.json`），供 beatoraja 等客户端直接拉取。URL 含 `[`、`]`、空格等需编码字符，HTTP 客户端会自动编码。不要改回相对路径。
 - **镜像表路由参数为 `[host] name` 格式** — `entries()` 读取 `tables.json` 中 `dir_name` 字段（由 `prebuild` jq 生成），格式为 `[host] name`（如 `[4uri.web.fc2.com] Youri差分難易度表`）。SvelteKit 自动 URL 编码/解码此参数。不要改为纯数字或 UUID 标识符。
