@@ -10,9 +10,7 @@ jobs:
     runs-on: codeberg-small-lazy
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
-        env:
-          GIT_DEFAULT_HASH: sha256
+        uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
         with:
           version: 11
