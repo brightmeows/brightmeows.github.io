@@ -29,7 +29,7 @@ Hooks 配置：`pnpm format:check`、`pnpm lint`、`pnpm check`、no-confusable-
 ### 构建与配置
 
 - **`vite.config.ts` 中 `server.fs.allow: ["content"]`** — Vite dev server 默认仅允许 `src/`、`.svelte-kit/`、`node_modules/` 内的文件被访问。`content/` 不在其中，`import()` 请求会被拦截（404/403）。需要在 `vite.config.ts` 中显式添加。build 时无此限制。
-- **`prebuild` 转换 `mirror/tables.json`** — `package.json` 的 `prebuild` 脚本中 `jq` 命令执行两项操作：① 添加 `dir_name` 字段（`[host] name` 格式，用作页面路由参数和 R2 目录名）；② 将 `url` 转为 Codeberg Pages 路径（保存原 URL 到 `url_from`）。`pnpm build` 时自动触发。输入为 `tables.raw.json`（git 跟踪），输出为 `tables.json`（gitignored）。`pnpm dev` 也自动触发。修改脚本时保持此转换逻辑。
+- **`prebuild` 转换 `mirror/tables.json`** — `package.json` 的 `prebuild` 脚本中 `jq` 命令执行两项操作：① 添加 `dir_name` 字段（`[host] name` 格式，用作页面路由参数和 R2 目录名）；② 将 `url` 转为 GitHub Pages 路径（`https://brightmeows.github.io/`，保存原 URL 到 `url_from`）。`pnpm build` 时自动触发。输入为 `tables.raw.json`（git 跟踪），输出为 `tables.json`（gitignored）。`pnpm dev` 也自动触发。修改脚本时保持此转换逻辑。
 
 ### BMS
 
