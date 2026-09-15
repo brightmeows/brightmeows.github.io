@@ -1,33 +1,44 @@
 import path from "node:path";
 
+import { sveltex } from "@nvl/sveltex";
 import adapter from "@sveltejs/adapter-static";
 import type { Config } from "@sveltejs/kit";
 import { vitePreprocess } from "@sveltejs/vite-plugin-svelte";
-import { mdsvex } from "mdsvex";
-import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
 
 const config: Config = {
-  // Consult https://svelte.dev/docs/kit/integrations
-  // for more information about preprocessors
   preprocess: [
-    mdsvex({
-      extensions: [".svx", ".md"],
-      remarkPlugins: [remarkGfm, remarkMath],
-      rehypePlugins: [
-        [
-          rehypeKatex as any, // eslint-disable-line @typescript-eslint/no-explicit-any
-          {
-            throwOnError: false,
-            macros: {
-              "\\N": "\\mathbb{N}",
-              "\\Z": "\\mathbb{Z}",
-            },
-          } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
-        ],
-      ],
-    }),
+    await sveltex(
+      {
+        markdownBackend: "unified",
+        codeBackend: "shiki",
+        mathBackend: "katex",
+      },
+      {
+        extensions: [".md", ".svx"],
+        // 站点在 +layout.svelte 统一管理 <svelte:head>，关闭 SvelTeX 的
+        // frontmatter head 注入（title/meta/noscript 等）避免重复标签
+        frontmatter: {
+          head: false,
+        },
+        // SvelTeX 默认不启用 GFM（表格/任务列表/删除线），需显式挂载
+        markdown: {
+          remarkPlugins: [remarkGfm],
+        },
+        // 站点为深色主题，代码块用 shiki 的 github-dark 配色
+        code: {
+          shiki: {
+            theme: "github-dark",
+          },
+        },
+        // katex CSS 由 MarkdownContent.svelte 本地引入，关闭 CDN 注入
+        math: {
+          css: {
+            type: "none",
+          },
+        },
+      }
+    ),
     vitePreprocess(),
   ],
 
