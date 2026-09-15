@@ -7,8 +7,9 @@ import type { BlogPostMetadata } from "$lib/types/blog";
 import { extractDateFromSlug, EPOCH_DATE } from "$lib/utils/date";
 import { formatTitle } from "$lib/utils/title";
 
-interface BlogPostModule extends BlogPostMetadata {
+interface BlogPostModule {
   default: Component;
+  metadata?: Partial<BlogPostMetadata>;
 }
 
 export const load: PageLoad = async ({ params }) => {
@@ -16,13 +17,14 @@ export const load: PageLoad = async ({ params }) => {
 
   try {
     const post = (await import(`$blog/${slug}.md`)) as BlogPostModule;
+    const meta = post.metadata ?? {};
 
     // 元数据优先使用 frontmatter 导出，无 frontmatter 时从 slug 推算
-    const title = post.title ?? slug;
-    const date = post.date ?? extractDateFromSlug(slug) ?? EPOCH_DATE;
+    const title = meta.title ?? slug;
+    const date = meta.date ?? extractDateFromSlug(slug) ?? EPOCH_DATE;
 
     return {
-      post: { slug, title, date, order: post.order },
+      post: { slug, title, date, order: meta.order },
       component: post.default,
       title: formatTitle(title),
     };
