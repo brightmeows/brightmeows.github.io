@@ -29,8 +29,8 @@ jobs:
       - name: Enable auto-merge
         run: |
           # 3. 使用 gh 命令标记自动合并
-          # 如果分支保护允许 auto-merge，这将成功
-          gh pr merge --auto --squash "$PR_URL"
+          # 仓库仅允许 merge commit（allow_squash_merge=false），故用 --merge
+          gh pr merge --auto --merge "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
