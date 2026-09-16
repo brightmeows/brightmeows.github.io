@@ -41,6 +41,7 @@ Hooks 配置：`pnpm format:check`、`pnpm lint`、`pnpm check`、no-confusable-
 - **`static/bms/table/search/` 不存在** — 搜索索引已移至 R2，由 `bms-search.worker.ts` 在客户端运行时从 R2 拉取。不要尝试在仓库内重新创建此目录。
 - **`bmstableMeta` 使用 R2 绝对 URL** — `+page.server.ts` 中 `bmstableMeta` 注入 `<meta name="bmstable">` 的 content 为 R2 上 `header.json` 的绝对 URL（如 `https://pub-...r2.dev/tables/[host] name/header.json`），供 beatoraja 等客户端直接拉取。URL 含 `[`、`]`、空格等需编码字符，HTTP 客户端会自动编码。不要改回相对路径。
 - **镜像表路由参数为 `[host] name` 格式** — `entries()` 读取 `tables.json` 中 `dir_name` 字段（由 `prebuild` jq 生成），格式为 `[host] name`（如 `[4uri.web.fc2.com] Youri差分難易度表`）。SvelteKit 自动 URL 编码/解码此参数。不要改为纯数字或 UUID 标识符。
+- **难度表数据管线在本仓 Actions 中运行** — `.github/workflows/update-tables.yml` 每 6 小时（或 `config/**` 变更时、手动 dispatch）用 `bms-table-fetch` 抓取难度表，经 rclone 与 Cloudflare R2 双向同步：先拉取 R2 基线保留增量，跑完抓取再推回。输出 `tables/`、`indexes/`、`lists/`、`warnings.log`（均 gitignored，仅存在于 CI 工作区与 R2）。数据源配置在 `config/table.toml`（`[[table]]`/`[[disable]]`/`[[replace]]`）与 `config/list.toml`（`[[source]]`）。R2 凭据以 Actions secrets 注入（`R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY`/`R2_ENDPOINT`/`R2_BUCKET`）。该管线原为独立的 Codeberg 壳子仓库 bms-table-mirror-r2，2026-09 迁入本仓并归档原仓；`bms-table-fetch` 二进制取自其 GitHub release（版本由工作流内 `BMS_TABLE_FETCH_VERSION` 固定）。
 - **`r2.ts` 集中管理 R2 端点** — `src/lib/constants/r2.ts` 定义了 `R2_BASE`/`R2_TABLES_BASE`/`R2_INDEXES_BASE` 三个常量和 `r2TableHeaderUrl()`/`r2TableDataUrl()` 两个路径构造函数。修改 R2 地址时仅改此文件。该文件位于 `$lib/constants/`（环境无关层），可供构建时和客户端代码共同使用。
 
 ### SvelTeX（Markdown 管线）

@@ -1,0 +1,71 @@
+name: Update Tables
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "config/**"
+      - ".github/workflows/update-tables.yml"
+  schedule:
+    - cron: "15 */6 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: update-tables
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    env:
+      BMS_TABLE_FETCH_VERSION: v0.4.2
+    steps:
+      - uses: actions/checkout@v7
+
+      # Secrets 需在本仓库 Settings > Secrets and variables > Actions 中设置：
+      #   R2_ACCESS_KEY_ID      — Cloudflare Dashboard > R2 > 管理 R2 API 令牌 > 创建 API 令牌
+      #   R2_SECRET_ACCESS_KEY  — 同上（创建时一并生成）
+      #   R2_ENDPOINT           — Cloudflare Dashboard > R2 > 存储桶 > S3 API > 端点
+      #   R2_BUCKET             — Cloudflare Dashboard > R2 > 存储桶名称
+      - name: Run
+        env:
+          RCLONE_CONFIG_R2_TYPE: s3
+          RCLONE_CONFIG_R2_PROVIDER: Cloudflare
+          RCLONE_CONFIG_R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          RCLONE_CONFIG_R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+        run: |
+          echo "=== Download tools ==="
+          curl -L -o bms-table-fetch.tar.xz \
+            https://github.com/brightmeows/bms-table-fetch/releases/download/$BMS_TABLE_FETCH_VERSION/bms-table-fetch-$BMS_TABLE_FETCH_VERSION-linux-amd64.tar.xz
+          tar xf bms-table-fetch.tar.xz
+          chmod +x bms-table-fetch
+          rm -f bms-table-fetch.tar.xz
+
+          curl -L -o rclone.zip https://downloads.rclone.org/rclone-current-linux-amd64.zip
+          unzip -j rclone.zip "*/rclone" -d ./
+          chmod +x rclone
+          rm -f rclone.zip
+
+          echo "=== Pull baseline from R2 ==="
+          ./rclone sync r2:${{ secrets.R2_BUCKET }}/ . \
+            --include "/tables/**" \
+            --include "/indexes/**" \
+            --include "/lists/**" \
+            --include "/warnings.log" \
+            --checksum \
+            --transfers 16
+
+          echo "=== Run bms-table-fetch ==="
+          ./bms-table-fetch
+          rm -f bms-table-fetch
+
+          echo "=== Sync to R2 ==="
+          ./rclone sync . r2:${{ secrets.R2_BUCKET }}/ \
+            --include "/tables/**" \
+            --include "/indexes/**" \
+            --include "/lists/**" \
+            --include "/warnings.log" \
+            --checksum \
+            --transfers 16
+          rm -f rclone
