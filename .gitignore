@@ -40,3 +40,9 @@ static/bms/table/mirror/tables.json
 
 # BrightMeowS Workflow
 /docs/blueprint
+
+# BMS table mirror data (R2 管线输出)
+/indexes
+/lists
+/tables
+/warnings.log
