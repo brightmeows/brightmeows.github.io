@@ -199,7 +199,18 @@
     "unicorn/no-abusive-eslint-disable": "error",
     "unicorn/prefer-node-protocol": "error",
     "unicorn/require-module-specifiers": "error",
-    "unicorn/no-empty-file": "error"
+    "unicorn/no-empty-file": "error",
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["$lib/loaders", "$lib/loaders/*"],
+            "message": "loaders 是构建期 Node 层（fs/path/process.cwd），只能在 +page.server.ts 等构建时入口导入；客户端代码请改用 $lib/data 从 R2 获取数据。"
+          }
+        ]
+      }
+    ]
   },
   "overrides": [
     {
@@ -236,7 +247,8 @@
         "prefer-spread": "error"
       }
     },
-    { "files": ["**/*.d.ts"], "rules": { "unicorn/require-module-specifiers": "off" } }
+    { "files": ["**/*.d.ts"], "rules": { "unicorn/require-module-specifiers": "off" } },
+    { "files": ["**/*.server.ts"], "rules": { "no-restricted-imports": "off" } }
   ],
   "settings": { "tailwindcss": { "entryPoint": "src/routes/layout.css" } }
 }
