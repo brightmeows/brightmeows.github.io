@@ -69,3 +69,14 @@ repos:
         entry: python3 scripts/check-cn-quotes.py
         language: system
         files: \.(md|svx)$
+
+  # config/*.toml 由 CI 的 bms-table-fetch 读取；语法/字段错误在这里立即暴露，
+  # 不必等 6 小时一轮的 update-tables 反馈。
+  - repo: local
+    hooks:
+      - id: config-toml
+        name: config TOML syntax and fields
+        entry: python3 scripts/check-config-toml.py
+        language: system
+        files: ^config/.*\.toml$
+        pass_filenames: false
