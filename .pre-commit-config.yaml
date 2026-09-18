@@ -11,7 +11,7 @@ repos:
     hooks:
       - id: format-check
         name: pnpm format:check
-        # --check via Prettier: exit non-zero if any file differs
+        # exit non-zero if any file differs
         entry: pnpm format:check
         language: system
         types: [text]
@@ -59,3 +59,13 @@ repos:
           "$@"' _
         language: system
         types: [text]
+
+  # 简体中文横排引号规范（GB/T 15834-2011）：中文正文必须用弯引号。
+  # YAML frontmatter 与 HTML 标签属性中的引号是语法，脚本会跳过。
+  - repo: local
+    hooks:
+      - id: cn-quotes
+        name: Chinese quotes follow GB/T 15834-2011
+        entry: python3 scripts/check-cn-quotes.py
+        language: system
+        files: \.(md|svx)$
