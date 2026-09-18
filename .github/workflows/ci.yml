@@ -55,3 +55,19 @@ jobs:
       - run: pnpm format:check
       - run: python3 scripts/check-cn-quotes.py $(git ls-files "*.md" "*.svx")
       - run: python3 scripts/check-config-toml.py
+
+  commit-msg:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Check commit messages
+        run: |
+          git rev-list --no-merges \
+            "${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }}" |
+          while read -r sha; do
+            git log -1 --format=%B "$sha" > /tmp/commit-msg
+            python3 scripts/check-commit-msg.py /tmp/commit-msg || exit 1
+          done

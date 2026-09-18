@@ -5,6 +5,9 @@
 # on the project as a whole, not individual files.
 # All pnpm hooks specify types: [text] so pre-commit can skip early when
 # no text files are staged (only binary changes).
+#
+# 同时安装 pre-commit 与 commit-msg 两类 hook：
+#   pre-commit install
 
 repos:
   - repo: local
@@ -80,3 +83,12 @@ repos:
         language: system
         files: ^config/.*\.toml$
         pass_filenames: false
+
+  # 提交信息遵循 Conventional Commits（见 AGENTS.md「提交格式」）
+  - repo: local
+    hooks:
+      - id: conventional-commit
+        name: commit message follows Conventional Commits
+        entry: python3 scripts/check-commit-msg.py
+        language: system
+        stages: [commit-msg]
