@@ -46,3 +46,7 @@ static/bms/table/mirror/tables.json
 /lists
 /tables
 /warnings.log
+
+# Python
+__pycache__/
+*.py[cod]
