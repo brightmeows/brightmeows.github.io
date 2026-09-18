@@ -11,6 +11,8 @@
     "prepare": "paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide && svelte-kit sync || echo ''",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch --fail-on-warnings",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "lint": "oxlint --deny-warnings --report-unused-disable-directives",
     "lint:fix": "oxlint --fix",
     "format": "oxfmt .",
@@ -45,6 +47,7 @@
     "tailwindcss": "^4.3.3",
     "typescript": "^6.0.3",
     "unified": "^11.0.5",
-    "vite": "^8.3.0"
+    "vite": "^8.3.0",
+    "vitest": "^5.0.1"
   }
 }

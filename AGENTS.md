@@ -10,7 +10,7 @@
 pre-commit run --all-files --quiet    # 手动触发全部 hooks
 ```
 
-Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、no-confusable-unicode、cn-quotes、config-toml（`config/**` 变更时）、conventional-commit（commit-msg stage 校验提交信息）。
+Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm test`、no-confusable-unicode、cn-quotes、config-toml（`config/**` 变更时）、conventional-commit（commit-msg stage 校验提交信息）。
 
 ### scripts/ 校验脚本
 
@@ -22,6 +22,7 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、no-confusable-unicode
 
 - `pnpm dev`
 - `pnpm build`
+- `pnpm test`
 
 ## 反直觉决策
 
@@ -31,7 +32,7 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、no-confusable-unicode
 
 - **`hooks.server.ts` 不存在** — 纯 SSG 项目不需要 server handle，meta 注入已走标准数据流。不要重新添加。
 - **Paraglide i18n 基础设施全局加载但仅 `/demo/paraglide/` 生效** — `hooks.ts` 和 `+layout.svelte` 无条件导入 runtime（SSG 构建无法 tree-shake），但 `reroute` 钩子只对 `/demo/paraglide/` 路径触发。不要将 paraglide 扩展到其他路由。
-- **无测试框架** — `build`/`check`/`lint`/`format` 通过即验证通过。不要加测试依赖或测试文件。
+- **测试只覆盖纯函数层** — vitest 仅覆盖 `src/lib/utils/` 与生成器脚本中的纯函数，测试文件为相邻 `*.test.ts`；组件（需 browser mode）与数据层（需 fs/fetch fixture）刻意不覆盖，避免依赖与 CI 复杂度膨胀。`pnpm test` 与 format/lint/check 同为门槛，pre-commit 与 CI 都会跑，失败阻断提交与部署。给非纯函数层加测试依赖或测试文件前先确认范围。
 - **lint 不含 Svelte 模板级 linter** — 曾用 oxvelte（cargo 全局二进制）补 Svelte 模板规则，其上游 2026 年 5 月起停更、且依赖仓库外的 cargo 全局安装不可复现，已移除。现 `lint` 仅 oxlint（查 `.svelte` 的 script 块）加 svelte-check（编译期诊断）。代价是失去 `svelte/button-has-type` 与 `svelte/no-target-blank` 两条 warn。回归路径（跟踪 oxc issue #15761 “SFC Template Support”）：oxlint 支持自定义文件解析器后接 eslint-plugin-svelte 或原生规则。不要因“模板无 lint”而重新引入停更工具。
 - **auto-merge 合并的 PR 不触发 push 工作流** — GitHub 对 `GITHUB_TOKEN` 触发的事件有反递归机制：`dependabot-auto-merge.yml` 启用 auto-merge 后，服务端完成合并产生的 push 事件不会触发 CI/Deploy（只留下 dependabot 的 dynamic 事件）。后果是依赖更新合并后不会自动验证与部署，需等 6 小时一次的 schedule（`deploy.yml`）或手动 dispatch。手动 `gh pr merge` 用个人 token，不受影响，正常触发。
 - **`pnpm-workspace.yaml` 的 `allowBuilds` 由 pnpm 11 维护** — 遇到未决的 build script 时 pnpm 会自动写入占位符（值为字面量 `set this to true or false`），带着占位符提交会让 CI 的 install 直接失败。本地需改成明确的 `true`/`false` 再提交。
@@ -94,6 +95,7 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、no-confusable-unicode
 - Tailwind CSS v4（`@import "tailwindcss"`，无 `tailwind.config.*`）
 - SvelTeX 0.5（Markdown 预处理器：unified 后端 + remark-gfm + katex + shiki）（博客文章用 `.md`）
 - TypeScript 6（`rewriteRelativeImportExtensions: true`）
+- Vitest 5（纯函数单测，Node 环境）
 - Paraglide JS（i18n，仅 demo 用）
 
 ## 依赖升级挂起项
