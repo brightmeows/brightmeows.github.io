@@ -56,7 +56,6 @@
   let searchPhase = $state<"idle" | "searching" | "loading-tables" | "done">("idle");
   let searchResults = $state<SearchResult[]>([]);
   // $state 包裹是必要的：tableStates 在后续被整体重赋值（不只是 .set/.delete）
-  // eslint-disable-next-line svelte/no-unnecessary-state-wrap
   let tableStates = $state(new SvelteMap<string, TableLoadState>());
   // 普通 Map（非 SvelteMap）：仅在 loadSingleTable 异步回调中读取，不参与模板响应式追踪
   let candidateMap = new Map<string, CandidateEntry>();

@@ -9,7 +9,6 @@
     loadState?: "idle" | "loading" | "done" | "not-found" | "error";
   }
 
-  // eslint-disable-next-line no-useless-assignment
   let {
     headerUrl = undefined,
     hasData = $bindable(false),

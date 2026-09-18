@@ -13,7 +13,6 @@
   let tocItems = $state<TocItem[]>([]);
 
   onMount(() => {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
     tocItems = buildTocFromHeadings({ minLevel: 2, maxLevel: 6 });
   });
 </script>
