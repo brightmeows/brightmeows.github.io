@@ -23,7 +23,8 @@
     "eslint.config.ts",
     "prettier.config.ts",
     "svelte.config.ts",
-    "vite.config.ts"
+    "vite.config.ts",
+    "vitest.config.ts"
   ]
   // Path aliases are handled by https://svelte.dev/docs/kit/configuration#alias
   // except $lib which is handled by https://svelte.dev/docs/kit/configuration#files
