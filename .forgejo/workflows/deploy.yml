@@ -3,6 +3,9 @@ on:
   workflow_dispatch:
   push:
     branches: "main"
+  schedule:
+    # 6 小时兜底重建：GITHUB_TOKEN 类合并提交不触发 push 工作流
+    - cron: "20 */6 * * *"
 jobs:
   build_and_deploy:
     runs-on: codeberg-small-lazy
