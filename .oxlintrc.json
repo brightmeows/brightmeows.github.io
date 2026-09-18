@@ -200,6 +200,7 @@
     "unicorn/prefer-node-protocol": "error",
     "unicorn/require-module-specifiers": "error",
     "unicorn/no-empty-file": "error",
+    "unicorn/prefer-add-event-listener": "error",
     "no-restricted-imports": [
       "error",
       {

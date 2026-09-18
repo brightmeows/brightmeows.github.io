@@ -101,7 +101,7 @@
   // ---- Worker 消息处理 ----
 
   function setupWorker(w: Worker): void {
-    w.onmessage = (e: MessageEvent<WorkerMessage>) => {
+    w.addEventListener("message", (e: MessageEvent<WorkerMessage>) => {
       const msg = e.data;
       switch (msg.type) {
         case "index-progress": {
@@ -128,7 +128,7 @@
           break;
         }
       }
-    };
+    });
   }
 
   /** 发送单次搜索请求并 Promise 化等待结果 */
