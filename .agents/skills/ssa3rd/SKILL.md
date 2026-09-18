@@ -67,7 +67,7 @@ for song in songs:
 - 四个曲名的MD5必须按1st → 2nd → 3rd → final的顺序填入
 - constraint和trophy与现有部分保持一致
 - course名称格式：`Satellite Skill Analyzer 3rd sl{难度} {后缀}`
-  - 如果用户提交的是"代案"，名称应为 `Satellite Skill Analyzer 3rd sl{难度} {用户名} 代案`
+  - 如果用户提交的是“代案”，名称应为 `Satellite Skill Analyzer 3rd sl{难度} {用户名} 代案`
 - **必须追加到文件末尾**，不要插入到开头
 - 处理日文字符时需要设置 `sys.stdout.reconfigure(encoding='utf-8')`
 - 注意曲名中的特殊符号：〇 是不同的字符

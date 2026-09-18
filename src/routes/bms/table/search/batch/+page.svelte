@@ -56,7 +56,6 @@
   );
   let indexSearchProgress = $state({ done: 0, total: 0 });
   // $state 包裹是必要的：tableStates 会被整体重赋值
-  // eslint-disable-next-line svelte/no-unnecessary-state-wrap
   let tableStates = $state(new SvelteMap<string, TableLoadState>());
   let batchResults = $state<Record<string, SearchResult[]>>({});
 
@@ -65,11 +64,9 @@
   let searchIdCounter = 0;
   let abortController: AbortController | null = null;
   // 仅异步回调中读写，不参与模板追踪
-  // eslint-disable-next-line svelte/prefer-svelte-reactivity
   const pendingSearches = new Map<number, (candidates: CandidateEntry[]) => void>();
 
   // 已加载表数据（非响应式：仅异步回调中读写，不参与模板追踪）
-  // eslint-disable-next-line svelte/prefer-svelte-reactivity
   let tableData = new Map<string, { name: string; symbol?: string; charts: ChartData[] }>();
 
   // 预览展开
@@ -104,7 +101,7 @@
   // ---- Worker 消息处理 ----
 
   function setupWorker(w: Worker): void {
-    w.onmessage = (e: MessageEvent<WorkerMessage>) => {
+    w.addEventListener("message", (e: MessageEvent<WorkerMessage>) => {
       const msg = e.data;
       switch (msg.type) {
         case "index-progress": {
@@ -131,7 +128,7 @@
           break;
         }
       }
-    };
+    });
   }
 
   /** 发送单次搜索请求并 Promise 化等待结果 */
@@ -263,7 +260,6 @@
     }
 
     // 收集候选表并集（函数内局部变量，无需响应式）
-    // eslint-disable-next-line svelte/prefer-svelte-reactivity
     const allTableIds = new Set<string>();
     for (const info of perQuery) {
       for (const c of info.candidates) {

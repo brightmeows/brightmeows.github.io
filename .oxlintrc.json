@@ -2,17 +2,9 @@
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["typescript", "import", "unicorn"],
   "jsPlugins": ["oxlint-tailwindcss"],
-  "categories": {
-    "correctness": "off"
-  },
-  "options": {
-    "typeAware": true
-  },
-  "env": {
-    "builtin": true,
-    "browser": true,
-    "node": true
-  },
+  "categories": { "correctness": "error" },
+  "options": { "typeAware": true },
+  "env": { "builtin": true, "browser": true, "node": true },
   "globals": {
     "$props": "readonly",
     "$state": "readonly",
@@ -97,12 +89,7 @@
     "no-unsafe-optional-chaining": "error",
     "no-unused-labels": "error",
     "no-unused-private-class-members": "error",
-    "no-unused-vars": [
-      "error",
-      {
-        "argsIgnorePattern": "^_"
-      }
-    ],
+    "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
     "no-useless-assignment": "error",
     "no-useless-backreference": "error",
     "no-useless-catch": "error",
@@ -182,7 +169,49 @@
     "tailwindcss/no-deprecated-classes": "error",
     "tailwindcss/no-unnecessary-whitespace": "error",
     "tailwindcss/enforce-sort-order": "warn",
-    "tailwindcss/enforce-consistent-important-position": "error"
+    "tailwindcss/enforce-consistent-important-position": "error",
+    "eqeqeq": "error",
+    "array-callback-return": "error",
+    "no-throw-literal": "error",
+    "no-constructor-return": "error",
+    "no-loop-func": "error",
+    "no-self-compare": "error",
+    "no-shadow": "error",
+    "import/first": "error",
+    "import/newline-after-import": "error",
+    "import/no-cycle": "error",
+    "import/no-unassigned-import": ["error", { "allow": ["**/*.css"] }],
+    "typescript/switch-exhaustiveness-check": "error",
+    "typescript/related-getter-setter-pairs": "error",
+    "typescript/prefer-ts-expect-error": "error",
+    "typescript/no-mixed-enums": "error",
+    "typescript/consistent-type-imports": "error",
+    "typescript/consistent-type-exports": "error",
+    "typescript/no-import-type-side-effects": "error",
+    "unicorn/no-instanceof-array": "error",
+    "unicorn/prefer-date-now": "error",
+    "unicorn/consistent-assert": "error",
+    "unicorn/error-message": "error",
+    "unicorn/throw-new-error": "error",
+    "unicorn/prefer-optional-catch-binding": "error",
+    "unicorn/prefer-includes": "error",
+    "unicorn/prefer-set-size": "error",
+    "unicorn/no-abusive-eslint-disable": "error",
+    "unicorn/prefer-node-protocol": "error",
+    "unicorn/require-module-specifiers": "error",
+    "unicorn/no-empty-file": "error",
+    "unicorn/prefer-add-event-listener": "error",
+    "no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["$lib/loaders", "$lib/loaders/*"],
+            "message": "loaders 是构建期 Node 层（fs/path/process.cwd），只能在 +page.server.ts 等构建时入口导入；客户端代码请改用 $lib/data 从 R2 获取数据。"
+          }
+        ]
+      }
+    ]
   },
   "overrides": [
     {
@@ -218,11 +247,9 @@
         "prefer-rest-params": "error",
         "prefer-spread": "error"
       }
-    }
+    },
+    { "files": ["**/*.d.ts"], "rules": { "unicorn/require-module-specifiers": "off" } },
+    { "files": ["**/*.server.ts"], "rules": { "no-restricted-imports": "off" } }
   ],
-  "settings": {
-    "tailwindcss": {
-      "entryPoint": "src/routes/layout.css"
-    }
-  }
+  "settings": { "tailwindcss": { "entryPoint": "src/routes/layout.css" } }
 }

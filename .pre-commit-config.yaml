@@ -5,13 +5,17 @@
 # on the project as a whole, not individual files.
 # All pnpm hooks specify types: [text] so pre-commit can skip early when
 # no text files are staged (only binary changes).
+#
+# 同时安装 pre-commit 与 commit-msg 两类 hook：
+#   pre-commit install
+default_install_hook_types: [pre-commit, commit-msg]
 
 repos:
   - repo: local
     hooks:
       - id: format-check
         name: pnpm format:check
-        # --check via Prettier: exit non-zero if any file differs
+        # exit non-zero if any file differs
         entry: pnpm format:check
         language: system
         types: [text]
@@ -59,3 +63,33 @@ repos:
           "$@"' _
         language: system
         types: [text]
+
+  # 简体中文横排引号规范（GB/T 15834-2011）：中文正文必须用弯引号。
+  # YAML frontmatter 与 HTML 标签属性中的引号是语法，脚本会跳过。
+  - repo: local
+    hooks:
+      - id: cn-quotes
+        name: Chinese quotes follow GB/T 15834-2011
+        entry: python3 scripts/check-cn-quotes.py
+        language: system
+        files: \.(md|svx)$
+
+  # config/*.toml 由 CI 的 bms-table-fetch 读取；语法/字段错误在这里立即暴露，
+  # 不必等 6 小时一轮的 update-tables 反馈。
+  - repo: local
+    hooks:
+      - id: config-toml
+        name: config TOML syntax and fields
+        entry: python3 scripts/check-config-toml.py
+        language: system
+        files: ^config/.*\.toml$
+        pass_filenames: false
+
+  # 提交信息遵循 Conventional Commits（见 AGENTS.md「提交格式」）
+  - repo: local
+    hooks:
+      - id: conventional-commit
+        name: commit message follows Conventional Commits
+        entry: python3 scripts/check-commit-msg.py
+        language: system
+        stages: [commit-msg]

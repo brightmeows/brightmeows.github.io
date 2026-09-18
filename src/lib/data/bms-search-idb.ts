@@ -22,10 +22,10 @@ function getDB(): Promise<IDBDatabase | null> {
         }
       };
       req.onsuccess = () => resolve(req.result);
-      req.onerror = () => {
+      req.addEventListener("error", () => {
         dbPromise = null;
         resolve(null);
-      };
+      });
       req.onblocked = () => {
         dbPromise = null;
         resolve(null);
@@ -111,7 +111,7 @@ function getFromStore<T>(db: IDBDatabase, store: string, key: IDBValidKey): Prom
     const tx = db.transaction(store, "readonly");
     const req = tx.objectStore(store).get(key);
     req.onsuccess = () => resolve(req.result as T | undefined);
-    req.onerror = () => reject(req.error ?? new Error(`IDB get ${store} failed`));
+    req.addEventListener("error", () => reject(req.error ?? new Error(`IDB get ${store} failed`)));
   });
 }
 
@@ -125,7 +125,7 @@ function putInStore(
     const tx = db.transaction(store, "readwrite");
     const req = tx.objectStore(store).put(value, key);
     req.onsuccess = () => resolve();
-    req.onerror = () => reject(req.error ?? new Error(`IDB put ${store} failed`));
+    req.addEventListener("error", () => reject(req.error ?? new Error(`IDB put ${store} failed`)));
   });
 }
 
@@ -134,6 +134,8 @@ function clearStore(db: IDBDatabase, store: string): Promise<void> {
     const tx = db.transaction(store, "readwrite");
     const req = tx.objectStore(store).clear();
     req.onsuccess = () => resolve();
-    req.onerror = () => reject(req.error ?? new Error(`IDB clear ${store} failed`));
+    req.addEventListener("error", () =>
+      reject(req.error ?? new Error(`IDB clear ${store} failed`))
+    );
   });
 }

@@ -27,11 +27,11 @@ export function fetchJsonp(url: string, timeoutMs = 10000): Promise<unknown> {
       cleanup();
       resolve(data);
     };
-    script.onerror = () => {
+    script.addEventListener("error", () => {
       window.clearTimeout(timer);
       cleanup();
       reject(new Error("JSONP request failed"));
-    };
+    });
     document.body.appendChild(script);
   });
 }

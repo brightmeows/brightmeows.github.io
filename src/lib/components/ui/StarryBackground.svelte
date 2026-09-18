@@ -153,7 +153,6 @@
     const canvas = canvasRef;
     if (!canvas) return;
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     const ctx = canvas.getContext("2d") as CanvasRenderingContext2D | null;
     if (!ctx) return;
 

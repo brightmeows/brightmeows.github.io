@@ -204,13 +204,13 @@ function handleSearch(req: WorkerSearchRequest): void {
 
 // ---- message handler ----
 
-self.onmessage = (e: MessageEvent<WorkerSearchRequest>) => {
+self.addEventListener("message", (e: MessageEvent<WorkerSearchRequest>) => {
   const msg = e.data;
 
   if (msg.type === "search") {
     handleSearch(msg);
   }
-};
+});
 
 // ---- startup ----
 

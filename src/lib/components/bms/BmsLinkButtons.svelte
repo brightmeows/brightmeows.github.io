@@ -10,13 +10,13 @@
   let { chart }: Props = $props();
   const bmsLinks = $derived(getBmsLinks(chart));
 
-  function hasMd5(chart: ChartData): boolean {
-    const v = chart.md5;
+  function hasMd5(data: ChartData): boolean {
+    const v = data.md5;
     return typeof v === "string" && v.trim().length > 0;
   }
 
-  function hasSha256(chart: ChartData): boolean {
-    const v = chart.sha256;
+  function hasSha256(data: ChartData): boolean {
+    const v = data.sha256;
     return typeof v === "string" && v.trim().length > 0;
   }
 </script>
