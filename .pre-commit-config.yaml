@@ -39,6 +39,15 @@ repos:
         types: [text]
         pass_filenames: false
 
+  - repo: local
+    hooks:
+      - id: vitest
+        name: pnpm test
+        entry: pnpm test
+        language: system
+        types: [text]
+        pass_filenames: false
+
   # Detect invisible or confusable Unicode characters that look like
   # ASCII equivalents, which can hide in string literals, comments, or
   # documentation and cause subtle bugs or security issues.
