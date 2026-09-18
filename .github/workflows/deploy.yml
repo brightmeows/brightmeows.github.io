@@ -27,6 +27,10 @@ jobs:
           cache: "pnpm"
       - name: Install dependencies
         run: pnpm install
+      - name: Lint and type-check
+        run: |
+          pnpm lint
+          pnpm check
       - name: Build
         run: pnpm build
       - name: Upload Artifacts

@@ -8,6 +8,7 @@
 #
 # 同时安装 pre-commit 与 commit-msg 两类 hook：
 #   pre-commit install
+default_install_hook_types: [pre-commit, commit-msg]
 
 repos:
   - repo: local
