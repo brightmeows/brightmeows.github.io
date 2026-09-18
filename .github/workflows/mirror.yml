@@ -29,13 +29,4 @@ jobs:
       - name: Push main to Codeberg
         run: |
           git remote add codeberg git@codeberg.org:brightmeows/pages.git
-          for attempt in 1 2 3; do
-            if git push codeberg main; then
-              echo "已推送到 Codeberg（第 $attempt 次尝试）"
-              exit 0
-            fi
-            echo "推送失败（第 $attempt 次），重试"
-            sleep $((attempt * 5))
-          done
-          echo "连续推送失败" >&2
-          exit 1
+          git push codeberg main

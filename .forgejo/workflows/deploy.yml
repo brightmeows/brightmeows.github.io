@@ -22,6 +22,13 @@ jobs:
           pnpm install
           echo "::endgroup::"
 
+          echo "::group::Download tables.json from R2"
+          rm -f static/bms/table/mirror/tables.json
+          mkdir -p static/bms/table/mirror
+          curl -o static/bms/table/mirror/tables.raw.json \
+            https://pub-84cdf79347284e449ba30da571d91e41.r2.dev/tables/tables.json
+          echo "::endgroup::"
+
           echo "::group::Build"
           pnpm build
           echo "::endgroup::"

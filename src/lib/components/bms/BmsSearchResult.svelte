@@ -4,7 +4,6 @@
   import { GlassContainer, GradientButton } from "$lib/components/ui";
   import type { TableLoadState } from "$lib/data/bms-search";
   import type { SearchResult } from "$lib/data/search-aggregator";
-  import { viewerPath } from "$lib/mirror/urls";
   import type { ChartData } from "$lib/types/bms";
   import { clipboardFieldFeedback } from "$lib/utils/clipboard.svelte";
   import { formatBytes } from "$lib/utils/format";
@@ -86,7 +85,7 @@
     </h4>
     {#each sortedAppearances as entry (entry.tableId)}
       {@const loadState = tableStates.get(entry.tableId)}
-      {@const tableHref = viewerPath(entry.tableId)}
+      {@const tableHref = `/bms/table/mirror/${entry.tableId}`}
 
       {#if loadState?.status === "done"}
         <!-- 已完成：显示完整数据 -->

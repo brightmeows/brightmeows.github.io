@@ -5,8 +5,6 @@ on:
     branches: [main]
     paths:
       - "config/**"
-      - "scripts/gen-mirror-pages.ts"
-      - "src/lib/mirror/**"
       - ".github/workflows/update-tables.yml"
   schedule:
     - cron: "15 */6 * * *"
@@ -23,11 +21,8 @@ jobs:
       BMS_TABLE_FETCH_VERSION: v0.4.2
     steps:
       - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
 
       # Secrets 需在本仓库 Settings > Secrets and variables > Actions 中设置：
-      #   MIRROR_SYNC_DEPLOY_KEY — 本仓库写权限 deploy key（生成物提交后推送）
       #   R2_ACCESS_KEY_ID      — Cloudflare Dashboard > R2 > 管理 R2 API 令牌 > 创建 API 令牌
       #   R2_SECRET_ACCESS_KEY  — 同上（创建时一并生成）
       #   R2_ENDPOINT           — Cloudflare Dashboard > R2 > 存储桶 > S3 API > 端点
@@ -74,42 +69,3 @@ jobs:
             --checksum \
             --transfers 16
           rm -f rclone
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version: latest
-
-      - name: Generate mirror pages
-        run: node scripts/gen-mirror-pages.ts
-
-      - name: Commit and push generated pages
-        env:
-          MIRROR_SYNC_DEPLOY_KEY: ${{ secrets.MIRROR_SYNC_DEPLOY_KEY }}
-          # 正式触发（push/schedule）均为 main；临时分支演练时推回当前分支
-          TARGET_BRANCH: ${{ github.ref_name }}
-        run: |
-          git config user.name "brightmeows-bot"
-          git config user.email "brightmeows-bot@users.noreply.github.com"
-          git add static/bms/table/mirror
-          if git diff --cached --quiet; then
-            echo "生成物无变化，跳过提交"
-            exit 0
-          fi
-          git commit -m "chore(mirror): sync generated pages and table list"
-
-          mkdir -p ~/.ssh
-          printf '%s\n' "$MIRROR_SYNC_DEPLOY_KEY" > ~/.ssh/mirror_sync
-          chmod 600 ~/.ssh/mirror_sync
-          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
-          git remote set-url origin git@github.com:brightmeows/brightmeows.github.io.git
-
-          for attempt in 1 2 3; do
-            if GIT_SSH_COMMAND="ssh -i ~/.ssh/mirror_sync -o IdentitiesOnly=yes" git push origin "HEAD:$TARGET_BRANCH"; then
-              echo "生成物已推送（第 $attempt 次尝试）"
-              exit 0
-            fi
-            echo "推送失败（第 $attempt 次），rebase 后重试"
-            GIT_SSH_COMMAND="ssh -i ~/.ssh/mirror_sync -o IdentitiesOnly=yes" git pull --rebase origin "$TARGET_BRANCH" || exit 1
-          done
-          echo "生成物连续推送失败" >&2
-          exit 1
