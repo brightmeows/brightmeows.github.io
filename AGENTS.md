@@ -18,6 +18,10 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm test`、no-conf
 - `scripts/check-config-toml.py` — `config/*.toml` 语法与关键字段校验（url 必须 http(s)、tag 字段类型、replace 的 from/to 非空、未知段报错）。这些文件由 bms-table-fetch 在 CI 中读取，本地校验把反馈从 6 小时缩短到提交时。
 - `scripts/check-commit-msg.py` — Conventional Commits 格式校验（见“提交格式”节），pre-commit commit-msg stage 与 CI 的 PR job 共用。
 
+### scripts/ 生成脚本
+
+- `scripts/gen-mirror-pages.ts` — 镜像表生成器：读 R2 清单输出 stub 与站点清单并清理过期 stub；由 update-tables 调用，可本地 `node scripts/gen-mirror-pages.ts --input=... --mirror-dir=...` 演练（Node 原生直跑 TS）。
+
 ### 手动命令
 
 - `pnpm dev`
@@ -34,23 +38,24 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm test`、no-conf
 - **Paraglide i18n 基础设施全局加载但仅 `/demo/paraglide/` 生效** — `hooks.ts` 和 `+layout.svelte` 无条件导入 runtime（SSG 构建无法 tree-shake），但 `reroute` 钩子只对 `/demo/paraglide/` 路径触发。不要将 paraglide 扩展到其他路由。
 - **测试只覆盖纯函数层** — vitest 仅覆盖 `src/lib/utils/` 与生成器脚本中的纯函数，测试文件为相邻 `*.test.ts`；组件（需 browser mode）与数据层（需 fs/fetch fixture）刻意不覆盖，避免依赖与 CI 复杂度膨胀。`pnpm test` 与 format/lint/check 同为门槛，pre-commit 与 CI 都会跑，失败阻断提交与部署。给非纯函数层加测试依赖或测试文件前先确认范围。
 - **lint 不含 Svelte 模板级 linter** — 曾用 oxvelte（cargo 全局二进制）补 Svelte 模板规则，其上游 2026 年 5 月起停更、且依赖仓库外的 cargo 全局安装不可复现，已移除。现 `lint` 仅 oxlint（查 `.svelte` 的 script 块）加 svelte-check（编译期诊断）。代价是失去 `svelte/button-has-type` 与 `svelte/no-target-blank` 两条 warn。回归路径（跟踪 oxc issue #15761 “SFC Template Support”）：oxlint 支持自定义文件解析器后接 eslint-plugin-svelte 或原生规则。不要因“模板无 lint”而重新引入停更工具。
-- **auto-merge 合并的 PR 不触发 push 工作流** — GitHub 对 `GITHUB_TOKEN` 触发的事件有反递归机制：`dependabot-auto-merge.yml` 启用 auto-merge 后，服务端完成合并产生的 push 事件不会触发 CI/Deploy（只留下 dependabot 的 dynamic 事件）。后果是依赖更新合并后不会自动验证与部署，需等 6 小时一次的 schedule（`deploy.yml`）或手动 dispatch。手动 `gh pr merge` 用个人 token，不受影响，正常触发。
+- **auto-merge 合并的 PR 不触发 push 工作流** — GitHub 对 `GITHUB_TOKEN` 触发的事件有反递归机制：`dependabot-auto-merge.yml` 启用 auto-merge 后，服务端完成合并产生的 push 事件不会触发 CI/Deploy（只留下 dependabot 的 dynamic 事件）。后果是依赖更新合并后不会自动验证与部署，也不会同步到 Codeberg；需手动 dispatch `deploy.yml` 与 `mirror.yml`（部署已无定时兜底）。手动 `gh pr merge` 用个人 token，不受影响，正常触发。
+- **镜像生成物以 deploy key 推送** — update-tables 用 `MIRROR_SYNC_DEPLOY_KEY`（仓库写权限 deploy key）推送：`GITHUB_TOKEN` 的 push 不触发后续工作流，普通 push 才能连锁 ci/deploy/mirror。推送目标是 `github.ref_name`（正式触发为 main，临时分支演练时推回该分支）。
 - **`pnpm-workspace.yaml` 的 `allowBuilds` 由 pnpm 11 维护** — 遇到未决的 build script 时 pnpm 会自动写入占位符（值为字面量 `set this to true or false`），带着占位符提交会让 CI 的 install 直接失败。本地需改成明确的 `true`/`false` 再提交。
 - **本地 install 可能因 npmmirror 同步延迟失败** — 全局 registry 指向 `registry.npmmirror.com`，其同步有延迟（曾出现 `@inlang/paraglide-js` 2.25.2 缺失导致 `--frozen-lockfile` 报 404）。绕过方式为 `pnpm install --registry=https://registry.npmjs.org`。CI 使用官方源，不受影响。
 
 ### 构建与配置
 
 - **`vite.config.ts` 中 `server.fs.allow: ["content"]`** — Vite dev server 默认仅允许 `src/`、`.svelte-kit/`、`node_modules/` 内的文件被访问。`content/` 不在其中，`import()` 请求会被拦截（404/403）。需要在 `vite.config.ts` 中显式添加。build 时无此限制。
-- **`prebuild` 转换 `mirror/tables.json`** — `package.json` 的 `prebuild` 脚本中 `jq` 命令执行两项操作：① 添加 `dir_name` 字段（`[host] name` 格式，用作页面路由参数和 R2 目录名）；② 将 `url` 转为 GitHub Pages 路径（`https://brightmeows.github.io/`，保存原 URL 到 `url_from`）。`pnpm build` 时自动触发。输入为 `tables.raw.json`（git 跟踪），输出为 `tables.json`（gitignored）。`pnpm dev` 也自动触发。修改脚本时保持此转换逻辑。
+- **`config/mirror.json` 是 R2 与站点基址的单一来源** — `r2Base`/`siteBase` 由站点代码（`src/lib/constants/r2.ts` 导入）与生成器（`scripts/gen-mirror-pages.ts`）共读；迁域只改这一处，随后由 update-tables 重新生成 stub 与清单。
 
 ### BMS
 
-- **`<meta name="bmstable">` 不删** — 虽然无客户端 JS 读取，但刻意保留用作外部标记。注入路径：`+page.server.ts` → `PageData.bmstableMeta` → `+layout.svelte` 的 `<svelte:head>`。
-- **`static/bms/table/mirror/tables.json` 为构建产物（gitignored）** — 源文件为 `tables.raw.json`（git 跟踪，含原始数据），由 `prebuild` 脚本的 jq 命令变换生成 `tables.json`（添加 `dir_name`、`url_from`，替换 `url` 为镜像页面地址）。CI（`.github/workflows/deploy.yml`）每 6 小时从 R2 拉取真实数据到 `tables.raw.json`。两次构建之间 `tables.json` 始终为最新变换结果。表数据（`header.json`/`data.json`）和搜索索引全在客户端运行时从 R2 拉取，构建时不依赖。
+- **`<meta name="bmstable">` 有两个来源** — 自托管表由 `[table]/+page.server.ts` 经 `PageData.bmstableMeta` → `+layout.svelte` 的 `<svelte:head>` 注入（`./header.json`）；镜像表由数据管线生成的静态 stub 直接携带（绝对 R2 地址）。两处都不要删。
+- **`static/bms/table/mirror/` 的 stub 与 `tables.json` 是已提交的生成物** — 由 `scripts/gen-mirror-pages.ts` 从 R2 清单生成，update-tables 工作流在数据同步后运行、变化时提交；仓库内提交物即站点构建输入，构建不再联网取数，也不再预渲染每表页面。手工编辑会被覆盖，改数据请走 R2 管线。
 - **`static/bms/table/search/` 不存在** — 搜索索引已移至 R2，由 `bms-search.worker.ts` 在客户端运行时从 R2 拉取。不要尝试在仓库内重新创建此目录。
-- **`bmstableMeta` 使用 R2 绝对 URL** — `+page.server.ts` 中 `bmstableMeta` 注入 `<meta name="bmstable">` 的 content 为 R2 上 `header.json` 的绝对 URL（如 `https://pub-...r2.dev/tables/[host] name/header.json`），供 beatoraja 等客户端直接拉取。URL 含 `[`、`]`、空格等需编码字符，HTTP 客户端会自动编码。不要改回相对路径。
-- **镜像表路由参数为 `[host] name` 格式** — `entries()` 读取 `tables.json` 中 `dir_name` 字段（由 `prebuild` jq 生成），格式为 `[host] name`（如 `[4uri.web.fc2.com] Youri差分難易度表`）。SvelteKit 自动 URL 编码/解码此参数。不要改为纯数字或 UUID 标识符。
-- **难度表数据管线在本仓 Actions 中运行** — `.github/workflows/update-tables.yml` 每 6 小时（或 `config/**` 变更时、手动 dispatch）用 `bms-table-fetch` 抓取难度表，经 rclone 与 Cloudflare R2 双向同步：先拉取 R2 基线保留增量，跑完抓取再推回。输出 `tables/`、`indexes/`、`lists/`、`warnings.log`（均 gitignored，仅存在于 CI 工作区与 R2）。数据源配置在 `config/table.toml`（`[[table]]`/`[[disable]]`/`[[replace]]`）与 `config/list.toml`（`[[source]]`）。R2 凭据以 Actions secrets 注入（`R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY`/`R2_ENDPOINT`/`R2_BUCKET`）。该管线原为独立的 Codeberg 壳子仓库 bms-table-mirror-r2，2026-09 迁入本仓并归档原仓；`bms-table-fetch` 二进制取自其 GitHub release（版本由工作流内 `BMS_TABLE_FETCH_VERSION` 固定）。
+- **镜像表页面是管线生成的静态 stub** — `static/bms/table/mirror/<dir_name>/index.html` 携带 bmstable meta（绝对 R2 header URL）与 JS 跳转；客户端读 meta，浏览器被送往 `/bms/table/mirror/view/?t=`。不要改回 SvelteKit 预渲染路由：那会把页面生成重新绑回构建期。
+- **镜像表目录名 `dir_name` 来自 bms-table-fetch** — 格式为 `[host] name`（如 `[4uri.web.fc2.com] Youri差分難易度表`），与 R2 目录名一致；生成器直接消费该字段（不再重算），缺失即失败。不要改为纯数字或 UUID 标识符。
+- **难度表数据管线在本仓 Actions 中运行** — `.github/workflows/update-tables.yml` 每 6 小时（或 `config/**` 变更时、手动 dispatch）用 `bms-table-fetch` 抓取难度表，经 rclone 与 Cloudflare R2 双向同步：先拉取 R2 基线保留增量，跑完抓取再推回。输出 `tables/`、`indexes/`、`lists/`、`warnings.log`（均 gitignored，仅存在于 CI 工作区与 R2）。数据源配置在 `config/table.toml`（`[[table]]`/`[[disable]]`/`[[replace]]`）与 `config/list.toml`（`[[source]]`）。R2 凭据以 Actions secrets 注入（`R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY`/`R2_ENDPOINT`/`R2_BUCKET`）。该管线原为独立的 Codeberg 壳子仓库 bms-table-mirror-r2，2026-09 迁入本仓并归档原仓；`bms-table-fetch` 二进制取自其 GitHub release（版本由工作流内 `BMS_TABLE_FETCH_VERSION` 固定）。R2 同步后同一工作流运行 `scripts/gen-mirror-pages.ts` 更新 stub 与站点清单，有变化时以 deploy key 提交并推送，从而触发部署链。
 - **`r2.ts` 集中管理 R2 端点** — `src/lib/constants/r2.ts` 定义了 `R2_BASE`/`R2_TABLES_BASE`/`R2_INDEXES_BASE` 三个常量和 `r2TableHeaderUrl()`/`r2TableDataUrl()` 两个路径构造函数。修改 R2 地址时仅改此文件。该文件位于 `$lib/constants/`（环境无关层），可供构建时和客户端代码共同使用。
 
 ### SvelTeX（Markdown 管线）
@@ -82,11 +87,12 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm test`、no-conf
 ## 架构边界
 
 - **纯 SSG** — `@sveltejs/adapter-static` + 全局 `prerender = true`。不加 server routes / API endpoints。
-- **BMS 数据源分流** — `static/bms/table/` 下 `self-sp/`、`self-dp/`、`satellite-skill-analyzer-3rd-preview/`、`starlight-preview/` 在 git 中；`mirror/` 仅含 `tables.raw.json`（由 CI 从 R2 拉取）和生成产物 `tables.json`（gitignored），表数据（`header.json`/`data.json`）和搜索索引全从 R2 客户端拉取。修改数据入口时区分来源。
+- **BMS 数据源分流** — `static/bms/table/` 下 `self-sp/`、`self-dp/`、`satellite-skill-analyzer-3rd-preview/`、`starlight-preview/` 在 git 中；`mirror/` 的 stub 与 `tables.json` 是数据管线维护的已提交生成物；表数据（`header.json`/`data.json`）和搜索索引全从 R2 客户端拉取。修改数据入口时区分来源。
 - **`src/lib/loaders/`** — 构建时数据加载层（Node.js 环境）。博客扫描、BMS 表枚举入口在此，不走路由内联。`blog-scanner.ts`、`blog-metadata.ts` 也在此目录。
 - **`src/lib/data/`** — 客户端数据获取层（浏览器环境）。BMS 谱面数据 fetch/JSONP、镜像表加载编排在此。仅在 `onMount` 中调用。
 - **`src/lib/utils/`** — 纯函数。无副作用、无平台特定 API 依赖（轻量 DOM 工具如 `clipboard.ts`、`url.ts` 除外）。任何环境可调用。
-- **数据加载策略** — 构建时加载（`+page.server.ts` / `+page.ts`）：数据在 git 仓库内，如博客 `.md` 文件、BMS 表目录枚举、`tables.json`（CI 填充）。客户端加载（`onMount` → `data/` 层 fetch）：数据来自 R2（表数据 `header.json`/`data.json`、搜索索引），或远程原始源（`data_url` JSONP/跨域 fetch）。选择标准：数据源在构建时可访问且不依赖用户上下文 → 构建时加载；否则客户端加载。
+- **`src/lib/mirror/`** — 镜像表 URL 构造的零依赖层，站点与 `scripts/` 生成器共用；受 Node 直跑约束：无 Svelte/DOM 依赖、可擦除语法、相对导入带 `.ts` 扩展名。
+- **数据加载策略** — 构建时加载（`+page.server.ts` / `+page.ts`）：数据在 git 仓库内，如博客 `.md` 文件、BMS 表目录枚举、`tables.json`（数据管线提交的生成物）。客户端加载（`onMount` → `data/` 层 fetch）：数据来自 R2（表数据 `header.json`/`data.json`、搜索索引），或远程原始源（`data_url` JSONP/跨域 fetch）。选择标准：数据源在构建时可访问且不依赖用户上下文 → 构建时加载；否则客户端加载。
 - **`src/lib/components/`** — UI 组件层。`ui/` 为通用原语（barrel export 见 `ui/index.ts`），其余子目录为领域组件。写 UI 前 `glob src/lib/components/**/*.svelte` 检索已有组件。
 
 ## 技术栈

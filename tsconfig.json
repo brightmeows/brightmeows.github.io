@@ -20,6 +20,7 @@
   "include": [
     "src/**/*",
     "src/**/*.svelte",
+    "scripts/**/*.ts",
     "eslint.config.ts",
     "prettier.config.ts",
     "svelte.config.ts",

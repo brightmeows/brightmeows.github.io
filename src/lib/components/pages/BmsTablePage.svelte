@@ -16,9 +16,11 @@
 
   interface Props {
     headerUrl: string;
+    /** 复制按钮的目标路径（根相对）；缺省复制当前页 URL。 */
+    copyPath?: string;
   }
 
-  let { headerUrl }: Props = $props();
+  let { headerUrl, copyPath }: Props = $props();
 
   // ---- Header 加载状态 ----
   let headerLoadState = $state<"loading" | "loaded" | "error">("loading");
@@ -36,6 +38,11 @@
 
   let pageTitle = $state("加载难度表header中");
   let cb = clipboardFeedback();
+
+  /** 复制给客户端注册用的表地址：默认当前页，viewer 路由传入 stub 路径。 */
+  function copyTableUrl(): void {
+    cb.copy(copyPath ? new URL(copyPath, window.location.origin).toString() : page.url.href);
+  }
   let levelRefHasData = $state(false);
   let levelRefLoadState = $state<"idle" | "loading" | "done" | "not-found" | "error">("idle");
 
@@ -203,9 +210,7 @@
     {/if}
     <div class="mt-2 text-[1.2rem] text-white/70 italic">
       使用方式：复制本网站链接（
-      <button class="link-accent" type="button" onclick={() => cb.copy(page.url.href)}>
-        点击复制
-      </button>
+      <button class="link-accent" type="button" onclick={copyTableUrl}> 点击复制 </button>
       ），然后在BeMusicSeeker或beatoraja中，粘贴至对应选项处。
       {#if cb.copied}
         <span class="ml-2 text-[#4caf50]">已复制</span>
