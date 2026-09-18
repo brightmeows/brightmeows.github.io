@@ -3,10 +3,6 @@ on:
   workflow_dispatch:
   push:
     branches: "main"
-  schedule:
-    # 每日兜底重推：GITHUB_TOKEN 完成的推送不触发本 workflow（dependabot
-    # auto-merge 即此类），bot 合并的漂移由本 cron 收敛至至多一天
-    - cron: "30 4 * * *"
 
 jobs:
   mirror:
@@ -29,4 +25,13 @@ jobs:
       - name: Push main to Codeberg
         run: |
           git remote add codeberg git@codeberg.org:brightmeows/pages.git
-          git push codeberg main
+          for attempt in 1 2 3; do
+            if git push codeberg main; then
+              echo "已推送到 Codeberg（第 $attempt 次尝试）"
+              exit 0
+            fi
+            echo "推送失败（第 $attempt 次），重试"
+            sleep $((attempt * 5))
+          done
+          echo "连续推送失败" >&2
+          exit 1
