@@ -3,9 +3,9 @@ import { join } from "node:path";
 
 import matter from "gray-matter";
 
-import type { BlogPost, BlogPostMetadata } from "../types/blog";
+import type { BlogPost } from "../types/blog";
 
-import { extractFirstSentence } from "./blog-metadata";
+import { extractFirstSentence, validateFrontmatter } from "./blog-metadata";
 
 import { extractDateFromSlug, EPOCH_DATE } from "$lib/utils/date";
 
@@ -35,7 +35,7 @@ export function scanBlogDirectory(blogDir: string, basePath = ""): BlogPost[] {
     const fullPath = join(blogDir, entry);
     const content = readFileSync(fullPath, "utf-8");
     const parsed = matter(content);
-    const metadata = parsed.data as BlogPostMetadata;
+    const metadata = validateFrontmatter(parsed.data, fullPath);
 
     // 从文件名提取 slug（不含扩展名）
     const filename = entry.replace(/\.(md|svx)$/, "");
