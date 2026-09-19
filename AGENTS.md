@@ -51,20 +51,21 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm test`、no-conf
 ### 构建与配置
 
 - **`vite.config.ts` 中 `server.fs.allow: ["content"]`** — Vite dev server 默认仅允许 `src/`、`.svelte-kit/`、`node_modules/` 内的文件被访问。`content/` 不在其中，`import()` 请求会被拦截（404/403）。需要在 `vite.config.ts` 中显式添加。build 时无此限制。
-- **`config/mirror.json` 是 R2 与站点基址的单一来源** — `r2Base`/`siteBase` 由站点代码（`src/lib/constants/r2.ts` 导入）与生成器（`scripts/gen-mirror-pages.ts`）共读；迁域只改这一处，随后由 update-tables 重新生成 stub 与清单。
+- **`config/mirror.json` 是 R2 基址的单一来源** — `r2Base` 由站点代码（`src/lib/constants/r2.ts`）、Worker（`worker/index.ts`）与数据管线生成器（`scripts/gen-mirror-pages.ts`）共读；迁域只改这一处，随后由 update-tables 重新生成 stub 与清单。`siteBase` 仅剩旧托管生成器使用。
 
 ### BMS
 
-- **`<meta name="bmstable">` 有两个来源** — 自托管表由 `[table]/+page.server.ts` 经 `PageData.bmstableMeta` → `+layout.svelte` 的 `<svelte:head>` 注入（`./header.json`）；镜像表由数据管线生成的静态 stub 直接携带（绝对 R2 地址）。两处都不要删。
+- **`<meta name="bmstable">` 有三个来源** — 自托管表由 `[table]/+page.server.ts` 经 `PageData.bmstableMeta` → `+layout.svelte` 的 `<svelte:head>` 注入（`./header.json`）；镜像表由 Worker 在 SPA 外壳 `<head>` 里注入（绝对 R2 地址）；冻结中的旧托管仍由静态 stub 直接携带。三处都不要删。
 - **`static/bms/table/mirror/` 的 stub 与 `tables.json` 是已提交的生成物** — 由 `scripts/gen-mirror-pages.ts` 从 R2 清单生成，update-tables 工作流在数据同步后运行、变化时提交；仓库内提交物即站点构建输入，构建不再联网取数，也不再预渲染每表页面。手工编辑会被覆盖，改数据请走 R2 管线。
 - **`static/bms/table/search/` 不存在** — 搜索索引已移至 R2，由 `bms-search.worker.ts` 在客户端运行时从 R2 拉取。不要尝试在仓库内重新创建此目录。
-- **镜像表页面是管线生成的静态 stub** — `static/bms/table/mirror/<dir_name>/index.html` 携带 bmstable meta（绝对 R2 header URL）与 JS 跳转；客户端读 meta，浏览器被送往 `/bms/table/mirror/view/?t=`。不要改回 SvelteKit 预渲染路由：那会把页面生成重新绑回构建期。
+- **镜像表单表页由 Worker 动态生成** — `worker/index.ts` 接管 `/bms/table/mirror/*`：`/bms/table/mirror/<dir_name>/` 取站点 SPA 外壳（构建产物 `404.html`）并把该表的 `<meta name="bmstable">` 注入 `<head>`，beatoraja / BeMusicSeeker 不执行 JS 直接读 meta，浏览器则由 `src/routes/bms/table/mirror/[name]/`（`prerender = false`）客户端路由渲染查看器；`/bms/table/mirror/tables.json` 同理由 R2 清单实时生成，`url` 字段用请求 origin。校验策略：清单不可用返回 503、表不存在返回 404，清单读失败时先回落到 Cache API 快照。注入的 meta 必须独占一行：beatoraja 的 jbmstable-parser 按行扫描再按引号切分取第 4 段。
+- **镜像表页面曾经是管线生成的静态 stub** — `static/bms/table/mirror/<dir_name>/index.html` 携带绝对 R2 header URL 与 JS 跳转，是 Worker 动态路由之前的实现，迁移期保留只为已经分发的旧链接；当前冻结的旧托管仍靠它工作，新域名一律走 Worker。
 - **镜像表目录名 `dir_name` 来自 bms-table-fetch** — 格式为 `[host] name`（如 `[4uri.web.fc2.com] Youri差分難易度表`），与 R2 目录名一致；生成器直接消费该字段（不再重算），缺失即失败。不要改为纯数字或 UUID 标识符。
 - **难度表数据管线在本仓 Actions 中运行** — `.github/workflows/update-tables.yml` 每 6 小时（或 `config/**` 变更时、手动 dispatch）用 `bms-table-fetch` 抓取难度表，经 rclone 与 Cloudflare R2 双向同步：先拉取 R2 基线保留增量，跑完抓取再推回。输出 `tables/`、`indexes/`、`lists/`、`warnings.log`（均 gitignored，仅存在于 CI 工作区与 R2）。数据源配置在 `config/table.toml`（`[[table]]`/`[[disable]]`/`[[replace]]`）与 `config/list.toml`（`[[source]]`）。R2 凭据以 Actions secrets 注入（`R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY`/`R2_ENDPOINT`/`R2_BUCKET`）。该管线原为独立的 Codeberg 壳子仓库 bms-table-mirror-r2，2026-09 迁入本仓并归档原仓；`bms-table-fetch` 二进制取自其 GitHub release（版本由工作流内 `BMS_TABLE_FETCH_VERSION` 固定）。R2 同步后同一工作流运行 `scripts/gen-mirror-pages.ts` 更新 stub 与站点清单，有变化时以 deploy key 提交并推送，从而触发部署链。
 - **`r2.ts` 集中管理 R2 端点** — `src/lib/constants/r2.ts` 定义了 `R2_BASE`/`R2_TABLES_BASE`/`R2_INDEXES_BASE` 三个常量和 `r2TableHeaderUrl()`/`r2TableDataUrl()` 两个路径构造函数。修改 R2 地址时仅改此文件。该文件位于 `$lib/constants/`（环境无关层），可供构建时和客户端代码共同使用。
-- **浏览器侧取数依赖 R2 桶的 CORS policy** — 镜像表 viewer 与谱面搜索都在客户端直连 R2（`r2TableHeaderUrl()`/`r2TableDataUrl()`、`R2_INDEXES_BASE`）。bucket 未放行站点来源时，浏览器报 `Failed to fetch`（viewer）与“索引加载失败”（搜索），而 beatoraja 等原生客户端不受影响，容易误判为代码缺陷。policy 位置在 Cloudflare 控制台 R2 → 桶 → Settings → CORS Policy；当前显式放行 `https://brightmeows.github.io`、`https://brightmeows.codeberg.page`、`http://localhost:5173`（本地 dev；`pnpm preview` 的 4173 未放行）。改域或新增来源后必须同步该列表，否则站点功能静默退化。验证：`curl -sI -H "Origin: https://brightmeows.github.io" <R2 header 地址> | rg -i access-control` 应出现 `access-control-allow-origin`。
-- **r2.dev 会按 User-Agent 拦截** — 实测 `Java/1.8.x`、`Python-urllib`、`libwww-perl` 被返回 403（Cloudflare error 1010），而 `Java/11` 及以上、`okhttp`、浏览器与 curl 均放行。beatoraja 官方要求 Java 17，主路径不受影响；旧 Java 8 客户端会被拦。该策略在 r2.dev 上不可配置，要绕开只能接自定义域名或 Worker 代理。
-- **难度表导入链接是 stub 页 URL，不是 viewer URL** — beatoraja 对不以 `.json` 结尾的 URL 会当 HTML 页解析 `<meta name="bmstable">`，对 `.json` 结尾的 URL 直读 header；BeMusicSeeker 的按 URL 加载同样支持这两类地址。stub 页 `/bms/table/mirror/<dir_name>/` 承载 meta 并在浏览器跳转到 viewer，viewer 页 `/bms/table/mirror/view/?t=…` 没有 meta、不能用于导入，因此 viewer 页显式展示可导入链接并提示不要使用地址栏 URL。`tables.json` 兼作 BeMusicSeeker 的难度表清单（超集字段，`url` 指向镜像 stub）。
+- **浏览器侧取数依赖 R2 桶的 CORS policy** — 镜像表 viewer 与谱面搜索都在客户端直连 R2（`r2TableHeaderUrl()`/`r2TableDataUrl()`、`R2_INDEXES_BASE`）。bucket 未放行站点来源时，浏览器报 `Failed to fetch`（viewer）与“索引加载失败”（搜索），而 beatoraja 等原生客户端不受影响，容易误判为代码缺陷。policy 位置在 Cloudflare 控制台 R2 → 桶 → Settings → CORS Policy；当前放行 `https://miyakomeow.site`、`https://brightmeows.github.io`、`https://brightmeows.codeberg.page`（冻结旧产物仍从 R2 取数）与本地端口 `localhost:5173-5175`、`localhost:4173-4175`、`127.0.0.1:8787`、`localhost:8787`（`pnpm dev`、`pnpm preview`、`wrangler dev`）。改域或新增来源后必须同步该列表，否则站点功能静默退化。验证：`curl -sI -H "Origin: https://miyakomeow.site" <R2 header 地址> | rg -i access-control` 应出现 `access-control-allow-origin`。
+- **旧客户端 UA 是否被拦由 zone 级 Browser Integrity Check 决定** — 实测 `Java/1.8.x`、`Python-urllib`、`libwww-perl` 在 r2.dev、R2 自定义域与 workers.dev 上一律 403（Cloudflare error 1010），根因是 Browser Integrity Check，不是 r2.dev 的特有策略。本 zone 已关闭该开关（`browser_check = off`），因此 `bms-table-mirror-r2.miyakomeow.site` 与站点对旧 UA 全部放行；r2.dev 由 Cloudflare 管理，仍会拦。开关位置：控制台 zone → Security → Settings，或 `PATCH /zones/{id}/settings/browser_check`。
+- **难度表导入链接与查看页是同一条 URL** — 新域名下 `/bms/table/mirror/<dir_name>/` 既是 beatoraja / BeMusicSeeker 的导入地址（beatoraja 对不以 `.json` 结尾的 URL 会当 HTML 页解析 `bmstable` meta，对 `.json` 结尾的 URL 直读 header），也是浏览器里的查看页；`tables.json` 兼作 BeMusicSeeker 的难度表清单（超集字段）。旧查看页 `/bms/table/mirror/view/?t=…` 由 Worker 永久 301 到该形态，冻结中的旧托管仍由静态 stub + JS 跳转承担导入地址。
 
 ### SvelTeX（Markdown 管线）
 
@@ -94,7 +95,7 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm test`、no-conf
 
 ## 架构边界
 
-- **纯 SSG** — `@sveltejs/adapter-static` + 全局 `prerender = true`。不加 server routes / API endpoints。
+- **纯 SSG（含一处边缘例外）** — `@sveltejs/adapter-static` + 全局 `prerender = true`，不加 server routes / API endpoints。例外是 Cloudflare Worker（`worker/index.ts`）承担的镜像表动态路由：它只先接管 `/bms/table/mirror/*`（`assets.run_worker_first`），其余请求全部回落静态资源。
 - **BMS 数据源分流** — `static/bms/table/` 下 `self-sp/`、`self-dp/`、`satellite-skill-analyzer-3rd-preview/`、`starlight-preview/` 在 git 中；`mirror/` 的 stub 与 `tables.json` 是数据管线维护的已提交生成物；表数据（`header.json`/`data.json`）和搜索索引全从 R2 客户端拉取。修改数据入口时区分来源。
 - **`src/lib/loaders/`** — 构建时数据加载层（Node.js 环境）。博客扫描、BMS 表枚举入口在此，不走路由内联。`blog-scanner.ts`、`blog-metadata.ts` 也在此目录。
 - **`src/lib/data/`** — 客户端数据获取层（浏览器环境）。BMS 谱面数据 fetch/JSONP、镜像表加载编排在此。仅在 `onMount` 中调用。
