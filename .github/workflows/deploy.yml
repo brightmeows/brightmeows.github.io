@@ -29,6 +29,7 @@ jobs:
         run: |
           pnpm lint
           pnpm check
+          pnpm check:worker
           pnpm test
       - name: Build
         run: pnpm build
