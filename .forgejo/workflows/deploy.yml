@@ -31,7 +31,7 @@ jobs:
           pnpm build
           echo "::endgroup::"
       - name: Generate static mirror pages
-        run: node scripts/gen-static-mirror-pages.ts --site-base=https://brightmeows.codeberg.page
+        run: node scripts/gen-static-mirror-pages.ts --target=codeberg-pages
       - name: Deploy to Codeberg Pages
         uses: https://codeberg.org/git-pages/action@v2
         with:

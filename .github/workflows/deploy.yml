@@ -48,7 +48,7 @@ jobs:
       - name: Generate static mirror pages
         # 离线生成（只读仓库内快照与 build/404.html）；失败即整步失败，避免用缺失
         # 镜像页的产物覆盖上一版仍可用的 GitHub Pages 站点
-        run: node scripts/gen-static-mirror-pages.ts --site-base=https://brightmeows.github.io
+        run: node scripts/gen-static-mirror-pages.ts --target=github-pages
       - name: Upload Artifacts
         uses: actions/upload-pages-artifact@v5
         with:
