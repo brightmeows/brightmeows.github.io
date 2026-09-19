@@ -1,8 +1,12 @@
-# 站点部署：构建产物发布到 Cloudflare Workers（静态资源 + mirror 动态路由 Worker）。
+# 站点部署：三个目标，按目标分区。
 #
-# 旧托管（GitHub Pages / Codeberg Pages）已于 2026-09-19 冻结：它们的产物停在换血后的
-# 那一版（静态 stub 指向 R2 自定义域、canonical 指向新域名），不再随仓库更新，仓库里
-# 也不再有 stub 生成物。本工作流只负责新域名的部署。
+# - Cloudflare Workers（主站，miyakomeow.site）：静态资源 + Worker，镜像表页面与
+#   tables.json 由 Worker 运行时生成，因此 Cloudflare 侧**不**需要构建期产出的
+#   镜像页——所以 `wrangler deploy` 必须排在生成步骤之前（顺序反了会把 443 个
+#   静态页一起传上去，虽不致命但会白白增加上传量）。
+# - GitHub Pages（brightmeows.github.io）：构建期生成静态镜像页与站点清单后发布。
+# - Codeberg Pages（brightmeows.codeberg.page）：由 .forgejo/workflows/deploy.yml
+#   在 Codeberg 侧跑同样的「构建 + 生成」流程。
 name: Deploy Site
 on:
   workflow_dispatch:
@@ -10,7 +14,7 @@ on:
     branches: "main"
   schedule:
     # 6 小时兜底重建：GITHUB_TOKEN 类合并提交（dependabot auto-merge）不触发
-    # push 工作流，由本 cron 收敛至至多 6 小时
+    # push 工作流，也兜住「清单快照在两次代码提交之间更新」的情况
     - cron: "20 */6 * * *"
 jobs:
   build_site:
@@ -41,3 +45,25 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Generate static mirror pages
+        # 离线生成（只读仓库内快照与 build/404.html）；失败即整步失败，避免用缺失
+        # 镜像页的产物覆盖上一版仍可用的 GitHub Pages 站点
+        run: node scripts/gen-static-mirror-pages.ts --site-base=https://brightmeows.github.io
+      - name: Upload Artifacts
+        uses: actions/upload-pages-artifact@v5
+        with:
+          # this should match the `pages` option in your adapter-static options
+          path: "build/"
+  deploy:
+    needs: build_site
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v5
