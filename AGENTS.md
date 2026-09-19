@@ -40,6 +40,7 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm test`、no-conf
 - **lint 不含 Svelte 模板级 linter** — 曾用 oxvelte（cargo 全局二进制）补 Svelte 模板规则，其上游 2026 年 5 月起停更、且依赖仓库外的 cargo 全局安装不可复现，已移除。现 `lint` 仅 oxlint（查 `.svelte` 的 script 块）加 svelte-check（编译期诊断）。代价是失去 `svelte/button-has-type` 与 `svelte/no-target-blank` 两条 warn。回归路径（跟踪 oxc issue #15761 “SFC Template Support”）：oxlint 支持自定义文件解析器后接 eslint-plugin-svelte 或原生规则。不要因“模板无 lint”而重新引入停更工具。
 - **auto-merge 合并的 PR 不触发 push 工作流** — GitHub 对 `GITHUB_TOKEN` 触发的事件有反递归机制：`dependabot-auto-merge.yml` 启用 auto-merge 后，服务端完成合并产生的 push 事件不会触发 CI/Deploy（只留下 dependabot 的 dynamic 事件）。后果是依赖更新合并后不会立即部署与同步，由 `deploy.yml`（GitHub 与 Forgejo 两份）每 6 小时的 schedule 与 `mirror.yml` 的每日 schedule 在至多一个周期内收敛，也可手动 dispatch。手动 `gh pr merge` 用个人 token，不受影响，正常触发。
 - **镜像生成物以 deploy key 推送** — update-tables 用 `MIRROR_SYNC_DEPLOY_KEY`（仓库写权限 deploy key）推送：`GITHUB_TOKEN` 的 push 不触发后续工作流，普通 push 才能连锁 ci/deploy/mirror。推送目标是 `github.ref_name`（正式触发为 main，临时分支演练时推回该分支）。
+- **分支 ruleset 放行 deploy key 直推 main** — ruleset `main-branch-protection` 禁止直接 push main 并要求 PR + 必过检查（见“分支与工作树”），但 update-tables 的生成物提交必须直推 main（见上条），因此该 ruleset 的 bypass actors 包含 DeployKey。不要移除该 bypass，否则数据管线在下次 stub 变更提交时被拒。CI job 增删或改名时，ruleset 的 required_status_checks context 必须同步更新，否则 PR 合并被永久阻塞。
 - **`pnpm-workspace.yaml` 的 `allowBuilds` 由 pnpm 11 维护** — 遇到未决的 build script 时 pnpm 会自动写入占位符（值为字面量 `set this to true or false`），带着占位符提交会让 CI 的 install 直接失败。本地需改成明确的 `true`/`false` 再提交。
 - **本地 install 可能因 npmmirror 同步延迟失败** — 全局 registry 指向 `registry.npmmirror.com`，其同步有延迟（曾出现 `@inlang/paraglide-js` 2.25.2 缺失导致 `--frozen-lockfile` 报 404）。绕过方式为 `pnpm install --registry=https://registry.npmjs.org`。CI 使用官方源，不受影响。
 
@@ -123,7 +124,7 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm test`、no-conf
 ## 分支与工作树
 
 - **新分支在 `.worktrees/` 隔离开发** — `.worktrees/` 已 gitignore，用 `git worktree add .worktrees/<分支名> -b <分支>` 创建隔离工作树，不在主工作树上直接切分支。
-- **变更一律走 PR，以 merge commit 合并** — main 不接受直接 push，一切变更经 PR 合并，代理会话不在 main 上直接提交。合并方式固定为 merge commit（`gh pr merge --merge`），不用 squash/rebase，保留分支拓扑与独立 revert 粒度。
+- **变更一律走 PR，以 merge commit 合并** — main 不接受直接 push，一切变更经 PR 合并，代理会话不在 main 上直接提交。合并方式固定为 merge commit（`gh pr merge --merge`），不用 squash/rebase，保留分支拓扑与独立 revert 粒度。该要求由仓库 ruleset `main-branch-protection` 机械强制：禁直推、禁删除、禁 force push，PR 合并仅限 merge method，CI 的 lint/check/test/format/commit-msg 五个 job 必过。
 - **分支合并即清理** — 分支经 PR 合并后立即清理现场，不留挂起引用：`git worktree remove .worktrees/<分支名>` 拆工作树，`git branch -d <分支>` 删本地分支，最后 `git fetch --prune` 收掉失效的 remote-tracking ref。远端分支由仓库设置 delete_branch_on_merge（已开启）随合并自动删除，但它不覆盖 PR 关闭未合并（方案否决）的情况，此时需手动 `git push origin --delete <分支>` 收尾。已合并与已关闭分支的 commit 由远端 PR 引用保留，本地不留存档分支，也不以“未合并”为由拖延清理。
 
 ## 提交格式
