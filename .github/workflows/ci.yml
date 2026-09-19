@@ -38,6 +38,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - run: pnpm check
+      - run: pnpm check:worker
 
   test:
     runs-on: ubuntu-latest
