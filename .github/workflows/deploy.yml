@@ -1,11 +1,11 @@
 # 站点部署：三个目标，按目标分区。
 #
-# - Cloudflare Workers（主站，miyakomeow.site）：静态资源 + Worker，镜像表页面与
+# - Cloudflare Workers（主站）：静态资源 + Worker，镜像表页面与
 #   tables.json 由 Worker 运行时生成，因此 Cloudflare 侧**不**需要构建期产出的
 #   镜像页——所以 `wrangler deploy` 必须排在生成步骤之前（顺序反了会把 443 个
 #   静态页一起传上去，虽不致命但会白白增加上传量）。
-# - GitHub Pages（brightmeows.github.io）：构建期生成静态镜像页与站点清单后发布。
-# - Codeberg Pages（brightmeows.codeberg.page）：由 .forgejo/workflows/deploy.yml
+# - GitHub Pages（静态镜像目标之一）：构建期生成静态镜像页与站点清单后发布。
+# - Codeberg Pages（静态镜像目标之二）：由 .forgejo/workflows/deploy.yml
 #   在 Codeberg 侧跑同样的「构建 + 生成」流程。
 name: Deploy Site
 on:
@@ -24,11 +24,10 @@ jobs:
         uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
         with:
-          version: 11
           cache: true
       - uses: actions/setup-node@v7
         with:
-          node-version: latest
+          node-version-file: .nvmrc
           cache: "pnpm"
       - name: Install dependencies
         run: pnpm install

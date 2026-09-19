@@ -94,6 +94,17 @@ repos:
         files: ^config/.*\.toml$
         pass_filenames: false
 
+  # 同一事实在不能 import 配置的地方（wrangler.jsonc、工作流 YAML、oxfmt 忽略项、
+  # 版本文件）必须与 config/site.json 一致；纯离线、毫秒级。
+  - repo: local
+    hooks:
+      - id: site-config
+        name: config/site.json consistency with workflows and wrangler
+        entry: node scripts/check-site-config.ts
+        language: system
+        files: ^(config/site\.json|wrangler\.jsonc|\.oxfmtrc\.json|\.nvmrc|package\.json)$|^\.(github|forgejo)/workflows/.*\.ya?ml$
+        pass_filenames: false
+
   # 提交信息遵循 Conventional Commits（见 AGENTS.md「提交格式」）
   - repo: local
     hooks:
