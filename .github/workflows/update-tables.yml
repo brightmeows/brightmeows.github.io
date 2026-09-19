@@ -21,11 +21,19 @@ jobs:
       BMS_TABLE_FETCH_VERSION: v0.4.2
     steps:
       - uses: actions/checkout@v7
+        with:
+          # 快照有变动时要 rebase 后重推，需要完整历史
+          fetch-depth: 0
 
-      # 本工作流只做“抓取 + R2 双向同步”，不再生成或提交任何仓库内文件：
-      # 镜像表的单表 meta 页与 tables.json 由 Cloudflare Worker 运行时生成。
+      # 本工作流做两件事：
+      # 1. “抓取 + R2 双向同步”（镜像表页面与 tables.json 由 Worker 运行时应答）
+      # 2. 比对 R2 清单与仓库快照，**仅当列表变动**时提交快照并推送（投影口径，
+      #    见 src/lib/mirror/manifest.ts）；表内容或上游元数据更新不提交。
+      # 推送会连锁触发 CI/Deploy/Mirror，从而重建三个部署目标。
+      # 快照位于 src/lib/mirror/ 下，不会命中本工作流的 config/** 过滤，不会自触发。
       #
       # Secrets 需在本仓库 Settings > Secrets and variables > Actions 中设置：
+      #   MIRROR_SYNC_DEPLOY_KEY — 本仓库写权限 deploy key（快照提交后推送）
       #   R2_ACCESS_KEY_ID      — Cloudflare Dashboard > R2 > 管理 R2 API 令牌 > 创建 API 令牌
       #   R2_SECRET_ACCESS_KEY  — 同上（创建时一并生成）
       #   R2_ENDPOINT           — Cloudflare Dashboard > R2 > 存储桶 > S3 API > 端点
@@ -72,3 +80,42 @@ jobs:
             --checksum \
             --transfers 16
           rm -f rclone
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: latest
+
+      - name: Sync table manifest snapshot
+        run: node scripts/sync-mirror-manifest.ts
+
+      - name: Commit snapshot when the table list changed
+        env:
+          MIRROR_SYNC_DEPLOY_KEY: ${{ secrets.MIRROR_SYNC_DEPLOY_KEY }}
+          # 正式触发（push/schedule）均为 main；临时分支演练时推回当前分支
+          TARGET_BRANCH: ${{ github.ref_name }}
+        run: |
+          git config user.name "brightmeows-bot"
+          git config user.email "brightmeows-bot@users.noreply.github.com"
+          git add src/lib/mirror/table-manifest.json
+          if git diff --cached --quiet; then
+            echo "列表无变动，跳过提交"
+            exit 0
+          fi
+          git commit -m "chore(mirror): sync table manifest snapshot"
+
+          mkdir -p ~/.ssh
+          printf '%s\n' "$MIRROR_SYNC_DEPLOY_KEY" > ~/.ssh/mirror_sync
+          chmod 600 ~/.ssh/mirror_sync
+          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
+          git remote set-url origin git@github.com:brightmeows/brightmeows.github.io.git
+
+          for attempt in 1 2 3; do
+            if GIT_SSH_COMMAND="ssh -i ~/.ssh/mirror_sync -o IdentitiesOnly=yes" git push origin "HEAD:$TARGET_BRANCH"; then
+              echo "快照已推送（第 $attempt 次尝试）"
+              exit 0
+            fi
+            echo "推送失败（第 $attempt 次），rebase 后重试"
+            GIT_SSH_COMMAND="ssh -i ~/.ssh/mirror_sync -o IdentitiesOnly=yes" git pull --rebase origin "$TARGET_BRANCH" || exit 1
+          done
+          echo "快照连续推送失败" >&2
+          exit 1
