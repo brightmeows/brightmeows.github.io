@@ -2,7 +2,7 @@
   import { GradientButton } from "$lib/components/ui";
   import Checkbox from "$lib/components/ui/Checkbox.svelte";
   import { jsonPreview } from "$lib/components/ui/JsonPreview.svelte";
-  import { viewerPath } from "$lib/mirror/urls";
+  import { mirrorTablePath } from "$lib/mirror/urls";
   import type { MirrorTableItem } from "$lib/types/bms";
   import type { JsonPreviewHandle } from "$lib/types/ui";
   import { clipboardFieldFeedback } from "$lib/utils/clipboard.svelte";
@@ -45,7 +45,7 @@
     <div class="flex items-center gap-1">
       <GradientButton
         variant="blue"
-        href={item.dir_name ? viewerPath(item.dir_name) : item.url}
+        href={item.dir_name ? mirrorTablePath(item.dir_name) : item.url}
         size="sm"
         class="flex min-w-0 flex-1"
         target="_blank"
