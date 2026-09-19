@@ -6,7 +6,8 @@
  * 共用 `src/lib/mirror/manifest.ts` 里的注入与序列化函数，保证输出一致。
  *
  * 用法：
- *   node scripts/gen-static-mirror-pages.ts --site-base=https://brightmeows.github.io [--build-dir=build]
+ *   node scripts/gen-static-mirror-pages.ts --target=github-pages [--build-dir=build]
+ *   node scripts/gen-static-mirror-pages.ts --site-base=https://example.com   # 显式覆盖（本地演练用）
  *
  * 清单地址会发布在该目标的同源路径 `/bms/table/mirror/tables.json` 上，因此
  * `url` 字段按 `--site-base` 生成；快照本身是 origin 无关的原始清单。
@@ -23,6 +24,8 @@ import {
 } from "../src/lib/mirror/manifest.ts";
 import { r2TableHeaderUrl } from "../src/lib/mirror/urls.ts";
 import type { MirrorTableItem } from "../src/lib/types/bms.ts";
+
+import { CONFIG_PATH, findStaticTarget, readSiteConfig } from "./site-config.ts";
 
 /** 站点 SPA 外壳在构建产物里的路径（adapter-static 的 fallback）。 */
 const SITE_SHELL_PATH = "404.html";
@@ -94,19 +97,23 @@ export function generateStaticMirrorPages(options: GenerateOptions): GenerateRes
 }
 
 function parseArgs(argv: string[]): {
+  target?: string;
   siteBase?: string;
   buildDir?: string;
   snapshotPath?: string;
   configPath?: string;
 } {
   const result: {
+    target?: string;
     siteBase?: string;
     buildDir?: string;
     snapshotPath?: string;
     configPath?: string;
   } = {};
   for (const arg of argv) {
-    if (arg.startsWith("--site-base=")) {
+    if (arg.startsWith("--target=")) {
+      result.target = arg.slice("--target=".length);
+    } else if (arg.startsWith("--site-base=")) {
       result.siteBase = arg.slice("--site-base=".length);
     } else if (arg.startsWith("--build-dir=")) {
       result.buildDir = arg.slice("--build-dir=".length);
@@ -124,22 +131,26 @@ function parseArgs(argv: string[]): {
 function main(argv: string[]): void {
   const repoRoot = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
   const args = parseArgs(argv);
-  const siteBase = args.siteBase;
-  if (!siteBase || !/^https?:\/\//.test(siteBase)) {
-    throw new Error("必须提供 --site-base=https://…（用于生成清单里的 url 字段）");
+  const configPath = args.configPath ?? CONFIG_PATH;
+  const config = readSiteConfig(configPath);
+
+  // 站点基址来自配置里的目标；--site-base 仅用于本地演练覆盖
+  if (!args.target && !args.siteBase) {
+    const names = config.targets.map((target) => target.name).join("、");
+    throw new Error(`必须提供 --target=<名称>（可选：${names}）或 --site-base=https://…`);
   }
-  const configPath = args.configPath ?? path.join(repoRoot, "config", "mirror.json");
-  const { r2Base } = JSON.parse(readFileSync(configPath, "utf8")) as { r2Base: string };
+  const siteBase = args.siteBase ?? findStaticTarget(config, args.target ?? "").siteBase;
 
   const result = generateStaticMirrorPages({
-    snapshotPath:
-      args.snapshotPath ?? path.join(repoRoot, "src", "lib", "mirror", "table-manifest.json"),
+    snapshotPath: args.snapshotPath ?? path.join(repoRoot, config.r2.snapshot),
     buildDir: args.buildDir ?? path.join(repoRoot, "build"),
-    r2Base,
+    r2Base: config.r2.base,
     siteBase,
   });
 
-  console.log(`站点基址：${siteBase}`);
+  console.log(
+    `站点基址：${siteBase}${args.target ? `（目标 ${args.target}）` : "（--site-base 覆盖）"}`
+  );
   console.log(`镜像页：${result.pages} 个`);
   console.log(`站点清单：${result.listPath}`);
 }

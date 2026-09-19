@@ -16,7 +16,7 @@
  * 先用 Cache API 里的最近快照兜底，没有快照才 503。
  */
 
-import mirrorConfig from "../config/mirror.json";
+import siteConfig from "../config/site.json";
 import {
   injectBmstableMeta,
   serializeSiteTableList,
@@ -30,7 +30,7 @@ interface Env {
 }
 
 /** 清单在 R2 上的对象键，由数据管线的 tables/ 目录同步而来。 */
-const MANIFEST_OBJECT = "tables/tables.json";
+const MANIFEST_OBJECT = siteConfig.r2.manifestObject;
 /** 清单响应的边缘缓存秒数：新增或删除的表最迟这个时间后可见。 */
 const MANIFEST_MAX_AGE = 60;
 /** Cache API 中兜底快照的保留秒数。 */
@@ -41,7 +41,7 @@ const SITE_SHELL_PATH = "/404.html";
 const MIRROR_ROOT = "/bms/table/mirror/";
 
 function manifestUrl(): string {
-  return `${mirrorConfig.r2Base.replace(/\/+$/, "")}/${MANIFEST_OBJECT}`;
+  return `${siteConfig.r2.base.replace(/\/+$/, "")}/${MANIFEST_OBJECT}`;
 }
 
 function textResponse(body: string, status: number, extra: Record<string, string> = {}): Response {
@@ -118,7 +118,7 @@ async function handleTablePage(
 
   const shellRes = await env.ASSETS.fetch(new URL(SITE_SHELL_PATH, url.origin));
   const shell = await shellRes.text();
-  const headerUrl = r2TableHeaderUrl(mirrorConfig.r2Base, tableId);
+  const headerUrl = r2TableHeaderUrl(siteConfig.r2.base, tableId);
   // 与构建期脚本共用同一段注入逻辑，保证两种输出逐字节等价
   const page = injectBmstableMeta(shell, headerUrl);
 

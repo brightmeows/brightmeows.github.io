@@ -5,7 +5,7 @@
  * projectTableList），因此上游元数据抖动与表内容更新都不会改动快照，也就不会
  * 触发部署。是否提交由调用方（update-tables 工作流）比对 git 状态决定。
  *
- * 用法：node scripts/sync-mirror-manifest.ts [--config=config/mirror.json] [--snapshot=src/lib/mirror/table-manifest.json] [--check]
+ * 用法：node scripts/sync-mirror-manifest.ts [--config=config/site.json] [--snapshot=<路径>] [--check]
  */
 
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -15,18 +15,10 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { diffTableList, serializeTableManifest } from "../src/lib/mirror/manifest.ts";
 import type { MirrorTableItem } from "../src/lib/types/bms.ts";
 
-/** 从共享配置读取 R2 基址（与站点代码同一来源）。 */
-export function readR2Base(configPath: string): string {
-  const parsed: unknown = JSON.parse(readFileSync(configPath, "utf8"));
-  if (typeof parsed !== "object" || parsed === null) {
-    throw new Error(`共享配置不是对象：${configPath}`);
-  }
-  const { r2Base } = parsed as Record<string, unknown>;
-  if (typeof r2Base !== "string" || !/^https?:\/\//.test(r2Base)) {
-    throw new Error(`共享配置 r2Base 不是 http(s) 地址：${configPath}`);
-  }
-  return r2Base.replace(/\/+$/, "");
-}
+import { CONFIG_PATH, readSiteConfig } from "./site-config.ts";
+
+/** 配置里的清单对象键与快照路径在这里展开，供调用方与测试使用。 */
+export { CONFIG_PATH };
 
 export interface SyncResult {
   /** 是否发生列表变动（check 模式下据此返回非零退出码）。 */
@@ -41,6 +33,7 @@ export interface SyncResult {
 
 export interface SyncOptions {
   r2Base: string;
+  manifestObject: string;
   snapshotPath: string;
   check?: boolean;
   fetchImpl?: typeof fetch;
@@ -58,7 +51,7 @@ function loadJsonArray(filePath: string | null): MirrorTableItem[] {
 /** 拉取远端清单、比对投影，必要时写入快照。 */
 export async function runSync(options: SyncOptions): Promise<SyncResult> {
   const fetchImpl = options.fetchImpl ?? fetch;
-  const manifestUrl = `${options.r2Base}/tables/tables.json`;
+  const manifestUrl = `${options.r2Base}/${options.manifestObject}`;
   const res = await fetchImpl(manifestUrl);
   if (!res.ok) {
     throw new Error(`拉取 R2 清单失败：${manifestUrl} 返回 ${res.status}`);
@@ -98,17 +91,18 @@ function parseArgs(argv: string[]): { configPath?: string; snapshotPath?: string
 async function main(argv: string[]): Promise<void> {
   const repoRoot = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
   const args = parseArgs(argv);
-  const configPath = args.configPath ?? path.join(repoRoot, "config", "mirror.json");
-  const snapshotPath =
-    args.snapshotPath ?? path.join(repoRoot, "src", "lib", "mirror", "table-manifest.json");
+  const configPath = args.configPath ?? CONFIG_PATH;
+  const config = readSiteConfig(configPath);
+  const snapshotPath = args.snapshotPath ?? path.join(repoRoot, config.r2.snapshot);
 
   const result = await runSync({
-    r2Base: readR2Base(configPath),
+    r2Base: config.r2.base,
+    manifestObject: config.r2.manifestObject,
     snapshotPath,
     check: args.check,
   });
 
-  console.log(`清单来源：${readR2Base(configPath)}/tables/tables.json`);
+  console.log(`清单来源：${config.r2.base}/${config.r2.manifestObject}`);
   console.log(`快照路径：${snapshotPath}`);
   console.log(`远端条数：${result.total}`);
   if (!result.changed) {

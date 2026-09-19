@@ -1,4 +1,4 @@
-import mirrorConfig from "../../../config/mirror.json";
+import siteConfig from "../../../config/site.json";
 
 import {
   r2TableDataUrl as buildR2TableDataUrl,
@@ -7,7 +7,7 @@ import {
 } from "$lib/mirror/urls";
 
 /** Cloudflare R2 bucket base URL for mirrored BMS table data */
-export const R2_BASE = mirrorConfig.r2Base;
+export const R2_BASE = siteConfig.r2.base;
 
 /** Base URL for table data (per-table header.json, data.json) */
 export const R2_TABLES_BASE = r2TablesBase(R2_BASE);
