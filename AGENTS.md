@@ -18,17 +18,13 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm test`、no-conf
 - `scripts/check-config-toml.py` — `config/*.toml` 语法与关键字段校验（url 必须 http(s)、tag 字段类型、replace 的 from/to 非空、未知段报错）。这些文件由 bms-table-fetch 在 CI 中读取，本地校验把反馈从 6 小时缩短到提交时。
 - `scripts/check-commit-msg.py` — Conventional Commits 格式校验（见“提交格式”节），pre-commit commit-msg stage 与 CI 的 PR job 共用。
 
-### scripts/ 生成脚本
-
-- `scripts/gen-mirror-pages.ts` — 镜像表生成器：读 R2 清单输出 stub 与站点清单并清理过期 stub；由 update-tables 调用，可本地 `node scripts/gen-mirror-pages.ts --input=... --mirror-dir=...` 演练（Node 原生直跑 TS）。
-
 ### 手动命令
 
 - `pnpm dev`
 - `pnpm build`
 - `pnpm test`
 - `pnpm exec wrangler deploy` — 把 `build/` 发布到 Cloudflare Workers（需环境变量 `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID`）
-- `pnpm exec wrangler dev` — 本地 Workers 运行时（需先 `pnpm build`）
+- `pnpm exec wrangler dev` — 本地 Workers 运行时，含 `/bms/table/mirror/*` 的动态路由（需先 `pnpm build`；这些路由在 `pnpm dev` 下不可用）
 
 ## 反直觉决策
 
@@ -40,31 +36,32 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm test`、no-conf
 - **Paraglide i18n 基础设施全局加载但仅 `/demo/paraglide/` 生效** — `hooks.ts` 和 `+layout.svelte` 无条件导入 runtime（SSG 构建无法 tree-shake），但 `reroute` 钩子只对 `/demo/paraglide/` 路径触发。不要将 paraglide 扩展到其他路由。
 - **测试只覆盖纯函数层** — vitest 仅覆盖 `src/lib/utils/` 与生成器脚本中的纯函数，测试文件为相邻 `*.test.ts`；组件（需 browser mode）与数据层（需 fs/fetch fixture）刻意不覆盖，避免依赖与 CI 复杂度膨胀。`pnpm test` 与 format/lint/check 同为门槛，pre-commit 与 CI 都会跑，失败阻断提交与部署。给非纯函数层加测试依赖或测试文件前先确认范围。
 - **lint 不含 Svelte 模板级 linter** — 曾用 oxvelte（cargo 全局二进制）补 Svelte 模板规则，其上游 2026 年 5 月起停更、且依赖仓库外的 cargo 全局安装不可复现，已移除。现 `lint` 仅 oxlint（查 `.svelte` 的 script 块）加 svelte-check（编译期诊断）。代价是失去 `svelte/button-has-type` 与 `svelte/no-target-blank` 两条 warn。回归路径（跟踪 oxc issue #15761 “SFC Template Support”）：oxlint 支持自定义文件解析器后接 eslint-plugin-svelte 或原生规则。不要因“模板无 lint”而重新引入停更工具。
-- **auto-merge 合并的 PR 不触发 push 工作流** — GitHub 对 `GITHUB_TOKEN` 触发的事件有反递归机制：`dependabot-auto-merge.yml` 启用 auto-merge 后，服务端完成合并产生的 push 事件不会触发 CI/Deploy（只留下 dependabot 的 dynamic 事件）。后果是依赖更新合并后不会立即部署与同步，由 `deploy.yml`（GitHub 与 Forgejo 两份）每 6 小时的 schedule 与 `mirror.yml` 的每日 schedule 在至多一个周期内收敛，也可手动 dispatch。手动 `gh pr merge` 用个人 token，不受影响，正常触发。
-- **镜像生成物以 deploy key 推送** — update-tables 用 `MIRROR_SYNC_DEPLOY_KEY`（仓库写权限 deploy key）推送：`GITHUB_TOKEN` 的 push 不触发后续工作流，普通 push 才能连锁 ci/deploy/mirror。推送目标是 `github.ref_name`（正式触发为 main，临时分支演练时推回该分支）。
-- **分支 ruleset 放行 deploy key 直推 main** — ruleset `main-branch-protection` 禁止直接 push main 并要求 PR + 必过检查（见“分支与工作树”），但 update-tables 的生成物提交必须直推 main（见上条），因此该 ruleset 的 bypass actors 包含 DeployKey。不要移除该 bypass，否则数据管线在下次 stub 变更提交时被拒。CI job 增删或改名时，ruleset 的 required_status_checks context 必须同步更新，否则 PR 合并被永久阻塞。
+- **auto-merge 合并的 PR 不触发 push 工作流** — GitHub 对 `GITHUB_TOKEN` 触发的事件有反递归机制：`dependabot-auto-merge.yml` 启用 auto-merge 后，服务端完成合并产生的 push 事件不会触发 CI/Deploy（只留下 dependabot 的 dynamic 事件）。后果是依赖更新合并后不会立即部署与同步：站点部署由 `deploy.yml` 每 6 小时的 schedule 兜底，仓库镜像由 `mirror.yml` 的每日 schedule 兜底，也可手动 dispatch。手动 `gh pr merge` 用个人 token，不受影响，正常触发。
+- **数据管线不再提交任何生成物** — 镜像表的单表 meta 页与 `tables.json` 已改由 Worker 运行时生成，`update-tables` 只做“抓取 + R2 双向同步”，不再 commit/push，`MIRROR_SYNC_DEPLOY_KEY` 因此失去使用者（secret 保留备用）。历史上管线用 deploy key 直推 main，是因为 `GITHUB_TOKEN` 的 push 不会触发后续工作流。
+- **分支 ruleset 放行 deploy key 直推 main** — ruleset `main-branch-protection` 禁止直接 push main 并要求 PR + 必过检查（见“分支与工作树”），历史上 update-tables 的生成物提交需要直推 main，因此该 ruleset 的 bypass actors 包含 DeployKey。管线现已不再提交，bypass 目前没有使用者，保留无副作用（要收紧时先确认没有其它直推路径）。CI job 增删或改名时，ruleset 的 required_status_checks context 必须同步更新，否则 PR 合并被永久阻塞。
 - **ruleset 不得启用 Restrict updates 规则** — 实测 ruleset 的 `update` 类型规则会把 PR 合并一起拦死：它只允许 bypass actor 更新 matching refs，而 PR 合并也是 ref 更新，启用后 PR 的 mergeStateStatus 恒为 BLOCKED（GitHub 报 “base branch policy prohibits the merge”），checks 全绿也无法合并。禁止直接 push main 由 `pull_request` 规则独立承担（已实测其拦直推），不要重新加回 `update` 规则。诊断提示：BLOCKED 且 checks 全绿时，先检查 ruleset 是否含 `update` 规则。
 - **`pnpm-workspace.yaml` 的 `allowBuilds` 由 pnpm 11 维护** — 遇到未决的 build script 时 pnpm 会自动写入占位符（值为字面量 `set this to true or false`），带着占位符提交会让 CI 的 install 直接失败。本地需改成明确的 `true`/`false` 再提交。
 - **本地 install 可能因 npmmirror 同步延迟失败** — 全局 registry 指向 `registry.npmmirror.com`，其同步有延迟（曾出现 `@inlang/paraglide-js` 2.25.2 缺失导致 `--frozen-lockfile` 报 404）。绕过方式为 `pnpm install --registry=https://registry.npmjs.org`。CI 使用官方源，不受影响。
-- **迁移期双轨部署：同一份 `build/` 同时发到 GitHub Pages 与 Cloudflare Workers** — `deploy.yml` 的 `build_site` 在 `pnpm build` 之后先 `wrangler deploy`（配置见 `wrangler.jsonc`，静态资源模式，暂无 Worker 脚本），随后照旧上传 Pages artifact 并由 `deploy` job 发布。两个新 secret（`CLOUDFLARE_API_TOKEN`、`CLOUDFLARE_ACCOUNT_ID`）缺失会让整个 job 失败，并连带跳过 Pages 部署。静态请求在 Workers 上不计费；自定义域与 mirror 动态路由在后续变更中加入。冻结旧托管时删掉 Pages 上传/部署步骤与 push 触发，只保留 Cloudflare 部署。
+- **站点只部署到 Cloudflare Workers** — `deploy.yml` 在 `pnpm build` 之后 `wrangler deploy`（`wrangler.jsonc`：静态资源 + `main` 指向 Worker，`run_worker_first` 只覆盖 `/bms/table/mirror/*`），需要的 secret 是 `CLOUDFLARE_API_TOKEN` 与 `CLOUDFLARE_ACCOUNT_ID`。**旧托管已冻结**：GitHub Pages 与 Codeberg Pages 的产物停在 2026-09-19 换血后的那一版（静态 stub 指向 R2 自定义域、canonical 指向新域名），不再随仓库更新；`.forgejo/workflows/deploy.yml` 改为仅手动触发，误触发会把 Codeberg Pages 覆盖成没有静态 stub 的新版本。
 
 ### 构建与配置
 
 - **`vite.config.ts` 中 `server.fs.allow: ["content"]`** — Vite dev server 默认仅允许 `src/`、`.svelte-kit/`、`node_modules/` 内的文件被访问。`content/` 不在其中，`import()` 请求会被拦截（404/403）。需要在 `vite.config.ts` 中显式添加。build 时无此限制。
-- **`config/mirror.json` 是 R2 基址的单一来源** — `r2Base` 由站点代码（`src/lib/constants/r2.ts`）、Worker（`worker/index.ts`）与数据管线生成器（`scripts/gen-mirror-pages.ts`）共读；迁域只改这一处，随后由 update-tables 重新生成 stub 与清单。`siteBase` 仅剩旧托管生成器使用。
+- **`config/mirror.json` 是 R2 基址的单一来源** — 只剩 `r2Base` 一个字段，由站点代码（`src/lib/constants/r2.ts`）与 Worker（`worker/index.ts`）共读；换 R2 域只改这一处再重新部署。
 
 ### BMS
 
-- **`<meta name="bmstable">` 有三个来源** — 自托管表由 `[table]/+page.server.ts` 经 `PageData.bmstableMeta` → `+layout.svelte` 的 `<svelte:head>` 注入（`./header.json`）；镜像表由 Worker 在 SPA 外壳 `<head>` 里注入（绝对 R2 地址）；冻结中的旧托管仍由静态 stub 直接携带。三处都不要删。
-- **`static/bms/table/mirror/` 的 stub 与 `tables.json` 是已提交的生成物** — 由 `scripts/gen-mirror-pages.ts` 从 R2 清单生成，update-tables 工作流在数据同步后运行、变化时提交；仓库内提交物即站点构建输入，构建不再联网取数，也不再预渲染每表页面。手工编辑会被覆盖，改数据请走 R2 管线。
+- **`<meta name="bmstable">` 有两个来源** — 自托管表由 `[table]/+page.server.ts` 经 `PageData.bmstableMeta` → `+layout.svelte` 的 `<svelte:head>` 注入（`./header.json`）；镜像表由 Worker 在 SPA 外壳 `<head>` 里注入（绝对 R2 地址）。冻结的旧托管产物里还留着第三种历史形态（静态 stub 自带 meta），仓库内已无对应代码。
+- **仓库里不再有 mirror 生成物** — `static/bms/table/mirror/`（443 个静态 stub 与 `tables.json`）已于 2026-09 清空，`scripts/gen-mirror-pages.ts` 及其测试同步删除：单表 meta 页与站点清单改由 Worker 运行时生成。构建产物里不存在这些路径，只有冻结的旧托管 artifact 还留着静态 stub。
 - **`static/bms/table/search/` 不存在** — 搜索索引已移至 R2，由 `bms-search.worker.ts` 在客户端运行时从 R2 拉取。不要尝试在仓库内重新创建此目录。
 - **镜像表单表页由 Worker 动态生成** — `worker/index.ts` 接管 `/bms/table/mirror/*`：`/bms/table/mirror/<dir_name>/` 取站点 SPA 外壳（构建产物 `404.html`）并把该表的 `<meta name="bmstable">` 注入 `<head>`，beatoraja / BeMusicSeeker 不执行 JS 直接读 meta，浏览器则由 `src/routes/bms/table/mirror/[name]/`（`prerender = false`）客户端路由渲染查看器；`/bms/table/mirror/tables.json` 同理由 R2 清单实时生成，`url` 字段用请求 origin。校验策略：清单不可用返回 503、表不存在返回 404，清单读失败时先回落到 Cache API 快照。注入的 meta 必须独占一行：beatoraja 的 jbmstable-parser 按行扫描再按引号切分取第 4 段。
-- **镜像表页面曾经是管线生成的静态 stub** — `static/bms/table/mirror/<dir_name>/index.html` 携带绝对 R2 header URL 与 JS 跳转，是 Worker 动态路由之前的实现，迁移期保留只为已经分发的旧链接；当前冻结的旧托管仍靠它工作，新域名一律走 Worker。
-- **镜像表目录名 `dir_name` 来自 bms-table-fetch** — 格式为 `[host] name`（如 `[4uri.web.fc2.com] Youri差分難易度表`），与 R2 目录名一致；生成器直接消费该字段（不再重算），缺失即失败。不要改为纯数字或 UUID 标识符。
-- **难度表数据管线在本仓 Actions 中运行** — `.github/workflows/update-tables.yml` 每 6 小时（或 `config/**` 变更时、手动 dispatch）用 `bms-table-fetch` 抓取难度表，经 rclone 与 Cloudflare R2 双向同步：先拉取 R2 基线保留增量，跑完抓取再推回。输出 `tables/`、`indexes/`、`lists/`、`warnings.log`（均 gitignored，仅存在于 CI 工作区与 R2）。数据源配置在 `config/table.toml`（`[[table]]`/`[[disable]]`/`[[replace]]`）与 `config/list.toml`（`[[source]]`）。R2 凭据以 Actions secrets 注入（`R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY`/`R2_ENDPOINT`/`R2_BUCKET`）。该管线原为独立的 Codeberg 壳子仓库 bms-table-mirror-r2，2026-09 迁入本仓并归档原仓；`bms-table-fetch` 二进制取自其 GitHub release（版本由工作流内 `BMS_TABLE_FETCH_VERSION` 固定）。R2 同步后同一工作流运行 `scripts/gen-mirror-pages.ts` 更新 stub 与站点清单，有变化时以 deploy key 提交并推送，从而触发部署链。
+- **镜像表页面曾经是管线生成的静态 stub** — 2026-09 之前每个表在 `static/bms/table/mirror/<dir_name>/index.html` 有一份提交物，携带绝对 R2 header URL 与 JS 跳转；现已全部删除，新域名一律走 Worker。已分发的旧链接靠冻结的旧托管 artifact 继续生效（那份产物里仍是静态 stub）。
+- **镜像表目录名 `dir_name` 来自 bms-table-fetch** — 格式为 `[host] name`（如 `[4uri.web.fc2.com] Youri差分難易度表`），与 R2 目录名一致；Worker 的清单校验与站点清单变换直接消费该字段，缺失即失败。不要改为纯数字或 UUID 标识符。
+- **难度表数据管线在本仓 Actions 中运行** — `.github/workflows/update-tables.yml` 每 6 小时（或 `config/**` 变更时、手动 dispatch）用 `bms-table-fetch` 抓取难度表，经 rclone 与 Cloudflare R2 双向同步：先拉取 R2 基线保留增量，跑完抓取再推回。输出 `tables/`、`indexes/`、`lists/`、`warnings.log`（均 gitignored，仅存在于 CI 工作区与 R2）。数据源配置在 `config/table.toml`（`[[table]]`/`[[disable]]`/`[[replace]]`）与 `config/list.toml`（`[[source]]`）。R2 凭据以 Actions secrets 注入（`R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY`/`R2_ENDPOINT`/`R2_BUCKET`）。该管线原为独立的 Codeberg 壳子仓库 bms-table-mirror-r2，2026-09 迁入本仓并归档原仓；`bms-table-fetch` 二进制取自其 GitHub release（版本由工作流内 `BMS_TABLE_FETCH_VERSION` 固定）。R2 同步后工作流即结束：单表 meta 页与站点清单由 Worker 运行时应答，仓库不再生成或提交产物。
 - **`r2.ts` 集中管理 R2 端点** — `src/lib/constants/r2.ts` 定义了 `R2_BASE`/`R2_TABLES_BASE`/`R2_INDEXES_BASE` 三个常量和 `r2TableHeaderUrl()`/`r2TableDataUrl()` 两个路径构造函数。修改 R2 地址时仅改此文件。该文件位于 `$lib/constants/`（环境无关层），可供构建时和客户端代码共同使用。
 - **浏览器侧取数依赖 R2 桶的 CORS policy** — 镜像表 viewer 与谱面搜索都在客户端直连 R2（`r2TableHeaderUrl()`/`r2TableDataUrl()`、`R2_INDEXES_BASE`）。bucket 未放行站点来源时，浏览器报 `Failed to fetch`（viewer）与“索引加载失败”（搜索），而 beatoraja 等原生客户端不受影响，容易误判为代码缺陷。policy 位置在 Cloudflare 控制台 R2 → 桶 → Settings → CORS Policy；当前放行 `https://miyakomeow.site`、`https://brightmeows.github.io`、`https://brightmeows.codeberg.page`（冻结旧产物仍从 R2 取数）与本地端口 `localhost:5173-5175`、`localhost:4173-4175`、`127.0.0.1:8787`、`localhost:8787`（`pnpm dev`、`pnpm preview`、`wrangler dev`）。改域或新增来源后必须同步该列表，否则站点功能静默退化。验证：`curl -sI -H "Origin: https://miyakomeow.site" <R2 header 地址> | rg -i access-control` 应出现 `access-control-allow-origin`。
-- **旧客户端 UA 是否被拦由 zone 级 Browser Integrity Check 决定** — 实测 `Java/1.8.x`、`Python-urllib`、`libwww-perl` 在 r2.dev、R2 自定义域与 workers.dev 上一律 403（Cloudflare error 1010），根因是 Browser Integrity Check，不是 r2.dev 的特有策略。本 zone 已关闭该开关（`browser_check = off`），因此 `bms-table-mirror-r2.miyakomeow.site` 与站点对旧 UA 全部放行；r2.dev 由 Cloudflare 管理，仍会拦。开关位置：控制台 zone → Security → Settings，或 `PATCH /zones/{id}/settings/browser_check`。
+- **旧客户端 UA 是否被拦由 zone 级 Browser Integrity Check 决定** — 实测 `Java/1.8.x`、`Python-urllib`、`libwww-perl` 在 r2.dev、R2 自定义域与 workers.dev 上一律 403（Cloudflare error 1010），根因是 Browser Integrity Check，不是 r2.dev 的特有策略。本 zone 已关闭该开关（`browser_check = off`），因此 `bms-table-mirror-r2.miyakomeow.site` 与站点对旧 UA 全部放行；r2.dev 已于 2026-09-19 关闭（API：`PUT /accounts/{id}/r2/buckets/{bucket}/domains/managed`，body `{"enabled":false}`）。开关位置：控制台 zone → Security → Settings，或 `PATCH /zones/{id}/settings/browser_check`。
+- **www 目前与 apex 同源返回站点，不是 301** — `run_worker_first` 只覆盖 `/bms/table/mirror/*`，所以 Worker 里的 `www` 判断对其他路径不生效，而边缘 301 需要 zone 上的 Single Redirect 规则（需 token 权限 `Zone > Single Redirect > Edit`）。在补上规则之前，www 会直接返回同一份站点，SEO 靠 layout 里的 canonical 收敛到 apex。
 - **难度表导入链接与查看页是同一条 URL** — 新域名下 `/bms/table/mirror/<dir_name>/` 既是 beatoraja / BeMusicSeeker 的导入地址（beatoraja 对不以 `.json` 结尾的 URL 会当 HTML 页解析 `bmstable` meta，对 `.json` 结尾的 URL 直读 header），也是浏览器里的查看页；`tables.json` 兼作 BeMusicSeeker 的难度表清单（超集字段）。旧查看页 `/bms/table/mirror/view/?t=…` 由 Worker 永久 301 到该形态，冻结中的旧托管仍由静态 stub + JS 跳转承担导入地址。
 
 ### SvelTeX（Markdown 管线）
@@ -96,12 +93,13 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm test`、no-conf
 ## 架构边界
 
 - **纯 SSG（含一处边缘例外）** — `@sveltejs/adapter-static` + 全局 `prerender = true`，不加 server routes / API endpoints。例外是 Cloudflare Worker（`worker/index.ts`）承担的镜像表动态路由：它只先接管 `/bms/table/mirror/*`（`assets.run_worker_first`），其余请求全部回落静态资源。
-- **BMS 数据源分流** — `static/bms/table/` 下 `self-sp/`、`self-dp/`、`satellite-skill-analyzer-3rd-preview/`、`starlight-preview/` 在 git 中；`mirror/` 的 stub 与 `tables.json` 是数据管线维护的已提交生成物；表数据（`header.json`/`data.json`）和搜索索引全从 R2 客户端拉取。修改数据入口时区分来源。
+- **BMS 数据源分流** — `static/bms/table/` 下只有自托管表（`self-sp/`、`self-dp/`、`satellite-skill-analyzer-3rd-preview/`、`starlight-preview/`）在 git 中；镜像表的一切（单表 meta 页、`tables.json`、表数据 `header.json`/`data.json`、搜索索引）都是 Worker 与 R2 的运行时取数。修改数据入口时区分来源。
 - **`src/lib/loaders/`** — 构建时数据加载层（Node.js 环境）。博客扫描、BMS 表枚举入口在此，不走路由内联。`blog-scanner.ts`、`blog-metadata.ts` 也在此目录。
 - **`src/lib/data/`** — 客户端数据获取层（浏览器环境）。BMS 谱面数据 fetch/JSONP、镜像表加载编排在此。仅在 `onMount` 中调用。
 - **`src/lib/utils/`** — 纯函数。无副作用、无平台特定 API 依赖（轻量 DOM 工具如 `clipboard.ts`、`url.ts` 除外）。任何环境可调用。
-- **`src/lib/mirror/`** — 镜像表 URL 构造的零依赖层，站点与 `scripts/` 生成器共用；受 Node 直跑约束：无 Svelte/DOM 依赖、可擦除语法、相对导入带 `.ts` 扩展名。
-- **数据加载策略** — 构建时加载（`+page.server.ts` / `+page.ts`）：数据在 git 仓库内，如博客 `.md` 文件、BMS 表目录枚举、`tables.json`（数据管线提交的生成物）。客户端加载（`onMount` → `data/` 层 fetch）：数据来自 R2（表数据 `header.json`/`data.json`、搜索索引），或远程原始源（`data_url` JSONP/跨域 fetch）。选择标准：数据源在构建时可访问且不依赖用户上下文 → 构建时加载；否则客户端加载。
+- **`src/lib/mirror/`** — 镜像表的零依赖层（URL 构造、清单变换、bmstable meta 渲染），由站点与 Worker（`worker/index.ts`）共用；约束：无 Svelte/DOM 依赖、可擦除语法、相对导入带 `.ts` 扩展名（Worker 由 wrangler/esbuild 打包，直接引用这些 `.ts` 文件）。
+- **数据加载策略** — 构建时加载（`+page.server.ts` / `+page.ts`）：数据在 git 仓库内，如博客 `.md` 文件与自托管 BMS 表的目录枚举。客户端加载（`onMount` → `data/` 层 fetch）：数据来自 R2（表数据 `header.json`/`data.json`、搜索索引），或同站 Worker 路由（`/bms/table/mirror/tables.json`），或远程原始源（`data_url` JSONP/跨域 fetch）。选择标准：数据源在构建时可访问且不依赖用户上下文 → 构建时加载；否则客户端加载。
+- **本地 `pnpm dev` 不提供 mirror 动态路由** — 列表页 `/bms/table/mirror/` 依赖 Worker 生成的 `tables.json`，本地 dev 下会报加载失败；单表页的 meta 注入也只存在于 Worker 运行时。验证 mirror 行为用 `pnpm build && pnpm exec wrangler dev`（`localhost:8787` 已在桶 CORS 放行）。
 - **`src/lib/components/`** — UI 组件层。`ui/` 为通用原语（barrel export 见 `ui/index.ts`），其余子目录为领域组件。写 UI 前 `glob src/lib/components/**/*.svelte` 检索已有组件。
 
 ## 技术栈
