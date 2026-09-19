@@ -17,6 +17,9 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm test`、no-conf
 - `scripts/check-cn-quotes.py` — 中文正文引号规范（GB/T 15834-2011）。跳过 YAML frontmatter、HTML 标签属性、行内代码与围栏代码块，这些位置的引号是语法而非中文文本。
 - `scripts/check-config-toml.py` — `config/*.toml` 语法与关键字段校验（url 必须 http(s)、tag 字段类型、replace 的 from/to 非空、未知段报错）。这些文件由 bms-table-fetch 在 CI 中读取，本地校验把反馈从 6 小时缩短到提交时。
 - `scripts/check-commit-msg.py` — Conventional Commits 格式校验（见“提交格式”节），pre-commit commit-msg stage 与 CI 的 PR job 共用。
+- `scripts/check-site-config.ts` — 离线一致性校验（六条断言：`--target` 合法、wrangler routes ⊆ 配置、工作流无硬编码域名、快照路径三处一致、CORS 覆盖全部目标、版本来源唯一）。`pnpm check:config` 调用它，pre-commit 与 CI 都跑。
+- `scripts/check-r2-cors.ts` — 只读比对桶 CORS policy 与配置（需 `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID`/`R2_BUCKET`）；不在日常 CI 跑，由 `config-drift.yml` 在配置变更的 PR 与手动触发时调用。
+- `scripts/site-config.ts` / `scripts/site-target.ts` — 读取并校验 `config/site.json`、打印某静态目标的站点基址（供工作流把域名从 YAML 里移出）。
 
 ### 手动命令
 
@@ -27,6 +30,8 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm test`、no-conf
 - `pnpm exec wrangler dev` — 本地 Workers 运行时，含 `/bms/table/mirror/*` 的动态路由（需先 `pnpm build`；这些路由在 `pnpm dev` 下不可用）
 - `node scripts/sync-mirror-manifest.ts [--check]` — 比对 R2 清单与仓库快照，仅列表变动时写入（`--check` 只报告不写入）
 - `node scripts/gen-static-mirror-pages.ts --target=<目标名> [--site-base=<域名>]` — 生成静态宿主的镜像页与站点清单（需先 `pnpm build`，完全离线；`--site-base` 仅本地演练覆盖）
+- `pnpm check:config` — 配置一致性校验（离线，毫秒级）
+- `R2_BUCKET=<桶名> node scripts/check-r2-cors.ts` — 与线上桶 CORS policy 比对（需 Cloudflare 凭据；只读）
 
 ## 反直觉决策
 
@@ -44,6 +49,8 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm test`、no-conf
 - **ruleset 不得启用 Restrict updates 规则** — 实测 ruleset 的 `update` 类型规则会把 PR 合并一起拦死：它只允许 bypass actor 更新 matching refs，而 PR 合并也是 ref 更新，启用后 PR 的 mergeStateStatus 恒为 BLOCKED（GitHub 报 “base branch policy prohibits the merge”），checks 全绿也无法合并。禁止直接 push main 由 `pull_request` 规则独立承担（已实测其拦直推），不要重新加回 `update` 规则。诊断提示：BLOCKED 且 checks 全绿时，先检查 ruleset 是否含 `update` 规则。
 - **`pnpm-workspace.yaml` 的 `allowBuilds` 由 pnpm 11 维护** — 遇到未决的 build script 时 pnpm 会自动写入占位符（值为字面量 `set this to true or false`），带着占位符提交会让 CI 的 install 直接失败。本地需改成明确的 `true`/`false` 再提交。
 - **本地 install 可能因 npmmirror 同步延迟失败** — 全局 registry 指向 `registry.npmmirror.com`，其同步有延迟（曾出现 `@inlang/paraglide-js` 2.25.2 缺失导致 `--frozen-lockfile` 报 404）。绕过方式为 `pnpm install --registry=https://registry.npmjs.org`。CI 使用官方源，不受影响。
+- **同一事实只允许一个权威点，其余由门槛机械守住** — `config/site.json` 是站点与部署配置的单一来源；不能 import 它的地方（`wrangler.jsonc` 的 routes、工作流 YAML、`update-tables` 的 `git add` 路径、`.oxfmtrc.json` 的忽略项、`.nvmrc` 与 `packageManager`）由 `scripts/check-site-config.ts` 的六条断言守住，进 pre-commit 与 `pnpm check:config`。工作流里**任何位置（含注释）**都不该出现域名：域名通过 `--target=<目标名>` 交给脚本从配置解析。唯一豁免是仓库自身的远程地址（`git@github.com:owner/brightmeows.github.io.git`）—— 其中的 `brightmeows.github.io` 是仓库名。
+- **外部状态只把桶 CORS 来源纳入仓库** — 它是唯一“改了仓库但线上没跟上就静默退化”的外部状态（漏放时原生客户端正常、只有浏览器失败）。期望值在 `config/site.json` 的 `r2.corsOrigins`，由 `scripts/check-r2-cors.ts` 只读比对，`.github/workflows/config-drift.yml` 在配置变更的 PR 与手动触发时跑（复用 `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID`/`R2_BUCKET`，桶名仍不入库）。其余外部状态（zone 开关、自定义域、ruleset、secrets）维持文档口径。
 - **三个部署目标，按目标分区** — Cloudflare Workers（主站 `miyakomeow.site`：静态资源 + Worker，镜像表页面与 `tables.json` 运行时生成，因此 `wrangler deploy` 必须排在生成步骤**之前**）；GitHub Pages（`brightmeows.github.io`）与 Codeberg Pages（`brightmeows.codeberg.page`）：后两者在构建后用 `node scripts/gen-static-mirror-pages.ts --target=<目标名>` 离线生成静态镜像页与自己的 `tables.json` 再发布（域名由脚本从配置解析，工作流里不再出现域名）（Codeberg 侧由 `.forgejo/workflows/deploy.yml` 跑同样流程，触发随镜像推送）。三处页面逐字节一致——Worker 与脚本共用 `src/lib/mirror/manifest.ts` 的注入与序列化函数。生成失败即整步失败，避免用缺页产物覆盖上一版仍可用的静态站点；Cloudflare 已先部署完成，属可接受的失败隔离。
 
 ### 构建与配置
@@ -61,7 +68,7 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm test`、no-conf
 - **镜像表目录名 `dir_name` 来自 bms-table-fetch** — 格式为 `[host] name`（如 `[4uri.web.fc2.com] Youri差分難易度表`），与 R2 目录名一致；Worker 的清单校验与站点清单变换直接消费该字段，缺失即失败。不要改为纯数字或 UUID 标识符。
 - **难度表数据管线在本仓 Actions 中运行** — `.github/workflows/update-tables.yml` 每 6 小时（或 `config/**` 变更时、手动 dispatch）用 `bms-table-fetch` 抓取难度表，经 rclone 与 Cloudflare R2 双向同步：先拉取 R2 基线保留增量，跑完抓取再推回。输出 `tables/`、`indexes/`、`lists/`、`warnings.log`（均 gitignored，仅存在于 CI 工作区与 R2）。数据源配置在 `config/table.toml`（`[[table]]`/`[[disable]]`/`[[replace]]`）与 `config/list.toml`（`[[source]]`）。R2 凭据以 Actions secrets 注入（`R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY`/`R2_ENDPOINT`/`R2_BUCKET`）。该管线原为独立的 Codeberg 壳子仓库 bms-table-mirror-r2，2026-09 迁入本仓并归档原仓；`bms-table-fetch` 二进制取自其 GitHub release（版本由工作流内 `BMS_TABLE_FETCH_VERSION` 固定）。R2 同步后，工作流比对清单与仓库快照、并按列表变动提交（见“反直觉决策 / 项目基础设施”里的快照条目）；页面类生成物不再入库。
 - **`r2.ts` 集中管理 R2 端点** — `src/lib/constants/r2.ts` 定义了 `R2_BASE`/`R2_TABLES_BASE`/`R2_INDEXES_BASE` 三个常量和 `r2TableHeaderUrl()`/`r2TableDataUrl()` 两个路径构造函数。修改 R2 地址时仅改此文件。该文件位于 `$lib/constants/`（环境无关层），可供构建时和客户端代码共同使用。
-- **浏览器侧取数依赖 R2 桶的 CORS policy** — 镜像表 viewer 与谱面搜索都在客户端直连 R2（`r2TableHeaderUrl()`/`r2TableDataUrl()`、`R2_INDEXES_BASE`）。bucket 未放行站点来源时，浏览器报 `Failed to fetch`（viewer）与“索引加载失败”（搜索），而 beatoraja 等原生客户端不受影响，容易误判为代码缺陷。policy 位置在 Cloudflare 控制台 R2 → 桶 → Settings → CORS Policy；当前放行 `https://miyakomeow.site`、`https://brightmeows.github.io`、`https://brightmeows.codeberg.page`（两个静态镜像站仍从 R2 取数）与本地端口 `localhost:5173-5175`、`localhost:4173-4175`、`127.0.0.1:8787`、`localhost:8787`（`pnpm dev`、`pnpm preview`、`wrangler dev`）。改域或新增来源后必须同步该列表，否则站点功能静默退化。验证：`curl -sI -H "Origin: https://miyakomeow.site" <R2 header 地址> | rg -i access-control` 应出现 `access-control-allow-origin`。
+- **浏览器侧取数依赖 R2 桶的 CORS policy** — 镜像表 viewer 与谱面搜索都在客户端直连 R2（`r2TableHeaderUrl()`/`r2TableDataUrl()`、`R2_INDEXES_BASE`）。bucket 未放行站点来源时，浏览器报 `Failed to fetch`（viewer）与“索引加载失败”（搜索），而 beatoraja 等原生客户端不受影响，容易误判为代码缺陷。**期望来源写在 `config/site.json` 的 `r2.corsOrigins`**（三个站点域 + 本地端口），线上值用 `R2_BUCKET=<桶名> node scripts/check-r2-cors.ts` 只读比对；policy 位置在 Cloudflare 控制台 R2 → 桶 → Settings → CORS Policy。改域或新增来源时先改配置再同步线上（`config-drift.yml` 会在配置变更的 PR 上拦一次）。验证：`curl -sI -H "Origin: https://miyakomeow.site" <R2 header 地址> | rg -i access-control` 应出现 `access-control-allow-origin`。
 - **旧客户端 UA 是否被拦由 zone 级 Browser Integrity Check 决定** — 实测 `Java/1.8.x`、`Python-urllib`、`libwww-perl` 在 r2.dev、R2 自定义域与 workers.dev 上一律 403（Cloudflare error 1010），根因是 Browser Integrity Check，不是 r2.dev 的特有策略。本 zone 已关闭该开关（`browser_check = off`），因此 `bms-table-mirror-r2.miyakomeow.site` 与站点对旧 UA 全部放行；r2.dev 已于 2026-09-19 关闭（API：`PUT /accounts/{id}/r2/buckets/{bucket}/domains/managed`，body `{"enabled":false}`）。开关位置：控制台 zone → Security → Settings，或 `PATCH /zones/{id}/settings/browser_check`。
 - **www 目前与 apex 同源返回站点，不是 301** — `run_worker_first` 只覆盖 `/bms/table/mirror/*`，所以 Worker 里的 `www` 判断对其他路径不生效，而边缘 301 需要 zone 上的 Single Redirect 规则（需 token 权限 `Zone > Single Redirect > Edit`）。在补上规则之前，www 会直接返回同一份站点，SEO 靠 layout 里的 canonical 收敛到 apex。
 - **难度表导入链接与查看页是同一条 URL** — `/bms/table/mirror/<dir_name>/` 既是 beatoraja / BeMusicSeeker 的导入地址（beatoraja 对不以 `.json` 结尾的 URL 会当 HTML 页解析 `bmstable` meta，对 `.json` 结尾的 URL 直读 header），也是浏览器里的查看页；页面直接展示当前地址作为可导入链接（`BmsTablePage` 从地址栏取，带复制按钮）。`tables.json` 兼作 BeMusicSeeker 的难度表清单（超集字段）。旧的 `/bms/table/mirror/view/?t=…` 形态已于 2026-09 彻底移除：仓库中无对应路由，Worker 与静态产物都不提供，访问该路径得到 404。
@@ -111,6 +118,7 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm test`、no-conf
 - SvelTeX 0.5（Markdown 预处理器：unified 后端 + remark-gfm + katex + shiki）（博客文章用 `.md`）
 - TypeScript 6（`rewriteRelativeImportExtensions: true`）
 - Vitest 5（纯函数单测，Node 环境）
+- Node 版本以 `.nvmrc` 为准（工作流用 `node-version-file: .nvmrc`）；pnpm 版本以 `package.json` 的 `packageManager` 为准（工作流不传 `version`）。两者都由 `pnpm check:config` 断言
 - Paraglide JS（i18n，仅 demo 用）
 
 ## 依赖升级挂起项

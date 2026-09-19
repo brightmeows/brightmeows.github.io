@@ -1,8 +1,8 @@
-# Codeberg Pages 部署（镜像目标之一）。
+# Codeberg Pages 部署（静态镜像目标之一）。
 #
 # 代码经 mirror.yml 从 GitHub 推到这里，本工作流在 Codeberg 侧跑「构建 + 生成静态
-# 镜像页 + 发布」。清单里的 url 指向 codeberg 自己的域名，因此 Codeberg 用户拿到的
-# 导入地址与清单都指向本站；Cloudflare 侧由 Worker 动态生成，不涉及这里。
+# 镜像页 + 发布」。目标域名由配置解析（--target），因此这里不出现任何域名；
+# Cloudflare 侧由 Worker 动态生成，不涉及这里。
 name: Deploy to Codeberg Pages
 on:
   workflow_dispatch:
@@ -19,8 +19,11 @@ jobs:
         uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
         with:
-          version: 11
           cache: true
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: "pnpm"
       - name: Build
         run: |
           echo "::group::Install dependencies"
@@ -32,9 +35,11 @@ jobs:
           echo "::endgroup::"
       - name: Generate static mirror pages
         run: node scripts/gen-static-mirror-pages.ts --target=codeberg-pages
+      - name: Resolve site base from config
+        run: echo "SITE_BASE=$(node scripts/site-target.ts --target=codeberg-pages)" >> "$GITHUB_ENV"
       - name: Deploy to Codeberg Pages
         uses: https://codeberg.org/git-pages/action@v2
         with:
-          site: "https://brightmeows.codeberg.page/"
+          site: ${{ env.SITE_BASE }}
           token: "${{ forge.token }}"
           source: build/

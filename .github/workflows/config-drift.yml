@@ -1,0 +1,35 @@
+# 外部状态的只读漂移检查：桶的 CORS 来源是「改了仓库但线上没跟上就会静默退化」的
+# 一项（漏放来源时原生客户端照常工作，只有浏览器侧失败）。因此它进入配置并由本
+# 工作流在**配置变更的 PR** 与手动触发时与线上比对。
+#
+# 只在配置变更路径上跑：日常 CI 不必依赖 Cloudflare API，避免把抖动带进每次反馈。
+name: Config Drift
+on:
+  pull_request:
+    paths:
+      - "config/site.json"
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          cache: true
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install
+      - name: In-repo config consistency
+        run: pnpm check:config
+      - name: Compare R2 bucket CORS policy with config
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: node scripts/check-r2-cors.ts
