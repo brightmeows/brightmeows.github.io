@@ -15,11 +15,9 @@
 
   interface Props {
     headerUrl: string;
-    /** 复制按钮的目标路径（根相对）；缺省复制当前页 URL。 */
-    copyPath?: string;
   }
 
-  let { headerUrl, copyPath }: Props = $props();
+  let { headerUrl }: Props = $props();
 
   // ---- Header 加载状态 ----
   let headerLoadState = $state<"loading" | "loaded" | "error">("loading");
@@ -39,9 +37,8 @@
   let cb = clipboardFeedback();
 
   /**
-   * 客户端导入用链接（beatoraja / BeMusicSeeker）：viewer 路由传入 stub 路径，
-   * 其余场景为当前页。viewer 页本身不含 bmstable meta，不能在地址栏里被发现，
-   * 因此这里单独展示可导入的地址。
+   * 客户端导入用链接（beatoraja / BeMusicSeeker）：bmstable meta 由服务端注入，
+   * 地址栏 URL 本身即可导入，因此这里展示当前页地址（去掉查询串与 fragment）。
    */
   let importUrl = $state<string | null>(null);
 
@@ -178,9 +175,7 @@
   const dataLoading = $derived(dataLoadState === "idle" || dataLoadState === "loading");
 
   onMount(() => {
-    importUrl = copyPath
-      ? new URL(copyPath, window.location.origin).toString()
-      : window.location.href;
+    importUrl = `${window.location.origin}${window.location.pathname}`;
     void loadHeader();
   });
 </script>
@@ -217,7 +212,7 @@
       </div>
     {/if}
     <div class="mt-2 text-[1.2rem] text-white/70 italic">
-      导入链接（beatoraja / BeMusicSeeker 用）：
+      本页地址可直接用于导入（beatoraja / BeMusicSeeker）：
       {#if importUrl}
         <span class="font-mono text-[0.95rem] break-all text-white/85">{importUrl}</span>
         <button class="link-accent" type="button" onclick={copyImportUrl}> 点击复制 </button>
@@ -228,11 +223,6 @@
         <span class="ml-2 text-[#4caf50]">已复制</span>
       {/if}
     </div>
-    {#if copyPath}
-      <div class="mt-1 text-[1.05rem] text-white/60 italic">
-        请使用上面的链接：浏览器地址栏里的本查看页不含难度表元数据，无法被客户端导入。
-      </div>
-    {/if}
     <div class="mt-2 text-[1.2rem] text-white/70 italic">
       {#if headerUrl}
         <a class="link-accent" href={headerUrl} target="_blank" rel="noopener noreferrer">
