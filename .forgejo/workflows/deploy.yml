@@ -1,11 +1,12 @@
-name: Deploy to Codeberg Pages
+# Codeberg Pages 已于 2026-09-19 冻结：产物停在换血后的那一版（静态 stub 指向
+# R2 自定义域、canonical 指向新域名），不再随仓库更新，仓库里也不再有 stub 生成物。
+#
+# 因此本工作流改为仅手动触发：误触发会把 Codeberg Pages 覆盖成当前仓库状态，
+# 而当前构建产物没有静态 stub，旧链接 /bms/table/mirror/<dir_name>/ 会失效。
+# 保留文件是为了留住当年可用的部署方式与凭据配置，不是让你去点它。
+name: Deploy to Codeberg Pages (frozen)
 on:
   workflow_dispatch:
-  push:
-    branches: "main"
-  schedule:
-    # 6 小时兜底重建：GITHUB_TOKEN 类合并提交不触发 push 工作流
-    - cron: "20 */6 * * *"
 jobs:
   build_and_deploy:
     runs-on: codeberg-small-lazy

@@ -1,5 +1,8 @@
-# 迁移期双轨部署：同一份构建产物同时发布到 GitHub Pages 与 Cloudflare Workers。
-# 冻结旧托管时，删除 Pages 上传/部署步骤与 push 触发，只保留 Cloudflare 部署。
+# 站点部署：构建产物发布到 Cloudflare Workers（静态资源 + mirror 动态路由 Worker）。
+#
+# 旧托管（GitHub Pages / Codeberg Pages）已于 2026-09-19 冻结：它们的产物停在换血后的
+# 那一版（静态 stub 指向 R2 自定义域、canonical 指向新域名），不再随仓库更新，仓库里
+# 也不再有 stub 生成物。本工作流只负责新域名的部署。
 name: Deploy Site
 on:
   workflow_dispatch:
@@ -38,21 +41,3 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      - name: Upload Artifacts
-        uses: actions/upload-pages-artifact@v5
-        with:
-          # this should match the `pages` option in your adapter-static options
-          path: "build/"
-  deploy:
-    needs: build_site
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy
-        id: deployment
-        uses: actions/deploy-pages@v5
