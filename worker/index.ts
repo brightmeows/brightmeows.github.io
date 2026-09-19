@@ -17,7 +17,11 @@
  */
 
 import mirrorConfig from "../config/mirror.json";
-import { renderBmstableMetaTag, transformTableList } from "../src/lib/mirror/manifest.ts";
+import {
+  injectBmstableMeta,
+  serializeSiteTableList,
+  transformTableList,
+} from "../src/lib/mirror/manifest.ts";
 import { r2TableHeaderUrl } from "../src/lib/mirror/urls.ts";
 import type { MirrorTableItem } from "../src/lib/types/bms.ts";
 
@@ -112,20 +116,13 @@ async function handleTablePage(
     return env.ASSETS.fetch(request);
   }
 
-  const shell = await env.ASSETS.fetch(new URL(SITE_SHELL_PATH, url.origin));
+  const shellRes = await env.ASSETS.fetch(new URL(SITE_SHELL_PATH, url.origin));
+  const shell = await shellRes.text();
   const headerUrl = r2TableHeaderUrl(mirrorConfig.r2Base, tableId);
-  const rewritten = new HTMLRewriter()
-    .on("head", {
-      element(element) {
-        // 前后各一个换行：让 meta 独占一行。jbmstable-parser 会按行取含
-        // `<meta name="bmstable"` 的那一行并按引号切分，与 `<head>` 同处一行时
-        // 只要该行还有其他引号就会解析错位。
-        element.prepend(`\n${renderBmstableMetaTag(headerUrl)}\n`, { html: true });
-      },
-    })
-    .transform(shell);
+  // 与构建期脚本共用同一段注入逻辑，保证两种输出逐字节等价
+  const page = injectBmstableMeta(shell, headerUrl);
 
-  return new Response(rewritten.body, {
+  return new Response(page, {
     status: 200,
     headers: {
       "content-type": "text/html; charset=utf-8",
@@ -145,7 +142,7 @@ async function handleTablesJson(url: URL): Promise<Response> {
   }
   let body: string;
   try {
-    body = `${JSON.stringify(transformTableList(manifest, url.origin), null, 2)}\n`;
+    body = serializeSiteTableList(transformTableList(manifest, url.origin));
   } catch (error) {
     return textResponse(
       `清单数据不完整：${error instanceof Error ? error.message : String(error)}`,
