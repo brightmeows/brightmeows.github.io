@@ -1,12 +1,16 @@
-# Codeberg Pages 已于 2026-09-19 冻结：产物停在换血后的那一版（静态 stub 指向
-# R2 自定义域、canonical 指向新域名），不再随仓库更新，仓库里也不再有 stub 生成物。
+# Codeberg Pages 部署（镜像目标之一）。
 #
-# 因此本工作流改为仅手动触发：误触发会把 Codeberg Pages 覆盖成当前仓库状态，
-# 而当前构建产物没有静态 stub，旧链接 /bms/table/mirror/<dir_name>/ 会失效。
-# 保留文件是为了留住当年可用的部署方式与凭据配置，不是让你去点它。
-name: Deploy to Codeberg Pages (frozen)
+# 代码经 mirror.yml 从 GitHub 推到这里，本工作流在 Codeberg 侧跑「构建 + 生成静态
+# 镜像页 + 发布」。清单里的 url 指向 codeberg 自己的域名，因此 Codeberg 用户拿到的
+# 导入地址与清单都指向本站；Cloudflare 侧由 Worker 动态生成，不涉及这里。
+name: Deploy to Codeberg Pages
 on:
   workflow_dispatch:
+  push:
+    branches: "main"
+  schedule:
+    # 6 小时兜底重建：与 GitHub 侧对称，兜住镜像推送延迟与清单快照更新
+    - cron: "20 */6 * * *"
 jobs:
   build_and_deploy:
     runs-on: codeberg-small-lazy
@@ -26,6 +30,8 @@ jobs:
           echo "::group::Build"
           pnpm build
           echo "::endgroup::"
+      - name: Generate static mirror pages
+        run: node scripts/gen-static-mirror-pages.ts --site-base=https://brightmeows.codeberg.page
       - name: Deploy to Codeberg Pages
         uses: https://codeberg.org/git-pages/action@v2
         with:
