@@ -1,4 +1,6 @@
-name: Deploy to GitHub Pages
+# 迁移期双轨部署：同一份构建产物同时发布到 GitHub Pages 与 Cloudflare Workers。
+# 冻结旧托管时，删除 Pages 上传/部署步骤与 push 触发，只保留 Cloudflare 部署。
+name: Deploy Site
 on:
   workflow_dispatch:
   push:
@@ -30,6 +32,11 @@ jobs:
           pnpm test
       - name: Build
         run: pnpm build
+      - name: Deploy to Cloudflare Workers
+        run: pnpm exec wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - name: Upload Artifacts
         uses: actions/upload-pages-artifact@v5
         with:

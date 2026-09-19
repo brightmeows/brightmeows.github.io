@@ -27,6 +27,8 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm test`、no-conf
 - `pnpm dev`
 - `pnpm build`
 - `pnpm test`
+- `pnpm exec wrangler deploy` — 把 `build/` 发布到 Cloudflare Workers（需环境变量 `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID`）
+- `pnpm exec wrangler dev` — 本地 Workers 运行时（需先 `pnpm build`）
 
 ## 反直觉决策
 
@@ -44,6 +46,7 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm test`、no-conf
 - **ruleset 不得启用 Restrict updates 规则** — 实测 ruleset 的 `update` 类型规则会把 PR 合并一起拦死：它只允许 bypass actor 更新 matching refs，而 PR 合并也是 ref 更新，启用后 PR 的 mergeStateStatus 恒为 BLOCKED（GitHub 报 “base branch policy prohibits the merge”），checks 全绿也无法合并。禁止直接 push main 由 `pull_request` 规则独立承担（已实测其拦直推），不要重新加回 `update` 规则。诊断提示：BLOCKED 且 checks 全绿时，先检查 ruleset 是否含 `update` 规则。
 - **`pnpm-workspace.yaml` 的 `allowBuilds` 由 pnpm 11 维护** — 遇到未决的 build script 时 pnpm 会自动写入占位符（值为字面量 `set this to true or false`），带着占位符提交会让 CI 的 install 直接失败。本地需改成明确的 `true`/`false` 再提交。
 - **本地 install 可能因 npmmirror 同步延迟失败** — 全局 registry 指向 `registry.npmmirror.com`，其同步有延迟（曾出现 `@inlang/paraglide-js` 2.25.2 缺失导致 `--frozen-lockfile` 报 404）。绕过方式为 `pnpm install --registry=https://registry.npmjs.org`。CI 使用官方源，不受影响。
+- **迁移期双轨部署：同一份 `build/` 同时发到 GitHub Pages 与 Cloudflare Workers** — `deploy.yml` 的 `build_site` 在 `pnpm build` 之后先 `wrangler deploy`（配置见 `wrangler.jsonc`，静态资源模式，暂无 Worker 脚本），随后照旧上传 Pages artifact 并由 `deploy` job 发布。两个新 secret（`CLOUDFLARE_API_TOKEN`、`CLOUDFLARE_ACCOUNT_ID`）缺失会让整个 job 失败，并连带跳过 Pages 部署。静态请求在 Workers 上不计费；自定义域与 mirror 动态路由在后续变更中加入。冻结旧托管时删掉 Pages 上传/部署步骤与 push 触发，只保留 Cloudflare 部署。
 
 ### 构建与配置
 

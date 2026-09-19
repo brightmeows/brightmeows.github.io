@@ -1,0 +1,14 @@
+{
+  // 站点以 Cloudflare Workers 静态资源形式部署。
+  // 本阶段暂无 Worker 脚本（main 未配置），mirror 的动态路由在后续变更中加入。
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "miyakomeow-site",
+  "compatibility_date": "2026-09-19",
+  "assets": {
+    // 与 svelte.config.ts 中 adapter-static 的 pages/assets 输出保持一致
+    "directory": "./build",
+    // 站点全局 trailingSlash="always"，构建产物为 <route>/index.html
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page",
+  },
+}
