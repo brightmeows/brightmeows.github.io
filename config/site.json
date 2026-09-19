@@ -1,0 +1,38 @@
+{
+  "origin": "https://miyakomeow.site",
+  "targets": [
+    {
+      "name": "cloudflare",
+      "kind": "worker",
+      "hosts": ["miyakomeow.site", "www.miyakomeow.site"]
+    },
+    {
+      "name": "github-pages",
+      "kind": "static",
+      "siteBase": "https://brightmeows.github.io"
+    },
+    {
+      "name": "codeberg-pages",
+      "kind": "static",
+      "siteBase": "https://brightmeows.codeberg.page"
+    }
+  ],
+  "r2": {
+    "base": "https://bms-table-mirror-r2.miyakomeow.site",
+    "manifestObject": "tables/tables.json",
+    "snapshot": "src/lib/mirror/table-manifest.json",
+    "corsOrigins": [
+      "https://miyakomeow.site",
+      "https://brightmeows.github.io",
+      "https://brightmeows.codeberg.page",
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "http://localhost:5175",
+      "http://localhost:4173",
+      "http://localhost:4174",
+      "http://localhost:4175",
+      "http://localhost:8787",
+      "http://127.0.0.1:8787"
+    ]
+  }
+}

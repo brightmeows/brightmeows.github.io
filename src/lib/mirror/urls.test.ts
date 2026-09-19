@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import mirrorConfig from "../../../config/mirror.json";
+import siteConfig from "../../../config/site.json";
 
 import {
   encodeTableId,
@@ -54,13 +54,13 @@ describe("镜像页路径", () => {
   });
 });
 
-describe("config/mirror.json", () => {
+describe("config/site.json", () => {
   it("基址为 https 且不带尾部斜杠", () => {
-    expect(mirrorConfig.r2Base).toMatch(/^https:\/\//);
-    expect(mirrorConfig.r2Base.endsWith("/")).toBe(false);
+    expect(siteConfig.r2.base).toMatch(/^https:\/\//);
+    expect(siteConfig.r2.base.endsWith("/")).toBe(false);
   });
 
   it("站点常量与共享配置一致", () => {
-    expect(R2_BASE).toBe(mirrorConfig.r2Base);
+    expect(R2_BASE).toBe(siteConfig.r2.base);
   });
 });

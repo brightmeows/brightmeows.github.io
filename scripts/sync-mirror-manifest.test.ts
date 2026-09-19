@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { serializeTableManifest } from "../src/lib/mirror/manifest.ts";
 import type { MirrorTableItem } from "../src/lib/types/bms.ts";
 
-import { readR2Base, runSync } from "./sync-mirror-manifest.ts";
+import { runSync } from "./sync-mirror-manifest.ts";
 
 const manifest: MirrorTableItem[] = [
   {
@@ -50,6 +50,7 @@ describe("runSync", () => {
     const snapshotPath = tempSnapshot();
     const result = await runSync({
       r2Base: "https://r2.example",
+      manifestObject: "tables/tables.json",
       snapshotPath,
       fetchImpl: stubFetch(manifest),
     });
@@ -64,6 +65,7 @@ describe("runSync", () => {
     writeFileSync(snapshotPath, serializeTableManifest(manifest));
     const result = await runSync({
       r2Base: "https://r2.example",
+      manifestObject: "tables/tables.json",
       snapshotPath,
       fetchImpl: stubFetch(
         manifest.map((item) => ({ ...item, comment: "上游改过", date: "2026-09-19" }))
@@ -84,6 +86,7 @@ describe("runSync", () => {
     writeFileSync(snapshotPath, serializeTableManifest([manifest[0]]));
     const result = await runSync({
       r2Base: "https://r2.example",
+      manifestObject: "tables/tables.json",
       snapshotPath,
       fetchImpl: stubFetch(manifest),
     });
@@ -97,6 +100,7 @@ describe("runSync", () => {
     writeFileSync(snapshotPath, serializeTableManifest([manifest[0]]));
     const result = await runSync({
       r2Base: "https://r2.example",
+      manifestObject: "tables/tables.json",
       snapshotPath,
       check: true,
       fetchImpl: stubFetch(manifest),
@@ -109,28 +113,20 @@ describe("runSync", () => {
   it("远端返回非数组或非 2xx 时报错", async () => {
     const snapshotPath = tempSnapshot();
     await expect(
-      runSync({ r2Base: "https://r2.example", snapshotPath, fetchImpl: stubFetch({ oops: true }) })
+      runSync({
+        r2Base: "https://r2.example",
+        manifestObject: "tables/tables.json",
+        snapshotPath,
+        fetchImpl: stubFetch({ oops: true }),
+      })
     ).rejects.toThrow(/不是数组/);
     await expect(
-      runSync({ r2Base: "https://r2.example", snapshotPath, fetchImpl: stubFetch(manifest, 503) })
+      runSync({
+        r2Base: "https://r2.example",
+        manifestObject: "tables/tables.json",
+        snapshotPath,
+        fetchImpl: stubFetch(manifest, 503),
+      })
     ).rejects.toThrow(/503/);
-  });
-});
-
-describe("readR2Base", () => {
-  it("读取合法配置并去掉尾部斜杠", () => {
-    const configPath = path.join(mkdtempSync(path.join(tmpdir(), "mirror-config-")), "mirror.json");
-    writeFileSync(configPath, JSON.stringify({ r2Base: "https://r2.example/" }));
-    expect(readR2Base(configPath)).toBe("https://r2.example");
-  });
-
-  it("缺字段或非 http(s) 时报错", () => {
-    const dir = mkdtempSync(path.join(tmpdir(), "mirror-config-"));
-    const bad = path.join(dir, "bad.json");
-    writeFileSync(bad, JSON.stringify({ r2Base: "r2.example" }));
-    expect(() => readR2Base(bad)).toThrow(/r2Base/);
-    const empty = path.join(dir, "empty.json");
-    writeFileSync(empty, JSON.stringify({}));
-    expect(() => readR2Base(empty)).toThrow(/r2Base/);
   });
 });

@@ -26,7 +26,7 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm test`、no-conf
 - `pnpm exec wrangler deploy` — 把 `build/` 发布到 Cloudflare Workers（需环境变量 `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID`）
 - `pnpm exec wrangler dev` — 本地 Workers 运行时，含 `/bms/table/mirror/*` 的动态路由（需先 `pnpm build`；这些路由在 `pnpm dev` 下不可用）
 - `node scripts/sync-mirror-manifest.ts [--check]` — 比对 R2 清单与仓库快照，仅列表变动时写入（`--check` 只报告不写入）
-- `node scripts/gen-static-mirror-pages.ts --site-base=<域名>` — 生成静态宿主的镜像页与站点清单（需先 `pnpm build`，完全离线）
+- `node scripts/gen-static-mirror-pages.ts --target=<目标名> [--site-base=<域名>]` — 生成静态宿主的镜像页与站点清单（需先 `pnpm build`，完全离线；`--site-base` 仅本地演练覆盖）
 
 ## 反直觉决策
 
@@ -44,12 +44,12 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm test`、no-conf
 - **ruleset 不得启用 Restrict updates 规则** — 实测 ruleset 的 `update` 类型规则会把 PR 合并一起拦死：它只允许 bypass actor 更新 matching refs，而 PR 合并也是 ref 更新，启用后 PR 的 mergeStateStatus 恒为 BLOCKED（GitHub 报 “base branch policy prohibits the merge”），checks 全绿也无法合并。禁止直接 push main 由 `pull_request` 规则独立承担（已实测其拦直推），不要重新加回 `update` 规则。诊断提示：BLOCKED 且 checks 全绿时，先检查 ruleset 是否含 `update` 规则。
 - **`pnpm-workspace.yaml` 的 `allowBuilds` 由 pnpm 11 维护** — 遇到未决的 build script 时 pnpm 会自动写入占位符（值为字面量 `set this to true or false`），带着占位符提交会让 CI 的 install 直接失败。本地需改成明确的 `true`/`false` 再提交。
 - **本地 install 可能因 npmmirror 同步延迟失败** — 全局 registry 指向 `registry.npmmirror.com`，其同步有延迟（曾出现 `@inlang/paraglide-js` 2.25.2 缺失导致 `--frozen-lockfile` 报 404）。绕过方式为 `pnpm install --registry=https://registry.npmjs.org`。CI 使用官方源，不受影响。
-- **三个部署目标，按目标分区** — Cloudflare Workers（主站 `miyakomeow.site`：静态资源 + Worker，镜像表页面与 `tables.json` 运行时生成，因此 `wrangler deploy` 必须排在生成步骤**之前**）；GitHub Pages（`brightmeows.github.io`）与 Codeberg Pages（`brightmeows.codeberg.page`）：后两者在构建后用 `node scripts/gen-static-mirror-pages.ts --site-base=<该目标域名>` 离线生成静态镜像页与自己的 `tables.json` 再发布（Codeberg 侧由 `.forgejo/workflows/deploy.yml` 跑同样流程，触发随镜像推送）。三处页面逐字节一致——Worker 与脚本共用 `src/lib/mirror/manifest.ts` 的注入与序列化函数。生成失败即整步失败，避免用缺页产物覆盖上一版仍可用的静态站点；Cloudflare 已先部署完成，属可接受的失败隔离。
+- **三个部署目标，按目标分区** — Cloudflare Workers（主站 `miyakomeow.site`：静态资源 + Worker，镜像表页面与 `tables.json` 运行时生成，因此 `wrangler deploy` 必须排在生成步骤**之前**）；GitHub Pages（`brightmeows.github.io`）与 Codeberg Pages（`brightmeows.codeberg.page`）：后两者在构建后用 `node scripts/gen-static-mirror-pages.ts --target=<目标名>` 离线生成静态镜像页与自己的 `tables.json` 再发布（域名由脚本从配置解析，工作流里不再出现域名）（Codeberg 侧由 `.forgejo/workflows/deploy.yml` 跑同样流程，触发随镜像推送）。三处页面逐字节一致——Worker 与脚本共用 `src/lib/mirror/manifest.ts` 的注入与序列化函数。生成失败即整步失败，避免用缺页产物覆盖上一版仍可用的静态站点；Cloudflare 已先部署完成，属可接受的失败隔离。
 
 ### 构建与配置
 
 - **`vite.config.ts` 中 `server.fs.allow: ["content"]`** — Vite dev server 默认仅允许 `src/`、`.svelte-kit/`、`node_modules/` 内的文件被访问。`content/` 不在其中，`import()` 请求会被拦截（404/403）。需要在 `vite.config.ts` 中显式添加。build 时无此限制。
-- **`config/mirror.json` 是 R2 基址的单一来源** — 只剩 `r2Base` 一个字段，由站点代码（`src/lib/constants/r2.ts`）与 Worker（`worker/index.ts`）共读；换 R2 域只改这一处再重新部署。
+- **`config/site.json` 是站点与部署配置的单一来源** — 字段：`origin`（站点规范域）、`targets[]`（部署目标：cloudflare/worker + hosts，两个静态目标的 siteBase）、`r2.base`/`r2.manifestObject`/`r2.snapshot`/`r2.corsOrigins`。能 import 的消费者直接 import（`src/lib/constants/r2.ts`、`src/lib/constants/site.ts`、`worker/index.ts`）；不能 import 的（`wrangler.jsonc` 的 routes、工作流里的域名）由 `scripts/check-site-config.ts` 断言一致。桶名刻意不在配置里（只存在于 Actions secret 与 Cloudflare 侧）。
 
 ### BMS
 
@@ -101,7 +101,7 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm test`、no-conf
 - **`src/lib/utils/`** — 纯函数。无副作用、无平台特定 API 依赖（轻量 DOM 工具如 `clipboard.ts`、`url.ts` 除外）。任何环境可调用。
 - **`src/lib/mirror/`** — 镜像表的零依赖层（URL 构造、清单变换、bmstable meta 渲染），由站点与 Worker（`worker/index.ts`）共用；约束：无 Svelte/DOM 依赖、可擦除语法、相对导入带 `.ts` 扩展名（Worker 由 wrangler/esbuild 打包，直接引用这些 `.ts` 文件）。
 - **数据加载策略** — 构建时加载（`+page.server.ts` / `+page.ts`）：数据在 git 仓库内，如博客 `.md` 文件与自托管 BMS 表的目录枚举。客户端加载（`onMount` → `data/` 层 fetch）：数据来自 R2（表数据 `header.json`/`data.json`、搜索索引），或同站 Worker 路由（`/bms/table/mirror/tables.json`），或远程原始源（`data_url` JSONP/跨域 fetch）。选择标准：数据源在构建时可访问且不依赖用户上下文 → 构建时加载；否则客户端加载。
-- **本地 `pnpm dev` 不提供 mirror 动态路由** — 列表页 `/bms/table/mirror/` 依赖 Worker 生成的 `tables.json`，本地 dev 下会报加载失败；单表页的 meta 注入也只存在于 Worker 运行时。验证 mirror 行为用 `pnpm build && pnpm exec wrangler dev`（`localhost:8787` 已在桶 CORS 放行）；想验静态宿主形态则 `pnpm build && node scripts/gen-static-mirror-pages.ts --site-base=http://127.0.0.1:8787` 后用静态服务器起 `build/`。
+- **本地 `pnpm dev` 不提供 mirror 动态路由** — 列表页 `/bms/table/mirror/` 依赖 Worker 生成的 `tables.json`，本地 dev 下会报加载失败；单表页的 meta 注入也只存在于 Worker 运行时。验证 mirror 行为用 `pnpm build && pnpm exec wrangler dev`（`localhost:8787` 已在桶 CORS 放行）；想验静态宿主形态则 `pnpm build && node scripts/gen-static-mirror-pages.ts --site-base=http://127.0.0.1:8787` 后用静态服务器起 `build/`（本地演练用显式 site-base，因为配置里只有生产目标）。
 - **`src/lib/components/`** — UI 组件层。`ui/` 为通用原语（barrel export 见 `ui/index.ts`），其余子目录为领域组件。写 UI 前 `glob src/lib/components/**/*.svelte` 检索已有组件。
 
 ## 技术栈
