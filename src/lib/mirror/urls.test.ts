@@ -4,13 +4,11 @@ import mirrorConfig from "../../../config/mirror.json";
 
 import {
   encodeTableId,
-  mirrorTableAbsoluteUrl,
   mirrorTablePath,
   normalizeBase,
   r2TableDataUrl,
   r2TableHeaderUrl,
   r2TablesBase,
-  viewerPath,
 } from "./urls";
 
 import { R2_BASE } from "$lib/constants/r2";
@@ -51,24 +49,15 @@ describe("r2 URL 构造", () => {
 });
 
 describe("镜像页路径", () => {
-  it("stub 路径与 viewer 路径均带编码参数", () => {
+  it("镜像页路径带编码参数", () => {
     expect(mirrorTablePath(tableId)).toBe(`/bms/table/mirror/${encodeTableId(tableId)}/`);
-    expect(viewerPath(tableId)).toBe(`/bms/table/mirror/view/?t=${encodeTableId(tableId)}`);
-  });
-
-  it("绝对镜像地址拼接站点基址并去尾斜杠", () => {
-    expect(mirrorTableAbsoluteUrl("https://site.test/", tableId)).toBe(
-      `https://site.test/bms/table/mirror/${encodeTableId(tableId)}/`
-    );
   });
 });
 
 describe("config/mirror.json", () => {
   it("基址为 https 且不带尾部斜杠", () => {
     expect(mirrorConfig.r2Base).toMatch(/^https:\/\//);
-    expect(mirrorConfig.siteBase).toMatch(/^https:\/\//);
     expect(mirrorConfig.r2Base.endsWith("/")).toBe(false);
-    expect(mirrorConfig.siteBase.endsWith("/")).toBe(false);
   });
 
   it("站点常量与共享配置一致", () => {

@@ -32,13 +32,3 @@ export function r2TableDataUrl(r2Base: string, tableId: string): string {
 export function mirrorTablePath(tableId: string): string {
   return `/bms/table/mirror/${encodeTableId(tableId)}/`;
 }
-
-/** 站点内 viewer 路径（带查询参数）。 */
-export function viewerPath(tableId: string): string {
-  return `/bms/table/mirror/view/?t=${encodeTableId(tableId)}`;
-}
-
-/** 站点清单中使用的镜像表页面绝对 URL。 */
-export function mirrorTableAbsoluteUrl(siteBase: string, tableId: string): string {
-  return `${normalizeBase(siteBase)}${mirrorTablePath(tableId)}`;
-}
