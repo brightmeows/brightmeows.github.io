@@ -123,7 +123,8 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm test`、no-conf
 ## 分支与工作树
 
 - **新分支在 `.worktrees/` 隔离开发** — `.worktrees/` 已 gitignore，用 `git worktree add .worktrees/<分支名> -b <分支>` 创建隔离工作树，不在主工作树上直接切分支。
-- **分支合并即清理** — 分支经 PR 合并或本地并入 main 后立即清理现场，不留挂起引用：`git worktree remove .worktrees/<分支名>` 拆工作树，`git branch -d <分支>` 删本地分支，最后 `git fetch --prune` 收掉失效的 remote-tracking ref。远端分支由仓库设置 delete_branch_on_merge（已开启）随合并自动删除，但它不覆盖 PR 关闭未合并（方案否决）的情况，此时需手动 `git push origin --delete <分支>` 收尾。已合并与已关闭分支的 commit 由远端 PR 引用保留，本地不留存档分支，也不以“未合并”为由拖延清理。
+- **变更一律走 PR，以 merge commit 合并** — main 不接受直接 push，一切变更经 PR 合并，代理会话不在 main 上直接提交。合并方式固定为 merge commit（`gh pr merge --merge`），不用 squash/rebase，保留分支拓扑与独立 revert 粒度。
+- **分支合并即清理** — 分支经 PR 合并后立即清理现场，不留挂起引用：`git worktree remove .worktrees/<分支名>` 拆工作树，`git branch -d <分支>` 删本地分支，最后 `git fetch --prune` 收掉失效的 remote-tracking ref。远端分支由仓库设置 delete_branch_on_merge（已开启）随合并自动删除，但它不覆盖 PR 关闭未合并（方案否决）的情况，此时需手动 `git push origin --delete <分支>` 收尾。已合并与已关闭分支的 commit 由远端 PR 引用保留，本地不留存档分支，也不以“未合并”为由拖延清理。
 
 ## 提交格式
 
