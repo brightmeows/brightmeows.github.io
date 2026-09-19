@@ -18,7 +18,7 @@
 
 import mirrorConfig from "../config/mirror.json";
 import { renderBmstableMetaTag, transformTableList } from "../src/lib/mirror/manifest.ts";
-import { mirrorTablePath, r2TableHeaderUrl } from "../src/lib/mirror/urls.ts";
+import { r2TableHeaderUrl } from "../src/lib/mirror/urls.ts";
 import type { MirrorTableItem } from "../src/lib/types/bms.ts";
 
 interface Env {
@@ -180,13 +180,6 @@ export default {
     const path = decodePath(url.pathname);
     if (path === null) {
       return textResponse("URL 编码非法。", 400);
-    }
-
-    // 旧查看页 /bms/table/mirror/view/?t=… 永久跳到新形态
-    if (path === `${MIRROR_ROOT}view` || path === `${MIRROR_ROOT}view/`) {
-      const tableId = url.searchParams.get("t");
-      const target = tableId ? mirrorTablePath(tableId) : MIRROR_ROOT;
-      return Response.redirect(new URL(target, url.origin).toString(), 301);
     }
 
     if (path === `${MIRROR_ROOT}tables.json`) {
