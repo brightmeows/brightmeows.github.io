@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import { page } from "$app/state";
   import { ChartsTableSection, CourseSection, LevelRefTable } from "$lib/components/bms";
   import { PageShell } from "$lib/components/layout";
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
@@ -39,9 +38,15 @@
   let pageTitle = $state("加载难度表header中");
   let cb = clipboardFeedback();
 
-  /** 复制给客户端注册用的表地址：默认当前页，viewer 路由传入 stub 路径。 */
-  function copyTableUrl(): void {
-    cb.copy(copyPath ? new URL(copyPath, window.location.origin).toString() : page.url.href);
+  /**
+   * 客户端导入用链接（beatoraja / BeMusicSeeker）：viewer 路由传入 stub 路径，
+   * 其余场景为当前页。viewer 页本身不含 bmstable meta，不能在地址栏里被发现，
+   * 因此这里单独展示可导入的地址。
+   */
+  let importUrl = $state<string | null>(null);
+
+  function copyImportUrl(): void {
+    if (importUrl) cb.copy(importUrl);
   }
   let levelRefHasData = $state(false);
   let levelRefLoadState = $state<"idle" | "loading" | "done" | "not-found" | "error">("idle");
@@ -173,6 +178,9 @@
   const dataLoading = $derived(dataLoadState === "idle" || dataLoadState === "loading");
 
   onMount(() => {
+    importUrl = copyPath
+      ? new URL(copyPath, window.location.origin).toString()
+      : window.location.href;
     void loadHeader();
   });
 </script>
@@ -209,13 +217,22 @@
       </div>
     {/if}
     <div class="mt-2 text-[1.2rem] text-white/70 italic">
-      使用方式：复制本网站链接（
-      <button class="link-accent" type="button" onclick={copyTableUrl}> 点击复制 </button>
-      ），然后在BeMusicSeeker或beatoraja中，粘贴至对应选项处。
+      导入链接（beatoraja / BeMusicSeeker 用）：
+      {#if importUrl}
+        <span class="font-mono text-[0.95rem] break-all text-white/85">{importUrl}</span>
+        <button class="link-accent" type="button" onclick={copyImportUrl}> 点击复制 </button>
+      {:else}
+        <span class="text-white/50">读取中…</span>
+      {/if}
       {#if cb.copied}
         <span class="ml-2 text-[#4caf50]">已复制</span>
       {/if}
     </div>
+    {#if copyPath}
+      <div class="mt-1 text-[1.05rem] text-white/60 italic">
+        请使用上面的链接：浏览器地址栏里的本查看页不含难度表元数据，无法被客户端导入。
+      </div>
+    {/if}
     <div class="mt-2 text-[1.2rem] text-white/70 italic">
       {#if headerUrl}
         <a class="link-accent" href={headerUrl} target="_blank" rel="noopener noreferrer">
