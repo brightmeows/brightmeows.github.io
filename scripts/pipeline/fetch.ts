@@ -8,6 +8,7 @@
  */
 
 import { describeError } from "./errors.ts";
+import { requestHttp2 } from "./http2-client.ts";
 import { parseJsonWithFallback, stripControlChars } from "./json-utils.ts";
 import { extractBmstableUrlHint } from "./meta.ts";
 import type { TableInfo } from "./types.ts";
@@ -19,6 +20,14 @@ export const DEFAULT_TIMEOUT_MS = 60_000;
 
 const ACCEPT_HEADER =
   "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9";
+
+/** 请求头：与旧实现的浏览器仿真一致；h2 与 h1 共用。 */
+const REQUEST_HEADERS: Record<string, string> = {
+  accept: ACCEPT_HEADER,
+  "accept-language": "zh-CN,zh;q=0.9,en;q=0.8",
+  "user-agent": USER_AGENT,
+  "accept-encoding": "gzip, deflate, br",
+};
 
 export interface FetchOptions {
   timeoutMs?: number;
@@ -40,19 +49,38 @@ function decodeBody(buffer: Buffer, contentType: string): string {
   }
 }
 
-/** 抓取 URL 并解码为文本；HTTP 状态不参与判断（与旧实现一致，页面内容决定成败）。 */
+/**
+ * 抓取 URL 并解码为文本。
+ *
+ * https 默认走 HTTP/2（见 http2-client.ts：数据中心 IP 下 Cloudflare 只挑战
+ * HTTP/1.1），协商失败时回退；h2 拿到 403/503 时也换 HTTP/1.1 再试一次。
+ * HTTP 状态不参与成败判断，页面内容决定成败（与旧实现一致）。
+ */
 export async function fetchText(url: string, options: FetchOptions = {}): Promise<FetchTextResult> {
+  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  if (url.startsWith("https://")) {
+    try {
+      const response = await requestHttp2(url, { headers: REQUEST_HEADERS, timeoutMs });
+      if (response.status !== 403 && response.status !== 503) {
+        const contentType = response.headers["content-type"] ?? "";
+        return { text: decodeBody(response.buffer, contentType), contentType };
+      }
+    } catch {
+      // 服务器不支持 h2 或连接被重置：回退 HTTP/1.1
+    }
+  }
+  return fetchTextHttp1(url, options);
+}
+
+/** HTTP/1.1 抓取（http 地址与 h2 回退路径）。 */
+async function fetchTextHttp1(url: string, options: FetchOptions): Promise<FetchTextResult> {
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const fetchImpl = options.fetchImpl ?? fetch;
   let response: Response;
   try {
     response = await fetchImpl(url, {
       redirect: "follow",
-      headers: {
-        accept: ACCEPT_HEADER,
-        "accept-language": "zh-CN,zh;q=0.9,en;q=0.8",
-        "user-agent": USER_AGENT,
-      },
+      headers: REQUEST_HEADERS,
       signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (error) {
