@@ -59,6 +59,9 @@ importers:
       oxlint-tsgolint:
         specifier: ^7.0.2001
         version: 7.0.2001
+      parse5:
+        specifier: ^8.0.1
+        version: 8.0.1
       rehype-stringify:
         specifier: ^10.0.1
         version: 10.0.1
@@ -77,6 +80,9 @@ importers:
       shiki:
         specifier: ^4.4.3
         version: 4.4.3
+      smol-toml:
+        specifier: ^1.8.0
+        version: 1.8.0
       svelte:
         specifier: ^5.57.0
         version: 5.57.0
@@ -2144,6 +2150,9 @@ packages:
 
   parse5@7.3.0:
     resolution: {integrity: sha512-IInvU7fabl34qmi9gY8XOVxhYyMyuH2xUNpb2q8/Y+7552KlejkRvqvD19nMoUW/uQGGbqNpA6Tufu5FL5BZgw==}
+
+  parse5@8.0.1:
+    resolution: {integrity: sha512-z1e/HMG90obSGeidlli3hj7cbocou0/wa5HacvI3ASx34PecNjNQeaHNo5WIZpWofN9kgkqV1q5YvXe3F0FoPw==}
 
   path-scurry@2.0.2:
     resolution: {integrity: sha512-3O/iVVsJAPsOnpwWIeD+d6z/7PmqApyQePUtCndjatj/9I5LylHvt5qluFaBT3I5h3r1ejfR056c+FCv+NnNXg==}
@@ -4553,6 +4562,10 @@ snapshots:
   parse5@7.3.0:
     dependencies:
       entities: 6.0.1
+
+  parse5@8.0.1:
+    dependencies:
+      entities: 8.1.0
 
   path-scurry@2.0.2:
     dependencies:
