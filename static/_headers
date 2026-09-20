@@ -3,6 +3,12 @@
 #
 # `_app/immutable/` 下的资源由构建器按内容哈希命名，可安全长缓存；`/*` 规则只加
 # 安全头，不要在这里设置 Cache-Control——它会与下面的长缓存规则叠加。
+#
+# 刻意不含 Content-Security-Policy（2026-09 评估）：站点无 `{@html}` 注入点、无
+# 第三方脚本，但客户端要跨域 fetch 多个表数据源（connect-src 必须放开到 https:），
+# 且 SvelteKit 会注入内联启动脚本（script-src 需保留 unsafe-inline 或做
+# hash/nonce）——两者叠加后 CSP 能挡的攻击面已经很窄，而配置出错会直接破坛页面。
+# 重新评估的触发条件：引入第三方脚本、渲染用户输入，或新增非 self 的资源来源时。
 /_app/immutable/*
   Cache-Control: public, max-age=31536000, immutable
 
