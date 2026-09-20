@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { GlassNavCard } from "$lib/components/ui";
+  import GlassNavCard from "$lib/components/ui/GlassNavCard.svelte";
   import type { NavChild } from "$lib/types/ui";
 
   interface Props {

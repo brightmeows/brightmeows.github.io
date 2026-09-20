@@ -1,8 +1,9 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
 
-  import { GroupedTablesSection, SelectedTablesPanel } from "$lib/components/bms";
-  import { PageShell } from "$lib/components/layout";
+  import GroupedTablesSection from "$lib/components/bms/GroupedTablesSection.svelte";
+  import SelectedTablesPanel from "$lib/components/bms/SelectedTablesPanel.svelte";
+  import PageShell from "$lib/components/layout/PageShell.svelte";
   import Checkbox from "$lib/components/ui/Checkbox.svelte";
   import JsonPreview from "$lib/components/ui/JsonPreview.svelte";
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";

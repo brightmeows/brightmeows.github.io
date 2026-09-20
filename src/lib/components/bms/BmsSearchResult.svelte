@@ -1,7 +1,8 @@
 <script lang="ts">
   import BmsLinkButtons from "./BmsLinkButtons.svelte";
 
-  import { GlassContainer, GradientButton } from "$lib/components/ui";
+  import GlassContainer from "$lib/components/ui/GlassContainer.svelte";
+  import GradientButton from "$lib/components/ui/GradientButton.svelte";
   import type { TableLoadState } from "$lib/data/bms-search";
   import type { SearchResult } from "$lib/data/search-aggregator";
   import { mirrorTablePath } from "$lib/mirror/urls";

@@ -1,8 +1,10 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import { ChartsTableSection, CourseSection, LevelRefTable } from "$lib/components/bms";
-  import { PageShell } from "$lib/components/layout";
+  import ChartsTableSection from "$lib/components/bms/ChartsTableSection.svelte";
+  import CourseSection from "$lib/components/bms/CourseSection.svelte";
+  import LevelRefTable from "$lib/components/bms/LevelRefTable.svelte";
+  import PageShell from "$lib/components/layout/PageShell.svelte";
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
   import { fetchBmsHeader, fetchBmsTableData } from "$lib/data/bms-data";

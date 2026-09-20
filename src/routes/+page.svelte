@@ -5,8 +5,8 @@
 
   import { resolve } from "$app/paths";
   import BlogPostCard from "$lib/components/content/BlogPostCard.svelte";
-  import { PageShell } from "$lib/components/layout";
   import { buildTocFromHeadings } from "$lib/components/layout/FloatingToc.svelte";
+  import PageShell from "$lib/components/layout/PageShell.svelte";
   import type { TocItem } from "$lib/types/ui";
 
   let { data }: { data: PageData } = $props();

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { GradientButton } from "$lib/components/ui";
   import Checkbox from "$lib/components/ui/Checkbox.svelte";
+  import GradientButton from "$lib/components/ui/GradientButton.svelte";
   import { jsonPreview } from "$lib/components/ui/JsonPreview.svelte";
   import { mirrorTablePath } from "$lib/mirror/urls";
   import type { MirrorTableItem } from "$lib/types/bms";

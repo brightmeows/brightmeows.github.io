@@ -1,6 +1,6 @@
 <script lang="ts">
   import { page } from "$app/state";
-  import { BmsTablePage } from "$lib/components/pages";
+  import BmsTablePage from "$lib/components/pages/BmsTablePage.svelte";
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
   import { r2TableHeaderUrl } from "$lib/constants/r2";
 

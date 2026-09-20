@@ -1,6 +1,6 @@
 <script lang="ts">
   import BlogPostCard from "$lib/components/content/BlogPostCard.svelte";
-  import { PageShell } from "$lib/components/layout";
+  import PageShell from "$lib/components/layout/PageShell.svelte";
   import type { BlogPost } from "$lib/types/blog";
 
   let { data }: { data: { posts: BlogPost[] } } = $props();

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { IconButton } from "$lib/components/ui";
+  import IconButton from "$lib/components/ui/IconButton.svelte";
   import type { ChartData } from "$lib/types/bms";
   import { getBmsLinks } from "$lib/utils/bms-table";
 

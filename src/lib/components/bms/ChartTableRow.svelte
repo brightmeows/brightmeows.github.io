@@ -1,7 +1,7 @@
 <script lang="ts">
   import BmsLinkButtons from "./BmsLinkButtons.svelte";
 
-  import { GradientButton } from "$lib/components/ui";
+  import GradientButton from "$lib/components/ui/GradientButton.svelte";
   import { jsonPreview } from "$lib/components/ui/JsonPreview.svelte";
   import type { ChartData } from "$lib/types/bms";
   import type { JsonPreviewHandle } from "$lib/types/ui";
