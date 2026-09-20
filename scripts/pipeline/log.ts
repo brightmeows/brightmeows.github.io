@@ -21,13 +21,22 @@ export interface RunSummary {
   unrecognizedData: string[];
 }
 
+export interface PipelineLogger {
+  warn(message: string): void;
+  info(message: string): void;
+  /** 本轮告警条数（汇总用）。 */
+  readonly warningCount: number;
+  /** 渲染 warnings.log 内容。 */
+  render(summary: RunSummary): string;
+}
+
 interface LoggedWarning {
   at: string;
   message: string;
 }
 
 /** 记录告警并在结束时写出单轮日志文件。 */
-export class RunLog {
+export class RunLog implements PipelineLogger {
   private readonly warnings: LoggedWarning[] = [];
 
   warn(message: string): void {
