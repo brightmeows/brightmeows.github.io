@@ -83,7 +83,7 @@ describe("runSync", () => {
 
   it("快照缺一条时判定为新增并写回正确内容", async () => {
     const snapshotPath = tempSnapshot();
-    writeFileSync(snapshotPath, serializeTableManifest([manifest[0]]));
+    writeFileSync(snapshotPath, serializeTableManifest([manifest[0]!]));
     const result = await runSync({
       r2Base: "https://r2.example",
       manifestObject: "tables/tables.json",
@@ -97,7 +97,7 @@ describe("runSync", () => {
 
   it("check 模式只报告不写入", async () => {
     const snapshotPath = tempSnapshot();
-    writeFileSync(snapshotPath, serializeTableManifest([manifest[0]]));
+    writeFileSync(snapshotPath, serializeTableManifest([manifest[0]!]));
     const result = await runSync({
       r2Base: "https://r2.example",
       manifestObject: "tables/tables.json",
@@ -107,7 +107,7 @@ describe("runSync", () => {
     });
     expect(result.changed).toBe(true);
     expect(result.written).toBe(false);
-    expect(readFileSync(snapshotPath, "utf8")).toBe(serializeTableManifest([manifest[0]]));
+    expect(readFileSync(snapshotPath, "utf8")).toBe(serializeTableManifest([manifest[0]!]));
   });
 
   it("远端返回非数组或非 2xx 时报错", async () => {

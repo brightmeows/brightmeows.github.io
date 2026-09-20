@@ -247,9 +247,8 @@
     indexSearchProgress = { done: 0, total: queries.length };
 
     const perQuery: PerQueryInfo[] = [];
-    for (let i = 0; i < queries.length; i++) {
+    for (const [i, query] of queries.entries()) {
       if (!isEpochValid(epoch)) return;
-      const query = queries[i];
       const queryType = detectQueryType(query);
       const needles =
         queryType === "text" ? buildSearchNeedles(query, searchConverters) : undefined;
@@ -512,7 +511,7 @@
         <!-- 可折叠预览 -->
         <div class="space-y-2">
           {#each resultQueries as query (query)}
-            {@const results = batchResults[query]}
+            {@const results = batchResults[query] ?? []}
             <div class="card-dark">
               <button
                 type="button"

@@ -58,9 +58,9 @@ export async function getCachedIndices(): Promise<SearchIndexBundle | null> {
     getFromStore<SearchIndex>(db, INDEX_STORE, "sha256"),
   ]);
 
-  if (indices.some((v) => v === undefined)) return null;
+  const [title, artist, md5, sha256] = indices;
+  if (!title || !artist || !md5 || !sha256) return null;
 
-  const [title, artist, md5, sha256] = indices as SearchIndex[];
   return { title, artist, md5, sha256 };
 }
 

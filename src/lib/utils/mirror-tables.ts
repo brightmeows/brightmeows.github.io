@@ -121,11 +121,9 @@ export function groupByTags(tables: MirrorTableItem[]): Tag1Group[] {
     }
 
     const tag2Map = groupsMap[tag1].tag2Map;
-    if (!tag2Map[tag2]) {
-      tag2Map[tag2] = [];
-    }
+    const bucket = (tag2Map[tag2] ??= []);
 
-    tag2Map[tag2].push(item);
+    bucket.push(item);
   });
 
   const tag1Groups: Tag1Group[] = Object.entries(groupsMap).map(([tag1, { order, tag2Map }]) => {

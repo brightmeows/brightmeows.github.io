@@ -14,10 +14,8 @@ export function groupChartsByLevel(charts: ChartData[]): DifficultyGroup[] {
   const groupsMap: Record<string, DifficultyGroup> = {};
   for (const chart of charts) {
     const level = chart.level ?? "unknown";
-    if (!groupsMap[level]) {
-      groupsMap[level] = { level, charts: [] };
-    }
-    groupsMap[level].charts.push(chart);
+    const group = (groupsMap[level] ??= { level, charts: [] });
+    group.charts.push(chart);
   }
   return Object.values(groupsMap);
 }

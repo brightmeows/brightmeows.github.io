@@ -143,10 +143,10 @@ async function fetchAllIndices(): Promise<SearchIndexBundle | null> {
   const total = INDEX_NAMES.length;
 
   // 先发 loading 消息
-  for (let i = 0; i < INDEX_NAMES.length; i++) {
+  for (const [i, name] of INDEX_NAMES.entries()) {
     post({
       type: "index-progress",
-      name: INDEX_NAMES[i],
+      name,
       status: "loading",
       current: i,
       total,
