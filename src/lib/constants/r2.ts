@@ -17,7 +17,7 @@ export const R2_INDEXES_BASE = `${R2_BASE}/indexes`;
 
 /**
  * 返回 R2 上指定镜像表的 header.json 完整 URL。
- * tableId 格式如 `[host] table name`，由 bms-table-fetch 生成。
+ * tableId 格式如 `[host] table name`，由数据管线（scripts/fetch-tables.ts）生成。
  */
 export function r2TableHeaderUrl(tableId: string): string {
   return buildR2TableHeaderUrl(R2_BASE, tableId);

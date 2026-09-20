@@ -9,16 +9,22 @@ on:
   schedule:
     - cron: "15 */6 * * *"
   workflow_dispatch:
+    inputs:
+      parity:
+        description: "只跑新旧实现对拍（不推送 R2、不提交快照）"
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: update-tables
   cancel-in-progress: false
 
 jobs:
+  # 默认流水线：抓取、与 R2 双向同步、比对清单快照。
   update:
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.parity != true }}
     runs-on: ubuntu-latest
-    env:
-      BMS_TABLE_FETCH_VERSION: v0.4.2
     steps:
       - uses: actions/checkout@v7
         with:
@@ -32,12 +38,25 @@ jobs:
       # 推送会连锁触发 CI/Deploy/Mirror，从而重建三个部署目标。
       # 快照位于 src/lib/mirror/ 下，不会命中本工作流的 config/** 过滤，不会自触发。
       #
+      # 抓取逻辑在 scripts/fetch-tables.ts（scripts/pipeline/），与站点同仓演进。
+      #
       # Secrets 需在本仓库 Settings > Secrets and variables > Actions 中设置：
       #   MIRROR_SYNC_DEPLOY_KEY — 本仓库写权限 deploy key（快照提交后推送）
       #   R2_ACCESS_KEY_ID      — Cloudflare Dashboard > R2 > 管理 R2 API 令牌 > 创建 API 令牌
       #   R2_SECRET_ACCESS_KEY  — 同上（创建时一并生成）
       #   R2_ENDPOINT           — Cloudflare Dashboard > R2 > 存储桶 > S3 API > 端点
       #   R2_BUCKET             — Cloudflare Dashboard > R2 > 存储桶名称
+      - uses: pnpm/action-setup@v6
+        with:
+          cache: true
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
       - name: Run
         env:
           RCLONE_CONFIG_R2_TYPE: s3
@@ -46,13 +65,7 @@ jobs:
           RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           RCLONE_CONFIG_R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
         run: |
-          echo "=== Download tools ==="
-          curl -L -o bms-table-fetch.tar.xz \
-            https://github.com/brightmeows/bms-table-fetch/releases/download/$BMS_TABLE_FETCH_VERSION/bms-table-fetch-$BMS_TABLE_FETCH_VERSION-linux-amd64.tar.xz
-          tar xf bms-table-fetch.tar.xz
-          chmod +x bms-table-fetch
-          rm -f bms-table-fetch.tar.xz
-
+          echo "=== Download rclone ==="
           curl -L -o rclone.zip https://downloads.rclone.org/rclone-current-linux-amd64.zip
           unzip -j rclone.zip "*/rclone" -d ./
           chmod +x rclone
@@ -67,9 +80,8 @@ jobs:
             --checksum \
             --transfers 16
 
-          echo "=== Run bms-table-fetch ==="
-          ./bms-table-fetch
-          rm -f bms-table-fetch
+          echo "=== Run table pipeline ==="
+          node scripts/fetch-tables.ts
 
           echo "=== Sync to R2 ==="
           ./rclone sync . r2:${{ secrets.R2_BUCKET }}/ \
@@ -80,10 +92,6 @@ jobs:
             --checksum \
             --transfers 16
           rm -f rclone
-
-      - uses: actions/setup-node@v7
-        with:
-          node-version-file: .nvmrc
 
       - name: Sync table manifest snapshot
         run: node scripts/sync-mirror-manifest.ts
@@ -119,3 +127,24 @@ jobs:
           done
           echo "快照连续推送失败" >&2
           exit 1
+
+  # 手动对拍：用公开 R2 基线与固定版本的旧二进制（bms-table-fetch release）
+  # 跑两条实现并逐对象比对产物，不写 R2、不影响站点数据。
+  parity:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.parity == true }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+        with:
+          cache: true
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm test:parity

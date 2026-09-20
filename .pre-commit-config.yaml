@@ -83,7 +83,8 @@ repos:
         language: system
         files: \.(md|svx)$
 
-  # config/*.toml 由 CI 的 bms-table-fetch 读取；语法/字段错误在这里立即暴露，
+  # config/*.toml 由 CI 的数据管线（scripts/fetch-tables.ts）读取；
+  # 语法/字段错误在这里立即暴露，
   # 不必等 6 小时一轮的 update-tables 反馈。
   - repo: local
     hooks:

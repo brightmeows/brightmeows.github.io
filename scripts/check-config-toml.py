@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """校验 config/ 下 TOML 配置的语法与关键字段。
 
-这些文件由 bms-table-fetch 在 CI 中读取；如果语法或字段错误拖到 CI
+这些文件由数据管线（scripts/fetch-tables.ts）在 CI 中读取；如果语法或字段错误拖到 CI
 才发现，反馈周期是 6 小时。本地与 PR 阶段直接校验，失败即报全部问题。
 
 用法：
