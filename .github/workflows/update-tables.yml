@@ -6,6 +6,10 @@ on:
     paths:
       - "config/**"
       - ".github/workflows/update-tables.yml"
+      # 管线实现变更后自动跑一轮：运行时错误（模块加载、配置解析）当天暴露；
+      # 管线自带「先拉 R2 基线再抓取、失败表保留基线」的自愈设计
+      - "scripts/fetch-tables.ts"
+      - "scripts/pipeline/**"
   schedule:
     - cron: "15 */6 * * *"
   workflow_dispatch:
@@ -25,6 +29,7 @@ jobs:
   update:
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.parity != true }}
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
@@ -47,8 +52,6 @@ jobs:
       #   R2_ENDPOINT           — Cloudflare Dashboard > R2 > 存储桶 > S3 API > 端点
       #   R2_BUCKET             — Cloudflare Dashboard > R2 > 存储桶名称
       - uses: pnpm/action-setup@v6
-        with:
-          cache: true
 
       - uses: actions/setup-node@v7
         with:
@@ -56,6 +59,28 @@ jobs:
           cache: "pnpm"
 
       - run: pnpm install --frozen-lockfile
+
+      - name: Install rclone (pinned)
+        # rclone sync 会删除目标端多余文件，是本管线破坏性最高的一环：版本固定并
+        # 校验 SHA256SUMS，升级改成显式动作。
+        # 版本号用 shell 局部变量而非 env：rclone 会把所有 RCLONE_* 环境变量当作
+        # CLI 标志解析，RCLONE_VERSION 会与它自己的 --version 冲突。
+        run: |
+          version=v1.75.1
+          base="https://downloads.rclone.org/${version}"
+          archive="rclone-${version}-linux-amd64.zip"
+          curl -fsSL --retry 3 --max-time 300 -o "$archive" "${base}/${archive}"
+          curl -fsSL --retry 3 --max-time 60 -o SHA256SUMS "${base}/SHA256SUMS"
+          line=$(grep " ${archive}\$" SHA256SUMS)
+          if [ -z "$line" ]; then
+            echo "SHA256SUMS 中未找到 ${archive}" >&2
+            exit 1
+          fi
+          echo "$line" | sha256sum -c -
+          unzip -j "$archive" "*/rclone" -d ./
+          chmod +x rclone
+          rm -f "$archive" SHA256SUMS
+          ./rclone version
 
       - name: Run
         env:
@@ -65,12 +90,6 @@ jobs:
           RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           RCLONE_CONFIG_R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
         run: |
-          echo "=== Download rclone ==="
-          curl -L -o rclone.zip https://downloads.rclone.org/rclone-current-linux-amd64.zip
-          unzip -j rclone.zip "*/rclone" -d ./
-          chmod +x rclone
-          rm -f rclone.zip
-
           echo "=== Pull baseline from R2 ==="
           ./rclone sync r2:${{ secrets.R2_BUCKET }}/ . \
             --include "/tables/**" \
@@ -133,12 +152,11 @@ jobs:
   parity:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.parity == true }}
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
 
       - uses: pnpm/action-setup@v6
-        with:
-          cache: true
 
       - uses: actions/setup-node@v7
         with:
