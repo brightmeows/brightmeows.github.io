@@ -8,7 +8,7 @@
  */
 
 import { describeError } from "./errors.ts";
-import { requestHttp2 } from "./http2-client.ts";
+import { requestHttp2, type HttpResponse } from "./http2-client.ts";
 import { parseJsonWithFallback, stripControlChars } from "./json-utils.ts";
 import { extractBmstableUrlHint } from "./meta.ts";
 import type { TableInfo } from "./types.ts";
@@ -53,20 +53,33 @@ function decodeBody(buffer: Buffer, contentType: string): string {
  * 抓取 URL 并解码为文本。
  *
  * https 默认走 HTTP/2（见 http2-client.ts：数据中心 IP 下 Cloudflare 只挑战
- * HTTP/1.1），协商失败时回退；h2 拿到 403/503 时也换 HTTP/1.1 再试一次。
- * HTTP 状态不参与成败判断，页面内容决定成败（与旧实现一致）。
+ * HTTP/1.1）。h2 非 2xx 时再用 HTTP/1.1 复核一次：实测部分老站点经 h2 网关
+ * 返回 404 错误页、HTTP/1.1 正常；若 h1 请求成功则采用 h1 结果。h2 协商失败
+ * （服务器不支持）也直接回退。HTTP 状态不参与成败判断，页面内容决定成败
+ * （与旧实现一致）。
  */
 export async function fetchText(url: string, options: FetchOptions = {}): Promise<FetchTextResult> {
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   if (url.startsWith("https://")) {
+    let h2Result: HttpResponse | undefined;
     try {
       const response = await requestHttp2(url, { headers: REQUEST_HEADERS, timeoutMs });
-      if (response.status !== 403 && response.status !== 503) {
+      if (response.status >= 200 && response.status < 400) {
         const contentType = response.headers["content-type"] ?? "";
         return { text: decodeBody(response.buffer, contentType), contentType };
       }
+      h2Result = response;
     } catch {
       // 服务器不支持 h2 或连接被重置：回退 HTTP/1.1
+    }
+    if (h2Result !== undefined) {
+      try {
+        return await fetchTextHttp1(url, options);
+      } catch {
+        // h1 网络失败：沿用 h2 的结果（内容解析会如实报错）
+        const contentType = h2Result.headers["content-type"] ?? "";
+        return { text: decodeBody(h2Result.buffer, contentType), contentType };
+      }
     }
   }
   return fetchTextHttp1(url, options);
