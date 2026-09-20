@@ -2,38 +2,42 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main]
   pull_request:
-    branches: [main, master]
+    branches: [main]
+
+# 同一分支的新 push 取消尚未完成的旧检查，避免重复消耗 runner
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
-        with:
-          cache: true
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build
       - run: pnpm lint
 
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
-        with:
-          cache: true
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
+      # CI 里唯一的构建验证点：frontmatter 校验、构建期数据加载与打包错误都在
+      # 这里暴露（lint/test/format 不依赖 build 产物）
       - run: pnpm build
       - run: pnpm check
       - run: pnpm check:worker
@@ -41,11 +45,10 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
-        with:
-          cache: true
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
@@ -55,11 +58,10 @@ jobs:
 
   format:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
-        with:
-          cache: true
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
@@ -72,6 +74,7 @@ jobs:
   commit-msg:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
         with:
