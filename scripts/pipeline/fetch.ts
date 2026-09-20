@@ -30,8 +30,8 @@ const REQUEST_HEADERS: Record<string, string> = {
 };
 
 export interface FetchOptions {
-  timeoutMs?: number;
-  fetchImpl?: typeof fetch;
+  timeoutMs?: number | undefined;
+  fetchImpl?: typeof fetch | undefined;
 }
 
 export interface FetchTextResult {

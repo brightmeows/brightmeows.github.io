@@ -10,7 +10,7 @@
   interface Props {
     tables?: MirrorTableItem[];
     selectedMap?: Record<string, boolean>;
-    mirrorPreview?: JsonPreviewHandle;
+    mirrorPreview?: JsonPreviewHandle | undefined;
     /** 显示顺序 URL 列表，用于 JSON 输出排序 */
     displayOrderUrls?: string[];
   }

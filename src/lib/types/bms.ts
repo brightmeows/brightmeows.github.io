@@ -2,7 +2,7 @@
 export interface TableEntry {
   id: string;
   name: string;
-  symbol?: string;
+  symbol?: string | undefined;
 }
 
 /** 镜像表格项 */
@@ -37,14 +37,14 @@ export interface Tag1Group {
 
 /** 谱面数据 */
 export interface ChartData {
-  title?: string;
-  artist?: string;
-  level?: string;
-  sha256?: string;
-  md5?: string;
-  comment?: string;
-  url?: string;
-  url_diff?: string;
+  title?: string | undefined;
+  artist?: string | undefined;
+  level?: string | undefined;
+  sha256?: string | undefined;
+  md5?: string | undefined;
+  comment?: string | undefined;
+  url?: string | undefined;
+  url_diff?: string | undefined;
   [key: string]: unknown;
 }
 
@@ -63,19 +63,19 @@ export interface Trophy {
 
 /** 段位内单谱面（已解析） */
 export interface CourseChartInfo {
-  md5?: string;
-  sha256?: string;
-  title?: string;
-  artist?: string;
-  level?: string;
+  md5?: string | undefined;
+  sha256?: string | undefined;
+  title?: string | undefined;
+  artist?: string | undefined;
+  level?: string | undefined;
   resolved: boolean;
 }
 
 /** 段位（Course 对象） */
 export interface Course {
   name: string;
-  constraint?: string[];
-  trophy?: Trophy[];
+  constraint?: string[] | undefined;
+  trophy?: Trophy[] | undefined;
   charts: CourseChartInfo[];
 }
 

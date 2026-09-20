@@ -21,7 +21,7 @@
   interface Props {
     groups?: Tag1Group[];
     selectedMap?: Record<string, boolean>;
-    mirrorPreview?: JsonPreviewHandle;
+    mirrorPreview?: JsonPreviewHandle | undefined;
     /** 精选列表 URL 顺序，用于排序 */
     featuredUrls?: string[];
     /** 是否按 featuredUrls 顺序排序 */

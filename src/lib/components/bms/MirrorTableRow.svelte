@@ -11,7 +11,7 @@
     item: MirrorTableItem;
     selected: boolean;
     onchange: (checked: boolean) => void;
-    mirrorPreview?: JsonPreviewHandle;
+    mirrorPreview?: JsonPreviewHandle | undefined;
   }
 
   let { item, selected, onchange, mirrorPreview }: Props = $props();
