@@ -13,7 +13,7 @@
  *    指向当前请求的站点 origin（新旧域名都自洽）。
  *
  * 校验策略：清单不可用返回 503，表不存在回落到站点的 404 页；清单读取失败时
- * 先用 Cache API 里的最近快照兜底，没有快照才 503。
+ * 先用独立命名空间（与 fetch 缓存隔离）里的最近快照兜底，没有快照才 503。
  */
 
 import siteConfig from "../config/site.json";
@@ -35,6 +35,14 @@ const MANIFEST_OBJECT = siteConfig.r2.manifestObject;
 const MANIFEST_MAX_AGE = 60;
 /** Cache API 中兜底快照的保留秒数。 */
 const SNAPSHOT_MAX_AGE = 604800;
+/**
+ * 兜底快照的缓存命名空间。
+ *
+ * 必须与 fetch 的默认缓存隔离：`caches.default` 就是 fetch 使用的同一份缓存，
+ * 把快照（7 天 TTL）写进同一个 URL 键后，fetch 会一直命中该快照、并在每次读取
+ * 时把它续期，清单被冻结在快照时刻。`caches.open()` 打开的是独立命名空间。
+ */
+const SNAPSHOT_CACHE_NAME = "mirror-manifest-snapshot";
 /** 注入 meta 用的站点 SPA 外壳（adapter-static 的 fallback 产物）。 */
 const SITE_SHELL_PATH = "/404.html";
 
@@ -51,8 +59,51 @@ function textResponse(body: string, status: number, extra: Record<string, string
   });
 }
 
+/** 惰性打开快照命名空间；isolate 内复用同一个 promise，打开失败不缓存失败结果。 */
+let snapshotCachePromise: Promise<Cache> | null = null;
+function openSnapshotCache(): Promise<Cache> {
+  snapshotCachePromise ??= caches.open(SNAPSHOT_CACHE_NAME).catch((error: unknown) => {
+    snapshotCachePromise = null;
+    throw error;
+  });
+  return snapshotCachePromise;
+}
+
+/** 写入兜底快照；失败静默——快照是尽力而为的降级手段，不该影响主路径。 */
+async function saveSnapshot(key: Request, list: MirrorTableItem[]): Promise<void> {
+  try {
+    const cache = await openSnapshotCache();
+    await cache.put(
+      key,
+      new Response(JSON.stringify(list), {
+        headers: {
+          "content-type": "application/json",
+          "cache-control": `max-age=${SNAPSHOT_MAX_AGE}`,
+        },
+      })
+    );
+  } catch {
+    // 快照写入失败：忽略，主路径已拿到新数据
+  }
+}
+
+/** 读取兜底快照；缓存不可用或快照损坏时返回 null（调用方据此回 503）。 */
+async function loadSnapshot(key: Request): Promise<MirrorTableItem[] | null> {
+  try {
+    const cache = await openSnapshotCache();
+    const cached = await cache.match(key);
+    if (cached) {
+      const parsed: unknown = await cached.json();
+      if (Array.isArray(parsed)) return parsed as MirrorTableItem[];
+    }
+  } catch {
+    // 缓存不可用或快照损坏：按无快照处理
+  }
+  return null;
+}
+
 /**
- * 读取表格清单：优先走带边缘缓存的 fetch，失败时用 Cache API 里的最近快照
+ * 读取表格清单：优先走带边缘缓存的 fetch，失败时用独立命名空间里的最近快照
  * 兜底，两者都不可用返回 null（调用方据此回 503）。
  */
 async function loadManifest(): Promise<MirrorTableItem[] | null> {
@@ -63,29 +114,17 @@ async function loadManifest(): Promise<MirrorTableItem[] | null> {
     if (res.ok) {
       const parsed: unknown = await res.json();
       if (Array.isArray(parsed)) {
-        const snapshot = new Response(JSON.stringify(parsed), {
-          headers: {
-            "content-type": "application/json",
-            "cache-control": `max-age=${SNAPSHOT_MAX_AGE}`,
-          },
-        });
-        await caches.default.put(key, snapshot);
+        // 仅回源时刷新快照：命中边缘缓存时内容与快照一致，重复写只是浪费
+        if (res.headers.get("cf-cache-status") !== "HIT") {
+          await saveSnapshot(key, parsed as MirrorTableItem[]);
+        }
         return parsed as MirrorTableItem[];
       }
     }
   } catch {
     // 网络或解析失败：继续走快照兜底
   }
-  const cached = await caches.default.match(key);
-  if (cached) {
-    try {
-      const parsed: unknown = await cached.json();
-      if (Array.isArray(parsed)) return parsed as MirrorTableItem[];
-    } catch {
-      // 快照损坏，按不可用处理
-    }
-  }
-  return null;
+  return loadSnapshot(key);
 }
 
 /** 解码路径；编码非法时返回 null。 */
