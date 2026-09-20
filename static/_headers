@@ -1,0 +1,11 @@
+# Cloudflare Workers 静态资源响应头（GitHub Pages / Codeberg 不解析此文件，
+# 只会把它作为普通文本暴露在站点根）。
+#
+# `_app/immutable/` 下的资源由构建器按内容哈希命名，可安全长缓存；`/*` 规则只加
+# 安全头，不要在这里设置 Cache-Control——它会与下面的长缓存规则叠加。
+/_app/immutable/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
