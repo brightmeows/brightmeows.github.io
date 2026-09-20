@@ -68,7 +68,10 @@
   const pendingSearches = new Map<number, (candidates: CandidateEntry[]) => void>();
 
   // 已加载表数据（非响应式：仅异步回调中读写，不参与模板追踪）
-  let tableData = new Map<string, { name: string; symbol?: string; charts: ChartData[] }>();
+  let tableData = new Map<
+    string,
+    { name: string; symbol?: string | undefined; charts: ChartData[] }
+  >();
 
   // 预览展开
   let expandedQuery = $state<string | null>(null);

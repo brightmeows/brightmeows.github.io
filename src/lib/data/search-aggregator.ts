@@ -6,7 +6,7 @@ import type { ChartData } from "$lib/types/bms";
 export interface ChartAppearance {
   tableId: string;
   tableName: string;
-  symbol?: string;
+  symbol?: string | undefined;
   chart: ChartData;
 }
 
@@ -28,10 +28,10 @@ function nextId(): string {
 
 /** 身份信息集合，用于统一索引管理 */
 interface IdentityInput {
-  sha256?: string;
-  md5?: string;
-  title?: string;
-  artist?: string;
+  sha256?: string | undefined;
+  md5?: string | undefined;
+  title?: string | undefined;
+  artist?: string | undefined;
 }
 
 /**

@@ -33,7 +33,7 @@ export interface WorkerSearchRequest {
   type: "search";
   searchId: number;
   query: string;
-  needles?: string[];
+  needles?: string[] | undefined;
 }
 
 /** Worker → 主线程：索引加载进度 */
@@ -185,10 +185,10 @@ export async function loadTableDataWithProgress(
 export async function loadTableHeader(
   tableId: string,
   signal?: AbortSignal
-): Promise<{ name: string; symbol?: string } | null> {
+): Promise<{ name: string; symbol: string | undefined } | null> {
   try {
     const header = await fetchJson<{ name?: string; symbol?: string }>(r2TableHeaderUrl(tableId), {
-      signal,
+      signal: signal ?? null,
     });
     return { name: header.name ?? tableId, symbol: header.symbol };
   } catch {

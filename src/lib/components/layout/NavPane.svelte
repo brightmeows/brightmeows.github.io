@@ -4,9 +4,9 @@
 
   interface Props {
     /** 自动生成的子页面导航 */
-    children?: NavChild[];
+    children?: NavChild[] | undefined;
     /** 手动追加的快捷导航 */
-    shortcuts?: NavChild[];
+    shortcuts?: NavChild[] | undefined;
   }
 
   let { children = [], shortcuts = [] }: Props = $props();

@@ -17,8 +17,8 @@ export interface BlogPostMetadata extends BlogFrontmatter {
 export interface BlogPost {
   slug: string;
   title: string;
-  order?: number;
-  date?: string;
+  order?: number | undefined;
+  date?: string | undefined;
   firstSentence: string;
   url: string;
 }

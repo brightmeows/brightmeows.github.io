@@ -128,6 +128,7 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm test`、no-conf
 - Tailwind CSS v4（`@import "tailwindcss"`，无 `tailwind.config.*`）
 - SvelTeX 0.5（Markdown 预处理器：unified 后端 + remark-gfm + katex + shiki）（博客文章用 `.md`）
 - TypeScript 6（`rewriteRelativeImportExtensions: true`）
+- tsconfig 已开启 `noUncheckedIndexedAccess` 与 `exactOptionalPropertyTypes`（2026-09）—— 两者分别修复 45 处与 27 处真实未定义状态问题后开启。批量修法：`exactOptionalPropertyTypes` 要求给类型定义的可选属性显式写 `| undefined`（项目里确实存在“显式传 undefined”的语义，如调用方把 `string | undefined` 直接放进字面量）；`noUncheckedIndexedAccess` 优先真修（用 `entries()` 遍历消除索引访问、用解构加逐项检查替代 `some` 加 `as` 断言），确证安全处（循环内已保证边界、测试里已有前置断言）用 `!`。开启后 oxlint 的 `prefer-nullish-coalescing` 会多报几处，属预期。
 - Vitest 5（纯函数单测，Node 环境）
 - Node 版本以 `.nvmrc` 为准（工作流用 `node-version-file: .nvmrc`）；pnpm 版本以 `package.json` 的 `packageManager` 为准（工作流不传 `version`）。两者都由 `pnpm check:config` 断言
 - Paraglide JS（i18n，仅 demo 用）
@@ -142,8 +143,6 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm test`、no-conf
 
 ## 其他挂起项
 
-- **tsconfig `exactOptionalPropertyTypes`** — 试跑命中 27 处真实未定义状态问题（2026-09 复跑）。修完后开启。触发条件：安排专门窗口做类型修复。
-  - 配套记录：`noUncheckedIndexedAccess` 已于 2026-09 修完并开启（实测 45 处，跨 10 个文件）；修复策略为真修为主、确证安全处（如循环内已保证边界、测试里已有前置断言）用 `!` 断言。开启该选项后 oxlint 的 `prefer-nullish-coalescing` 会多报几处（索引访问变成 `T | undefined` 后 `if (!x) x = y` 可改为 `x ??= y`），属预期。
 - **knip 与 rumdl** — 分别扫描未使用文件/依赖/导出与 markdown lint。评估结论：knip 需为刻意保留项配置豁免、rumdl 对当前 4 个源 md 收益有限，暂不引入。2026-09 复跑过一次 knip：5 个“未使用文件”全是 SvelteKit 特殊文件与动态 import 的误报，9 个“未使用 devDependencies”是 SvelteX 的动态导入依赖（见上文），唯一真实发现（barrel 冗余导出）已通过移除 barrel 解决——维持不引入的结论。触发条件：代码库规模或 md 数量显著增长。
 
 ## 分支与工作树

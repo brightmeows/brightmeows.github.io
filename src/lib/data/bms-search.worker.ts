@@ -121,7 +121,7 @@ async function fetchSingleIndex(
 ): Promise<SearchIndex | null> {
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const resp = await fetch(url, { signal });
+      const resp = await fetch(url, { signal: signal ?? null });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       return (await resp.json()) as SearchIndex;
     } catch (err) {

@@ -16,7 +16,7 @@ export async function fetchStream(
   signal?: AbortSignal,
   onProgress?: (progress: StreamProgress) => void
 ): Promise<{ response: Response; bytes: Uint8Array }> {
-  const response = await fetch(url, { signal, redirect: "follow" });
+  const response = await fetch(url, { signal: signal ?? null, redirect: "follow" });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
   if (!onProgress || !response.body) {
