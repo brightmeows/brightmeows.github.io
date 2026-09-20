@@ -11,15 +11,20 @@ on:
   schedule:
     # 6 小时兜底重建：与 GitHub 侧对称，兜住镜像推送延迟与清单快照更新
     - cron: "20 */6 * * *"
+
+# Codeberg runner 资源有限：连续推送时只保留最新一轮构建
+concurrency:
+  group: codeberg-deploy
+  cancel-in-progress: true
+
 jobs:
   build_and_deploy:
     runs-on: codeberg-small-lazy
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
-        with:
-          cache: true
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
@@ -27,7 +32,7 @@ jobs:
       - name: Build
         run: |
           echo "::group::Install dependencies"
-          pnpm install
+          pnpm install --frozen-lockfile
           echo "::endgroup::"
 
           echo "::group::Build"
