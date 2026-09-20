@@ -15,7 +15,7 @@ export function extractDateFromSlug(slug: string): string | undefined {
   }
 
   if (segments.length >= 4) {
-    const [y, mm, dd] = segments;
+    const [y = "", mm = "", dd = ""] = segments;
     if (/^\d{4}$/.test(y) && /^\d{2}$/.test(mm) && /^\d{2}$/.test(dd)) {
       return `${y}-${mm}-${dd}`;
     }

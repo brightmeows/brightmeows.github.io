@@ -83,8 +83,8 @@ describe("groupByTags", () => {
       { name: "gamma", tag1: "Y", tag2: "T1", tag_order: "2", url: "u3" },
     ]);
     expect(groups.map((g) => g.tag1)).toEqual(["X", "Y"]);
-    expect(groups[0].subgroups.map((s) => s.tag2)).toEqual(["T1", "T2"]);
-    expect(groups[0].subgroups[0].items.map((i) => i.name)).toEqual(["alpha"]);
+    expect(groups[0]!.subgroups.map((s) => s.tag2)).toEqual(["T1", "T2"]);
+    expect(groups[0]!.subgroups[0]!.items.map((i) => i.name)).toEqual(["alpha"]);
   });
 
   it("tag_order 取同 tag1 内最小值，缺失或非数字记为 999", () => {
@@ -103,7 +103,7 @@ describe("groupByTags", () => {
 
   it("缺省标签回落为 未分类 与 其它", () => {
     const groups = groupByTags([{ name: "x", url: "u" }]);
-    expect(groups[0].tag1).toBe("未分类");
-    expect(groups[0].subgroups[0].tag2).toBe("其它");
+    expect(groups[0]!.tag1).toBe("未分类");
+    expect(groups[0]!.subgroups[0]!.tag2).toBe("其它");
   });
 });

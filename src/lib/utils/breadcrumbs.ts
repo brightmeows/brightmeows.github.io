@@ -31,8 +31,7 @@ export function deriveBreadcrumbs(pathname: string, currentLabel?: string): Brea
   const items: BreadcrumbItem[] = [{ label: "主页", href: "/" }];
   let currentPath = "";
 
-  for (let i = 0; i < segments.length; i++) {
-    const segment = segments[i];
+  for (const [i, segment] of segments.entries()) {
     currentPath += `/${segment}`;
     const isLast = i === segments.length - 1;
 

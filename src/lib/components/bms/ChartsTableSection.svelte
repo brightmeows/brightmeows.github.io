@@ -20,12 +20,12 @@
   } = $props();
 
   function segmentColor(index: number, total: number): string {
-    const palette = ["#4caf50", "#2196f3", "#ff9800", "#f44336", "#ce50d8", "#9c27b0"];
+    const palette = ["#4caf50", "#2196f3", "#ff9800", "#f44336", "#ce50d8", "#9c27b0"] as const;
     if (total <= 0) return palette[1];
     const bins = palette.length;
     const size = Math.ceil(total / bins);
-    const ci = Math.min(bins - 1, Math.floor(index / size));
-    return palette[ci];
+    const ci = Math.min(bins - 1, Math.max(0, Math.floor(index / size)));
+    return palette[ci] ?? palette[0];
   }
 
   function resolvedBundleUrl(chart: ChartData): string | undefined {

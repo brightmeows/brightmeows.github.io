@@ -52,7 +52,9 @@
     ];
 
     for (const h of headingInfo) {
-      while (stack.length > 0 && h.level <= stack[stack.length - 1].level) {
+      while (stack.length > 0) {
+        const top = stack[stack.length - 1];
+        if (!top || h.level > top.level) break;
         stack.pop();
       }
       const parent = stack[stack.length - 1] ?? { level: minLevel - 1, children: rootItems };
