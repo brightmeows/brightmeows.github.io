@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { GlassButton } from "$lib/components/ui";
   import FloatingPanel from "$lib/components/ui/FloatingPanel.svelte";
+  import GlassButton from "$lib/components/ui/GlassButton.svelte";
 </script>
 
 <FloatingPanel

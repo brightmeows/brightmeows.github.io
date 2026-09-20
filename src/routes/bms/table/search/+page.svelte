@@ -2,8 +2,8 @@
   import { onMount, onDestroy } from "svelte";
   import { SvelteMap } from "svelte/reactivity";
 
-  import { BmsSearchResult } from "$lib/components/bms";
-  import { PageShell } from "$lib/components/layout";
+  import BmsSearchResult from "$lib/components/bms/BmsSearchResult.svelte";
+  import PageShell from "$lib/components/layout/PageShell.svelte";
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
   import type {
     CandidateEntry,

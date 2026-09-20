@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
 
   import { resolve } from "$app/paths";
-  import { GlassPanel } from "$lib/components/ui";
+  import GlassPanel from "$lib/components/ui/GlassPanel.svelte";
 
   interface BreadcrumbItem {
     /** 显示文本 */

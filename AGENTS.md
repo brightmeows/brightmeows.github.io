@@ -120,7 +120,7 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm test`、no-conf
 - **`src/lib/mirror/`** — 镜像表的零依赖层（URL 构造、清单变换、bmstable meta 渲染），由站点与 Worker（`worker/index.ts`）共用；约束：无 Svelte/DOM 依赖、可擦除语法、相对导入带 `.ts` 扩展名（Worker 由 wrangler/esbuild 打包，直接引用这些 `.ts` 文件）。
 - **数据加载策略** — 构建时加载（`+page.server.ts` / `+page.ts`）：数据在 git 仓库内，如博客 `.md` 文件与自托管 BMS 表的目录枚举。客户端加载（`onMount` → `data/` 层 fetch）：数据来自 R2（表数据 `header.json`/`data.json`、搜索索引），或同站 Worker 路由（`/bms/table/mirror/tables.json`），或远程原始源（`data_url` JSONP/跨域 fetch）。选择标准：数据源在构建时可访问且不依赖用户上下文 → 构建时加载；否则客户端加载。
 - **本地 `pnpm dev` 不提供 mirror 动态路由** — 列表页 `/bms/table/mirror/` 依赖 Worker 生成的 `tables.json`，本地 dev 下会报加载失败；单表页的 meta 注入也只存在于 Worker 运行时。验证 mirror 行为用 `pnpm build && pnpm exec wrangler dev`（`localhost:8787` 已在桶 CORS 放行）；想验静态宿主形态则 `pnpm build && node scripts/gen-static-mirror-pages.ts --site-base=http://127.0.0.1:8787` 后用静态服务器起 `build/`（本地演练用显式 site-base，因为配置里只有生产目标）。
-- **`src/lib/components/`** — UI 组件层。`ui/` 为通用原语（barrel export 见 `ui/index.ts`），其余子目录为领域组件。写 UI 前 `glob src/lib/components/**/*.svelte` 检索已有组件。
+- **`src/lib/components/`** — UI 组件层。`ui/` 为通用原语，其余子目录为领域组件。**组件导入一律用直接路径**（`$lib/components/<域>/<组件>.svelte`）：2026-09 移除了五个 barrel 文件（`ui`/`bms`/`layout`/`content`/`pages` 下的 `index.ts`），原因是它们与实际使用漂移——knip 报出一批只被直接路径引用、在 barrel 里却仍挂着导出的冗余项。直接路径无维护面、语义无歧义，不要再新增 barrel。写 UI 前 `glob src/lib/components/**/*.svelte` 检索已有组件。
 
 ## 技术栈
 
@@ -143,7 +143,7 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm test`、no-conf
 ## 其他挂起项
 
 - **tsconfig `noUncheckedIndexedAccess` 与 `exactOptionalPropertyTypes`** — 试跑分别命中 18 与 26 处真实未定义状态问题，修完后开启。触发条件：安排专门窗口做类型修复。
-- **knip 与 rumdl** — 分别扫描未使用文件/依赖/导出与 markdown lint。评估结论：knip 需为刻意保留项配置豁免、rumdl 对当前 4 个源 md 收益有限，暂不引入。触发条件：代码库规模或 md 数量显著增长。
+- **knip 与 rumdl** — 分别扫描未使用文件/依赖/导出与 markdown lint。评估结论：knip 需为刻意保留项配置豁免、rumdl 对当前 4 个源 md 收益有限，暂不引入。2026-09 复跑过一次 knip：5 个“未使用文件”全是 SvelteKit 特殊文件与动态 import 的误报，9 个“未使用 devDependencies”是 SvelteX 的动态导入依赖（见上文），唯一真实发现（barrel 冗余导出）已通过移除 barrel 解决——维持不引入的结论。触发条件：代码库规模或 md 数量显著增长。
 
 ## 分支与工作树
 

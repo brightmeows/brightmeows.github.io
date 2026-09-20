@@ -3,9 +3,9 @@
 
   import type { PageData } from "./$types";
 
-  import { MarkdownContent } from "$lib/components/content";
-  import { PageShell } from "$lib/components/layout";
+  import MarkdownContent from "$lib/components/content/MarkdownContent.svelte";
   import { buildTocFromHeadings } from "$lib/components/layout/FloatingToc.svelte";
+  import PageShell from "$lib/components/layout/PageShell.svelte";
   import type { TocItem } from "$lib/types/ui";
 
   let { data }: { data: PageData } = $props();

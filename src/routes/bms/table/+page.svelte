@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { PageData } from "./$types";
 
-  import { BmsTableList } from "$lib/components/bms";
-  import { PageShell } from "$lib/components/layout";
+  import BmsTableList from "$lib/components/bms/BmsTableList.svelte";
+  import PageShell from "$lib/components/layout/PageShell.svelte";
 
   let { data }: { data: PageData } = $props();
 </script>

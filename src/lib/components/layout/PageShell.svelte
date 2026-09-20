@@ -8,7 +8,8 @@
   import QuickActions from "./QuickActions.svelte";
 
   import { page } from "$app/state";
-  import { GlassContainer, StarryBackground } from "$lib/components/ui";
+  import GlassContainer from "$lib/components/ui/GlassContainer.svelte";
+  import StarryBackground from "$lib/components/ui/StarryBackground.svelte";
   import type { TocItem, NavChild } from "$lib/types/ui";
   import { deriveBreadcrumbs } from "$lib/utils/breadcrumbs";
 
