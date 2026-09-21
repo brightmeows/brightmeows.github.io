@@ -12,9 +12,22 @@
     selected: boolean;
     onchange: (checked: boolean) => void;
     mirrorPreview?: JsonPreviewHandle | undefined;
+    /** 是否显示删除按钮（已登录且非受保护）。 */
+    deletable?: boolean;
+    /** 删除进行中：按钮禁用。 */
+    deleting?: boolean;
+    ondelete?: ((item: MirrorTableItem) => void) | undefined;
   }
 
-  let { item, selected, onchange, mirrorPreview }: Props = $props();
+  let {
+    item,
+    selected,
+    onchange,
+    mirrorPreview,
+    deletable = false,
+    deleting = false,
+    ondelete,
+  }: Props = $props();
 
   let cb = clipboardFieldFeedback();
 </script>
@@ -27,19 +40,37 @@
     {item.symbol ?? ""}
   </td>
   <td class="table-td-glass min-w-50 wrap-break-word">
-    <strong
-      class="cursor-default"
-      use:jsonPreview={{
-        preview: mirrorPreview,
-        options: {
-          value: item,
-          label: `${item.name ?? "难度表"} JSON`,
-          maxHeightRem: 14,
-        },
-      }}
-    >
-      {item.name}
-    </strong>
+    <div class="flex flex-wrap items-center gap-2">
+      <strong
+        class="cursor-default"
+        use:jsonPreview={{
+          preview: mirrorPreview,
+          options: {
+            value: item,
+            label: `${item.name ?? "难度表"} JSON`,
+            maxHeightRem: 14,
+          },
+        }}
+      >
+        {item.name}
+      </strong>
+      {#if item.protected}
+        <span
+          class="rounded border border-[#ffd54f]/40 bg-[#ffd54f]/15 px-1.5 py-[0.1rem] text-[0.75rem] text-[#ffd54f]"
+          title="站长已授权保护，不能删除">已授权</span
+        >
+      {/if}
+      {#if deletable && ondelete}
+        <button
+          class="cursor-pointer rounded-md border border-red-300/30 bg-red-400/10 px-2 py-[0.2rem] text-[0.8rem] text-red-200 transition-colors duration-200 hover:bg-red-400/20 disabled:cursor-not-allowed disabled:opacity-50"
+          type="button"
+          disabled={deleting}
+          onclick={() => ondelete(item)}
+        >
+          {deleting ? "删除中…" : "删除"}
+        </button>
+      {/if}
+    </div>
   </td>
   <td class="table-td-glass min-w-32.5 wrap-break-word">
     <div class="flex items-center gap-1">

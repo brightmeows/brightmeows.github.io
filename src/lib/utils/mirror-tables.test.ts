@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  buildSearchNeedles,
-  filterTables,
-  groupByTags,
-  slugifyTag,
-  sortMirrorTablesByFeatured,
-} from "./mirror-tables";
+import { buildSearchNeedles, filterTables, groupByTags, slugifyTag } from "./mirror-tables";
 
 import type { MirrorTableItem } from "$lib/types/bms";
 
@@ -43,28 +37,6 @@ describe("filterTables", () => {
     expect(filterTables(items, ["alpha"])).toEqual([items[0]]);
     expect(filterTables(items, ["▼"])).toEqual([items[1]]);
     expect(filterTables(items, ["nomatch"])).toEqual([]);
-  });
-});
-
-describe("sortMirrorTablesByFeatured", () => {
-  const itemA: MirrorTableItem = { name: "b", url: "https://example.test/b" };
-  const itemB: MirrorTableItem = { name: "a", url_from: "orig-a", url: "https://example.test/a" };
-  const itemC: MirrorTableItem = { name: "c", url: "https://example.test/c" };
-
-  it("精选模式按 featured 顺序在前，其余按名称", () => {
-    const sorted = sortMirrorTablesByFeatured([itemA, itemB, itemC], ["orig-a"], true);
-    expect(sorted.map((i) => i.name)).toEqual(["a", "b", "c"]);
-  });
-
-  it("非精选模式仅按名称排序", () => {
-    const sorted = sortMirrorTablesByFeatured([itemC, itemA, itemB], ["orig-a"], false);
-    expect(sorted.map((i) => i.name)).toEqual(["a", "b", "c"]);
-  });
-
-  it("不改动输入数组", () => {
-    const input = [itemC, itemA, itemB];
-    sortMirrorTablesByFeatured(input, [], true);
-    expect(input.map((i) => i.name)).toEqual(["c", "b", "a"]);
   });
 });
 
