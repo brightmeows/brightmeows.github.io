@@ -1,0 +1,31 @@
+name: Install rclone
+description: >-
+  下载固定版本的 rclone 并校验 SHA256SUMS 后解压到工作目录。
+  版本升级是显式动作（见 AGENTS.md）：rclone sync 会删除目标端多余文件，
+  工具行为漂移是本管线破坏性最高的一环。
+
+runs:
+  using: composite
+  steps:
+    - name: Download and verify rclone
+      shell: bash
+      # 版本号用 shell 局部变量而非 env：rclone 会把所有 RCLONE_* 环境变量当作
+      # CLI 标志解析，RCLONE_VERSION 会与它自己的 --version 冲突。
+      # 下载时必须保留归档原名：SHA256SUMS 按文件名校验，存成 rclone.zip 会直接
+      # 找不到文件。
+      run: |
+        version=v1.75.1
+        base="https://downloads.rclone.org/${version}"
+        archive="rclone-${version}-linux-amd64.zip"
+        curl -fsSL --retry 3 --max-time 300 -o "$archive" "${base}/${archive}"
+        curl -fsSL --retry 3 --max-time 60 -o SHA256SUMS "${base}/SHA256SUMS"
+        line=$(grep " ${archive}\$" SHA256SUMS)
+        if [ -z "$line" ]; then
+          echo "SHA256SUMS 中未找到 ${archive}" >&2
+          exit 1
+        fi
+        echo "$line" | sha256sum -c -
+        unzip -j "$archive" "*/rclone" -d ./
+        chmod +x ./rclone
+        rm -f "$archive" SHA256SUMS
+        ./rclone version

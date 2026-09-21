@@ -1,0 +1,88 @@
+name: Fetch Table
+
+# 单表抓取：用户提交添加后由 Worker 触发（workflow_dispatch），也可手动 dispatch
+# 演练。产物经 rclone 写入 R2：数据目录 tables/<dir_name>/、抓取结果
+# user/fetched/<id>.json 与状态 user/status/<id>.json；成功后触发一次站点部署，
+# 让新表在静态宿主上尽快可见。
+#
+# 需要的 Secrets（本仓库 Settings > Secrets and variables > Actions）：
+#   R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY / R2_ENDPOINT / R2_BUCKET — 与 update-tables 相同
+#   WORKFLOW_DISPATCH_TOKEN — fine-grained PAT，仅 actions:write（触发 deploy）
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "表源 URL"
+        required: true
+        type: string
+      requestId:
+        description: "添加请求 id（关联 user/status/<id>.json）"
+        required: true
+        type: string
+      author:
+        description: "添加者 GitHub 登录名（仅记录，可空）"
+        required: false
+        type: string
+
+concurrency:
+  group: fetch-table
+  cancel-in-progress: false
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install rclone (pinned)
+        uses: ./.github/actions/install-rclone
+
+      - name: Fetch table
+        # 输入经 env 传入，避免把用户提交的 URL 直接插值进 shell 命令
+        env:
+          TABLE_URL: ${{ inputs.url }}
+          REQUEST_ID: ${{ inputs.requestId }}
+          AUTHOR: ${{ inputs.author }}
+        run: |
+          node scripts/fetch-table-once.ts \
+            --url="$TABLE_URL" \
+            --request-id="$REQUEST_ID" \
+            --author="$AUTHOR" \
+            --out-dir=./out
+
+      - name: Upload results to R2
+        env:
+          RCLONE_CONFIG_R2_TYPE: s3
+          RCLONE_CONFIG_R2_PROVIDER: Cloudflare
+          RCLONE_CONFIG_R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          RCLONE_CONFIG_R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+        run: |
+          dir=$(jq -r '.dir_name // empty' out/result.json)
+          if [ -n "$dir" ] && [ -d "out/tables/$dir" ]; then
+            echo "上传表数据：$dir"
+            ./rclone copy "out/tables/$dir" "r2:${{ secrets.R2_BUCKET }}/tables/$dir" --transfers 4
+          fi
+          # 抓取结果与状态（失败时只有状态）都要上传，前端据此结束轮询
+          ./rclone copy out/user "r2:${{ secrets.R2_BUCKET }}/user" --transfers 4
+          rm -f rclone
+
+      - name: Read fetch result
+        id: result
+        run: echo "state=$(jq -r .state out/result.json)" >> "$GITHUB_OUTPUT"
+
+      - name: Trigger site deploy
+        if: steps.result.outputs.state == 'done'
+        env:
+          GH_TOKEN: ${{ secrets.WORKFLOW_DISPATCH_TOKEN }}
+        run: gh workflow run deploy.yml --ref main
