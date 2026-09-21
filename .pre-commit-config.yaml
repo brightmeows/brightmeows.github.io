@@ -83,18 +83,6 @@ repos:
         language: system
         files: \.(md|svx)$
 
-  # config/*.toml 由 CI 的数据管线（scripts/fetch-tables.ts）读取；
-  # 语法/字段错误在这里立即暴露，
-  # 不必等 6 小时一轮的 update-tables 反馈。
-  - repo: local
-    hooks:
-      - id: config-toml
-        name: config TOML syntax and fields
-        entry: python3 scripts/check-config-toml.py
-        language: system
-        files: ^config/.*\.toml$
-        pass_filenames: false
-
   # 同一事实在不能 import 配置的地方（wrangler.jsonc、工作流 YAML、oxfmt 忽略项、
   # 版本文件）必须与 config/site.json 一致；纯离线、毫秒级。
   - repo: local

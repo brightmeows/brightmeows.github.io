@@ -1,11 +1,11 @@
 /**
  * 旧配置（config/table.toml）的解析与用户层转换。
  *
- * 该配置已退役：活跃集合改由 R2 用户层驱动（见 user-layer.ts）。本模块服务
- * 两个用途——对拍工具把旧配置转成等价的用户层注入新实现（验证两种语义等价），
- * 以及一次性迁移把线上现存配置写入 R2。列表源（config/list.toml）随机制整体
- * 退役，不在此转换；迁移完成后 config/table.toml 与依赖它的解析一并删除，
- * 对拍改用存档的 fixture。
+ * 旧配置已退役且从仓库删除（不再有 config/*.toml）。本模块只服务两个用途——
+ * 对拍工具从存档 fixture（`scripts/pipeline/fixtures/legacy-table.toml`）转成
+ * 等价用户层注入新实现（验证语义等价），以及一次性迁移生成 R2 用户层对象。
+ * 列表源（config/list.toml）随机制整体退役，不在此转换；迁移完成后本模块与
+ * 迁移脚本、迁移工作流可一并删除。
  *
  * 解析行为与退役前的 scripts/pipeline/config.ts 对齐：未知顶层字段忽略、
  * 条目上的未知字段作为 extra 保留、非法输入直接抛错。
@@ -147,6 +147,12 @@ export interface LegacyConversionOptions {
   author?: string | undefined;
   /** 记录时间戳；迁移脚本应传入当前时间。 */
   now?: Date | undefined;
+  /**
+   * URL 到已知元数据的映射（来自线上清单）。
+   * 旧配置的 `[[table]]` 不带 name/symbol，直接按命名规则预计算会得到空表名的
+   * 目录占位；迁移时用清单里的真实值填上，抓取前也能得到正确目录名。
+   */
+  known?: ReadonlyMap<string, { dir_name: string; name: string; symbol: string }> | undefined;
 }
 
 /** 旧配置条目的稳定 id：`legacy-` 加 URL 哈希前缀。 */
@@ -189,18 +195,21 @@ export function legacyTableConfigToUserLayer(
   for (const entry of config.table) {
     const id = legacyEntryId(entry.url);
     added.push({ id, url: entry.url, author, role: "admin", added_at: at });
+    const known = options.known?.get(entry.url);
     const info: TableInfo = {
-      name: entry.name,
-      symbol: entry.symbol,
+      name: known?.name ?? entry.name,
+      symbol: known?.symbol ?? entry.symbol,
       url: entry.url,
       extra: entry.extra,
     };
+    const name = known?.name ?? entry.name;
+    const symbol = known?.symbol ?? entry.symbol;
     fetched.push({
       id,
       url: entry.url,
-      dir_name: expectedDirName(info),
-      name: entry.name,
-      ...(entry.symbol === "" ? {} : { symbol: entry.symbol }),
+      dir_name: known?.dir_name ?? expectedDirName(info),
+      name,
+      ...(symbol === "" ? {} : { symbol }),
       fetched_at: at,
     });
     const override = metaFromExtra(entry.url, entry.extra, at);

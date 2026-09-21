@@ -77,6 +77,23 @@ describe("legacyTableConfigToUserLayer", () => {
     expect(layer.meta).toHaveLength(1);
   });
 
+  it("known 映射覆盖目录名与名称（线上清单优先）", () => {
+    const config = parseLegacyTableConfig(TOML);
+    const known = new Map([
+      [
+        "https://a.example/table.html",
+        { dir_name: "[a.example] 真实表名", name: "真实表名", symbol: "★" },
+      ],
+    ]);
+    const layer = legacyTableConfigToUserLayer(config, { known });
+    const fetched = layer.fetched.find((entry) => entry.url === "https://a.example/table.html");
+    expect(fetched).toMatchObject({
+      dir_name: "[a.example] 真实表名",
+      name: "真实表名",
+      symbol: "★",
+    });
+  });
+
   it("disable 与 replace 一一对应", () => {
     const layer = legacyTableConfigToUserLayer(parseLegacyTableConfig(TOML), {
       author: "brightmeows",

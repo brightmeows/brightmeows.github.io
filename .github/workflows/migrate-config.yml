@@ -1,0 +1,61 @@
+name: Migrate Config
+
+# 一次性迁移：把存档的旧 config/table.toml（scripts/pipeline/fixtures/
+# legacy-table.toml）转成 R2 用户层对象（user/ 前缀），经 rclone 上传。
+#
+# 安全：线上 user/added.json 非空时脚本会中止，避免覆盖真实用户数据；确需重跑时
+# 勾选 force。迁移完成后本工作流与 scripts/migrate-config-to-user-layer.ts 可删除。
+on:
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "已有用户层数据时仍执行（会覆盖 added 等索引）"
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: migrate-config
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: "pnpm"
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install rclone (pinned)
+        uses: ./.github/actions/install-rclone
+
+      - name: Generate user layer objects
+        env:
+          FORCE: ${{ inputs.force }}
+        run: |
+          if [ "$FORCE" = "true" ]; then
+            node scripts/migrate-config-to-user-layer.ts --out-dir=./out --force
+          else
+            node scripts/migrate-config-to-user-layer.ts --out-dir=./out
+          fi
+
+      - name: Upload to R2
+        env:
+          RCLONE_CONFIG_R2_TYPE: s3
+          RCLONE_CONFIG_R2_PROVIDER: Cloudflare
+          RCLONE_CONFIG_R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          RCLONE_CONFIG_R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+        run: |
+          echo "上传用户层对象："
+          find out/user -type f | sort
+          ./rclone copy out/user "r2:${{ secrets.R2_BUCKET }}/user" --transfers 8
+          rm -f rclone
