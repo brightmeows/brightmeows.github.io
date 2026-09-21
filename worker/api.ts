@@ -19,6 +19,7 @@ import {
   type StatusEntry,
 } from "../src/lib/mirror/user-layer.ts";
 
+import { handleAdmin } from "./admin.ts";
 import { getSession, handleCallback, handleLogin, handleLogout, type Session } from "./auth.ts";
 import {
   OAUTH_CALLBACK_PATH,
@@ -27,6 +28,7 @@ import {
   PREVIEW_USER_AGENT,
   type Env,
 } from "./env.ts";
+import { checkSameOrigin, failure, json, readJsonBody } from "./http.ts";
 import { invalidateMergedManifest, loadMergedManifest, loadUserLayer } from "./manifest.ts";
 import {
   RateLimitError,
@@ -44,49 +46,6 @@ import {
 } from "./store.ts";
 
 const RESTORE_WINDOW_MS = TRASH_RETENTION_DAYS * 24 * 60 * 60 * 1000;
-
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
-  });
-}
-
-function failure(status: number, message: string): Response {
-  return json({ error: message }, status);
-}
-
-async function readJsonBody(request: Request): Promise<Record<string, unknown> | null> {
-  const contentType = request.headers.get("content-type") ?? "";
-  if (!contentType.includes("application/json")) {
-    return null;
-  }
-  try {
-    const value: unknown = await request.json();
-    if (typeof value !== "object" || value === null || Array.isArray(value)) {
-      return null;
-    }
-    return value as Record<string, unknown>;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * 写操作的同源校验：Origin 必须存在且与请求 host 一致。
- * SameSite=Lax 已阻断跨站 POST 携带会话 cookie，这里再加一道（浏览器无法伪造 Origin）。
- */
-function checkSameOrigin(request: Request, url: URL): boolean {
-  const origin = request.headers.get("origin");
-  if (origin === null || origin === "") {
-    return false;
-  }
-  try {
-    return new URL(origin).host === url.host;
-  } catch {
-    return false;
-  }
-}
 
 /** 统一处理限次错误。 */
 async function consume(env: Env, session: Session, now: Date): Promise<number | null> {
@@ -501,6 +460,9 @@ async function handleRemoved(request: Request, env: Env, now: Date): Promise<Res
 export async function handleApi(request: Request, env: Env, url: URL): Promise<Response> {
   const now = new Date();
   const path = url.pathname;
+  if (path === "/api/admin" || path.startsWith("/api/admin/")) {
+    return handleAdmin(request, env, url);
+  }
   if (path === "/api/me" && request.method === "GET") {
     return handleMe(request, env, now);
   }
