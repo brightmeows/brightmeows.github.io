@@ -97,15 +97,29 @@ export function roleFor(login: string): UserRole {
   return login.toLowerCase() === ADMIN_LOGIN ? "admin" : "user";
 }
 
+/**
+ * 读取会话签名密钥；部署未注入 secret 时返回 null。
+ * 未配置时不能继续 HMAC（零长度密钥会让 Workers 的 importKey 抛异常，
+ * 表现为带点 cookie 的请求全部 500），必须显式降级。
+ */
+function readSessionSecret(env: Env): string | null {
+  const secret = env.SESSION_SECRET;
+  return typeof secret === "string" && secret !== "" ? secret : null;
+}
+
 /** 生成带签名的会话 token。 */
 export async function createSessionToken(env: Env, login: string, now: Date): Promise<string> {
+  const secret = readSessionSecret(env);
+  if (secret === null) {
+    throw new Error("SESSION_SECRET 未配置，无法签发会话");
+  }
   const session: Session = {
     login,
     role: roleFor(login),
     exp: Math.floor(now.getTime() / 1000) + SESSION_MAX_AGE_SECONDS,
   };
   const payload = encodeJson(session);
-  const signature = await hmacSign(env.SESSION_SECRET, payload);
+  const signature = await hmacSign(secret, payload);
   return `${payload}.${signature}`;
 }
 
@@ -115,13 +129,18 @@ export async function verifySessionToken(
   token: string,
   now: Date
 ): Promise<Session | null> {
+  const secret = readSessionSecret(env);
+  if (secret === null) {
+    // 未配置密钥（部署尚未注入 secret）：按未登录处理，不抛异常
+    return null;
+  }
   const dot = token.lastIndexOf(".");
   if (dot <= 0) {
     return null;
   }
   const payload = token.slice(0, dot);
   const signature = token.slice(dot + 1);
-  const expected = await hmacSign(env.SESSION_SECRET, payload);
+  const expected = await hmacSign(secret, payload);
   if (!timingSafeEqual(signature, expected)) {
     return null;
   }
@@ -256,7 +275,13 @@ export async function handleCallback(
     return oauthError("GitHub 账号缺少 login 字段。");
   }
 
-  const token = await createSessionToken(env, login, now);
+  let token: string;
+  try {
+    token = await createSessionToken(env, login, now);
+  } catch {
+    // 登录流程只有在 SESSION_SECRET 未配置时才会走到这里
+    return oauthError("服务端会话密钥未配置，请联系站长。");
+  }
   const headers = new Headers({
     location: new URL("/bms/table/mirror/", url.origin).toString(),
     "cache-control": "no-store",
