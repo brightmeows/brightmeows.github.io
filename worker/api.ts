@@ -471,6 +471,32 @@ async function handleStatus(env: Env, requestId: string): Promise<Response> {
   return json(status);
 }
 
+/**
+ * 列出删除记录（回收站视图）：管理员看到全部，普通用户只看自己 30 天内的。
+ * 只读接口，不做同源校验（浏览器同源 GET 不带 Origin）。
+ */
+async function handleRemoved(request: Request, env: Env, now: Date): Promise<Response> {
+  const session = await getSession(env, request, now);
+  if (session === null) {
+    return failure(401, "请先登录 GitHub");
+  }
+  const removed = await readIndex(env, userRemovedKey(), parseRemovedIndex);
+  const cutoff = now.getTime() - RESTORE_WINDOW_MS;
+  const entries = removed
+    .filter((item) => session.role === "admin" || item.author === session.login)
+    .filter((item) => {
+      const at = Date.parse(item.removed_at);
+      return Number.isFinite(at) && at >= cutoff;
+    })
+    .map((item) => ({
+      dir_name: item.dir_name,
+      url: item.url,
+      removed_at: item.removed_at,
+      author: item.author,
+    }));
+  return json({ entries });
+}
+
 /** 分发 `/api/*` 请求；未匹配的路径返回 404。 */
 export async function handleApi(request: Request, env: Env, url: URL): Promise<Response> {
   const now = new Date();
@@ -501,6 +527,9 @@ export async function handleApi(request: Request, env: Env, url: URL): Promise<R
   }
   if (path === "/api/tables/restore" && request.method === "POST") {
     return handleRestore(request, env, url, now);
+  }
+  if (path === "/api/tables/removed" && request.method === "GET") {
+    return handleRemoved(request, env, now);
   }
   const statusMatch = /^\/api\/tables\/status\/([A-Za-z0-9-]+)$/u.exec(path);
   if (statusMatch?.[1] !== undefined && request.method === "GET") {

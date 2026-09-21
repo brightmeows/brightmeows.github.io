@@ -4,9 +4,9 @@
   import Checkbox from "$lib/components/ui/Checkbox.svelte";
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
   import ScrollSyncGroup from "$lib/components/ui/ScrollSyncGroup.svelte";
-  import type { Tag1Group, Tag2Group } from "$lib/types/bms";
+  import type { MirrorTableItem, Tag1Group, Tag2Group } from "$lib/types/bms";
   import type { JsonPreviewHandle } from "$lib/types/ui";
-  import { slugifyTag, sortMirrorTablesByFeatured } from "$lib/utils/mirror-tables";
+  import { slugifyTag } from "$lib/utils/mirror-tables";
 
   // 值域与类型域同名合并是标准 TS 惯用法；oxlint 误报 no-redeclare（typescript-eslint 不报）
   // oxlint-disable-next-line no-redeclare
@@ -22,18 +22,20 @@
     groups?: Tag1Group[];
     selectedMap?: Record<string, boolean>;
     mirrorPreview?: JsonPreviewHandle | undefined;
-    /** 精选列表 URL 顺序，用于排序 */
-    featuredUrls?: string[];
-    /** 是否按 featuredUrls 顺序排序 */
-    sortFeatured?: boolean;
+    /** 是否显示删除按钮（已登录）。 */
+    showDelete?: boolean;
+    /** 删除进行中的目录名。 */
+    deletingDir?: string | null;
+    ondelete?: ((item: MirrorTableItem) => void) | undefined;
   }
 
   let {
     groups = [],
     selectedMap = $bindable({}),
     mirrorPreview,
-    featuredUrls = [],
-    sortFeatured = false,
+    showDelete = false,
+    deletingDir = null,
+    ondelete,
   }: Props = $props();
 
   function scrollToTag1(tag1: string): void {
@@ -183,12 +185,15 @@
                       </tr>
                     </thead>
                     <tbody>
-                      {#each sortMirrorTablesByFeatured(sg.items, featuredUrls, sortFeatured) as item (item.url)}
+                      {#each sg.items as item (item.url)}
                         <MirrorTableRow
                           {item}
                           selected={!!selectedMap[item.url]}
                           onchange={(checked: boolean) => onRowChange(checked, item.url)}
                           {mirrorPreview}
+                          deletable={showDelete && item.protected !== true}
+                          deleting={deletingDir === item.dir_name}
+                          {ondelete}
                         />
                       {/each}
                     </tbody>
