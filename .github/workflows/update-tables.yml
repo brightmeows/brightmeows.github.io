@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
     paths:
-      - "config/**"
       - ".github/workflows/update-tables.yml"
       # 管线实现变更后自动跑一轮：运行时错误（模块加载、配置解析）当天暴露；
       # 管线自带「先拉 R2 基线再抓取、失败表保留基线」的自愈设计

@@ -69,7 +69,6 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm format:check
       - run: python3 scripts/check-cn-quotes.py $(git ls-files "*.md" "*.svx")
-      - run: python3 scripts/check-config-toml.py
 
   commit-msg:
     if: github.event_name == 'pull_request'

@@ -4,6 +4,8 @@
  * 用 R2 上的公开基线（tables/<dir>/info.json 与 lists 缓存）搭两个独立
  * 工作区，分别跑新实现与旧二进制（bms-table-fetch release），再逐对象比对
  * 对外产物：info/header/data 逐字节比较，tables.json 与 indexes 按语义比较。
+ * 旧配置来自存档 fixture（`scripts/pipeline/fixtures/legacy-table.toml`）：
+ * 旧二进制固定读 `config/table.toml`，而仓库的 `config/` 已随旧配置退役。
  *
  * 全程只读线上基线、不写 R2；差异报告与两份产物都留在工作区供复核。
  */
@@ -122,9 +124,17 @@ async function prepareBaseline(
   for (const dir of ["config", "lists", "tables"]) {
     await mkdir(path.join(baseline, dir), { recursive: true });
   }
-  for (const name of ["table.toml", "list.toml"]) {
-    await cp(path.join(repoRoot, "config", name), path.join(baseline, "config", name));
-  }
+  // 旧二进制固定读 config/ 下两个 toml：table.toml 来自存档 fixture（config/ 已
+  // 退役，仓库不再有该目录），list.toml 指向不可达地址——强制保留 R2 上的列表
+  // 缓存，让对拍不依赖 DARKSABUN 的可用性。
+  await cp(
+    path.join(repoRoot, "scripts", "pipeline", "fixtures", "legacy-table.toml"),
+    path.join(baseline, "config", "table.toml")
+  );
+  await writeFile(
+    path.join(baseline, "config", "list.toml"),
+    '[[source]]\nname = "DARKSABUN"\nurl = "http://127.0.0.1:1/offline-list"\n'
+  );
   if (listText !== null) {
     const urls = new Set(entries.map((entry) => entry.url));
     const listEntries = JSON.parse(listText) as unknown;
@@ -134,12 +144,6 @@ async function prepareBaseline(
     await writeFile(
       path.join(baseline, "lists", "DARKSABUN.json"),
       limited ? JSON.stringify(selected, null, 2) : listText
-    );
-  }
-  if (limited) {
-    await writeFile(
-      path.join(baseline, "config", "list.toml"),
-      '[[source]]\nname = "DARKSABUN"\nurl = "http://127.0.0.1:1/offline-list"\n'
     );
   }
 
@@ -252,9 +256,13 @@ export async function runParity(options: ParityOptions): Promise<ParityReport> {
   await copyWorkspaces(baseline, [newWorkspace, rustWorkspace]);
 
   log("运行新实现……");
-  // 旧二进制读 config/table.toml，新实现读用户层：把同一份配置转成等价用户层注入，
-  // 两边活跃表集合才能对齐，对拍同时验证了转换语义（迁移脚本复用同一函数）。
-  const legacyText = await readFile(path.join(options.repoRoot, "config", "table.toml"), "utf8");
+  // 旧二进制读存档 fixture（它固定找 config/table.toml，那里已由 prepareBaseline
+  // 拷贝过去），新实现读用户层：把同一份配置转成等价用户层注入，两边活跃表集合
+  // 才能对齐，对拍同时验证了转换语义（迁移脚本复用同一函数）。
+  const legacyText = await readFile(
+    path.join(options.repoRoot, "scripts", "pipeline", "fixtures", "legacy-table.toml"),
+    "utf8"
+  );
   const legacyLayer = legacyTableConfigToUserLayer(parseLegacyTableConfig(legacyText));
   const startedNew = Date.now();
   const newResult = await runPipeline({
