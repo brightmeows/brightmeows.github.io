@@ -1,16 +1,20 @@
 /**
  * 构建期为静态宿主（GitHub Pages / Codeberg Pages）生成镜像表页面与站点清单。
  *
- * 完全离线：只读仓库内快照（`src/lib/mirror/table-manifest.json`）与构建产物里的
- * SPA 外壳（`build/404.html`），产出与 Cloudflare Worker 运行时等价的页面——两处
- * 共用 `src/lib/mirror/manifest.ts` 里的注入与序列化函数，保证输出一致。
+ * 清单来源是主站的 `/bms/table/mirror/tables.json`——它已由 Worker 合成用户增删
+ * 与保护标记。静态宿主与主站展示同一份清单，合成逻辑只存在于 Worker 一处；
+ * 本脚本负责把 url 字段重写为自己域名并产出等价页面（与 Worker 共用
+ * `src/lib/mirror/` 的注入与序列化函数，保证输出逐字节一致）。清单拉取失败即
+ * 整步失败，避免用缺页产物覆盖上一版仍可用的静态站点。
  *
  * 用法：
  *   node scripts/gen-static-mirror-pages.ts --target=github-pages [--build-dir=build]
  *   node scripts/gen-static-mirror-pages.ts --site-base=https://example.com   # 显式覆盖（本地演练用）
  *
- * 清单地址会发布在该目标的同源路径 `/bms/table/mirror/tables.json` 上，因此
- * `url` 字段按 `--site-base` 生成；快照本身是 origin 无关的原始清单。
+ * `--manifest-base=https://…` 可覆盖清单来源基址，缺省取 config/site.json 的 origin。
+ *
+ * 注意：脚本不再读仓库内快照，构建机需要能访问主站（清单合成与用户层都在
+ * 主站侧），这是 2026-09 的显式取舍。
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -22,7 +26,7 @@ import {
   serializeSiteTableList,
   transformTableList,
 } from "../src/lib/mirror/manifest.ts";
-import { r2TableHeaderUrl } from "../src/lib/mirror/urls.ts";
+import { normalizeBase, r2TableHeaderUrl } from "../src/lib/mirror/urls.ts";
 import type { MirrorTableItem } from "../src/lib/types/bms.ts";
 
 import { CONFIG_PATH, findStaticTarget, readSiteConfig } from "./site-config.ts";
@@ -31,16 +35,19 @@ import { CONFIG_PATH, findStaticTarget, readSiteConfig } from "./site-config.ts"
 const SITE_SHELL_PATH = "404.html";
 /** 镜像表页面与站点清单在构建产物里的目录。 */
 const MIRROR_DIR = path.join("bms", "table", "mirror");
+/** 主站站点清单路径。 */
+const SITE_LIST_PATH = "/bms/table/mirror/tables.json";
 
 export interface GenerateOptions {
-  /** 快照路径（origin 无关的原始清单）。 */
-  snapshotPath: string;
+  /** 清单来源基址（主站 origin）。 */
+  manifestBase: string;
   /** 构建产物根目录。 */
   buildDir: string;
   /** R2 基址，用于拼每张表的 header.json 绝对地址。 */
   r2Base: string;
   /** 本目标的站点基址，用于生成清单里的 url 字段。 */
   siteBase: string;
+  fetchImpl?: typeof fetch | undefined;
 }
 
 export interface GenerateResult {
@@ -50,32 +57,49 @@ export interface GenerateResult {
   listPath: string;
 }
 
-/** 读取快照并校验为非空数组。 */
-export function readSnapshot(snapshotPath: string): MirrorTableItem[] {
-  if (!existsSync(snapshotPath)) {
-    throw new Error(`清单快照不存在：${snapshotPath}（先跑 scripts/sync-mirror-manifest.ts）`);
+/**
+ * 拉取主站站点清单。条目里的 `url` 指向主站、`url_from` 是原始源地址；
+ * 生成前把 url 还原为源地址，交由 transformTableList 按本目标域名重写。
+ */
+export async function fetchSiteTableList(
+  manifestBase: string,
+  fetchImpl: typeof fetch = fetch
+): Promise<MirrorTableItem[]> {
+  const url = `${normalizeBase(manifestBase)}${SITE_LIST_PATH}`;
+  const response = await fetchImpl(url);
+  if (!response.ok) {
+    throw new Error(`拉取主站清单失败：${url} 返回 ${response.status}`);
   }
-  const parsed: unknown = JSON.parse(readFileSync(snapshotPath, "utf8"));
+  const parsed: unknown = await response.json();
   if (!Array.isArray(parsed)) {
-    throw new Error(`清单快照不是数组：${snapshotPath}`);
+    throw new Error(`主站清单不是数组：${url}`);
   }
   return parsed as MirrorTableItem[];
 }
 
+export interface StaticGenerateOptions {
+  buildDir: string;
+  r2Base: string;
+  siteBase: string;
+}
+
 /**
- * 按快照生成镜像页与站点清单。
+ * 按清单生成镜像页与站点清单。
  * 写入位置：`<buildDir>/bms/table/mirror/<dir_name>/index.html` 与 `.../tables.json`。
  */
-export function generateStaticMirrorPages(options: GenerateOptions): GenerateResult {
-  const list = readSnapshot(options.snapshotPath);
+export function generateStaticMirrorPages(
+  list: readonly MirrorTableItem[],
+  options: StaticGenerateOptions
+): GenerateResult {
   const shellPath = path.join(options.buildDir, SITE_SHELL_PATH);
   if (!existsSync(shellPath)) {
     throw new Error(`构建产物里找不到 SPA 外壳：${shellPath}（先跑 pnpm build）`);
   }
   const shell = readFileSync(shellPath, "utf8");
   const mirrorDir = path.join(options.buildDir, MIRROR_DIR);
+  const remapped = list.map((item) => ({ ...item, url: item.url_from ?? item.url }));
 
-  for (const item of list) {
+  for (const item of remapped) {
     const dirName = item.dir_name;
     if (typeof dirName !== "string" || dirName.trim() === "") {
       throw new Error(`清单条目缺少 dir_name：${item.name ?? "(未命名)"}`);
@@ -90,7 +114,7 @@ export function generateStaticMirrorPages(options: GenerateOptions): GenerateRes
   const listPath = path.join(MIRROR_DIR, "tables.json");
   writeFileSync(
     path.join(options.buildDir, listPath),
-    serializeSiteTableList(transformTableList(list, options.siteBase))
+    serializeSiteTableList(transformTableList(remapped, options.siteBase))
   );
 
   return { pages: list.length, listPath: listPath.split(path.sep).join("/") };
@@ -99,15 +123,15 @@ export function generateStaticMirrorPages(options: GenerateOptions): GenerateRes
 function parseArgs(argv: string[]): {
   target?: string;
   siteBase?: string;
+  manifestBase?: string;
   buildDir?: string;
-  snapshotPath?: string;
   configPath?: string;
 } {
   const result: {
     target?: string;
     siteBase?: string;
+    manifestBase?: string;
     buildDir?: string;
-    snapshotPath?: string;
     configPath?: string;
   } = {};
   for (const arg of argv) {
@@ -115,10 +139,10 @@ function parseArgs(argv: string[]): {
       result.target = arg.slice("--target=".length);
     } else if (arg.startsWith("--site-base=")) {
       result.siteBase = arg.slice("--site-base=".length);
+    } else if (arg.startsWith("--manifest-base=")) {
+      result.manifestBase = arg.slice("--manifest-base=".length);
     } else if (arg.startsWith("--build-dir=")) {
       result.buildDir = arg.slice("--build-dir=".length);
-    } else if (arg.startsWith("--snapshot=")) {
-      result.snapshotPath = arg.slice("--snapshot=".length);
     } else if (arg.startsWith("--config=")) {
       result.configPath = arg.slice("--config=".length);
     } else {
@@ -128,7 +152,7 @@ function parseArgs(argv: string[]): {
   return result;
 }
 
-function main(argv: string[]): void {
+async function main(argv: string[]): Promise<void> {
   const repoRoot = path.resolve(fileURLToPath(new URL("..", import.meta.url)));
   const args = parseArgs(argv);
   const configPath = args.configPath ?? CONFIG_PATH;
@@ -140,14 +164,16 @@ function main(argv: string[]): void {
     throw new Error(`必须提供 --target=<名称>（可选：${names}）或 --site-base=https://…`);
   }
   const siteBase = args.siteBase ?? findStaticTarget(config, args.target ?? "").siteBase;
+  const manifestBase = args.manifestBase ?? config.origin;
 
-  const result = generateStaticMirrorPages({
-    snapshotPath: args.snapshotPath ?? path.join(repoRoot, config.r2.snapshot),
+  const list = await fetchSiteTableList(manifestBase);
+  const result = generateStaticMirrorPages(list, {
     buildDir: args.buildDir ?? path.join(repoRoot, "build"),
     r2Base: config.r2.base,
     siteBase,
   });
 
+  console.log(`清单来源：${normalizeBase(manifestBase)}${SITE_LIST_PATH}（${list.length} 张表）`);
   console.log(
     `站点基址：${siteBase}${args.target ? `（目标 ${args.target}）` : "（--site-base 覆盖）"}`
   );
@@ -158,10 +184,8 @@ function main(argv: string[]): void {
 const isMain =
   process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isMain) {
-  try {
-    main(process.argv.slice(2));
-  } catch (error: unknown) {
+  main(process.argv.slice(2)).catch((error: unknown) => {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
-  }
+  });
 }

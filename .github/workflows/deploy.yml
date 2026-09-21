@@ -47,8 +47,8 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - name: Generate static mirror pages
-        # 离线生成（只读仓库内快照与 build/404.html）；失败即整步失败，避免用缺失
-        # 镜像页的产物覆盖上一版仍可用的 GitHub Pages 站点
+        # 从主站拉取已合成清单（含用户增删与保护标记）后生成静态镜像页与站点清单；
+        # 失败即整步失败，避免用缺页产物覆盖上一版仍可用的 GitHub Pages 站点
         run: node scripts/gen-static-mirror-pages.ts --target=github-pages
       - name: Upload Artifacts
         uses: actions/upload-pages-artifact@v5

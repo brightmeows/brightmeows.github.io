@@ -39,6 +39,7 @@ jobs:
           pnpm build
           echo "::endgroup::"
       - name: Generate static mirror pages
+        # 从主站拉取已合成清单（含用户增删与保护标记）后生成静态镜像页与站点清单
         run: node scripts/gen-static-mirror-pages.ts --target=codeberg-pages
       - name: Resolve site base from config
         run: echo "SITE_BASE=$(node scripts/site-target.ts --target=codeberg-pages)" >> "$GITHUB_ENV"
