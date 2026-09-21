@@ -20,6 +20,8 @@ export interface MirrorTableItem {
   dir_name?: string;
   url_data_json?: string;
   url_header_json?: string;
+  /** 删除保护标记：由用户层合成写入，不在 R2 原始清单中。 */
+  protected?: boolean;
 }
 
 /** 二级分组（按 tag2） */
