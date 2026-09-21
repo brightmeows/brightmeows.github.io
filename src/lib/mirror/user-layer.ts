@@ -24,6 +24,12 @@ export const DAILY_OPERATION_LIMIT = 10;
 /** 部署触发的节流窗口（毫秒）。 */
 export const DEPLOY_THROTTLE_MS = 10 * 60 * 1000;
 
+/**
+ * 回收站保留天数：删除满该天数后由管线清理（update-tables 工作流的
+ * `rclone delete --min-age 720h`），自助恢复窗口与此一致。改这里要同步工作流。
+ */
+export const TRASH_RETENTION_DAYS = 30;
+
 /** 添加索引对象键（Worker 写、管线与 Worker 读）。 */
 export function userAddedKey(): string {
   return `${USER_PREFIX}/added.json`;
