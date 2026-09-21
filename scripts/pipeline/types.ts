@@ -22,33 +22,6 @@ export interface TableInfo {
   extra: Record<string, JsonValue>;
 }
 
-/** config/table.toml 里声明的表条目：name/symbol 缺省为空串，合并时由已有信息补齐。 */
-export interface TableEntryInput {
-  name: string;
-  symbol: string;
-  url: string;
-  extra: Record<string, JsonValue>;
-}
-
-/** URL 替换规则。 */
-export interface ReplaceRule {
-  from: string;
-  to: string;
-}
-
-/** config/table.toml 的完整结构。 */
-export interface TableConfig {
-  table: TableEntryInput[];
-  disable: string[];
-  replace: ReplaceRule[];
-}
-
-/** config/list.toml 的列表源。 */
-export interface ListSource {
-  name: string;
-  url: string;
-}
-
 /** overlay 之后的活跃表集合。 */
 export interface ActiveSet {
   activeUrls: Set<string>;

@@ -2,8 +2,8 @@
  * 难度表数据管线入口（默认流水线，无子命令）。
  *
  * 用法：在仓库根目录执行 `node scripts/fetch-tables.ts`。
- * 数据源配置读 config/table.toml 与 config/list.toml，产物写入
- * lists/、tables/、indexes/ 与 warnings.log（均在 gitignore 中）。
+ * 活跃表集合来自 R2 基线叠加用户层（不再读仓库内的 toml 配置），产物写入
+ * tables/、indexes/ 与 warnings.log（均在 gitignore 中）。
  */
 
 import { runPipeline } from "./pipeline/engine.ts";

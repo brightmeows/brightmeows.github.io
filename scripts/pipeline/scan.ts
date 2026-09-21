@@ -1,4 +1,4 @@
-/** 目录扫描与列表文件读取（I/O 层，供 engine 调用）。 */
+/** 目录扫描（I/O 层，供 engine 调用）。 */
 
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
@@ -57,64 +57,4 @@ export async function scanDirsFull(tableDir: string): Promise<FullDirEntry[]> {
     result.push({ dirName: entry.dirName, info, dataRaw });
   }
   return result;
-}
-
-export interface LoadListResult {
-  tables: Map<string, TableInfo>;
-  /** 读取或解析失败的文件名（旧实现只记告警，保留旧缓存）。 */
-  failures: string[];
-}
-
-/** 读取 lists/*.json；按文件名过滤；整份文件解析失败时跳过。 */
-export async function loadListFiles(
-  listDir: string,
-  listNames: readonly string[] = []
-): Promise<LoadListResult> {
-  const tables = new Map<string, TableInfo>();
-  const failures: string[] = [];
-  let fileNames: string[];
-  try {
-    fileNames = await readdir(listDir);
-  } catch {
-    return { tables, failures };
-  }
-  for (const fileName of fileNames) {
-    if (!fileName.endsWith(".json")) {
-      continue;
-    }
-    const stem = fileName.slice(0, -".json".length);
-    if (listNames.length > 0 && !listNames.includes(stem)) {
-      continue;
-    }
-    let content: string;
-    try {
-      content = await readFile(path.join(listDir, fileName), "utf8");
-    } catch {
-      failures.push(fileName);
-      continue;
-    }
-    const parsed = tryParseJson(content);
-    if (!Array.isArray(parsed)) {
-      failures.push(fileName);
-      continue;
-    }
-    const entries: TableInfo[] = [];
-    let valid = true;
-    for (const item of parsed) {
-      const info = tableInfoFromJson(item);
-      if (info === null) {
-        valid = false;
-        break;
-      }
-      entries.push(info);
-    }
-    if (!valid) {
-      failures.push(fileName);
-      continue;
-    }
-    for (const info of entries) {
-      tables.set(info.url, info);
-    }
-  }
-  return { tables, failures };
 }

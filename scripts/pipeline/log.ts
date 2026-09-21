@@ -8,8 +8,13 @@
 export interface RunSummary {
   startedAt: Date;
   finishedAt: Date;
-  listSources: number;
-  listFailures: string[];
+  /** 用户层记录数（是否生效由 overlay 决定）。 */
+  userAdded: number;
+  userRemoved: number;
+  userDisabled: number;
+  userReplaced: number;
+  /** 用户层读取或解析告警数。 */
+  userWarnings: number;
   tablesTotal: number;
   tablesFetched: number;
   tablesFailed: string[];
@@ -60,16 +65,14 @@ export class RunLog implements PipelineLogger {
       "# BMS 难度表管线告警日志",
       `# 运行区间：${summary.startedAt.toISOString()} 至 ${summary.finishedAt.toISOString()}`,
       `# 汇总：表 ${summary.tablesTotal} 张，成功 ${summary.tablesFetched}，失败 ${summary.tablesFailed.length}`,
-      `# 列表源 ${summary.listSources} 个（失败 ${summary.listFailures.length}）；目录重命名 ${summary.renamed}；孤儿 ${summary.orphansMoved}`,
+      `# 用户层：添加 ${summary.userAdded}、删除 ${summary.userRemoved}、禁用 ${summary.userDisabled}、替换 ${summary.userReplaced}（读取告警 ${summary.userWarnings}）`,
+      `# 目录重命名 ${summary.renamed}；孤儿 ${summary.orphansMoved}`,
       `# tables.json ${summary.tablesJsonEntries} 项；索引 ${Object.entries(summary.indexSizes)
         .map(([name, size]) => `${name}=${size}`)
         .join(" ")}`,
       "",
     ];
 
-    if (summary.listFailures.length > 0) {
-      lines.push(`# 列表源失败：${summary.listFailures.join("；")}`, "");
-    }
     if (summary.tablesFailed.length > 0) {
       lines.push(`# 抓取失败表（保留基线数据）：${summary.tablesFailed.join("；")}`, "");
     }

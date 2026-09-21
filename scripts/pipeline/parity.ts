@@ -17,6 +17,7 @@ import { promisify } from "node:util";
 import { runPipeline } from "./engine.ts";
 import { describeError } from "./errors.ts";
 import { canonicalJson, compareUtf8 } from "./json-utils.ts";
+import { legacyTableConfigToUserLayer, parseLegacyTableConfig } from "./legacy-config.ts";
 import type { PipelineLogger } from "./log.ts";
 
 const execFileAsync = promisify(execFile);
@@ -251,12 +252,17 @@ export async function runParity(options: ParityOptions): Promise<ParityReport> {
   await copyWorkspaces(baseline, [newWorkspace, rustWorkspace]);
 
   log("运行新实现……");
+  // 旧二进制读 config/table.toml，新实现读用户层：把同一份配置转成等价用户层注入，
+  // 两边活跃表集合才能对齐，对拍同时验证了转换语义（迁移脚本复用同一函数）。
+  const legacyText = await readFile(path.join(options.repoRoot, "config", "table.toml"), "utf8");
+  const legacyLayer = legacyTableConfigToUserLayer(parseLegacyTableConfig(legacyText));
   const startedNew = Date.now();
   const newResult = await runPipeline({
     cwd: newWorkspace,
     concurrency,
     timeoutMs,
     log: pipelineLogger(log, "new"),
+    userLayer: legacyLayer,
   });
   const newSeconds = ((Date.now() - startedNew) / 1000).toFixed(1);
   log(
