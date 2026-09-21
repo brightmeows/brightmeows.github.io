@@ -94,7 +94,6 @@ jobs:
           ./rclone sync r2:${{ secrets.R2_BUCKET }}/ . \
             --include "/tables/**" \
             --include "/indexes/**" \
-            --include "/lists/**" \
             --include "/warnings.log" \
             --checksum \
             --transfers 16
@@ -106,10 +105,14 @@ jobs:
           ./rclone sync . r2:${{ secrets.R2_BUCKET }}/ \
             --include "/tables/**" \
             --include "/indexes/**" \
-            --include "/lists/**" \
             --include "/warnings.log" \
             --checksum \
             --transfers 16
+
+          echo "=== Clean expired trash (30 days) ==="
+          # 回收站只由 Worker 写入；目录不存在或没有过期对象时不报错
+          ./rclone delete r2:${{ secrets.R2_BUCKET }}/trash --min-age 720h \
+            || echo "trash 无过期对象（或目录暂不存在），跳过"
           rm -f rclone
 
       - name: Sync table manifest snapshot

@@ -1,22 +1,19 @@
 /**
- * 默认流水线编排：list、overlay、fetch、post_process。
+ * 默认流水线编排：基线扫描、overlay、fetch、post_process。
  *
- * 与旧实现 bms-table-fetch 的四阶段一致：先抓列表源，再计算活跃表集合，
- * 然后并发抓取，最后做安全网重命名、孤儿处理、生成 tables.json 与
- * indexes，并写 state.toml 与单轮 warnings.log。
+ * 与旧实现 bms-table-fetch 的四阶段同构，区别在活跃表集合的来源：不再有
+ * 列表源与 toml 配置，改为 R2 基线叠加用户层（站长与访客的增删记录）。
+ * 并发抓取后做安全网重命名、孤儿处理、生成 tables.json 与 indexes，
+ * 并写 state.toml 与单轮 warnings.log。
  */
 
 import path from "node:path";
 
-import { parseListConfig, parseTableConfig } from "./config.ts";
+import type { UserLayer } from "../../src/lib/mirror/user-layer.ts";
+import { CONFIG_PATH, readSiteConfig } from "../site-config.ts";
+
 import { describeError } from "./errors.ts";
-import {
-  DEFAULT_TIMEOUT_MS,
-  fetchList,
-  fetchTable,
-  patchDataUrl,
-  type FetchOptions,
-} from "./fetch.ts";
+import { DEFAULT_TIMEOUT_MS, fetchTable, patchDataUrl, type FetchOptions } from "./fetch.ts";
 import {
   atomicWrite,
   cleanTmpFiles,
@@ -38,25 +35,20 @@ import { normalizeData, normalizeHeader } from "./normalize.ts";
 import { serializeJson, writeIndexes, writeTablesJson } from "./output.ts";
 import { mergeActiveSet } from "./overlay.ts";
 import { mapPool } from "./pool.ts";
-import { loadListFiles, scanDirs, scanDirsFull } from "./scan.ts";
+import { scanDirs, scanDirsFull } from "./scan.ts";
 import { buildState, parseStateToml, serializeStateToml, sha3_256Hex } from "./state.ts";
-import { tableInfoFromJson, tableInfoToJson } from "./table-info.ts";
-import type { TableConfig, TableInfo } from "./types.ts";
+import { tableInfoToJson } from "./table-info.ts";
+import type { TableInfo } from "./types.ts";
+import { loadUserLayer } from "./user-layer.ts";
 
 export interface PipelinePaths {
-  tableConfig: string;
-  listConfig: string;
-  listDir: string;
   tableDir: string;
   indexDir: string;
   warnings: string;
 }
 
-/** 相对工作目录的默认路径，与旧实现的固定布局一致。 */
+/** 相对工作目录的默认路径，与旧实现的固定布局一致（列表源目录已退役）。 */
 export const DEFAULT_PATHS: PipelinePaths = {
-  tableConfig: path.join("config", "table.toml"),
-  listConfig: path.join("config", "list.toml"),
-  listDir: "lists",
   tableDir: "tables",
   indexDir: "indexes",
   warnings: "warnings.log",
@@ -71,6 +63,10 @@ export interface PipelineOptions {
   timeoutMs?: number;
   fetchImpl?: typeof fetch;
   log?: PipelineLogger;
+  /** 用户层 R2 公开基址；缺省时读 config/site.json 的 r2.base。 */
+  r2Base?: string | undefined;
+  /** 直接注入用户层（对拍与演练用）；提供时不再拉取 R2。 */
+  userLayer?: UserLayer | undefined;
 }
 
 export interface PipelineResult {
@@ -81,9 +77,6 @@ export interface PipelineResult {
 function resolvePaths(cwd: string, overrides: Partial<PipelinePaths> = {}): PipelinePaths {
   const merged = { ...DEFAULT_PATHS, ...overrides };
   return {
-    tableConfig: path.resolve(cwd, merged.tableConfig),
-    listConfig: path.resolve(cwd, merged.listConfig),
-    listDir: path.resolve(cwd, merged.listDir),
     tableDir: path.resolve(cwd, merged.tableDir),
     indexDir: path.resolve(cwd, merged.indexDir),
     warnings: path.resolve(cwd, merged.warnings),
@@ -102,23 +95,22 @@ export async function runPipeline(options: PipelineOptions = {}): Promise<Pipeli
 
   log.info(`管线启动：表目录 ${paths.tableDir}`);
 
-  const { listSources, listFailures } = await fetchListSources(paths, fetchOptions, log);
-
   await cleanTmpFiles(paths.tableDir);
   const baseEntries = await scanDirs(paths.tableDir);
   log.info(`基线扫描：${baseEntries.length} 个表目录`);
   const base = new Map(baseEntries.map((entry) => [entry.info.url, entry.info]));
   const oldDirMap = new Map(baseEntries.map((entry) => [entry.info.url, entry.dirName]));
 
-  const lists = await loadListFiles(paths.listDir);
-  for (const failure of lists.failures) {
-    log.warn(`列表文件读取失败，保留旧缓存：${failure}`);
+  const { layer: userLayer, warnings: userWarnings } = await resolveUserLayer(options, log);
+  for (const warning of userWarnings) {
+    log.warn(warning);
   }
-  const config = await loadTableConfigFile(paths.tableConfig, log);
+  log.info(
+    `用户层：添加 ${userLayer.added.length}、删除 ${userLayer.removed.length}、禁用 ${userLayer.disabled.length}、替换 ${userLayer.replace.length}`
+  );
   const { activeSet, unmatchedReplace } = mergeActiveSet({
     base,
-    lists: lists.tables,
-    config,
+    user: userLayer,
     oldDirMap,
   });
   for (const url of unmatchedReplace) {
@@ -213,8 +205,11 @@ export async function runPipeline(options: PipelineOptions = {}): Promise<Pipeli
   const summary: RunSummary = {
     startedAt,
     finishedAt,
-    listSources,
-    listFailures,
+    userAdded: userLayer.added.length,
+    userRemoved: userLayer.removed.length,
+    userDisabled: userLayer.disabled.length,
+    userReplaced: userLayer.replace.length,
+    userWarnings: userWarnings.length,
     tablesTotal: activeSet.activeUrls.size,
     tablesFetched: fetched,
     tablesFailed: failures,
@@ -232,60 +227,23 @@ export async function runPipeline(options: PipelineOptions = {}): Promise<Pipeli
   return { summary, warningsPath: paths.warnings };
 }
 
-interface ListFetchResult {
-  listSources: number;
-  listFailures: string[];
+interface UserLayerLoad {
+  layer: UserLayer;
+  warnings: string[];
 }
 
-/** 阶段一：抓取所有列表源并写入 lists/*.json；单个源失败时保留旧缓存。 */
-async function fetchListSources(
-  paths: PipelinePaths,
-  fetchOptions: FetchOptions,
+/** 加载用户层：优先使用注入，否则按 R2 公开基址拉取并报告来源。 */
+async function resolveUserLayer(
+  options: PipelineOptions,
   log: PipelineLogger
-): Promise<ListFetchResult> {
-  const text = await readTextIfExists(paths.listConfig);
-  if (text === null) {
-    log.warn(`列表配置不存在：${paths.listConfig}`);
-    return { listSources: 0, listFailures: [] };
+): Promise<UserLayerLoad> {
+  if (options.userLayer !== undefined) {
+    return { layer: options.userLayer, warnings: [] };
   }
-  const sources = parseListConfig(text);
-  const listFailures: string[] = [];
-  for (const source of sources) {
-    try {
-      const fetched = await fetchList(source.url, fetchOptions);
-      const infos: TableInfo[] = [];
-      for (const item of fetched.entries) {
-        const info = tableInfoFromJson(item);
-        if (info === null) {
-          throw new Error("列表条目缺少 name/symbol/url 或 URL 非法");
-        }
-        infos.push(info);
-      }
-      const content = serializeJson(infos.map(tableInfoToJson));
-      const filePath = path.join(paths.listDir, `${source.name}.json`);
-      if (await isChangedJsonFile(filePath, content, identityNormalizer)) {
-        await atomicWrite(filePath, content);
-      }
-      log.info(`列表源 ${source.name}：${infos.length} 张表`);
-    } catch (error) {
-      listFailures.push(source.name);
-      log.warn(`列表源 ${source.name} 抓取失败，保留旧缓存：${describeError(error)}`);
-    }
-  }
-  return { listSources: sources.length, listFailures };
-}
-
-/** 读取 config/table.toml；文件缺失按空配置处理，解析失败直接抛错。 */
-async function loadTableConfigFile(
-  filePath: string,
-  log: PipelineLogger
-): Promise<TableConfig | null> {
-  const text = await readTextIfExists(filePath);
-  if (text === null) {
-    log.warn(`表配置不存在，按空配置处理：${filePath}`);
-    return null;
-  }
-  return parseTableConfig(text);
+  const r2Base = options.r2Base ?? readSiteConfig(CONFIG_PATH).r2.base;
+  log.info(`用户层来源：${r2Base}`);
+  const result = await loadUserLayer({ r2Base, fetchImpl: options.fetchImpl });
+  return { layer: result.layer, warnings: result.warnings };
 }
 
 /**

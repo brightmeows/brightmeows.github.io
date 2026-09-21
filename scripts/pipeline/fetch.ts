@@ -245,23 +245,3 @@ export async function fetchTable(
     dataJsonUrl,
   };
 }
-
-export interface FetchedList {
-  entries: unknown[];
-  raw: string;
-}
-
-/** 抓取列表源并解析为数组。 */
-export async function fetchList(url: string, options: FetchOptions = {}): Promise<FetchedList> {
-  const response = await fetchText(url, options);
-  let parsed: { value: unknown; used: string };
-  try {
-    parsed = parseJsonWithFallback(response.text);
-  } catch (error) {
-    throw new Error(`列表解析失败：${url}（${describeError(error)}）`, { cause: error });
-  }
-  if (!Array.isArray(parsed.value)) {
-    throw new Error(`列表不是数组：${url}`);
-  }
-  return { entries: parsed.value, raw: parsed.used };
-}

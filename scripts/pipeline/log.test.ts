@@ -6,8 +6,11 @@ function makeSummary(overrides: Partial<RunSummary> = {}): RunSummary {
   return {
     startedAt: new Date("2026-02-02T00:00:00.000Z"),
     finishedAt: new Date("2026-02-02T00:10:00.000Z"),
-    listSources: 1,
-    listFailures: [],
+    userAdded: 2,
+    userRemoved: 1,
+    userDisabled: 0,
+    userReplaced: 1,
+    userWarnings: 0,
     tablesTotal: 10,
     tablesFetched: 9,
     tablesFailed: ["表A"],
@@ -33,6 +36,7 @@ describe("RunLog", () => {
     const text = log.render(makeSummary());
     expect(text).toContain("# 运行区间：2026-02-02T00:00:00.000Z 至 2026-02-02T00:10:00.000Z");
     expect(text).toContain("成功 9，失败 1");
+    expect(text).toContain("用户层：添加 2、删除 1、禁用 0、替换 1（读取告警 0）");
     expect(text).toContain("抓取失败表（保留基线数据）：表A");
     expect(text).toContain("[a] 表：3 条");
     expect(text).toContain("[warn] 抓取失败：表A");
