@@ -587,6 +587,44 @@ export function parseMetaIndex(value: unknown): MetaOverride[] {
   return parseUserIndex(value, "meta", parseMetaEntry);
 }
 
+const AUDIT_ACTIONS = [
+  "add",
+  "remove",
+  "restore",
+  "authorize",
+  "deauthorize",
+  "disable",
+  "enable",
+  "replace",
+  "meta",
+  "migrate",
+] as const;
+
+function isAuditAction(value: unknown): value is AuditEntry["action"] {
+  return typeof value === "string" && AUDIT_ACTIONS.some((action) => action === value);
+}
+
+/** 解析审计记录。 */
+export function parseAuditEntry(value: unknown): AuditEntry {
+  const record = asRecord(value, "audit");
+  const action = record.action;
+  if (!isAuditAction(action)) {
+    throw new TypeError("audit.action 取值非法");
+  }
+  const url = optionalNonEmptyString(record, "url", "audit");
+  const dirName = optionalNonEmptyString(record, "dir_name", "audit");
+  const detail = optionalNonEmptyString(record, "detail", "audit");
+  return {
+    at: requiredString(record, "at", "audit"),
+    actor: requiredString(record, "actor", "audit"),
+    role: parseRole(record, "audit"),
+    action,
+    ...(url === undefined ? {} : { url }),
+    ...(dirName === undefined ? {} : { dir_name: dirName }),
+    ...(detail === undefined ? {} : { detail }),
+  };
+}
+
 /** 解析添加请求状态对象。 */
 export function parseStatusEntry(value: unknown): StatusEntry {
   const record = asRecord(value, "status");
