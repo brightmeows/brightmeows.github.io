@@ -2,9 +2,9 @@
  * 从站点 Worker 的内部接口加载用户层。
  *
  * 用户层存在 D1（Worker 侧），管线不直连数据库：经 `/api/internal/user-layer`
- * 一次拉取全部索引，用共享 token 鉴权。接口不可用时按空处理并记录告警——
- * 用户层是叠加在基线之上的增量，读不到最坏是增删晚一轮生效，不该中断整轮抓取；
- * 日志里区分「接口失败」与「确实为空」，后者不记告警。
+ * 一次拉取全部索引，用共享 token 鉴权（见 scripts/internal-api.ts）。接口不可用时
+ * 按空处理并记录告警——用户层是叠加在基线之上的增量，读不到最坏是增删晚一轮
+ * 生效，不该中断整轮抓取；日志里区分「接口失败」与「确实为空」，后者不记告警。
  *
  * 条目解析复用 `src/lib/mirror/user-layer.ts` 的解析器，与读取侧同一套语义。
  */
@@ -20,10 +20,7 @@ import {
   parseReplaceEntry,
   type UserLayer,
 } from "../../src/lib/mirror/user-layer.ts";
-import { CONFIG_PATH, readSiteConfig } from "../site-config.ts";
-
-/** 接口请求的默认超时（毫秒）。 */
-const DEFAULT_TIMEOUT_MS = 15_000;
+import { callInternal, internalToken } from "../internal-api.ts";
 
 export interface UserLayerLoadResult {
   layer: UserLayer;
@@ -32,17 +29,12 @@ export interface UserLayerLoadResult {
 }
 
 export interface LoadUserLayerOptions {
-  /** 内部接口地址；缺省取站点 origin 的 /api/internal/user-layer。 */
-  endpoint?: string | undefined;
+  /** 内部接口基址；缺省取 internalApiBase()（站点 origin，可用 INTERNAL_API_BASE 覆盖）。 */
+  base?: string | undefined;
   /** 共享 token；缺省读环境变量 INTERNAL_API_TOKEN。 */
   token?: string | undefined;
   fetchImpl?: typeof fetch | undefined;
   timeoutMs?: number | undefined;
-}
-
-/** 默认接口地址：站点规范域上的用户层端点（来源读自 config/site.json）。 */
-export function defaultUserLayerEndpoint(): string {
-  return `${readSiteConfig(CONFIG_PATH).origin}/api/internal/user-layer`;
 }
 
 /** 逐条解析一类条目：接口返回的是条目数组，坏条目跳过并记告警。 */
@@ -80,35 +72,27 @@ function parseEntries<T>(
 export async function loadUserLayer(
   options: LoadUserLayerOptions = {}
 ): Promise<UserLayerLoadResult> {
-  const endpoint = options.endpoint ?? defaultUserLayerEndpoint();
-  const token = options.token ?? process.env.INTERNAL_API_TOKEN ?? "";
-  const fetchImpl = options.fetchImpl ?? fetch;
-  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const warnings: string[] = [];
-
-  if (token === "") {
+  if ((options.token ?? internalToken()) === "") {
     warnings.push("用户层接口缺少 INTERNAL_API_TOKEN，按空处理");
   }
 
   let payload: Record<string, unknown>;
   try {
-    const response = await fetchImpl(endpoint, {
-      headers: token === "" ? {} : { authorization: `Bearer ${token}` },
-      signal: AbortSignal.timeout(timeoutMs),
+    const parsed = await callInternal<unknown>("/api/internal/user-layer", {
+      ...(options.base === undefined ? {} : { base: options.base }),
+      ...(options.token === undefined ? {} : { token: options.token }),
+      ...(options.fetchImpl === undefined ? {} : { fetchImpl: options.fetchImpl }),
+      ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
     });
-    if (!response.ok) {
-      warnings.push(`用户层接口 ${endpoint} 返回 HTTP ${response.status}，按空处理`);
-      return { layer: emptyUserLayer(), warnings };
-    }
-    const parsed: unknown = await response.json();
     if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-      warnings.push(`用户层接口 ${endpoint} 返回的不是对象，按空处理`);
+      warnings.push("用户层接口返回的不是对象，按空处理");
       return { layer: emptyUserLayer(), warnings };
     }
     payload = parsed as Record<string, unknown>;
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
-    warnings.push(`用户层接口 ${endpoint} 请求失败：${detail}，按空处理`);
+    warnings.push(`${detail}，按空处理`);
     return { layer: emptyUserLayer(), warnings };
   }
 

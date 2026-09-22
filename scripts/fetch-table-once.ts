@@ -1,30 +1,25 @@
 /**
  * 单表抓取：供 `fetch-table` 工作流调用（用户提交添加后由 Worker 触发）。
  *
- * 复用管线的抓取与规范化逻辑（`fetchTable`、`patchDataUrl`、目录命名），抓取
- * 成功时把 `tables/<dir_name>/{header,data,info}.json`、`user/fetched/<id>.json`
- * 与状态文件写到输出目录，交给工作流用 rclone 上传到 R2；失败只写 failed 状态，
- * 不产出数据目录——半成品目录会被管线当作基线，必须避免。
+ * 复用管线的抓取与规范化逻辑（`fetchTable`、`patchDataUrl`、目录命名）：抓取成功
+ * 时把 `tables/<dir_name>/{header,data,info}.json` 写到输出目录，交工作流用 rclone
+ * 上传到 R2；抓取结果与状态则经站点 Worker 的内部接口写进 D1（不再落 R2 对象）。
+ * 失败时不产出数据目录——半成品目录会被管线当作基线，必须避免。
  *
  * 用法：
  *   node scripts/fetch-table-once.ts --url=<表源> --request-id=<id> --out-dir=./out [--author=<login>]
  *
- * 退出码恒为 0（除参数错误外）：状态文件已写出，工作流需要上传它。结果摘要写在
- * `<out-dir>/result.json`（state 为 done 或 failed）。
+ * 退出码恒为 0（除参数错误外）：状态已经写进 D1，工作流据 `<out-dir>/result.json`
+ * 判断是否上传数据目录。
  */
 
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-import {
-  serializeUserRecord,
-  userFetchedKey,
-  userStatusKey,
-  type FetchedEntry,
-  type StatusEntry,
-} from "../src/lib/mirror/user-layer.ts";
+import { serializeUserRecord } from "../src/lib/mirror/user-layer.ts";
 
+import { callInternal } from "./internal-api.ts";
 import { describeError } from "./pipeline/errors.ts";
 import { DEFAULT_TIMEOUT_MS, fetchTable, patchDataUrl } from "./pipeline/fetch.ts";
 import { expectedDirName } from "./pipeline/naming.ts";
@@ -35,13 +30,16 @@ import type { TableInfo } from "./pipeline/types.ts";
 export interface FetchOnceOptions {
   /** 表源 URL（用户提交的原始地址）。 */
   url: string;
-  /** 添加请求 id，关联 `user/status/<id>.json` 与 `user/fetched/<id>.json`。 */
+  /** 添加请求 id，关联 D1 里的抓取结果与状态。 */
   requestId: string;
   /** 输出目录（工作流上传的根）。 */
   outDir: string;
   /** 添加者 GitHub 登录名；仅记录在失败状态里，便于排查。 */
   author?: string | undefined;
   timeoutMs?: number | undefined;
+  /** 内部接口基址与 token（缺省走环境变量，测试可注入）。 */
+  apiBase?: string | undefined;
+  apiToken?: string | undefined;
 }
 
 export interface FetchOnceResult {
@@ -50,35 +48,41 @@ export interface FetchOnceResult {
   message?: string | undefined;
 }
 
-/** 把 R2 对象键按同名路径写入输出目录。 */
-async function writeKey(outDir: string, key: string, value: unknown): Promise<void> {
-  const target = path.join(outDir, key);
-  await mkdir(path.dirname(target), { recursive: true });
-  await writeFile(target, serializeUserRecord(value));
-}
-
-function statusEntry(
+/** 回写抓取结果与状态：done 需要目录名与表名，failed 只带消息。 */
+async function reportResult(
   options: FetchOnceOptions,
-  state: "done" | "failed",
-  at: string,
-  message?: string
-): StatusEntry {
-  const detail =
-    message === undefined || options.author === undefined
-      ? message
-      : `提交者 ${options.author}：${message}`;
-  return {
-    id: options.requestId,
-    url: options.url,
-    state,
-    ...(detail === undefined || detail === "" ? {} : { message: detail }),
-    updated_at: at,
-  };
+  payload: {
+    state: "done" | "failed";
+    dirName?: string | undefined;
+    name?: string | undefined;
+    symbol?: string | undefined;
+    message?: string | undefined;
+  }
+): Promise<void> {
+  await callInternal("/api/internal/fetch-result", {
+    method: "POST",
+    body: {
+      requestId: options.requestId,
+      url: options.url,
+      state: payload.state,
+      ...(payload.dirName === undefined ? {} : { dir_name: payload.dirName }),
+      ...(payload.name === undefined ? {} : { name: payload.name }),
+      ...(payload.symbol === undefined ? {} : { symbol: payload.symbol }),
+      ...(payload.message === undefined ? {} : { message: payload.message }),
+    },
+    ...(options.apiBase === undefined ? {} : { base: options.apiBase }),
+    ...(options.apiToken === undefined ? {} : { token: options.apiToken }),
+    ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
+  });
 }
 
-/** 抓取单张表并写出上传所需文件；失败时只写状态。 */
+/** 失败状态里的消息：带上提交者便于排查。 */
+function failureMessage(options: FetchOnceOptions, message: string): string {
+  return options.author === undefined ? message : `提交者 ${options.author}：${message}`;
+}
+
+/** 抓取单张表：数据目录写入 out/，结果与状态写进 D1。 */
 export async function fetchTableOnce(options: FetchOnceOptions): Promise<FetchOnceResult> {
-  const at = new Date().toISOString();
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   try {
     const fetched = await fetchTable(
@@ -104,28 +108,23 @@ export async function fetchTableOnce(options: FetchOnceOptions): Promise<FetchOn
     await writeFile(path.join(dir, "data.json"), fetched.dataRaw);
     await writeFile(path.join(dir, "info.json"), serializeJson(tableInfoToJson(updated)));
 
-    const fetchedEntry: FetchedEntry = {
-      id: options.requestId,
-      url: options.url,
-      dir_name: dirName,
+    // 先落数据再回写状态：状态写入失败时异常会被下面的 catch 接住，
+    // 那时 result.json 记为 failed，工作流不会上传这份目录。
+    await reportResult(options, {
+      state: "done",
+      dirName,
       name: updated.name,
-      ...(updated.symbol === "" ? {} : { symbol: updated.symbol }),
-      fetched_at: at,
-    };
-    await writeKey(options.outDir, userFetchedKey(options.requestId), fetchedEntry);
-    await writeKey(
-      options.outDir,
-      userStatusKey(options.requestId),
-      statusEntry(options, "done", at)
-    );
+      symbol: updated.symbol,
+    });
     return { state: "done", dirName };
   } catch (error) {
     const message = describeError(error);
-    await writeKey(
-      options.outDir,
-      userStatusKey(options.requestId),
-      statusEntry(options, "failed", at, message)
-    );
+    try {
+      await reportResult(options, { state: "failed", message: failureMessage(options, message) });
+    } catch (reportError) {
+      // 状态回写失败不改变抓取结论：数据目录未产出，工作流据 result.json 判断
+      console.error(`状态回写失败：${describeError(reportError)}`);
+    }
     return { state: "failed", message };
   }
 }
@@ -189,7 +188,7 @@ async function main(argv: string[]): Promise<void> {
   if (result.state === "done") {
     console.log(`抓取成功：${result.dirName}`);
   } else {
-    // 状态文件已写出且会被上传，工作流据 result.json 判断；这里不置非零退出码
+    // 状态已经写进 D1；这里不置非零退出码，工作流据 result.json 判断后续动作
     console.error(`抓取失败：${result.message ?? "未知错误"}`);
   }
 }

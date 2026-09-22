@@ -10,6 +10,7 @@
 import path from "node:path";
 
 import type { UserLayer } from "../../src/lib/mirror/user-layer.ts";
+import { internalApiBase } from "../internal-api.ts";
 
 import { describeError } from "./errors.ts";
 import { DEFAULT_TIMEOUT_MS, fetchTable, patchDataUrl, type FetchOptions } from "./fetch.ts";
@@ -38,7 +39,7 @@ import { scanDirs, scanDirsFull } from "./scan.ts";
 import { buildState, parseStateToml, serializeStateToml, sha3_256Hex } from "./state.ts";
 import { tableInfoToJson } from "./table-info.ts";
 import type { TableInfo } from "./types.ts";
-import { defaultUserLayerEndpoint, loadUserLayer } from "./user-layer.ts";
+import { loadUserLayer } from "./user-layer.ts";
 
 export interface PipelinePaths {
   tableDir: string;
@@ -62,8 +63,8 @@ export interface PipelineOptions {
   timeoutMs?: number;
   fetchImpl?: typeof fetch;
   log?: PipelineLogger;
-  /** 用户层内部接口地址；缺省取站点 origin 的 /api/internal/user-layer。 */
-  userLayerEndpoint?: string | undefined;
+  /** 用户层内部接口基址；缺省取站点 origin（可用 INTERNAL_API_BASE 覆盖）。 */
+  userLayerBase?: string | undefined;
   /** 用户层接口的共享 token；缺省读环境变量 INTERNAL_API_TOKEN。 */
   userLayerToken?: string | undefined;
   /** 直接注入用户层（对拍与演练用）；提供时不再拉取接口。 */
@@ -241,10 +242,10 @@ async function resolveUserLayer(
   if (options.userLayer !== undefined) {
     return { layer: options.userLayer, warnings: [] };
   }
-  const endpoint = options.userLayerEndpoint ?? defaultUserLayerEndpoint();
-  log.info(`用户层来源：${endpoint}`);
+  const base = options.userLayerBase ?? internalApiBase();
+  log.info(`用户层来源：${base}/api/internal/user-layer`);
   const result = await loadUserLayer({
-    endpoint,
+    base,
     ...(options.userLayerToken === undefined ? {} : { token: options.userLayerToken }),
     ...(options.fetchImpl === undefined ? {} : { fetchImpl: options.fetchImpl }),
   });
