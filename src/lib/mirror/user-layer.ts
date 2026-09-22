@@ -1,22 +1,18 @@
 /**
- * 用户层的零依赖函数：R2 对象键、记录解析与序列化、站点清单合并。
+ * 用户层的零依赖函数：记录类型、条目解析与序列化、站点清单合并。
  *
  * 用户层承载站长与访客对镜像表集合的编辑意图（添加、删除、禁用、替换、
- * 授权、元数据覆盖），与管线产出的原始清单在读取侧合并——这是「用户添加的
- * 表立刻可见」与「删除由黑名单排除」的实现基础。站点、Worker 与构建期脚本
- * 共用本模块，必须保持零依赖、可擦除语法、相对导入带 .ts 扩展名。
+ * 授权、元数据覆盖），自 2026-09 起存于 D1（表结构见 worker/schema.ts，
+ * 读写见 worker/store.ts）。与管线产出的原始清单在读取侧合并——这是
+ * 「用户添加的表立刻可见」与「删除由黑名单排除」的实现基础。站点、Worker、
+ * 数据管线与构建期脚本共用本模块，必须保持零依赖、可擦除语法、相对导入带
+ * .ts 扩展名。
  *
  * 撤销关系（合并时的优先级）：禁用与删除黑名单优先于添加；替换规则在集合
  * 确定后应用；元数据覆盖最后应用；授权标记按 URL 或目录名匹配。
  */
 
 import type { MirrorTableItem } from "../types/bms.ts";
-
-/** 用户层对象在 R2 上的前缀：不在管线 rclone 白名单内，不会被同步覆盖。 */
-export const USER_PREFIX = "user";
-
-/** 用户层索引文件的格式版本，写入时携带、读取时校验。 */
-export const USER_FILE_VERSION = 1;
 
 /** 每账号每日增删操作上限。 */
 export const DAILY_OPERATION_LIMIT = 10;
@@ -29,61 +25,6 @@ export const DEPLOY_THROTTLE_MS = 10 * 60 * 1000;
  * `rclone delete --min-age 720h`），自助恢复窗口与此一致。改这里要同步工作流。
  */
 export const TRASH_RETENTION_DAYS = 30;
-
-/** 添加索引对象键（Worker 写、管线与 Worker 读）。 */
-export function userAddedKey(): string {
-  return `${USER_PREFIX}/added.json`;
-}
-
-/** 单表抓取结果对象键（工作流写、Worker 与管线读）。 */
-export function userFetchedKey(id: string): string {
-  return `${USER_PREFIX}/fetched/${encodeURIComponent(id)}.json`;
-}
-
-/** 删除黑名单对象键。 */
-export function userRemovedKey(): string {
-  return `${USER_PREFIX}/removed.json`;
-}
-
-/** 站长禁用表对象键。 */
-export function userDisabledKey(): string {
-  return `${USER_PREFIX}/disabled.json`;
-}
-
-/** 替换规则对象键。 */
-export function userReplaceKey(): string {
-  return `${USER_PREFIX}/replace.json`;
-}
-
-/** 授权（删除保护）名单对象键。 */
-export function userAuthorizedKey(): string {
-  return `${USER_PREFIX}/authorized.json`;
-}
-
-/** 元数据覆盖对象键。 */
-export function userMetaKey(): string {
-  return `${USER_PREFIX}/meta.json`;
-}
-
-/** 添加请求状态对象键（供前端轮询）。 */
-export function userStatusKey(id: string): string {
-  return `${USER_PREFIX}/status/${encodeURIComponent(id)}.json`;
-}
-
-/** 审计记录对象键；每条独立成对象，避免并发读改写。 */
-export function userAuditKey(stamp: string, random: string): string {
-  return `${USER_PREFIX}/audit/${encodeURIComponent(stamp)}-${encodeURIComponent(random)}.json`;
-}
-
-/** 每账号每日操作计数对象键。 */
-export function userLimitsKey(login: string, date: string): string {
-  return `${USER_PREFIX}/limits/${encodeURIComponent(login)}-${encodeURIComponent(date)}.json`;
-}
-
-/** 部署触发节流状态对象键。 */
-export function userDeployStateKey(): string {
-  return `${USER_PREFIX}/deploy-state.json`;
-}
 
 /** 操作者角色：站长操作与访客操作同层存储，用角色区分来源。 */
 export type UserRole = "admin" | "user";
@@ -189,13 +130,6 @@ export interface AuditEntry {
   url?: string | undefined;
   dir_name?: string | undefined;
   detail?: string | undefined;
-}
-
-/** 每账号每日操作计数。 */
-export interface LimitsFile {
-  login: string;
-  date: string;
-  count: number;
 }
 
 /** 部署触发节流状态。 */
@@ -439,36 +373,6 @@ function parseRole(record: Record<string, unknown>, context: string): UserRole {
   return value;
 }
 
-function parseFetchState(record: Record<string, unknown>, context: string): FetchState {
-  const value = record.state;
-  if (value !== "pending" && value !== "fetching" && value !== "done" && value !== "failed") {
-    throw new TypeError(`${context}.state 取值非法`);
-  }
-  return value;
-}
-
-/** 解析带版本外壳的索引文件（`{ version, entries }`）。 */
-export function parseUserIndex<T>(
-  value: unknown,
-  label: string,
-  parseItem: (item: unknown, context: string) => T
-): T[] {
-  const record = asRecord(value, label);
-  if (record.version !== USER_FILE_VERSION) {
-    throw new TypeError(`${label}.version 应为 ${USER_FILE_VERSION}`);
-  }
-  const entries = record.entries;
-  if (!Array.isArray(entries)) {
-    throw new TypeError(`${label}.entries 应为数组`);
-  }
-  return entries.map((item, index) => parseItem(item, `${label}.entries[${index}]`));
-}
-
-/** 序列化带版本外壳的索引文件：2 空格缩进加尾换行，与仓库快照格式一致。 */
-export function serializeUserIndex(entries: readonly unknown[]): string {
-  return `${JSON.stringify({ version: USER_FILE_VERSION, entries }, null, 2)}\n`;
-}
-
 export function parseAddedEntry(value: unknown, context: string): AddedEntry {
   const record = asRecord(value, context);
   return {
@@ -557,110 +461,9 @@ export function parseMetaEntry(value: unknown, context: string): MetaOverride {
   return result;
 }
 
-/** 解析添加索引文件。 */
-export function parseAddedIndex(value: unknown): AddedEntry[] {
-  return parseUserIndex(value, "added", parseAddedEntry);
-}
-
-/** 解析删除黑名单文件。 */
-export function parseRemovedIndex(value: unknown): RemovedEntry[] {
-  return parseUserIndex(value, "removed", parseRemovedEntry);
-}
-
-/** 解析禁用表文件。 */
-export function parseDisabledIndex(value: unknown): DisabledEntry[] {
-  return parseUserIndex(value, "disabled", parseDisabledEntry);
-}
-
-/** 解析替换规则文件。 */
-export function parseReplaceIndex(value: unknown): ReplaceRuleEntry[] {
-  return parseUserIndex(value, "replace", parseReplaceEntry);
-}
-
-/** 解析授权名单文件。 */
-export function parseAuthorizedIndex(value: unknown): AuthorizedEntry[] {
-  return parseUserIndex(value, "authorized", parseAuthorizedEntry);
-}
-
-/** 解析元数据覆盖文件。 */
-export function parseMetaIndex(value: unknown): MetaOverride[] {
-  return parseUserIndex(value, "meta", parseMetaEntry);
-}
-
-const AUDIT_ACTIONS = [
-  "add",
-  "remove",
-  "restore",
-  "authorize",
-  "deauthorize",
-  "disable",
-  "enable",
-  "replace",
-  "meta",
-  "migrate",
-] as const;
-
-function isAuditAction(value: unknown): value is AuditEntry["action"] {
-  return typeof value === "string" && AUDIT_ACTIONS.some((action) => action === value);
-}
-
-/** 解析审计记录。 */
-export function parseAuditEntry(value: unknown): AuditEntry {
-  const record = asRecord(value, "audit");
-  const action = record.action;
-  if (!isAuditAction(action)) {
-    throw new TypeError("audit.action 取值非法");
-  }
-  const url = optionalNonEmptyString(record, "url", "audit");
-  const dirName = optionalNonEmptyString(record, "dir_name", "audit");
-  const detail = optionalNonEmptyString(record, "detail", "audit");
-  return {
-    at: requiredString(record, "at", "audit"),
-    actor: requiredString(record, "actor", "audit"),
-    role: parseRole(record, "audit"),
-    action,
-    ...(url === undefined ? {} : { url }),
-    ...(dirName === undefined ? {} : { dir_name: dirName }),
-    ...(detail === undefined ? {} : { detail }),
-  };
-}
-
-/** 解析添加请求状态对象。 */
-export function parseStatusEntry(value: unknown): StatusEntry {
-  const record = asRecord(value, "status");
-  const message = optionalNonEmptyString(record, "message", "status");
-  return {
-    id: requiredString(record, "id", "status"),
-    url: requiredString(record, "url", "status"),
-    state: parseFetchState(record, "status"),
-    ...(message === undefined ? {} : { message }),
-    updated_at: requiredString(record, "updated_at", "status"),
-  };
-}
-
 /** 序列化单对象记录：2 空格缩进加尾换行。 */
 export function serializeUserRecord(value: unknown): string {
   return `${JSON.stringify(value, null, 2)}\n`;
-}
-
-/** 解析每账号每日操作计数对象。 */
-export function parseLimitsFile(value: unknown): LimitsFile {
-  const record = asRecord(value, "limits");
-  const count = record.count;
-  if (typeof count !== "number" || !Number.isInteger(count) || count < 0) {
-    throw new TypeError("limits.count 应为非负整数");
-  }
-  return {
-    login: requiredString(record, "login", "limits"),
-    date: requiredString(record, "date", "limits"),
-    count,
-  };
-}
-
-/** 解析部署触发节流状态对象。 */
-export function parseDeployState(value: unknown): DeployState {
-  const record = asRecord(value, "deploy-state");
-  return { last_requested_at: requiredString(record, "last_requested_at", "deploy-state") };
 }
 
 /** UTC 日期戳（`YYYY-MM-DD`），限次计数按 UTC 日划分。 */

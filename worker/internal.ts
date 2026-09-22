@@ -9,9 +9,6 @@
  * - GET  /api/internal/user-layer：返回原始用户层（6 类索引加 fetched），
  *   形状与旧的 R2 对象一致，管线据此计算活跃表集合。
  * - POST /api/internal/fetch-result：单表抓取工作流回写抓取结果与状态。
- * - POST /api/internal/migrate：手动触发一次性迁移（幂等，已迁移时不做任何事）。
- * - POST /api/internal/purge-legacy-user：删除 R2 上遗留的 user/ 前缀对象
- *   （一次性迁移收尾，D1 未迁移时拒绝执行）。
  */
 
 import type { FetchedEntry, StatusEntry } from "../src/lib/mirror/user-layer.ts";
@@ -19,13 +16,7 @@ import type { FetchedEntry, StatusEntry } from "../src/lib/mirror/user-layer.ts"
 import type { Env } from "./env.ts";
 import { failure, json, readJsonBody } from "./http.ts";
 import { invalidateMergedManifest } from "./manifest.ts";
-import {
-  loadUserLayer,
-  migrateFromR2IfNeeded,
-  purgeLegacyUserObjects,
-  upsertFetched,
-  writeFetchStatus,
-} from "./store.ts";
+import { loadUserLayer, upsertFetched, writeFetchStatus } from "./store.ts";
 
 /** 恒定时间比较：长度不同直接失败（token 等长，长度本身不泄露有效信息）。 */
 function constantTimeEquals(left: string, right: string): boolean {
@@ -106,28 +97,6 @@ async function handleFetchResult(request: Request, env: Env, now: Date): Promise
   return json({ ok: true, state });
 }
 
-/** 手动触发一次性迁移（幂等）：用于验证与重试。 */
-async function handleMigrate(env: Env): Promise<Response> {
-  const migrated = await migrateFromR2IfNeeded(env);
-  if (migrated) {
-    invalidateMergedManifest();
-  }
-  return json({ migrated });
-}
-
-/**
- * 删除 R2 上遗留的 user/ 前缀对象（一次性迁移收尾）。
- * D1 未完成迁移时拒绝执行，避免删掉唯一副本。
- */
-async function handlePurgeLegacy(env: Env): Promise<Response> {
-  try {
-    const result = await purgeLegacyUserObjects(env);
-    return json(result);
-  } catch (error) {
-    return failure(409, error instanceof Error ? error.message : String(error));
-  }
-}
-
 /** 分发 `/api/internal/*`；未匹配或鉴权失败时返回 404 与 401。 */
 export async function handleInternal(request: Request, env: Env, url: URL): Promise<Response> {
   if (!isAuthorized(env, request)) {
@@ -139,12 +108,6 @@ export async function handleInternal(request: Request, env: Env, url: URL): Prom
   }
   if (path === "/api/internal/fetch-result" && request.method === "POST") {
     return handleFetchResult(request, env, new Date());
-  }
-  if (path === "/api/internal/migrate" && request.method === "POST") {
-    return handleMigrate(env);
-  }
-  if (path === "/api/internal/purge-legacy-user" && request.method === "POST") {
-    return handlePurgeLegacy(env);
   }
   return failure(404, "未知内部接口");
 }
