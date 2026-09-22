@@ -32,4 +32,9 @@
     { "pattern": "miyakomeow.site", "custom_domain": true },
     { "pattern": "www.miyakomeow.site", "custom_domain": true },
   ],
+  // 定时任务：每天 UTC 18:30（北京时间 02:30）把用户层导出成 R2 快照，
+  // 保留最近 14 份（见 worker/backup.ts）。免费账户可建 5 个 cron trigger。
+  "triggers": {
+    "crons": ["30 18 * * *"],
+  },
 }
