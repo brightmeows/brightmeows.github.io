@@ -11,7 +11,8 @@
  *    路由渲染查看器（src/routes/bms/table/mirror/[name]/）。
  * 2. `/bms/table/mirror/tables.json`：由 R2 清单叠加用户层后生成站点清单，url
  *    字段指向请求 origin（新旧域名都自洽），受保护条目携带 `protected` 标记。
- * 3. `/api/*`：登录、预览、添加、删除、恢复与状态轮询（见 worker/api.ts）。
+ * 3. `/api/*`：登录、预览、添加、删除、恢复与状态轮询（见 worker/api.ts）；
+ *    `/api/internal/*` 是给 GitHub Actions 的内部端点（见 worker/internal.ts）。
  *
  * 清单读取与合成在 worker/manifest.ts；用户层存在 D1（worker/store.ts），
  * 同 isolate 内 60 秒内存缓存（写接口完成后主动失效）；用户层不可用时退化为
@@ -31,6 +32,7 @@ import { r2TableHeaderUrl } from "../src/lib/mirror/urls.ts";
 
 import { handleApi } from "./api.ts";
 import type { Env } from "./env.ts";
+import { handleInternal } from "./internal.ts";
 import { MANIFEST_MAX_AGE, loadMergedManifest } from "./manifest.ts";
 import { ensureSchemaOnce } from "./schema.ts";
 import { migrateFromR2Once } from "./store.ts";
@@ -171,6 +173,11 @@ export default {
           });
         }
       }
+    }
+
+    // 内部接口：仅 GitHub Actions 的管线与抓取工作流调用，共享 token 鉴权
+    if (path === "/api/internal" || path.startsWith("/api/internal/")) {
+      return handleInternal(request, env, url);
     }
 
     // 写接口与登录回调：方法校验与鉴权都在 api.ts 内部完成
