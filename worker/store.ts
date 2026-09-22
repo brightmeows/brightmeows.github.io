@@ -31,6 +31,7 @@ import {
   userMetaKey,
   userRemovedKey,
   userReplaceKey,
+  USER_PREFIX,
   emptyUserLayer,
   type AddedEntry,
   type AuditEntry,
@@ -742,6 +743,36 @@ export async function migrateFromR2IfNeeded(env: Env): Promise<boolean> {
   };
   console.log(`用户层迁移完成：${serializeUserRecord(counts).trim()}`);
   return true;
+}
+
+/**
+ * 删除 R2 上遗留的 user/ 前缀对象（一次性迁移收尾）。
+ *
+ * 只在 D1 已完成迁移时执行：迁移完成前 R2 是用户层的唯一副本。按 R2 批量删除
+ * 的上限（每次 1000 键）分批提交，返回被删的键列表供日志与核对。
+ */
+export async function purgeLegacyUserObjects(
+  env: Env
+): Promise<{ deleted: number; keys: string[] }> {
+  if (!(await isMigrationDone(env))) {
+    throw new Error("D1 尚未完成迁移，拒绝清理 R2 对象");
+  }
+  const keys: string[] = [];
+  let cursor: string | undefined;
+  do {
+    const listed = await env.MIRROR_BUCKET.list({
+      prefix: `${USER_PREFIX}/`,
+      ...(cursor === undefined ? {} : { cursor }),
+    });
+    for (const object of listed.objects) {
+      keys.push(object.key);
+    }
+    cursor = listed.truncated ? listed.cursor : undefined;
+  } while (cursor !== undefined);
+  for (let index = 0; index < keys.length; index += 1000) {
+    await env.MIRROR_BUCKET.delete(keys.slice(index, index + 1000));
+  }
+  return { deleted: keys.length, keys };
 }
 
 /** isolate 内缓存的迁移结果：迁移只检查一次，失败时重置以便下次重试。 */
