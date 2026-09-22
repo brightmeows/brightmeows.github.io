@@ -1,0 +1,126 @@
+/**
+ * 内部接口：供 GitHub Actions 的管线与单表抓取工作流读写用户层。
+ *
+ * 这一组端点不面向浏览器，调用方只有仓库自己的工作流，用共享 token 鉴权
+ * （Worker secret 与仓库 secret 同名同值，`Authorization: Bearer <token>`）。
+ * 不让 Actions 直连 Cloudflare API 的原因：那需要把账户级数据库权限交给
+ * GitHub，而这里只暴露三个固定端点。
+ *
+ * - GET  /api/internal/user-layer：返回原始用户层（6 类索引加 fetched），
+ *   形状与旧的 R2 对象一致，管线据此计算活跃表集合。
+ * - POST /api/internal/fetch-result：单表抓取工作流回写抓取结果与状态。
+ * - POST /api/internal/migrate：手动触发一次性迁移（幂等，已迁移时不做任何事）。
+ */
+
+import type { FetchedEntry, StatusEntry } from "../src/lib/mirror/user-layer.ts";
+
+import type { Env } from "./env.ts";
+import { failure, json, readJsonBody } from "./http.ts";
+import { invalidateMergedManifest } from "./manifest.ts";
+import { loadUserLayer, migrateFromR2IfNeeded, upsertFetched, writeFetchStatus } from "./store.ts";
+
+/** 恒定时间比较：长度不同直接失败（token 等长，长度本身不泄露有效信息）。 */
+function constantTimeEquals(left: string, right: string): boolean {
+  const encoder = new TextEncoder();
+  const a = encoder.encode(left);
+  const b = encoder.encode(right);
+  if (a.length !== b.length) {
+    return false;
+  }
+  let diff = 0;
+  for (let i = 0; i < a.length; i += 1) {
+    diff |= (a[i] ?? 0) ^ (b[i] ?? 0);
+  }
+  return diff === 0;
+}
+
+/** 校验共享 token；未配置 token 时拒绝一切内部调用。 */
+function isAuthorized(env: Env, request: Request): boolean {
+  const token = env.INTERNAL_API_TOKEN;
+  if (typeof token !== "string" || token === "") {
+    return false;
+  }
+  const header = request.headers.get("authorization") ?? "";
+  const prefix = "Bearer ";
+  if (!header.startsWith(prefix)) {
+    return false;
+  }
+  return constantTimeEquals(header.slice(prefix.length).trim(), token);
+}
+
+function bodyString(body: Record<string, unknown> | null, key: string): string | undefined {
+  const value = body?.[key];
+  return typeof value === "string" && value.trim() !== "" ? value.trim() : undefined;
+}
+
+/** 单表抓取结果回写：成功时同时写抓取结果与完成状态，失败只写状态。 */
+async function handleFetchResult(request: Request, env: Env, now: Date): Promise<Response> {
+  const body = await readJsonBody(request);
+  const requestId = bodyString(body, "requestId");
+  const url = bodyString(body, "url");
+  const state = bodyString(body, "state");
+  if (requestId === undefined || url === undefined) {
+    return failure(400, "需要提供 requestId 与 url");
+  }
+  if (state !== "done" && state !== "failed") {
+    return failure(400, "state 只能是 done 或 failed");
+  }
+  const at = now.toISOString();
+
+  if (state === "done") {
+    const dirName = bodyString(body, "dir_name");
+    const name = bodyString(body, "name");
+    if (dirName === undefined || name === undefined) {
+      return failure(400, "state 为 done 时需要 dir_name 与 name");
+    }
+    const symbol = bodyString(body, "symbol");
+    const entry: FetchedEntry = {
+      id: requestId,
+      url,
+      dir_name: dirName,
+      name,
+      ...(symbol === undefined ? {} : { symbol }),
+      fetched_at: at,
+    };
+    await upsertFetched(env, entry);
+  }
+
+  const message = bodyString(body, "message");
+  const status: StatusEntry = {
+    id: requestId,
+    url,
+    state,
+    ...(message === undefined ? {} : { message }),
+    updated_at: at,
+  };
+  await writeFetchStatus(env, status);
+  invalidateMergedManifest();
+  return json({ ok: true, state });
+}
+
+/** 手动触发一次性迁移（幂等）：用于验证与重试。 */
+async function handleMigrate(env: Env): Promise<Response> {
+  const migrated = await migrateFromR2IfNeeded(env);
+  if (migrated) {
+    invalidateMergedManifest();
+  }
+  return json({ migrated });
+}
+
+/** 分发 `/api/internal/*`；未匹配或鉴权失败时返回 404 与 401。 */
+export async function handleInternal(request: Request, env: Env, url: URL): Promise<Response> {
+  if (!isAuthorized(env, request)) {
+    return failure(401, "鉴权失败");
+  }
+  const path = url.pathname;
+  if (path === "/api/internal/user-layer" && request.method === "GET") {
+    return json(await loadUserLayer(env));
+  }
+  if (path === "/api/internal/fetch-result" && request.method === "POST") {
+    return handleFetchResult(request, env, new Date());
+  }
+  if (path === "/api/internal/migrate" && request.method === "POST") {
+    return handleMigrate(env);
+  }
+  return failure(404, "未知内部接口");
+}
