@@ -1,12 +1,13 @@
 name: Fetch Table
 
 # 单表抓取：用户提交添加后由 Worker 触发（workflow_dispatch），也可手动 dispatch
-# 演练。产物经 rclone 写入 R2：数据目录 tables/<dir_name>/、抓取结果
-# user/fetched/<id>.json 与状态 user/status/<id>.json；成功后触发一次站点部署，
-# 让新表在静态宿主上尽快可见。
+# 演练。产物经 rclone 写入 R2 的 tables/<dir_name>/；抓取结果与状态经站点 Worker
+# 的内部接口写进 D1（不再落 R2 对象）。成功后触发一次站点部署，让新表在静态
+# 宿主上尽快可见。
 #
 # 需要的 Secrets（本仓库 Settings > Secrets and variables > Actions）：
 #   R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY / R2_ENDPOINT / R2_BUCKET — 与 update-tables 相同
+#   INTERNAL_API_TOKEN — 站点 Worker 的内部接口共享 token（与 Worker secret 同名同值）
 #   WORKFLOW_DISPATCH_TOKEN — fine-grained PAT，仅 actions:write（触发 deploy）
 on:
   workflow_dispatch:
@@ -53,6 +54,8 @@ jobs:
           TABLE_URL: ${{ inputs.url }}
           REQUEST_ID: ${{ inputs.requestId }}
           AUTHOR: ${{ inputs.author }}
+          # 抓取结果与状态经内部接口写进 D1
+          INTERNAL_API_TOKEN: ${{ secrets.INTERNAL_API_TOKEN }}
         run: |
           node scripts/fetch-table-once.ts \
             --url="$TABLE_URL" \
@@ -73,8 +76,6 @@ jobs:
             echo "上传表数据：$dir"
             ./rclone copy "out/tables/$dir" "r2:${{ secrets.R2_BUCKET }}/tables/$dir" --transfers 4
           fi
-          # 抓取结果与状态（失败时只有状态）都要上传，前端据此结束轮询
-          ./rclone copy out/user "r2:${{ secrets.R2_BUCKET }}/user" --transfers 4
           rm -f rclone
 
       - name: Read fetch result
