@@ -11,7 +11,7 @@
  */
 
 /** 当前 schema 版本；新增升级步骤时同步递增。 */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 /** 把分行的 SQL 片段合成单行。D1 的 `exec()` 按换行切分语句，batch 里的语句
  * 也保持单行最不容易出错。 */
@@ -126,6 +126,15 @@ export const MIGRATION_STEPS: readonly (readonly string[])[] = [
       "CREATE TABLE IF NOT EXISTS deploy_state (",
       "id INTEGER PRIMARY KEY CHECK (id = 1),",
       "last_requested_at TEXT NOT NULL",
+      ")"
+    ),
+  ],
+  // 版本 2：R2 到 D1 的一次性迁移标记（迁移完成后本步与读取分支一并删除）
+  [
+    sql(
+      "CREATE TABLE IF NOT EXISTS migration_state (",
+      "id INTEGER PRIMARY KEY CHECK (id = 1),",
+      "migrated_at TEXT NOT NULL",
       ")"
     ),
   ],
