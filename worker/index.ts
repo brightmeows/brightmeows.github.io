@@ -31,6 +31,7 @@ import { r2TableHeaderUrl } from "../src/lib/mirror/urls.ts";
 import { handleApi } from "./api.ts";
 import type { Env } from "./env.ts";
 import { MANIFEST_MAX_AGE, loadMergedManifest } from "./manifest.ts";
+import { ensureSchemaOnce } from "./schema.ts";
 
 /** 注入 meta 用的站点 SPA 外壳（adapter-static 的 fallback 产物）。 */
 const SITE_SHELL_PATH = "/404.html";
@@ -152,8 +153,10 @@ export default {
       return textResponse("URL 编码非法。", 400);
     }
 
-    // 写接口与登录回调：方法校验与鉴权都在 api.ts 内部完成
+    // 写接口与登录回调：方法校验与鉴权都在 api.ts 内部完成。
+    // 用户层存在 D1，首次访问前确保 schema 就绪（isolate 内只初始化一次）。
     if (path === "/api" || path.startsWith("/api/")) {
+      await ensureSchemaOnce(env.MIRROR_DB);
       return handleApi(request, env, url);
     }
 

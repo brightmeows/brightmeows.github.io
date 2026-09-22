@@ -17,6 +17,8 @@ Thumbs.db
 .env.*
 !.env.example
 !.env.test
+# wrangler dev 的本地 secrets（OAuth 凭据、会话密钥、共享 token 等）
+.dev.vars
 
 # Vite
 vite.config.js.timestamp-*

@@ -14,10 +14,20 @@
     // mirror 前缀与写接口先走 Worker，其余请求直接由静态资源处理
     "run_worker_first": ["/bms/table/mirror/*", "/api/*"],
   },
-  // 镜像数据桶绑定：Worker 读用户层、写增删与治理记录（user/ 前缀）。
+  // 镜像数据桶绑定：Worker 读写表数据与备份快照；用户层已迁 D1（见下）。
   // 桶名入库是 2026-09 的显式取舍——绑定是部署期配置，无法用 secret 注入；
   // 桶内访问仍由公开域与凭据控制，凭据不入库。
   "r2_buckets": [{ "binding": "MIRROR_BUCKET", "bucket_name": "bms-table-mirror" }],
+  // 用户层数据库：增删改、审计、限次与抓取状态。schema 由 Worker 自持
+  // （worker/schema.ts 的幂等初始化），不走 wrangler d1 migrations，因此部署
+  // 流程不需要 D1 权限。database_id 为待填占位，由控制台或 wrangler d1 create 生成。
+  "d1_databases": [
+    {
+      "binding": "MIRROR_DB",
+      "database_name": "miyakomeow-user",
+      "database_id": "72ba6603-e324-4757-a876-dfe27e610415",
+    },
+  ],
   "routes": [
     { "pattern": "miyakomeow.site", "custom_domain": true },
     { "pattern": "www.miyakomeow.site", "custom_domain": true },
