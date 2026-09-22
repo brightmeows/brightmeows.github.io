@@ -9,10 +9,13 @@
  * - GET  /api/internal/user-layer：返回原始用户层（6 类索引加 fetched），
  *   形状与旧的 R2 对象一致，管线据此计算活跃表集合。
  * - POST /api/internal/fetch-result：单表抓取工作流回写抓取结果与状态。
+ * - POST /api/internal/backup-now：立即执行一次用户层备份（定时任务是主路径，
+ *   这里供手动触发与验证，见 worker/backup.ts）。
  */
 
 import type { FetchedEntry, StatusEntry } from "../src/lib/mirror/user-layer.ts";
 
+import { backupUserLayer } from "./backup.ts";
 import type { Env } from "./env.ts";
 import { failure, json, readJsonBody } from "./http.ts";
 import { invalidateMergedManifest } from "./manifest.ts";
@@ -97,6 +100,15 @@ async function handleFetchResult(request: Request, env: Env, now: Date): Promise
   return json({ ok: true, state });
 }
 
+/** 立即执行一次备份（返回写入的对象键与清理掉的旧快照）。 */
+async function handleBackupNow(env: Env): Promise<Response> {
+  try {
+    return json(await backupUserLayer(env, new Date()));
+  } catch (error) {
+    return failure(500, error instanceof Error ? error.message : String(error));
+  }
+}
+
 /** 分发 `/api/internal/*`；未匹配或鉴权失败时返回 404 与 401。 */
 export async function handleInternal(request: Request, env: Env, url: URL): Promise<Response> {
   if (!isAuthorized(env, request)) {
@@ -108,6 +120,9 @@ export async function handleInternal(request: Request, env: Env, url: URL): Prom
   }
   if (path === "/api/internal/fetch-result" && request.method === "POST") {
     return handleFetchResult(request, env, new Date());
+  }
+  if (path === "/api/internal/backup-now" && request.method === "POST") {
+    return handleBackupNow(env);
   }
   return failure(404, "未知内部接口");
 }

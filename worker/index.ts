@@ -31,6 +31,7 @@ import {
 import { r2TableHeaderUrl } from "../src/lib/mirror/urls.ts";
 
 import { handleApi } from "./api.ts";
+import { backupUserLayer } from "./backup.ts";
 import type { Env } from "./env.ts";
 import { handleInternal } from "./internal.ts";
 import { MANIFEST_MAX_AGE, loadMergedManifest } from "./manifest.ts";
@@ -207,5 +208,20 @@ export default {
     }
 
     return env.ASSETS.fetch(request);
+  },
+
+  /** 定时任务：每天导出一次用户层快照（见 worker/backup.ts）。 */
+  scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext): void {
+    ctx.waitUntil(
+      backupUserLayer(env, new Date(controller.scheduledTime)).then(
+        ({ key, pruned }) => {
+          const prunedNote = pruned.length === 0 ? "" : `，清理 ${pruned.length} 份旧快照`;
+          console.log(`用户层备份完成：${key}${prunedNote}`);
+        },
+        (error: unknown) => {
+          console.error("用户层备份失败", error);
+        }
+      )
+    );
   },
 } satisfies ExportedHandler<Env>;
