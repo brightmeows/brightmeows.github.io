@@ -1,15 +1,18 @@
 /**
  * Worker 运行时环境与全局常量。
  *
- * 绑定在 wrangler.jsonc（ASSETS 与 MIRROR_BUCKET），密钥经 `wrangler secret put`
- * 注入：OAuth 客户端凭据、会话签名密钥与触发工作流的 fine-grained PAT。
+ * 绑定在 wrangler.jsonc（ASSETS、MIRROR_BUCKET 与 MIRROR_DB），密钥经
+ * `wrangler secret put` 注入：OAuth 客户端凭据、会话签名密钥、触发工作流的
+ * fine-grained PAT，以及供 Actions 调内部接口的共享 token。
  */
 
 /** Workers 运行时绑定与 secrets。 */
 export interface Env {
   ASSETS: Fetcher;
-  /** 镜像数据桶：读写用户层与表数据（wrangler.jsonc 的 r2_buckets）。 */
+  /** 镜像数据桶：读写表数据与备份快照（wrangler.jsonc 的 r2_buckets）。 */
   MIRROR_BUCKET: R2Bucket;
+  /** 用户层数据库：增删改、审计、限次与抓取状态（wrangler.jsonc 的 d1_databases）。 */
+  MIRROR_DB: D1Database;
   /** GitHub OAuth App 的客户端 id 与密钥。 */
   GITHUB_OAUTH_CLIENT_ID: string;
   GITHUB_OAUTH_CLIENT_SECRET: string;
@@ -17,6 +20,8 @@ export interface Env {
   SESSION_SECRET: string;
   /** fine-grained PAT（仅 actions:write）：触发 fetch-table 与 deploy 工作流。 */
   GITHUB_DISPATCH_TOKEN: string;
+  /** 内部接口的共享 token：仅 GitHub Actions 的管线与抓取工作流使用。 */
+  INTERNAL_API_TOKEN: string;
 }
 
 /** 触发工作流的仓库，与 git remote 一致。 */
