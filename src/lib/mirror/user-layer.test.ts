@@ -8,20 +8,10 @@ import {
   emptyUserLayer,
   mergeTableList,
   normalizeTableUrl,
-  parseAddedIndex,
-  parseDeployState,
   parseFetchedEntry,
-  parseLimitsFile,
   remainingOperations,
-  serializeUserIndex,
   serializeUserRecord,
   shouldTriggerDeploy,
-  userAddedKey,
-  userAuditKey,
-  userDeployStateKey,
-  userFetchedKey,
-  userLimitsKey,
-  userStatusKey,
   utcDateStamp,
   type AddedEntry,
   type AuthorizedEntry,
@@ -76,21 +66,6 @@ function fetchedEntry(partial: Partial<FetchedEntry> = {}): FetchedEntry {
     ...partial,
   };
 }
-
-describe("对象键", () => {
-  it("用户层对象键集中构造且带前缀", () => {
-    expect(userAddedKey()).toBe("user/added.json");
-    expect(userFetchedKey("req1")).toBe("user/fetched/req1.json");
-    expect(userStatusKey("req1")).toBe("user/status/req1.json");
-    expect(userLimitsKey("brightmeows", "2026-09-21")).toBe(
-      "user/limits/brightmeows-2026-09-21.json"
-    );
-    expect(userDeployStateKey()).toBe("user/deploy-state.json");
-    expect(userAuditKey("2026-09-21T00:00:00.000Z", "ab12")).toBe(
-      "user/audit/2026-09-21T00%3A00%3A00.000Z-ab12.json"
-    );
-  });
-});
 
 describe("normalizeTableUrl", () => {
   it("规范化协议与主机名", () => {
@@ -287,23 +262,6 @@ describe("applyMetaOverride", () => {
 });
 
 describe("解析与序列化", () => {
-  it("添加索引往返一致且带版本外壳", () => {
-    const entries = [addedEntry()];
-    const text = serializeUserIndex(entries);
-    expect(text.endsWith("\n")).toBe(true);
-    expect(parseAddedIndex(JSON.parse(text))).toEqual(entries);
-  });
-
-  it("版本不符时报错", () => {
-    expect(() => parseAddedIndex({ version: 2, entries: [] })).toThrow(/version/);
-  });
-
-  it("条目字段缺失时报错并给出上下文", () => {
-    expect(() => parseAddedIndex({ version: 1, entries: [{ id: "x" }] })).toThrow(
-      /entries\[0\]\.url/
-    );
-  });
-
   it("抓取结果缺省 symbol 时不写入该字段", () => {
     const parsed = parseFetchedEntry({
       id: "req1",
@@ -320,21 +278,6 @@ describe("解析与序列化", () => {
       fetched_at: "t",
     });
     expect("symbol" in parsed).toBe(false);
-  });
-
-  it("计数对象校验非负整数", () => {
-    expect(() => parseLimitsFile({ login: "a", date: "2026-09-21", count: -1 })).toThrow(/count/);
-    expect(parseLimitsFile({ login: "a", date: "2026-09-21", count: 3 })).toEqual({
-      login: "a",
-      date: "2026-09-21",
-      count: 3,
-    });
-  });
-
-  it("节流状态解析", () => {
-    expect(parseDeployState({ last_requested_at: "2026-09-21T00:00:00.000Z" })).toEqual({
-      last_requested_at: "2026-09-21T00:00:00.000Z",
-    });
   });
 
   it("单对象序列化带尾换行", () => {

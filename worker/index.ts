@@ -35,7 +35,6 @@ import type { Env } from "./env.ts";
 import { handleInternal } from "./internal.ts";
 import { MANIFEST_MAX_AGE, loadMergedManifest } from "./manifest.ts";
 import { ensureSchemaOnce } from "./schema.ts";
-import { migrateFromR2Once } from "./store.ts";
 
 /** 注入 meta 用的站点 SPA 外壳（adapter-static 的 fallback 产物）。 */
 const SITE_SHELL_PATH = "/404.html";
@@ -157,13 +156,11 @@ export default {
       return textResponse("URL 编码非法。", 400);
     }
 
-    // 用户层在 D1（见 worker/store.ts）：首个请求初始化 schema 并完成 R2 到 D1 的
-    // 一次性迁移（两者在 isolate 内各只执行一次）。读取路径容忍失败并按纯管线清单
-    // 降级；写接口依赖 D1，初始化失败即报错。
+    // 用户层在 D1（见 worker/store.ts）：首个请求初始化 schema（isolate 内只执行一次）。
+    // 读取路径容忍失败并按纯管线清单降级；写接口依赖 D1，初始化失败即报错。
     if (path.startsWith(MIRROR_ROOT) || path === "/api" || path.startsWith("/api/")) {
       try {
         await ensureSchemaOnce(env.MIRROR_DB);
-        await migrateFromR2Once(env);
       } catch (error) {
         console.warn("用户层初始化失败", error);
         if (path === "/api" || path.startsWith("/api/")) {
