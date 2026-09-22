@@ -2,8 +2,8 @@
  * Worker 运行时环境与全局常量。
  *
  * 绑定在 wrangler.jsonc（ASSETS、MIRROR_BUCKET 与 MIRROR_DB），密钥经
- * `wrangler secret put` 注入：OAuth 客户端凭据、会话签名密钥、触发工作流的
- * fine-grained PAT，以及供 Actions 调内部接口的共享 token。
+ * `wrangler secret put` 注入：GitHub App 的用户授权凭据与私钥（登录与触发
+ * 工作流共用同一个 App）、会话签名密钥，以及供 Actions 调内部接口的共享 token。
  */
 
 /** Workers 运行时绑定与 secrets。 */
@@ -13,13 +13,15 @@ export interface Env {
   MIRROR_BUCKET: R2Bucket;
   /** 用户层数据库：增删改、审计、限次与抓取状态（wrangler.jsonc 的 d1_databases）。 */
   MIRROR_DB: D1Database;
-  /** GitHub OAuth App 的客户端 id 与密钥。 */
+  /** GitHub App 的用户授权凭据（登录用；App 与 OAuth App 共用同一套 OAuth 流程）。 */
   GITHUB_OAUTH_CLIENT_ID: string;
   GITHUB_OAUTH_CLIENT_SECRET: string;
   /** 会话 cookie 的 HMAC 签名密钥（任意长随机串）。 */
   SESSION_SECRET: string;
-  /** fine-grained PAT（仅 actions:write）：触发 fetch-table 与 deploy 工作流。 */
-  GITHUB_DISPATCH_TOKEN: string;
+  /** GitHub App 的 App ID、私钥（PEM 文本）与安装 ID：用于签发 installation token。 */
+  GITHUB_APP_ID: string;
+  GITHUB_APP_PRIVATE_KEY: string;
+  GITHUB_APP_INSTALLATION_ID: string;
   /** 内部接口的共享 token：仅 GitHub Actions 的管线与抓取工作流使用。 */
   INTERNAL_API_TOKEN: string;
 }

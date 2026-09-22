@@ -19,5 +19,8 @@
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true
   },
-  "include": ["./**/*.ts"]
+  "include": ["./**/*.ts"],
+  // 测试文件走 vitest（esbuild 转译加 oxlint 类型检查），不进 Worker 的类型上下文：
+  // 那里只有 Workers 运行时类型，没有 vitest 与 Node 的类型
+  "exclude": ["./**/*.test.ts"]
 }

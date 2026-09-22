@@ -8,7 +8,7 @@ name: Fetch Table
 # 需要的 Secrets（本仓库 Settings > Secrets and variables > Actions）：
 #   R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY / R2_ENDPOINT / R2_BUCKET — 与 update-tables 相同
 #   INTERNAL_API_TOKEN — 站点 Worker 的内部接口共享 token（与 Worker secret 同名同值）
-#   WORKFLOW_DISPATCH_TOKEN — fine-grained PAT，仅 actions:write（触发 deploy）
+#   APP_ID / APP_PRIVATE_KEY — GitHub App 的 App ID 与私钥（换 installation token 触发 deploy）
 on:
   workflow_dispatch:
     inputs:
@@ -82,8 +82,17 @@ jobs:
         id: result
         run: echo "state=$(jq -r .state out/result.json)" >> "$GITHUB_OUTPUT"
 
+      - name: Generate app token
+        # 用 GitHub App 换短时 installation token：没有长期令牌的过期与轮换问题
+        if: steps.result.outputs.state == 'done'
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - name: Trigger site deploy
         if: steps.result.outputs.state == 'done'
         env:
-          GH_TOKEN: ${{ secrets.WORKFLOW_DISPATCH_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: gh workflow run deploy.yml --ref main

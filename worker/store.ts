@@ -31,7 +31,8 @@ import {
   type UserRole,
 } from "../src/lib/mirror/user-layer.ts";
 
-import { REPOSITORY, type Env } from "./env.ts";
+import { dispatchWorkflow } from "./dispatch.ts";
+import type { Env } from "./env.ts";
 
 /** 已达每日操作上限。 */
 export class RateLimitError extends Error {
@@ -481,32 +482,6 @@ export async function writeDeployState(env: Env, state: DeployState): Promise<vo
   )
     .bind(state.last_requested_at)
     .run();
-}
-
-/** 触发 GitHub Actions 工作流（workflow_dispatch）。 */
-export async function dispatchWorkflow(
-  env: Env,
-  workflow: string,
-  inputs: Record<string, string>
-): Promise<void> {
-  const response = await fetch(
-    `https://api.github.com/repos/${REPOSITORY}/actions/workflows/${workflow}/dispatches`,
-    {
-      method: "POST",
-      headers: {
-        authorization: `Bearer ${env.GITHUB_DISPATCH_TOKEN}`,
-        accept: "application/vnd.github+json",
-        "content-type": "application/json",
-        "user-agent": "miyakomeow-site-worker",
-      },
-      body: JSON.stringify({ ref: "main", inputs }),
-    }
-  );
-  if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    console.warn(`触发工作流失败：${workflow} HTTP ${response.status} ${detail.slice(0, 300)}`);
-    throw new Error(`触发工作流失败（HTTP ${response.status}）`);
-  }
 }
 
 /**

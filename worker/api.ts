@@ -15,6 +15,7 @@ import {
 
 import { handleAdmin } from "./admin.ts";
 import { getSession, handleCallback, handleLogin, handleLogout, type Session } from "./auth.ts";
+import { dispatchWorkflow } from "./dispatch.ts";
 import {
   OAUTH_CALLBACK_PATH,
   PREVIEW_MAX_BYTES,
@@ -28,7 +29,6 @@ import {
   RateLimitError,
   consumeOperation,
   deleteRemovedByDirName,
-  dispatchWorkflow,
   insertAdded,
   listRemoved,
   loadUserLayer,
