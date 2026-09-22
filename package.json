@@ -23,7 +23,7 @@
   },
   "exports": {},
   "devDependencies": {
-    "@cloudflare/workers-types": "^5.20260918.1",
+    "@cloudflare/workers-types": "^5.20260919.1",
     "@inlang/paraglide-js": "^2.25.2",
     "@nvl/sveltex": "^0.5.1",
     "@sveltejs/adapter-static": "^3.0.10",
