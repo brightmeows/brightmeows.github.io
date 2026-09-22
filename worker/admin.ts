@@ -6,48 +6,36 @@
  * 只要求管理员身份——浏览器同源 GET 不带 Origin，不做同源校验。
  */
 
-import {
-  normalizeTableUrl,
-  parseAddedIndex,
-  parseAuditEntry,
-  parseAuthorizedIndex,
-  parseDisabledIndex,
-  parseMetaIndex,
-  parseRemovedIndex,
-  parseReplaceIndex,
-  userAddedKey,
-  userAuthorizedKey,
-  userDisabledKey,
-  userMetaKey,
-  userRemovedKey,
-  userReplaceKey,
-  USER_PREFIX,
-  type AuditEntry,
-  type AuthorizedEntry,
-  type DisabledEntry,
-  type MetaOverride,
-  type ReplaceRuleEntry,
-} from "../src/lib/mirror/user-layer.ts";
+import type { MetaOverride } from "../src/lib/mirror/user-layer.ts";
 
 import { getSession, type Session } from "./auth.ts";
 import { ADMIN_LOGIN, type Env } from "./env.ts";
 import { checkSameOrigin, failure, json, readJsonBody } from "./http.ts";
 import { invalidateMergedManifest } from "./manifest.ts";
 import {
-  mutateIndex,
-  readIndex,
+  deleteAuthorized,
+  deleteDisabled,
+  deleteMetaOverride,
+  deleteRemovedByDirName,
+  deleteReplaceRule,
+  listAdded,
+  listAudit,
+  listAuthorized,
+  listDisabled,
+  listMetaOverrides,
+  listRemoved,
+  listReplaceRules,
   restoreTableFromTrash,
   triggerDeploy,
+  upsertAuthorized,
+  upsertDisabled,
+  upsertMetaOverride,
+  upsertReplaceRule,
   writeAudit,
 } from "./store.ts";
 
-/** 审计对象前缀（键为 `<前缀><时间戳>-<随机>.json`）。 */
-const AUDIT_PREFIX = `${USER_PREFIX}/audit/`;
 /** 回收站前缀（键为 `trash/<时间戳>/<dir_name>/<文件>`）。 */
 const TRASH_PREFIX = "trash/";
-
-/** 审计列表读取上限：超过则只取按时间排序的最后若干条。 */
-const AUDIT_SCAN_LIMIT = 5000;
 
 function bodyString(body: Record<string, unknown> | null, key: string): string | undefined {
   const value = body?.[key];
@@ -73,37 +61,6 @@ async function safeDeploy(env: Env, now: Date): Promise<boolean> {
     console.warn("后台操作后触发部署失败", error);
     return false;
   }
-}
-
-/** 读取最近的审计记录（按对象键排序等于按时间排序）。 */
-async function listRecentAudit(env: Env, limit: number): Promise<AuditEntry[]> {
-  const keys: string[] = [];
-  let cursor: string | undefined;
-  do {
-    const listed = await env.MIRROR_BUCKET.list({
-      prefix: AUDIT_PREFIX,
-      ...(cursor === undefined ? {} : { cursor }),
-    });
-    for (const object of listed.objects) {
-      keys.push(object.key);
-    }
-    cursor = listed.truncated ? listed.cursor : undefined;
-  } while (cursor !== undefined && keys.length < AUDIT_SCAN_LIMIT);
-  keys.sort();
-
-  const entries: AuditEntry[] = [];
-  for (const key of keys.slice(-limit).reverse()) {
-    const object = await env.MIRROR_BUCKET.get(key);
-    if (object === null) {
-      continue;
-    }
-    try {
-      entries.push(parseAuditEntry(await object.json()));
-    } catch {
-      // 损坏的审计记录跳过
-    }
-  }
-  return entries;
 }
 
 interface TrashEntry {
@@ -146,13 +103,13 @@ async function listTrash(env: Env): Promise<TrashEntry[]> {
 /** 后台总览：用户层各索引、最近审计与回收站。 */
 async function handleOverview(env: Env): Promise<Response> {
   const [authorized, disabled, replace, meta, added, removed, audit, trash] = await Promise.all([
-    readIndex(env, userAuthorizedKey(), parseAuthorizedIndex),
-    readIndex(env, userDisabledKey(), parseDisabledIndex),
-    readIndex(env, userReplaceKey(), parseReplaceIndex),
-    readIndex(env, userMetaKey(), parseMetaIndex),
-    readIndex(env, userAddedKey(), parseAddedIndex),
-    readIndex(env, userRemovedKey(), parseRemovedIndex),
-    listRecentAudit(env, 50),
+    listAuthorized(env),
+    listDisabled(env),
+    listReplaceRules(env),
+    listMetaOverrides(env),
+    listAdded(env),
+    listRemoved(env),
+    listAudit(env, 50),
     listTrash(env),
   ]);
   return json({
@@ -190,24 +147,16 @@ async function handleAuthorize(
   const dirName = bodyString(body, "dir_name");
   const action = body?.action === "remove" ? "remove" : "add";
   const at = now.toISOString();
-  const matches = (item: AuthorizedEntry): boolean =>
-    normalizeTableUrl(item.url) === url || (dirName !== undefined && item.dir_name === dirName);
-
-  await mutateIndex<AuthorizedEntry>(env, userAuthorizedKey(), parseAuthorizedIndex, (current) =>
-    action === "add"
-      ? current.some(matches)
-        ? current
-        : [
-            ...current,
-            {
-              url,
-              ...(dirName === undefined ? {} : { dir_name: dirName }),
-              author: session.login,
-              authorized_at: at,
-            },
-          ]
-      : current.filter((item) => !matches(item))
-  );
+  if (action === "add") {
+    await upsertAuthorized(env, {
+      url,
+      ...(dirName === undefined ? {} : { dir_name: dirName }),
+      author: session.login,
+      authorized_at: at,
+    });
+  } else {
+    await deleteAuthorized(env, { url, dirName });
+  }
   await writeAudit(env, {
     at,
     actor: session.login,
@@ -235,25 +184,17 @@ async function handleDisable(
   const note = bodyString(body, "note");
   const action = body?.action === "remove" ? "remove" : "add";
   const at = now.toISOString();
-  const matches = (item: DisabledEntry): boolean =>
-    normalizeTableUrl(item.url) === url || (dirName !== undefined && item.dir_name === dirName);
-
-  await mutateIndex<DisabledEntry>(env, userDisabledKey(), parseDisabledIndex, (current) =>
-    action === "add"
-      ? current.some(matches)
-        ? current
-        : [
-            ...current,
-            {
-              url,
-              ...(dirName === undefined ? {} : { dir_name: dirName }),
-              author: session.login,
-              disabled_at: at,
-              ...(note === undefined ? {} : { note }),
-            },
-          ]
-      : current.filter((item) => !matches(item))
-  );
+  if (action === "add") {
+    await upsertDisabled(env, {
+      url,
+      ...(dirName === undefined ? {} : { dir_name: dirName }),
+      author: session.login,
+      disabled_at: at,
+      ...(note === undefined ? {} : { note }),
+    });
+  } else {
+    await deleteDisabled(env, { url, dirName });
+  }
   await writeAudit(env, {
     at,
     actor: session.login,
@@ -301,14 +242,9 @@ async function handleReplace(
     } catch {
       return failure(400, "to 不是合法 URL");
     }
-    await mutateIndex<ReplaceRuleEntry>(env, userReplaceKey(), parseReplaceIndex, (current) => [
-      ...current.filter((item) => normalizeTableUrl(item.from) !== from),
-      { from, to, author: session.login, updated_at: at },
-    ]);
+    await upsertReplaceRule(env, { from, to, author: session.login, updated_at: at });
   } else {
-    await mutateIndex<ReplaceRuleEntry>(env, userReplaceKey(), parseReplaceIndex, (current) =>
-      current.filter((item) => normalizeTableUrl(item.from) !== from)
-    );
+    await deleteReplaceRule(env, from);
   }
   await writeAudit(env, {
     at,
@@ -347,19 +283,17 @@ async function handleMeta(
     tagOrder !== undefined;
   const clear = body?.action === "clear" || !hasField;
 
-  await mutateIndex<MetaOverride>(env, userMetaKey(), parseMetaIndex, (current) => {
-    const rest = current.filter((item) => normalizeTableUrl(item.url) !== url);
-    if (clear) {
-      return rest;
-    }
+  if (clear) {
+    await deleteMetaOverride(env, url);
+  } else {
     const override: MetaOverride = { url, updated_at: at };
     if (name !== undefined) override.name = name;
     if (symbol !== undefined) override.symbol = symbol;
     if (tag1 !== undefined) override.tag1 = tag1;
     if (tag2 !== undefined) override.tag2 = tag2;
     if (tagOrder !== undefined) override.tag_order = tagOrder;
-    return [...rest, override];
-  });
+    await upsertMetaOverride(env, override);
+  }
   await writeAudit(env, {
     at,
     actor: session.login,
@@ -384,15 +318,13 @@ async function handleAdminRestore(
   if (dirName === undefined) {
     return failure(400, "需要提供 dir_name");
   }
-  const removed = await readIndex(env, userRemovedKey(), parseRemovedIndex);
+  const removed = await listRemoved(env);
   const record = removed.find((item) => item.dir_name === dirName);
   if (record === undefined) {
     return failure(404, "回收站里没有这张表");
   }
   const restoredObjects = await restoreTableFromTrash(env, record.trash_prefix, record.dir_name);
-  await mutateIndex(env, userRemovedKey(), parseRemovedIndex, (current) =>
-    current.filter((item) => item.dir_name !== dirName)
-  );
+  await deleteRemovedByDirName(env, dirName);
   await writeAudit(env, {
     at: now.toISOString(),
     actor: session.login,

@@ -1,33 +1,18 @@
 /**
  * 镜像清单的读取与合成：管线清单（含快照兜底）叠加用户层。
  *
- * 供 Worker 的镜像路由与写接口共用。用户层经 R2 binding 读取、没有边缘缓存
- * 可用：同一 isolate 内在窗口内复用合成结果（与清单响应的边缘缓存窗口一致），
- * 用户增删最迟该窗口后可见。用户层读取失败时退化为纯管线清单——清单可用优先
- * 于增删可见。
+ * 供 Worker 的镜像路由与写接口共用。用户层存在 D1（见 worker/store.ts），没有
+ * 边缘缓存可用：同一 isolate 内在窗口内复用合成结果（与清单响应的边缘缓存
+ * 窗口一致），用户增删最迟该窗口后可见。用户层读取失败时退化为纯管线清单——
+ * 清单可用优先于增删可见。
  */
 
 import siteConfig from "../config/site.json";
-import {
-  mergeTableList,
-  parseAddedIndex,
-  parseAuthorizedIndex,
-  parseDisabledIndex,
-  parseFetchedEntry,
-  parseMetaIndex,
-  parseRemovedIndex,
-  parseReplaceIndex,
-  userAddedKey,
-  userAuthorizedKey,
-  userDisabledKey,
-  userFetchedKey,
-  userMetaKey,
-  userRemovedKey,
-  userReplaceKey,
-  type FetchedEntry,
-  type UserLayer,
-} from "../src/lib/mirror/user-layer.ts";
+import { mergeTableList } from "../src/lib/mirror/user-layer.ts";
 import type { MirrorTableItem } from "../src/lib/types/bms.ts";
+
+import type { Env } from "./env.ts";
+import { loadUserLayer } from "./store.ts";
 
 /** 清单在 R2 上的对象键，由数据管线的 tables/ 目录同步而来。 */
 const MANIFEST_OBJECT = siteConfig.r2.manifestObject;
@@ -122,50 +107,6 @@ export async function loadManifest(): Promise<MirrorTableItem[] | null> {
   return loadSnapshot(key);
 }
 
-/** 读取用户层索引对象：缺失按空、损坏按空并记日志，不阻断主路径。 */
-async function readUserIndex<T>(
-  bucket: R2Bucket,
-  key: string,
-  parse: (value: unknown) => T[]
-): Promise<T[]> {
-  try {
-    const object = await bucket.get(key);
-    if (object === null) {
-      return [];
-    }
-    return parse(await object.json());
-  } catch (error) {
-    console.warn(`用户层对象不可用：${key}`, error);
-    return [];
-  }
-}
-
-/** 加载用户层：各索引对象与每个已提交请求的抓取结果。 */
-export async function loadUserLayer(bucket: R2Bucket): Promise<UserLayer> {
-  const [added, removed, disabled, replace, authorized, meta] = await Promise.all([
-    readUserIndex(bucket, userAddedKey(), parseAddedIndex),
-    readUserIndex(bucket, userRemovedKey(), parseRemovedIndex),
-    readUserIndex(bucket, userDisabledKey(), parseDisabledIndex),
-    readUserIndex(bucket, userReplaceKey(), parseReplaceIndex),
-    readUserIndex(bucket, userAuthorizedKey(), parseAuthorizedIndex),
-    readUserIndex(bucket, userMetaKey(), parseMetaIndex),
-  ]);
-  const fetched: FetchedEntry[] = [];
-  await Promise.all(
-    added.map(async (entry) => {
-      try {
-        const object = await bucket.get(userFetchedKey(entry.id));
-        if (object !== null) {
-          fetched.push(parseFetchedEntry(await object.json()));
-        }
-      } catch (error) {
-        console.warn(`用户层抓取结果不可用：${entry.id}`, error);
-      }
-    })
-  );
-  return { added, fetched, removed, disabled, replace, authorized, meta };
-}
-
 /** 合成清单的内存缓存；失败结果不缓存。 */
 let mergedCache: { at: number; list: MirrorTableItem[] } | null = null;
 
@@ -178,7 +119,7 @@ export function invalidateMergedManifest(): void {
  * 读取合成清单：管线清单（含快照兜底）叠加用户层。
  * 用户层不可用时退化为纯管线清单——清单可用优先于用户增删可见。
  */
-export async function loadMergedManifest(bucket: R2Bucket): Promise<MirrorTableItem[] | null> {
+export async function loadMergedManifest(env: Env): Promise<MirrorTableItem[] | null> {
   const now = Date.now();
   if (mergedCache !== null && now - mergedCache.at < MERGED_CACHE_MS) {
     return mergedCache.list;
@@ -187,7 +128,7 @@ export async function loadMergedManifest(bucket: R2Bucket): Promise<MirrorTableI
   if (base === null) {
     return null;
   }
-  const user = await loadUserLayer(bucket);
+  const user = await loadUserLayer(env);
   const { list } = mergeTableList(base, user);
   mergedCache = { at: now, list };
   return list;

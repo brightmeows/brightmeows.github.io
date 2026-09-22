@@ -9,12 +9,6 @@
 import {
   DAILY_OPERATION_LIMIT,
   normalizeTableUrl,
-  parseAddedIndex,
-  parseRemovedIndex,
-  parseStatusEntry,
-  userAddedKey,
-  userRemovedKey,
-  userStatusKey,
   TRASH_RETENTION_DAYS,
   type StatusEntry,
 } from "../src/lib/mirror/user-layer.ts";
@@ -29,20 +23,23 @@ import {
   type Env,
 } from "./env.ts";
 import { checkSameOrigin, failure, json, readJsonBody } from "./http.ts";
-import { invalidateMergedManifest, loadMergedManifest, loadUserLayer } from "./manifest.ts";
+import { invalidateMergedManifest, loadMergedManifest } from "./manifest.ts";
 import {
   RateLimitError,
   consumeOperation,
+  deleteRemovedByDirName,
   dispatchWorkflow,
+  insertAdded,
+  listRemoved,
+  loadUserLayer,
   moveTableToTrash,
-  mutateIndex,
-  putRecord,
-  readIndex,
+  readFetchStatus,
   readOperationCount,
-  readRecord,
   restoreTableFromTrash,
   triggerDeploy,
+  upsertRemoved,
   writeAudit,
+  writeFetchStatus,
 } from "./store.ts";
 
 const RESTORE_WINDOW_MS = TRASH_RETENTION_DAYS * 24 * 60 * 60 * 1000;
@@ -203,10 +200,7 @@ async function handleAdd(request: Request, env: Env, url: URL, now: Date): Promi
     return failure(400, "URL 非法");
   }
 
-  const [user, manifest] = await Promise.all([
-    loadUserLayer(env.MIRROR_BUCKET),
-    loadMergedManifest(env.MIRROR_BUCKET),
-  ]);
+  const [user, manifest] = await Promise.all([loadUserLayer(env), loadMergedManifest(env)]);
   if (manifest === null) {
     return failure(503, "清单暂不可用，请稍后重试");
   }
@@ -239,17 +233,20 @@ async function handleAdd(request: Request, env: Env, url: URL, now: Date): Promi
 
   const requestId = crypto.randomUUID();
   const at = now.toISOString();
-  await mutateIndex(env, userAddedKey(), parseAddedIndex, (current) => [
-    ...current,
-    { id: requestId, url: effectiveUrl, author: session.login, role: session.role, added_at: at },
-  ]);
+  await insertAdded(env, {
+    id: requestId,
+    url: effectiveUrl,
+    author: session.login,
+    role: session.role,
+    added_at: at,
+  });
   const pending: StatusEntry = {
     id: requestId,
     url: effectiveUrl,
     state: "pending",
     updated_at: at,
   };
-  await putRecord(env, userStatusKey(requestId), pending);
+  await writeFetchStatus(env, pending);
   await writeAudit(env, {
     at,
     actor: session.login,
@@ -266,7 +263,7 @@ async function handleAdd(request: Request, env: Env, url: URL, now: Date): Promi
       author: session.login,
     });
   } catch {
-    await putRecord(env, userStatusKey(requestId), {
+    await writeFetchStatus(env, {
       ...pending,
       state: "failed",
       message: "触发抓取工作流失败，请联系站长",
@@ -296,7 +293,7 @@ async function handleDelete(request: Request, env: Env, url: URL, now: Date): Pr
     return failure(400, "需要提供 dir_name 或 url");
   }
 
-  const manifest = await loadMergedManifest(env.MIRROR_BUCKET);
+  const manifest = await loadMergedManifest(env);
   if (manifest === null) {
     return failure(503, "清单暂不可用，请稍后重试");
   }
@@ -325,17 +322,14 @@ async function handleDelete(request: Request, env: Env, url: URL, now: Date): Pr
   const stamp = at.replaceAll(":", "-").replaceAll(".", "-");
   const removedUrl = entry.url_from ?? entry.url;
   // 先写黑名单再移数据：清单可见性优先，移动失败时数据仍在 tables/（恢复时兜底）
-  await mutateIndex(env, userRemovedKey(), parseRemovedIndex, (current) => [
-    ...current.filter((item) => item.dir_name !== targetDir),
-    {
-      url: removedUrl,
-      dir_name: targetDir,
-      author: session.login,
-      role: session.role,
-      removed_at: at,
-      trash_prefix: `trash/${stamp}/${targetDir}`,
-    },
-  ]);
+  await upsertRemoved(env, {
+    url: removedUrl,
+    dir_name: targetDir,
+    author: session.login,
+    role: session.role,
+    removed_at: at,
+    trash_prefix: `trash/${stamp}/${targetDir}`,
+  });
   const trashPrefix = await moveTableToTrash(env, targetDir, stamp);
   await writeAudit(env, {
     at,
@@ -375,7 +369,7 @@ async function handleRestore(request: Request, env: Env, url: URL, now: Date): P
     return failure(400, "需要提供 dir_name");
   }
 
-  const removed = await readIndex(env, userRemovedKey(), parseRemovedIndex);
+  const removed = await listRemoved(env);
   const record = removed.find((item) => item.dir_name === dirName);
   if (record === undefined) {
     return failure(404, "回收站里没有这张表");
@@ -394,9 +388,7 @@ async function handleRestore(request: Request, env: Env, url: URL, now: Date): P
   }
 
   const restoredObjects = await restoreTableFromTrash(env, record.trash_prefix, record.dir_name);
-  await mutateIndex(env, userRemovedKey(), parseRemovedIndex, (current) =>
-    current.filter((item) => item.dir_name !== record.dir_name)
-  );
+  await deleteRemovedByDirName(env, record.dir_name);
   await writeAudit(env, {
     at: now.toISOString(),
     actor: session.login,
@@ -423,7 +415,7 @@ async function handleRestore(request: Request, env: Env, url: URL, now: Date): P
 }
 
 async function handleStatus(env: Env, requestId: string): Promise<Response> {
-  const status = await readRecord(env, userStatusKey(requestId), parseStatusEntry);
+  const status = await readFetchStatus(env, requestId);
   if (status === null) {
     return failure(404, "没有该请求的记录");
   }
@@ -439,7 +431,7 @@ async function handleRemoved(request: Request, env: Env, now: Date): Promise<Res
   if (session === null) {
     return failure(401, "请先登录 GitHub");
   }
-  const removed = await readIndex(env, userRemovedKey(), parseRemovedIndex);
+  const removed = await listRemoved(env);
   const cutoff = now.getTime() - RESTORE_WINDOW_MS;
   const entries = removed
     .filter((item) => session.role === "admin" || item.author === session.login)

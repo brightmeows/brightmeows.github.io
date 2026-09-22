@@ -13,8 +13,9 @@
  *    字段指向请求 origin（新旧域名都自洽），受保护条目携带 `protected` 标记。
  * 3. `/api/*`：登录、预览、添加、删除、恢复与状态轮询（见 worker/api.ts）。
  *
- * 清单读取与合成在 worker/manifest.ts；用户层经 R2 binding 读取，同 isolate 内
- * 60 秒内存缓存（写接口完成后主动失效）；用户层不可用时退化为纯管线清单。
+ * 清单读取与合成在 worker/manifest.ts；用户层存在 D1（worker/store.ts），
+ * 同 isolate 内 60 秒内存缓存（写接口完成后主动失效）；用户层不可用时退化为
+ * 纯管线清单。
  *
  * 校验策略：清单不可用返回 503，表不存在回落到站点的 404 页；清单读取失败时
  * 先用独立命名空间（与 fetch 缓存隔离）里的最近快照兜底，没有快照才 503。
@@ -32,6 +33,7 @@ import { handleApi } from "./api.ts";
 import type { Env } from "./env.ts";
 import { MANIFEST_MAX_AGE, loadMergedManifest } from "./manifest.ts";
 import { ensureSchemaOnce } from "./schema.ts";
+import { migrateFromR2Once } from "./store.ts";
 
 /** 注入 meta 用的站点 SPA 外壳（adapter-static 的 fallback 产物）。 */
 const SITE_SHELL_PATH = "/404.html";
@@ -82,7 +84,7 @@ async function handleTablePage(
   url: URL,
   tableId: string
 ): Promise<Response> {
-  const manifest = await loadMergedManifest(env.MIRROR_BUCKET);
+  const manifest = await loadMergedManifest(env);
   if (manifest === null) {
     return textResponse("镜像表清单暂不可用，请稍后重试。", 503, {
       "cache-control": "no-store",
@@ -111,7 +113,7 @@ async function handleTablePage(
 
 /** 清单路由：从 R2 清单叠加用户层后生成站点清单。 */
 async function handleTablesJson(env: Env, url: URL): Promise<Response> {
-  const manifest = await loadMergedManifest(env.MIRROR_BUCKET);
+  const manifest = await loadMergedManifest(env);
   if (manifest === null) {
     return textResponse("镜像表清单暂不可用，请稍后重试。", 503, {
       "cache-control": "no-store",
@@ -153,10 +155,26 @@ export default {
       return textResponse("URL 编码非法。", 400);
     }
 
-    // 写接口与登录回调：方法校验与鉴权都在 api.ts 内部完成。
-    // 用户层存在 D1，首次访问前确保 schema 就绪（isolate 内只初始化一次）。
+    // 用户层在 D1（见 worker/store.ts）：首个请求初始化 schema 并完成 R2 到 D1 的
+    // 一次性迁移（两者在 isolate 内各只执行一次）。读取路径容忍失败并按纯管线清单
+    // 降级；写接口依赖 D1，初始化失败即报错。
+    if (path.startsWith(MIRROR_ROOT) || path === "/api" || path.startsWith("/api/")) {
+      try {
+        await ensureSchemaOnce(env.MIRROR_DB);
+        await migrateFromR2Once(env);
+      } catch (error) {
+        console.warn("用户层初始化失败", error);
+        if (path === "/api" || path.startsWith("/api/")) {
+          return textResponse("用户层暂不可用，请稍后重试。", 503, {
+            "cache-control": "no-store",
+            "retry-after": String(MANIFEST_MAX_AGE),
+          });
+        }
+      }
+    }
+
+    // 写接口与登录回调：方法校验与鉴权都在 api.ts 内部完成
     if (path === "/api" || path.startsWith("/api/")) {
-      await ensureSchemaOnce(env.MIRROR_DB);
       return handleApi(request, env, url);
     }
 
