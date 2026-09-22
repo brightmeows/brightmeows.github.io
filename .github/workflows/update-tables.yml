@@ -50,6 +50,7 @@ jobs:
       #   R2_SECRET_ACCESS_KEY  — 同上（创建时一并生成）
       #   R2_ENDPOINT           — Cloudflare Dashboard > R2 > 存储桶 > S3 API > 端点
       #   R2_BUCKET             — Cloudflare Dashboard > R2 > 存储桶名称
+      #   INTERNAL_API_TOKEN    — 站点 Worker 的内部接口共享 token（与 Worker secret 同名同值）
       - uses: pnpm/action-setup@v6
 
       - uses: actions/setup-node@v7
@@ -70,6 +71,8 @@ jobs:
           RCLONE_CONFIG_R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           RCLONE_CONFIG_R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          # 用户层经站点 Worker 的内部接口读取（管线不直连 D1）
+          INTERNAL_API_TOKEN: ${{ secrets.INTERNAL_API_TOKEN }}
         run: |
           echo "=== Pull baseline from R2 ==="
           ./rclone sync r2:${{ secrets.R2_BUCKET }}/ . \
