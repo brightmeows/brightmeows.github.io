@@ -22,16 +22,8 @@ export function internalToken(): string {
   return process.env.INTERNAL_API_TOKEN ?? "";
 }
 
-/** 内部接口调用失败（含 HTTP 状态与响应片段）。 */
-export class InternalApiError extends Error {
-  /** HTTP 状态；请求未发出时为 undefined。 */
-  readonly status: number | undefined;
-
-  constructor(message: string, status?: number) {
-    super(message);
-    this.status = status;
-  }
-}
+/** 内部接口调用失败（消息里带端点与 HTTP 状态）。 */
+export class InternalApiError extends Error {}
 
 export interface InternalCallOptions {
   method?: string | undefined;
@@ -71,8 +63,7 @@ export async function callInternal<T>(path: string, options: InternalCallOptions
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
     throw new InternalApiError(
-      `内部接口 ${url} 返回 HTTP ${response.status}${detail === "" ? "" : `：${detail.slice(0, 200)}`}`,
-      response.status
+      `内部接口 ${url} 返回 HTTP ${response.status}${detail === "" ? "" : `：${detail.slice(0, 200)}`}`
     );
   }
   return (await response.json()) as T;

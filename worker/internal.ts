@@ -36,18 +36,15 @@ function constantTimeEquals(left: string, right: string): boolean {
   return diff === 0;
 }
 
-/** 校验共享 token；未配置 token 时拒绝一切内部调用。 */
+/** 校验共享 token；未配置 token（空串）时拒绝一切内部调用。 */
 function isAuthorized(env: Env, request: Request): boolean {
-  const token = env.INTERNAL_API_TOKEN;
-  if (typeof token !== "string" || token === "") {
-    return false;
-  }
   const header = request.headers.get("authorization") ?? "";
   const prefix = "Bearer ";
   if (!header.startsWith(prefix)) {
     return false;
   }
-  return constantTimeEquals(header.slice(prefix.length).trim(), token);
+  const token = env.INTERNAL_API_TOKEN;
+  return token !== "" && constantTimeEquals(header.slice(prefix.length).trim(), token);
 }
 
 function bodyString(body: Record<string, unknown> | null, key: string): string | undefined {

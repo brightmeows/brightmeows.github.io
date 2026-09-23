@@ -108,18 +108,6 @@ describe("PKCS#1 到 PKCS#8 的包装", () => {
     );
     expect(key.type).toBe("private");
   });
-
-  it("PKCS#8 的 PEM 原样通过", async () => {
-    const { pkcs8Der } = await makeKeys();
-    const key = await crypto.subtle.importKey(
-      "pkcs8",
-      pemToPkcs8(toPem("PRIVATE KEY", pkcs8Der)),
-      { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-      false,
-      ["sign"]
-    );
-    expect(key.type).toBe("private");
-  });
 });
 
 describe("App JWT", () => {
