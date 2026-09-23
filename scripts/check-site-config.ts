@@ -1,7 +1,7 @@
 /**
  * 离线一致性校验：把「不能 import 配置」的消费者钉在 `config/site.json` 上。
  *
- * 六条断言，每条都是纯函数（输入为文本），便于单测：
+ * 七条断言，每条都是纯函数（输入为文本），便于单测：
  * 1. 工作流里的 `--target=<名>` 必须存在于配置且是静态目标
  * 2. `wrangler.jsonc` 的 routes 主机必须 ⊆ cloudflare 目标的 hosts
  * 3. 工作流文件里不得出现配置中的任何域名（域名一律由 `--target` 解析）
@@ -10,6 +10,8 @@
  *    （rclone copy 保留本地文件名，名字不一致会把对象写到错的键上）
  * 6. `.nvmrc` 与 `package.json` 的 `packageManager` 存在，且工作流通过文件读取版本
  *    （不能读文件的平台允许写字面量，但必须与 `.nvmrc` 相同）
+ * 7. `wrangler.jsonc` 的 `vars` 与 `r2.base`/`r2.manifestObject` 一致，且不引入
+ *    配置之外的键（Worker 从 env 读这两个值，这里是它们的守门）
  *
  * 纯读、不联网、毫秒级，进 pre-commit 与 CI。用法：`node scripts/check-site-config.ts`
  */
@@ -169,6 +171,42 @@ export function versionSourceIssues(args: {
   return issues;
 }
 
+/**
+ * 断言 7：`wrangler.jsonc` 的 `vars` 与配置的 r2 字段一致，且键集受控。
+ *
+ * Worker 不再 import `config/site.json`（改从 env 读 `R2_BASE` 与 `R2_MANIFEST_OBJECT`），
+ * 这两个值的一致性只能靠断言守：值要一致，键集也不得超出配置管理的范围。
+ */
+export function wranglerVarsIssues(args: { config: SiteConfig; wranglerText: string }): string[] {
+  const match = /"vars"\s*:\s*\{([^}]*)\}/u.exec(args.wranglerText);
+  if (match?.[1] === undefined) {
+    return ["wrangler.jsonc 里找不到 vars 块：Worker 的 R2 基址与清单对象键没有单一来源"];
+  }
+  const entries = new Map<string, string>();
+  for (const item of match[1].matchAll(/"([A-Za-z0-9_]+)"\s*:\s*"([^"]*)"/gu)) {
+    entries.set(item[1] ?? "", item[2] ?? "");
+  }
+  const expected: [string, string][] = [
+    ["R2_BASE", args.config.r2.base],
+    ["R2_MANIFEST_OBJECT", args.config.r2.manifestObject],
+  ];
+  const issues: string[] = [];
+  for (const [key, value] of expected) {
+    const actual = entries.get(key);
+    if (actual === undefined) {
+      issues.push(`wrangler.jsonc 的 vars 缺少 ${key}`);
+    } else if (actual !== value) {
+      issues.push(`wrangler.jsonc 的 vars.${key} 与 config/site.json 不一致（应为 ${value}）`);
+    }
+  }
+  for (const key of entries.keys()) {
+    if (!expected.some(([managed]) => managed === key)) {
+      issues.push(`wrangler.jsonc 的 vars 出现未受配置管理的键 ${key}`);
+    }
+  }
+  return issues;
+}
+
 /** 配置里出现过的全部域名（用于断言 3 的扫描列表）。 */
 export function collectDomains(config: SiteConfig): string[] {
   const hostOf = (url: string): string => new URL(url).host;
@@ -212,9 +250,11 @@ function main(): void {
   const allWorkflowText = workflowFiles.map((file) => file.text).join("\n");
 
   const nvmrcPath = path.join(repoRoot, ".nvmrc");
+  const wranglerText = read(repoRoot, "wrangler.jsonc");
   const issues: string[] = [
     ...targetFlagIssues(collectTargetFlags(allWorkflowText), config),
-    ...routeHostIssues(wranglerRouteHosts(read(repoRoot, "wrangler.jsonc")), config),
+    ...routeHostIssues(wranglerRouteHosts(wranglerText), config),
+    ...wranglerVarsIssues({ config, wranglerText }),
     ...hardcodedDomainIssues(workflowFiles, config),
     ...corsCoverageIssues(config),
     ...baselineFileNameIssues({

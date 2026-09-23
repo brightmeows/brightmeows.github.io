@@ -10,13 +10,8 @@
 import type { MirrorTableItem } from "@brightmeows/mirror/types";
 import { mergeTableList } from "@brightmeows/mirror/user-layer";
 
-import siteConfig from "../config/site.json";
-
 import type { Env } from "./env.ts";
 import { loadUserLayer } from "./store.ts";
-
-/** 清单在 R2 上的对象键，由数据管线的 tables/ 目录同步而来。 */
-const MANIFEST_OBJECT = siteConfig.r2.manifestObject;
 
 /** 清单响应的边缘缓存秒数：新增或删除的表最迟这个时间后可见。 */
 export const MANIFEST_MAX_AGE = 60;
@@ -36,8 +31,8 @@ const SNAPSHOT_CACHE_NAME = "mirror-manifest-snapshot";
 /** 合成清单的内存缓存时长（毫秒），与清单边缘缓存窗口一致。 */
 const MERGED_CACHE_MS = MANIFEST_MAX_AGE * 1000;
 
-function manifestUrl(): string {
-  return `${siteConfig.r2.base.replace(/\/+$/, "")}/${MANIFEST_OBJECT}`;
+function manifestUrl(env: Env): string {
+  return `${env.R2_BASE.replace(/\/+$/, "")}/${env.R2_MANIFEST_OBJECT}`;
 }
 
 /** 惰性打开快照命名空间；isolate 内复用同一个 promise，打开失败不缓存失败结果。 */
@@ -87,8 +82,8 @@ async function loadSnapshot(key: Request): Promise<MirrorTableItem[] | null> {
  * 读取管线清单：优先走带边缘缓存的 fetch，失败时用独立命名空间里的最近快照
  * 兜底，两者都不可用返回 null（调用方据此回 503）。
  */
-export async function loadManifest(): Promise<MirrorTableItem[] | null> {
-  const url = manifestUrl();
+export async function loadManifest(env: Env): Promise<MirrorTableItem[] | null> {
+  const url = manifestUrl(env);
   const key = new Request(url);
   try {
     const res = await fetch(url, { cf: { cacheTtl: MANIFEST_MAX_AGE, cacheEverything: true } });
@@ -125,7 +120,7 @@ export async function loadMergedManifest(env: Env): Promise<MirrorTableItem[] | 
   if (mergedCache !== null && now - mergedCache.at < MERGED_CACHE_MS) {
     return mergedCache.list;
   }
-  const base = await loadManifest();
+  const base = await loadManifest(env);
   if (base === null) {
     return null;
   }

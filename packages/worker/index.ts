@@ -29,8 +29,6 @@ import {
 } from "@brightmeows/mirror/manifest";
 import { r2TableHeaderUrl } from "@brightmeows/mirror/urls";
 
-import siteConfig from "../config/site.json";
-
 import { handleApi } from "./api.ts";
 import { backupUserLayer } from "./backup.ts";
 import type { Env } from "./env.ts";
@@ -101,7 +99,7 @@ async function handleTablePage(
 
   const shellRes = await env.ASSETS.fetch(new URL(SITE_SHELL_PATH, url.origin));
   const shell = await shellRes.text();
-  const headerUrl = r2TableHeaderUrl(siteConfig.r2.base, tableId);
+  const headerUrl = r2TableHeaderUrl(env.R2_BASE, tableId);
   // 与构建期脚本共用同一段注入逻辑，保证两种输出逐字节等价
   const page = injectBmstableMeta(shell, headerUrl);
 

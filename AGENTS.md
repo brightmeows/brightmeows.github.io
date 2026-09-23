@@ -6,7 +6,7 @@
 
 - `src/AGENTS.md` — 站点域：SvelteKit 应用、Markdown 管线（SvelTeX）、博客、组件与数据层。
 - `packages/mirror/AGENTS.md` — 镜像表内核：URL 构造、清单变换、用户层类型与镜像数据纪律。
-- `worker/AGENTS.md` — Cloudflare Worker：镜像路由、写接口、D1、部署与 Cloudflare 外部状态。
+- `packages/worker/AGENTS.md` — Cloudflare Worker：镜像路由、写接口、D1、部署与 Cloudflare 外部状态。
 - `scripts/AGENTS.md` — 仓库校验脚本、数据管线、抓取工作流与对拍。
 
 同一事实只在所属子文档维护，本文件只留指针；跨域基础设施约定留在本文件（归属存疑时按此判断）。
@@ -30,21 +30,21 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`�
 - `pnpm test`
 - `pnpm check:config` — 配置一致性校验（离线，毫秒级）
 
-域内命令见子文档：部署与 wrangler 相关在 `worker/AGENTS.md`；管线、抓取、对拍与校验脚本在 `scripts/AGENTS.md`。
+域内命令见子文档：部署与 wrangler 相关在 `packages/worker/AGENTS.md`；管线、抓取、对拍与校验脚本在 `scripts/AGENTS.md`。
 
 ## 反直觉决策
 
 以下行为在代码中看似错误/死代码/遗漏，但均为故意；本文件收录跨域基础设施条目，域内条目见子文档。
 
-- **测试只覆盖纯函数层** — vitest 覆盖 `src/lib/utils/`、生成器脚本、`packages/mirror` 与 `worker/` 里的纯函数（`include` 含 `packages/**/*.test.ts` 与 `worker/**/*.test.ts`；`worker/tsconfig.json` 把 `*.test.ts` 排除在 Worker 类型上下文外，那里没有 vitest 与 Node 的类型；`packages/mirror/tsconfig.json` 则连同测试一起检查，vitest 经根 `node_modules` 解析），测试文件为相邻 `*.test.ts`；组件（需 browser mode）与数据层（需 fs/fetch fixture）刻意不覆盖，避免依赖与 CI 复杂度膨胀。`pnpm test` 与 format/lint/check 同为门槛，pre-commit 与 CI 都会跑，失败阻断提交与部署。给非纯函数层加测试依赖或测试文件前先确认范围。
+- **测试只覆盖纯函数层** — vitest 覆盖 `src/lib/utils/`、生成器脚本、`packages/mirror` 与 `packages/worker` 里的纯函数（`include` 含 `packages/**/*.test.ts`；`packages/worker/tsconfig.json` 把 `*.test.ts` 排除在 Worker 类型上下文外，那里没有 vitest 与 Node 的类型；`packages/mirror/tsconfig.json` 则连同测试一起检查，vitest 经根 `node_modules` 解析），测试文件为相邻 `*.test.ts`；组件（需 browser mode）与数据层（需 fs/fetch fixture）刻意不覆盖，避免依赖与 CI 复杂度膨胀。`pnpm test` 与 format/lint/check 同为门槛，pre-commit 与 CI 都会跑，失败阻断提交与部署。给非纯函数层加测试依赖或测试文件前先确认范围。
 - **auto-merge 合并的 PR 不触发 push 工作流** — GitHub 对 `GITHUB_TOKEN` 触发的事件有反递归机制：`dependabot-auto-merge.yml` 启用 auto-merge 后，服务端完成合并产生的 push 事件不会触发 CI/Deploy（只留下 dependabot 的 dynamic 事件）。后果是依赖更新合并后不会立即部署与同步：站点部署由 `deploy.yml` 每 6 小时的 schedule 兜底，仓库镜像由 `mirror.yml` 的每日 schedule 兜底，也可手动 dispatch。手动 `gh pr merge` 用个人 token，不受影响，正常触发。
 - **分支 ruleset 不放行任何直推** — ruleset `main-branch-protection` 禁止直接 push main 并要求 PR + 必过检查（见“分支与工作树”）。2026-09 之前 update-tables 需要直推清单快照，bypass actors 里因此有 DeployKey；列表变动改由 App token 触发下游后这条直推已删除，**bypass actors 应为空**。若发现其中仍有 DeployKey 条目，属于遗留配置，应移除。CI job 增删或改名时，ruleset 的 required_status_checks context 必须同步更新，否则 PR 合并被永久阻塞。
 - **ruleset 不得启用 Restrict updates 规则** — 实测 ruleset 的 `update` 类型规则会把 PR 合并一起拦死：它只允许 bypass actor 更新 matching refs，而 PR 合并也是 ref 更新，启用后 PR 的 mergeStateStatus 恒为 BLOCKED（GitHub 报 “base branch policy prohibits the merge”），checks 全绿也无法合并。禁止直接 push main 由 `pull_request` 规则独立承担（已实测其拦直推），不要重新加回 `update` 规则。诊断提示：BLOCKED 且 checks 全绿时，先检查 ruleset 是否含 `update` 规则。
 - **`pnpm-workspace.yaml` 的 `allowBuilds` 由 pnpm 11 维护** — 遇到未决的 build script 时 pnpm 会自动写入占位符（值为字面量 `set this to true or false`），带着占位符提交会让 CI 的 install 直接失败。本地需改成明确的 `true`/`false` 再提交。
 - **本地 install 可能因 npmmirror 同步延迟失败** — 全局 registry 指向 `registry.npmmirror.com`，其同步有延迟（曾出现 `@inlang/paraglide-js` 2.25.2 缺失导致 `--frozen-lockfile` 报 404）。绕过方式为 `pnpm install --registry=https://registry.npmjs.org`。CI 使用官方源，不受影响。
-- **同一事实只允许一个权威点，其余由门槛机械守住** — `config/site.json` 是站点与部署配置的单一来源；不能 import 它的地方（`wrangler.jsonc` 的 routes、工作流 YAML、`.nvmrc` 与 `packageManager`）由 `scripts/check-site-config.ts` 的六条断言守住，进 pre-commit 与 `pnpm check:config`。工作流里**任何位置（含注释）**都不该出现域名：域名通过 `--target=<目标名>` 交给脚本从配置解析。唯一豁免是仓库自身的远程地址（`git@github.com:owner/brightmeows.github.io.git`）—— 其中的 `brightmeows.github.io` 是仓库名。
-- **`config/site.json` 是站点与部署配置的单一来源** — 字段：`origin`（站点规范域）、`targets[]`（部署目标：cloudflare/worker + hosts，两个静态目标的 siteBase）、`r2.base`/`r2.manifestObject`/`r2.baselineObject`/`r2.corsOrigins`。能 import 的消费者直接 import（`src/lib/constants/r2.ts`、`src/lib/constants/site.ts`、`worker/index.ts`）；不能 import 的（`wrangler.jsonc` 的 routes、工作流里的域名）由 `scripts/check-site-config.ts` 断言一致。桶名不入该配置：它只出现在 `wrangler.jsonc` 的 R2 binding（部署期配置，无法用 secret 注入）与 Actions secret（管线 S3 凭据）里，凭据本身不入库。
-- **外部状态只把桶 CORS 来源纳入仓库** — 它是唯一“改了仓库但线上没跟上就静默退化”的外部状态（漏放时原生客户端正常、只有浏览器失败）。期望值在 `config/site.json` 的 `r2.corsOrigins`，由 `scripts/check-r2-cors.ts` 只读比对，`.github/workflows/config-drift.yml` 在配置变更的 PR 与手动触发时跑（复用 `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID`/`R2_BUCKET`，桶名见 `worker/AGENTS.md` 的绑定说明）。其余外部状态（zone 开关、自定义域、ruleset、secrets）维持文档口径。
+- **同一事实只允许一个权威点，其余由门槛机械守住** — `config/site.json` 是站点与部署配置的单一来源；不能 import 它的地方（`wrangler.jsonc` 的 routes 与 vars、工作流 YAML、`.nvmrc` 与 `packageManager`）由 `scripts/check-site-config.ts` 的七条断言守住，进 pre-commit 与 `pnpm check:config`。工作流里**任何位置（含注释）**都不该出现域名：域名通过 `--target=<目标名>` 交给脚本从配置解析。唯一豁免是仓库自身的远程地址（`git@github.com:owner/brightmeows.github.io.git`）—— 其中的 `brightmeows.github.io` 是仓库名。
+- **`config/site.json` 是站点与部署配置的单一来源** — 字段：`origin`（站点规范域）、`targets[]`（部署目标：cloudflare/worker + hosts，两个静态目标的 siteBase）、`r2.base`/`r2.manifestObject`/`r2.baselineObject`/`r2.corsOrigins`。能 import 的消费者直接 import（`src/lib/constants/r2.ts`、`src/lib/constants/site.ts`）；不能 import 的（Worker 的 `vars`、`wrangler.jsonc` 的 routes、工作流里的域名）由 `scripts/check-site-config.ts` 断言一致。桶名不入该配置：它只出现在 `wrangler.jsonc` 的 R2 binding（部署期配置，无法用 secret 注入）与 Actions secret（管线 S3 凭据）里，凭据本身不入库。
+- **外部状态只把桶 CORS 来源纳入仓库** — 它是唯一“改了仓库但线上没跟上就静默退化”的外部状态（漏放时原生客户端正常、只有浏览器失败）。期望值在 `config/site.json` 的 `r2.corsOrigins`，由 `scripts/check-r2-cors.ts` 只读比对，`.github/workflows/config-drift.yml` 在配置变更的 PR 与手动触发时跑（复用 `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID`/`R2_BUCKET`，桶名见 `packages/worker/AGENTS.md` 的绑定说明）。其余外部状态（zone 开关、自定义域、ruleset、secrets）维持文档口径。
 - **浏览器侧取数依赖 R2 桶的 CORS policy** — 镜像表 viewer 与谱面搜索都在客户端直连 R2（`r2TableHeaderUrl()`/`r2TableDataUrl()`、`R2_INDEXES_BASE`）。bucket 未放行站点来源时，浏览器报 `Failed to fetch`（viewer）与“索引加载失败”（搜索），而 beatoraja 等原生客户端不受影响，容易误判为代码缺陷。**期望来源写在 `config/site.json` 的 `r2.corsOrigins`**（三个站点域 + 本地端口），线上值用 `R2_BUCKET=<桶名> node scripts/check-r2-cors.ts` 只读比对；policy 位置在 Cloudflare 控制台 R2 → 桶 → Settings → CORS Policy。改域或新增来源时先改配置再同步线上（`config-drift.yml` 会在配置变更的 PR 上拦一次）。验证：`curl -sI -H "Origin: https://miyakomeow.site" <R2 header 地址> | rg -i access-control` 应出现 `access-control-allow-origin`。
 - **旧客户端 UA 是否被拦由 zone 级 Browser Integrity Check 决定** — 实测 `Java/1.8.x`、`Python-urllib`、`libwww-perl` 在 r2.dev、R2 自定义域与 workers.dev 上一律 403（Cloudflare error 1010），根因是 Browser Integrity Check，不是 r2.dev 的特有策略。本 zone 已关闭该开关（`browser_check = off`），因此 `bms-table-mirror-r2.miyakomeow.site` 与站点对旧 UA 全部放行；r2.dev 已于 2026-09-19 关闭（API：`PUT /accounts/{id}/r2/buckets/{bucket}/domains/managed`，body `{"enabled":false}`）。开关位置：控制台 zone → Security → Settings，或 `PATCH /zones/{id}/settings/browser_check`。
 - **CI 与 Deploy 的检查分工** — CI 的 lint/test/format 不依赖 build 产物（把 `build/` 移走后全部通过），因此只有 check job 跑一次 `pnpm build`，作为 CI 里唯一的构建验证点（frontmatter 校验、构建期数据加载与打包错误都在这里暴露）；Deploy 只做 build、部署与镜像页生成，不重复 lint/check/test——main 的每次提交已由 PR 必过门槛与 push 触发的 CI 覆盖，所有变更都经 PR——列表变动改由 App token 触发下游，不再产生直推。各工作流持有独立 concurrency group：CI 与 Codeberg 取消被取代的旧运行，Deploy 排队串行（避免旧提交的部署最后完成、覆盖新版本）；各作业均设超时（CI/Deploy 15 分钟、config-drift 10 分钟、update-tables 30 分钟、fetch-table 15 分钟、Codeberg 20 分钟），防挂起占满 runner。
@@ -61,7 +61,7 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`�
 
 ## 架构边界
 
-- **纯 SSG（含一处边缘例外）** — `@sveltejs/adapter-static` + 全局 `prerender = true`，不加 server routes / API endpoints。例外是 Cloudflare Worker（`worker/index.ts`）承担的镜像表动态路由与写接口：它先接管 `/bms/table/mirror/*` 与 `/api/*`（`assets.run_worker_first`），其余请求全部回落静态资源。
+- **纯 SSG（含一处边缘例外）** — `@sveltejs/adapter-static` + 全局 `prerender = true`，不加 server routes / API endpoints。例外是 Cloudflare Worker（`packages/worker/index.ts`）承担的镜像表动态路由与写接口：它先接管 `/bms/table/mirror/*` 与 `/api/*`（`assets.run_worker_first`），其余请求全部回落静态资源。
 
 ## 技术栈
 

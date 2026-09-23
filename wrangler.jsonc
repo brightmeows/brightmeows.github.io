@@ -2,7 +2,7 @@
   // 站点以 Cloudflare Workers 静态资源形式部署，另有薄 Worker 处理 mirror 动态路由。
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "miyakomeow-site",
-  "main": "./worker/index.ts",
+  "main": "./packages/worker/index.ts",
   "compatibility_date": "2026-09-19",
   "assets": {
     // 与 svelte.config.ts 中 adapter-static 的 pages/assets 输出保持一致
@@ -19,7 +19,7 @@
   // 桶内访问仍由公开域与凭据控制，凭据不入库。
   "r2_buckets": [{ "binding": "MIRROR_BUCKET", "bucket_name": "bms-table-mirror" }],
   // 用户层数据库：增删改、审计、限次与抓取状态。schema 由 Worker 自持
-  // （worker/schema.ts 的幂等初始化），不走 wrangler d1 migrations，因此部署
+  // （packages/worker/schema.ts 的幂等初始化），不走 wrangler d1 migrations，因此部署
   // 流程不需要 D1 权限。database_id 为待填占位，由控制台或 wrangler d1 create 生成。
   "d1_databases": [
     {
@@ -28,12 +28,19 @@
       "database_id": "72ba6603-e324-4757-a876-dfe27e610415",
     },
   ],
+  // 部署期变量：Worker 的 R2 基址与清单对象键不再 import config/site.json，
+  // 改为从 env 读取；config/site.json 仍是权威源，一致性由
+  // scripts/check-site-config.ts 的第 7 条断言守住。
+  "vars": {
+    "R2_BASE": "https://bms-table-mirror-r2.miyakomeow.site",
+    "R2_MANIFEST_OBJECT": "tables/tables.json",
+  },
   "routes": [
     { "pattern": "miyakomeow.site", "custom_domain": true },
     { "pattern": "www.miyakomeow.site", "custom_domain": true },
   ],
   // 定时任务：每天 UTC 18:30（北京时间 02:30）把用户层导出成 R2 快照，
-  // 保留最近 14 份（见 worker/backup.ts）。免费账户可建 5 个 cron trigger。
+  // 保留最近 14 份（见 packages/worker/backup.ts）。免费账户可建 5 个 cron trigger。
   "triggers": {
     "crons": ["30 18 * * *"],
   },

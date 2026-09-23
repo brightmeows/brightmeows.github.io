@@ -1,7 +1,7 @@
 /**
  * 从备份快照生成用户层恢复 SQL。
  *
- * 备份对象是 R2 上的 `backup/user-layer-YYYY-MM-DD.json`（见 worker/backup.ts）。
+ * 备份对象是 R2 上的 `backup/user-layer-YYYY-MM-DD.json`（见 packages/worker/backup.ts）。
  * 本脚本读取其中的 layer 段、逐条校验后输出 INSERT OR REPLACE 语句，交由
  * `wrangler d1 execute miyakomeow-user --remote --file=<sql>` 执行——生成与执行
  * 分离：恢复是人工决策，先 review SQL 再导入。快照里的审计段只作存档，不在
@@ -11,7 +11,7 @@
  *   node scripts/restore-user-layer.ts --file=<快照路径> [--out=<sql 路径>]
  *
  * 表与列的对应写在 RESTORE_TABLES，由 scripts/restore-user-layer.test.ts 对照
- * worker/schema.ts 的建表语句机械校验，避免两处各自漂移。
+ * packages/worker/schema.ts 的建表语句机械校验，避免两处各自漂移。
  */
 
 import { readFileSync, writeFileSync } from "node:fs";
@@ -28,7 +28,7 @@ import {
   type UserLayer,
 } from "@brightmeows/mirror/user-layer";
 
-/** 各表的列顺序：与 worker/schema.ts 的建表语句一一对应（有测试守着）。 */
+/** 各表的列顺序：与 packages/worker/schema.ts 的建表语句一一对应（有测试守着）。 */
 export const RESTORE_TABLES: Record<string, readonly string[]> = {
   added: ["id", "url", "author", "role", "added_at"],
   fetched: ["id", "url", "dir_name", "name", "symbol", "fetched_at"],
