@@ -5,9 +5,8 @@
  * 1. 工作流里的 `--target=<名>` 必须存在于配置且是静态目标
  * 2. `wrangler.jsonc` 的 routes 主机必须 ⊆ cloudflare 目标的 hosts
  * 3. 工作流文件里不得出现配置中的任何域名（域名一律由 `--target` 解析）
- * 4. 快照路径必须同时等于 `r2.snapshot`、update-tables 的 `git add` 目标与 oxfmt 忽略项
- * 5. `r2.corsOrigins` 必须覆盖 `origin` 与所有静态目标的 `siteBase`
- * 6. `.nvmrc` 与 `package.json` 的 `packageManager` 存在，且工作流通过文件读取版本
+ * 4. `r2.corsOrigins` 必须覆盖 `origin` 与所有静态目标的 `siteBase`
+ * 5. `.nvmrc` 与 `package.json` 的 `packageManager` 存在，且工作流通过文件读取版本
  *    （不能读文件的平台允许写字面量，但必须与 `.nvmrc` 相同）
  *
  * 纯读、不联网、毫秒级，进 pre-commit 与 CI。用法：`node scripts/check-site-config.ts`
@@ -93,32 +92,6 @@ export function hardcodedDomainIssues(
     for (const domain of findDomainsInText(file.text, domains)) {
       issues.push(`${file.path} 里出现域名 ${domain}：工作流不应硬编码域名，请改用 --target`);
     }
-  }
-  return issues;
-}
-
-/** 断言 4：快照路径在三处一致。 */
-export function snapshotPathIssues(args: {
-  config: SiteConfig;
-  updateTablesText: string;
-  oxfmtText: string;
-}): string[] {
-  const { config } = args;
-  const issues: string[] = [];
-  const gitAdd = /git add\s+(\S+)/g;
-  const added = [...args.updateTablesText.matchAll(gitAdd)].map((match) => match[1] ?? "");
-  if (added.length === 0) {
-    issues.push("update-tables.yml 里找不到 git add <快照路径>");
-  }
-  for (const target of added) {
-    if (target !== config.r2.snapshot) {
-      issues.push(`update-tables.yml 的 git add 路径 ${target} 与配置的 r2.snapshot 不一致`);
-    }
-  }
-  if (!args.oxfmtText.includes(config.r2.snapshot)) {
-    issues.push(
-      `.oxfmtrc.json 的 ignorePatterns 缺少配置里的 r2.snapshot（${config.r2.snapshot}）`
-    );
   }
   return issues;
 }
@@ -219,11 +192,6 @@ function main(): void {
     ...targetFlagIssues(collectTargetFlags(allWorkflowText), config),
     ...routeHostIssues(wranglerRouteHosts(read(repoRoot, "wrangler.jsonc")), config),
     ...hardcodedDomainIssues(workflowFiles, config),
-    ...snapshotPathIssues({
-      config,
-      updateTablesText: read(repoRoot, path.join(".github", "workflows", "update-tables.yml")),
-      oxfmtText: read(repoRoot, ".oxfmtrc.json"),
-    }),
     ...corsCoverageIssues(config),
     ...versionSourceIssues({
       nvmrc: existsSync(nvmrcPath) ? readFileSync(nvmrcPath, "utf8") : null,

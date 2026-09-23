@@ -24,33 +24,30 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # 默认流水线：抓取、与 R2 双向同步、比对清单快照。
+  # 默认流水线：抓取、与 R2 双向同步、判定列表变动并按需触发下游重建。
   update:
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.parity != true }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
-        with:
-          # 快照有变动时要 rebase 后重推，需要完整历史
-          fetch-depth: 0
 
-      # 本工作流做两件事：
+      # 本工作流做三件事：
       # 1. “抓取 + R2 双向同步”（镜像表页面与 tables.json 由 Worker 运行时应答）
-      # 2. 比对 R2 清单与仓库快照，**仅当列表变动**时提交快照并推送（投影口径，
-      #    见 src/lib/mirror/manifest.ts）；表内容或上游元数据更新不提交。
-      # 推送会连锁触发 CI/Deploy/Mirror，从而重建三个部署目标。
-      # 快照位于 src/lib/mirror/ 下，不会命中本工作流的 config/** 过滤，不会自触发。
+      # 2. 判定列表是否变动（投影口径，见 src/lib/mirror/manifest.ts）：基线对象
+      #    也在 R2（meta/last-notified.json），仓库不参与，不产生任何 git 提交。
+      # 3. 变动时用 App token 触发 deploy 与 mirror，重建两个静态宿主；主站是运行时
+      #    生成，不需要重建。表内容与上游元数据变化不触发。
       #
       # 抓取逻辑在 scripts/fetch-tables.ts（scripts/pipeline/），与站点同仓演进。
       #
       # Secrets 需在本仓库 Settings > Secrets and variables > Actions 中设置：
-      #   MIRROR_SYNC_DEPLOY_KEY — 本仓库写权限 deploy key（快照提交后推送）
       #   R2_ACCESS_KEY_ID      — Cloudflare Dashboard > R2 > 管理 R2 API 令牌 > 创建 API 令牌
       #   R2_SECRET_ACCESS_KEY  — 同上（创建时一并生成）
       #   R2_ENDPOINT           — Cloudflare Dashboard > R2 > 存储桶 > S3 API > 端点
       #   R2_BUCKET             — Cloudflare Dashboard > R2 > 存储桶名称
       #   INTERNAL_API_TOKEN    — 站点 Worker 的内部接口共享 token（与 Worker secret 同名同值）
+      #   APP_ID / APP_PRIVATE_KEY — GitHub App（触发 deploy 与 mirror）
       - uses: pnpm/action-setup@v6
 
       - uses: actions/setup-node@v7
@@ -65,6 +62,7 @@ jobs:
         uses: ./.github/actions/install-rclone
 
       - name: Run
+        id: pipeline
         env:
           RCLONE_CONFIG_R2_TYPE: s3
           RCLONE_CONFIG_R2_PROVIDER: Cloudflare
@@ -97,42 +95,35 @@ jobs:
           # 回收站只由 Worker 写入；目录不存在或没有过期对象时不报错
           ./rclone delete r2:${{ secrets.R2_BUCKET }}/trash --min-age 720h \
             || echo "trash 无过期对象（或目录暂不存在），跳过"
+
+          echo "=== Detect manifest change ==="
+          # 基线对象在 R2 的 meta/ 前缀（不在上面的同步白名单内），仓库不参与
+          changed=$(node scripts/detect-mirror-change.ts --out=./baseline.json)
+          if [ "$changed" = "true" ]; then
+            ./rclone copy ./baseline.json "r2:${{ secrets.R2_BUCKET }}/meta/" --transfers 1
+            rm -f ./baseline.json
+          fi
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
           rm -f rclone
 
-      - name: Sync table manifest snapshot
-        run: node scripts/sync-mirror-manifest.ts
+      - name: Generate app token
+        # 用 GitHub App 换短时 installation token 触发下游，不使用长期令牌
+        if: steps.pipeline.outputs.changed == 'true'
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
-      - name: Commit snapshot when the table list changed
+      - name: Trigger static hosts rebuild
+        # 主站是运行时生成，只有两个静态宿主需要重建
+        if: steps.pipeline.outputs.changed == 'true'
         env:
-          MIRROR_SYNC_DEPLOY_KEY: ${{ secrets.MIRROR_SYNC_DEPLOY_KEY }}
-          # 正式触发（push/schedule）均为 main；临时分支演练时推回当前分支
-          TARGET_BRANCH: ${{ github.ref_name }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          git config user.name "brightmeows-bot"
-          git config user.email "brightmeows-bot@users.noreply.github.com"
-          git add src/lib/mirror/table-manifest.json
-          if git diff --cached --quiet; then
-            echo "列表无变动，跳过提交"
-            exit 0
-          fi
-          git commit -m "chore(mirror): sync table manifest snapshot"
-
-          mkdir -p ~/.ssh
-          printf '%s\n' "$MIRROR_SYNC_DEPLOY_KEY" > ~/.ssh/mirror_sync
-          chmod 600 ~/.ssh/mirror_sync
-          ssh-keyscan github.com >> ~/.ssh/known_hosts 2>/dev/null
-          git remote set-url origin git@github.com:brightmeows/brightmeows.github.io.git
-
-          for attempt in 1 2 3; do
-            if GIT_SSH_COMMAND="ssh -i ~/.ssh/mirror_sync -o IdentitiesOnly=yes" git push origin "HEAD:$TARGET_BRANCH"; then
-              echo "快照已推送（第 $attempt 次尝试）"
-              exit 0
-            fi
-            echo "推送失败（第 $attempt 次），rebase 后重试"
-            GIT_SSH_COMMAND="ssh -i ~/.ssh/mirror_sync -o IdentitiesOnly=yes" git pull --rebase origin "$TARGET_BRANCH" || exit 1
-          done
-          echo "快照连续推送失败" >&2
-          exit 1
+          echo "列表变动，触发静态宿主重建"
+          gh workflow run deploy.yml --ref main
+          gh workflow run mirror.yml --ref main
 
   # 手动对拍：用公开 R2 基线与固定版本的旧二进制（bms-table-fetch release）
   # 跑两条实现并逐对象比对产物，不写 R2、不影响站点数据。

@@ -20,7 +20,7 @@
   "r2": {
     "base": "https://bms-table-mirror-r2.miyakomeow.site",
     "manifestObject": "tables/tables.json",
-    "snapshot": "src/lib/mirror/table-manifest.json",
+    "baselineObject": "meta/last-notified.json",
     "corsOrigins": [
       "https://miyakomeow.site",
       "https://brightmeows.github.io",

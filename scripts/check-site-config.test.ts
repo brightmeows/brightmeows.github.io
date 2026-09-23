@@ -7,7 +7,6 @@ import {
   findDomainsInText,
   hardcodedDomainIssues,
   routeHostIssues,
-  snapshotPathIssues,
   targetFlagIssues,
   versionSourceIssues,
   wranglerRouteHosts,
@@ -25,7 +24,7 @@ const config = parseSiteConfig(
     r2: {
       base: "https://r2.example",
       manifestObject: "tables/tables.json",
-      snapshot: "src/lib/mirror/table-manifest.json",
+      baselineObject: "meta/last-notified.json",
       corsOrigins: [
         "https://miyakomeow.site",
         "https://brightmeows.github.io",
@@ -107,38 +106,6 @@ describe("hardcodedDomainIssues / findDomainsInText", () => {
     expect(findDomainsInText("https://r2.example/x", collectDomains(config))).toEqual([
       "r2.example",
     ]);
-  });
-});
-
-describe("snapshotPathIssues", () => {
-  it("三处一致时通过", () => {
-    expect(
-      snapshotPathIssues({
-        config,
-        updateTablesText: "git add src/lib/mirror/table-manifest.json",
-        oxfmtText: '{"ignorePatterns": ["src/lib/mirror/table-manifest.json"]}',
-      })
-    ).toEqual([]);
-  });
-
-  it("git add 路径或忽略项不一致时报错", () => {
-    const issues = snapshotPathIssues({
-      config,
-      updateTablesText: "git add src/lib/mirror/other.json",
-      oxfmtText: "{}",
-    });
-    expect(issues).toHaveLength(2);
-    expect(issues.join()).toContain("git add");
-  });
-
-  it("找不到 git add 时报错", () => {
-    expect(
-      snapshotPathIssues({
-        config,
-        updateTablesText: "echo hi",
-        oxfmtText: "src/lib/mirror/table-manifest.json",
-      })
-    ).toEqual([expect.stringContaining("找不到 git add")]);
   });
 });
 

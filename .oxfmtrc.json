@@ -34,7 +34,6 @@
     "pnpm-lock.yaml",
     "*.generated.ts",
     "project.inlang/",
-    "static/bms/",
-    "src/lib/mirror/table-manifest.json"
+    "static/bms/"
   ]
 }
