@@ -100,7 +100,10 @@ jobs:
           # 基线对象在 R2 的 meta/ 前缀（不在上面的同步白名单内），仓库不参与
           changed=$(node scripts/detect-mirror-change.ts --out=./baseline.json)
           if [ "$changed" = "true" ]; then
-            ./rclone copy ./baseline.json "r2:${{ secrets.R2_BUCKET }}/meta/" --transfers 1
+            # 桶级凭据没有 HeadBucket 权限：目标带子目录时 rclone 会先检查桶并试图
+            # 创建它（403），加此旗标跳过检查（桶必然已存在）
+            ./rclone copy ./baseline.json "r2:${{ secrets.R2_BUCKET }}/meta/" \
+              --transfers 1 --s3-no-check-bucket
             rm -f ./baseline.json
           fi
           echo "changed=$changed" >> "$GITHUB_OUTPUT"
