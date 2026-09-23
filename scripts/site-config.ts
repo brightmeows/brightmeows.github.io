@@ -32,7 +32,8 @@ export interface SiteConfig {
   r2: {
     base: string;
     manifestObject: string;
-    snapshot: string;
+    /** 上次通知下游重建时的清单对象键（列表变动的判定基线）。 */
+    baselineObject: string;
     corsOrigins: string[];
   };
 }
@@ -112,9 +113,9 @@ export function parseSiteConfig(value: unknown, source = CONFIG_PATH): SiteConfi
   if (manifestObject.startsWith("/")) {
     throw new Error(`r2.manifestObject 不应以斜杠开头：${manifestObject}`);
   }
-  const snapshot = requireString(r2Record.snapshot, "r2.snapshot");
-  if (path.isAbsolute(snapshot) || snapshot.startsWith("..")) {
-    throw new Error(`r2.snapshot 必须是仓库内相对路径：${snapshot}`);
+  const baselineObject = requireString(r2Record.baselineObject, "r2.baselineObject");
+  if (baselineObject.startsWith("/")) {
+    throw new Error(`r2.baselineObject 不应以斜杠开头：${baselineObject}`);
   }
   if (!Array.isArray(r2Record.corsOrigins) || r2Record.corsOrigins.length === 0) {
     throw new Error(`r2.corsOrigins 必须是非空数组：${source}`);
@@ -125,7 +126,7 @@ export function parseSiteConfig(value: unknown, source = CONFIG_PATH): SiteConfi
     r2: {
       base: requireHttpUrl(r2Record.base, "r2.base").replace(/\/+$/, ""),
       manifestObject,
-      snapshot,
+      baselineObject,
       corsOrigins: r2Record.corsOrigins.map((origin, i) =>
         requireOrigin(origin, `r2.corsOrigins[${i}]`)
       ),

@@ -15,7 +15,7 @@ const valid = {
   r2: {
     base: "https://r2.example/",
     manifestObject: "tables/tables.json",
-    snapshot: "src/lib/mirror/table-manifest.json",
+    baselineObject: "meta/last-notified.json",
     corsOrigins: ["https://miyakomeow.site"],
   },
 };
@@ -50,7 +50,11 @@ describe("parseSiteConfig", () => {
       { ...valid, r2: { ...valid.r2, manifestObject: "/tables/tables.json" } },
       /manifestObject/,
     ],
-    ["snapshot 是绝对路径", { ...valid, r2: { ...valid.r2, snapshot: "/tmp/x.json" } }, /snapshot/],
+    [
+      "baselineObject 以斜杠开头",
+      { ...valid, r2: { ...valid.r2, baselineObject: "/meta/x.json" } },
+      /baselineObject/,
+    ],
     ["corsOrigins 为空", { ...valid, r2: { ...valid.r2, corsOrigins: [] } }, /corsOrigins/],
     [
       "corsOrigins 含路径",
