@@ -13,7 +13,7 @@
  *   这里供手动触发与验证，见 worker/backup.ts）。
  */
 
-import type { FetchedEntry, StatusEntry } from "../src/lib/mirror/user-layer.ts";
+import type { FetchedEntry, StatusEntry } from "@brightmeows/mirror/user-layer";
 
 import { backupUserLayer } from "./backup.ts";
 import type { Env } from "./env.ts";

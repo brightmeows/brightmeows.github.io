@@ -1,0 +1,29 @@
+{
+  // 镜像内核的类型上下文：只允许 ES2023 语言特性，不引入 DOM / Node / Workers
+  // 任何一侧的全局类型——内核同时跑在浏览器、Worker 与 Node 三种运行时里。
+  // 三种运行时共有的宿主 API（目前只有 URL）在 src/globals.d.ts 里按最小面声明。
+  // erasableSyntaxOnly 与 verbatimModuleSyntax 把「可擦除语法、显式 import type」
+  // 从文档约束升级为类型检查强制（Node 直接执行 TS 源时依赖这两条）。
+  // 测试文件同在一个程序里检查（vitest 经根 node_modules 解析，不进内核的全局类型）。
+  "compilerOptions": {
+    "target": "esnext",
+    "lib": ["es2023"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "types": [],
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true
+  },
+  "include": ["./src/**/*.ts"]
+}

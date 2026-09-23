@@ -11,8 +11,6 @@
  * 条目上的未知字段作为 extra 保留、非法输入直接抛错。
  */
 
-import { parse as parseToml } from "smol-toml";
-
 import type {
   AddedEntry,
   DisabledEntry,
@@ -20,7 +18,8 @@ import type {
   MetaOverride,
   ReplaceRuleEntry,
   UserLayer,
-} from "../../src/lib/mirror/user-layer.ts";
+} from "@brightmeows/mirror/user-layer";
+import { parse as parseToml } from "smol-toml";
 
 import { expectedDirName } from "./naming.ts";
 import { sha3_256Hex } from "./state.ts";

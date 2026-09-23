@@ -10,7 +10,8 @@ import {
   normalizeTableUrl,
   TRASH_RETENTION_DAYS,
   type StatusEntry,
-} from "../../src/lib/mirror/user-layer.ts";
+} from "@brightmeows/mirror/user-layer";
+
 import { getSession, type Session } from "../auth.ts";
 import { dispatchWorkflow } from "../dispatch.ts";
 import type { Env } from "../env.ts";

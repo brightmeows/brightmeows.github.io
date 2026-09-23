@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { MirrorTableItem } from "../types/bms.ts";
-
+import type { MirrorTableItem } from "./types.ts";
 import {
   DAILY_OPERATION_LIMIT,
   applyMetaOverride,

@@ -29,7 +29,7 @@ import {
   type StatusEntry,
   type UserLayer,
   type UserRole,
-} from "../src/lib/mirror/user-layer.ts";
+} from "@brightmeows/mirror/user-layer";
 
 import { dispatchWorkflow } from "./dispatch.ts";
 import type { Env } from "./env.ts";

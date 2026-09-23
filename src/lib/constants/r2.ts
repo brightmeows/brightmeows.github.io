@@ -1,10 +1,10 @@
-import siteConfig from "../../../config/site.json";
-
 import {
   r2TableDataUrl as buildR2TableDataUrl,
   r2TableHeaderUrl as buildR2TableHeaderUrl,
   r2TablesBase,
-} from "$lib/mirror/urls";
+} from "@brightmeows/mirror/urls";
+
+import siteConfig from "../../../config/site.json";
 
 /** Cloudflare R2 bucket base URL for mirrored BMS table data */
 export const R2_BASE = siteConfig.r2.base;

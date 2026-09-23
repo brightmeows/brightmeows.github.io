@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      '@brightmeows/mirror':
+        specifier: workspace:*
+        version: link:packages/mirror
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^5.20260919.1
@@ -107,6 +111,8 @@ importers:
       wrangler:
         specifier: ^4.135.0
         version: 4.135.0(@cloudflare/workers-types@5.20260919.1)(@types/node@26.6.2)
+
+  packages/mirror: {}
 
 packages:
 

@@ -7,9 +7,10 @@
  * 清单可用优先于增删可见。
  */
 
+import type { MirrorTableItem } from "@brightmeows/mirror/types";
+import { mergeTableList } from "@brightmeows/mirror/user-layer";
+
 import siteConfig from "../config/site.json";
-import { mergeTableList } from "../src/lib/mirror/user-layer.ts";
-import type { MirrorTableItem } from "../src/lib/types/bms.ts";
 
 import type { Env } from "./env.ts";
 import { loadUserLayer } from "./store.ts";

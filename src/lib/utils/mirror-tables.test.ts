@@ -1,8 +1,7 @@
+import type { MirrorTableItem } from "@brightmeows/mirror/types";
 import { describe, expect, it } from "vitest";
 
 import { buildSearchNeedles, filterTables, groupByTags, slugifyTag } from "./mirror-tables";
-
-import type { MirrorTableItem } from "$lib/types/bms";
 
 describe("buildSearchNeedles", () => {
   it("空白输入返回空数组，非空白做 NFKC 与小写归一", () => {

@@ -9,7 +9,7 @@
  * 再经 `wrangler d1 execute --file` 导入。
  */
 
-import { serializeUserRecord } from "../src/lib/mirror/user-layer.ts";
+import { serializeUserRecord } from "@brightmeows/mirror/user-layer";
 
 import type { Env } from "./env.ts";
 import { listAudit, loadUserLayer } from "./store.ts";

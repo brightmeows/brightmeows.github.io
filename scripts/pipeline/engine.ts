@@ -9,7 +9,8 @@
 
 import path from "node:path";
 
-import type { UserLayer } from "../../src/lib/mirror/user-layer.ts";
+import type { UserLayer } from "@brightmeows/mirror/user-layer";
+
 import { internalApiBase } from "../internal-api.ts";
 
 import { describeError } from "./errors.ts";

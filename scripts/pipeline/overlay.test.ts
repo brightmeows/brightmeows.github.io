@@ -1,5 +1,3 @@
-import { describe, expect, it } from "vitest";
-
 import {
   emptyUserLayer,
   type AddedEntry,
@@ -9,7 +7,8 @@ import {
   type RemovedEntry,
   type ReplaceRuleEntry,
   type UserLayer,
-} from "../../src/lib/mirror/user-layer.ts";
+} from "@brightmeows/mirror/user-layer";
+import { describe, expect, it } from "vitest";
 
 import { mergeActiveSet } from "./overlay.ts";
 import type { TableInfo } from "./types.ts";

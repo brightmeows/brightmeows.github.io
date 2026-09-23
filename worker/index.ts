@@ -22,13 +22,14 @@
  * 先用独立命名空间（与 fetch 缓存隔离）里的最近快照兜底，没有快照才 503。
  */
 
-import siteConfig from "../config/site.json";
 import {
   injectBmstableMeta,
   serializeSiteTableList,
   transformTableList,
-} from "../src/lib/mirror/manifest.ts";
-import { r2TableHeaderUrl } from "../src/lib/mirror/urls.ts";
+} from "@brightmeows/mirror/manifest";
+import { r2TableHeaderUrl } from "@brightmeows/mirror/urls";
+
+import siteConfig from "../config/site.json";
 
 import { handleApi } from "./api.ts";
 import { backupUserLayer } from "./backup.ts";

@@ -1,4 +1,4 @@
-import type { FetchState, UserRole } from "$lib/mirror/user-layer";
+import type { FetchState, UserRole } from "@brightmeows/mirror/user-layer";
 
 /**
  * 镜像表用户操作接口的客户端封装。

@@ -5,7 +5,8 @@
  * 写操作都写审计、失效清单缓存并触发部署（10 分钟节流）。
  */
 
-import type { MetaOverride } from "../../src/lib/mirror/user-layer.ts";
+import type { MetaOverride } from "@brightmeows/mirror/user-layer";
+
 import type { Session } from "../auth.ts";
 import type { Env } from "../env.ts";
 import { failure, json, readJsonBody } from "../http.ts";

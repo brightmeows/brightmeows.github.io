@@ -1,5 +1,3 @@
-import { ApiUnavailableError } from "./mirror-user-api";
-
 import type {
   AddedEntry,
   AuditEntry,
@@ -8,7 +6,9 @@ import type {
   MetaOverride,
   RemovedEntry,
   ReplaceRuleEntry,
-} from "$lib/mirror/user-layer";
+} from "@brightmeows/mirror/user-layer";
+
+import { ApiUnavailableError } from "./mirror-user-api";
 
 /** 回收站条目（表级聚合）。 */
 export interface TrashEntry {

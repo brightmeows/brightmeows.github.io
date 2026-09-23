@@ -1,4 +1,4 @@
-import type { MirrorTableItem } from "$lib/types/bms";
+import type { MirrorTableItem } from "@brightmeows/mirror/types";
 
 /**
  * 加载镜像表列表并修正 URL
