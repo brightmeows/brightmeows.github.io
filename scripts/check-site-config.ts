@@ -6,7 +6,9 @@
  * 2. `wrangler.jsonc` 的 routes 主机必须 ⊆ cloudflare 目标的 hosts
  * 3. 工作流文件里不得出现配置中的任何域名（域名一律由 `--target` 解析）
  * 4. `r2.corsOrigins` 必须覆盖 `origin` 与所有静态目标的 `siteBase`
- * 5. `.nvmrc` 与 `package.json` 的 `packageManager` 存在，且工作流通过文件读取版本
+ * 5. update-tables 写出的基线文件名必须等于 `r2.baselineObject` 的 basename
+ *    （rclone copy 保留本地文件名，名字不一致会把对象写到错的键上）
+ * 6. `.nvmrc` 与 `package.json` 的 `packageManager` 存在，且工作流通过文件读取版本
  *    （不能读文件的平台允许写字面量，但必须与 `.nvmrc` 相同）
  *
  * 纯读、不联网、毫秒级，进 pre-commit 与 CI。用法：`node scripts/check-site-config.ts`
@@ -96,7 +98,7 @@ export function hardcodedDomainIssues(
   return issues;
 }
 
-/** 断言 5：corsOrigins 覆盖 origin 与所有静态目标的 siteBase。 */
+/** 断言 4：corsOrigins 覆盖 origin 与所有静态目标的 siteBase。 */
 export function corsCoverageIssues(config: SiteConfig): string[] {
   const required = [
     config.origin,
@@ -106,6 +108,28 @@ export function corsCoverageIssues(config: SiteConfig): string[] {
   return required
     .filter((origin) => !origins.has(origin))
     .map((origin) => `r2.corsOrigins 缺少 ${origin}：该来源无法从浏览器读取 R2 数据`);
+}
+
+/**
+ * 断言 5：基线文件名与配置的对象键 basename 一致。
+ * rclone copy 保留本地文件名，若工作流写出的名字与 `r2.baselineObject` 不符，
+ * 对象会被写到另一个键上，下次读取仍视为「首次运行」而重复触发下游重建。
+ */
+export function baselineFileNameIssues(args: {
+  config: SiteConfig;
+  updateTablesText: string;
+}): string[] {
+  // 文件名限定为字词、点与横线：工作流里该参数常出现在 $(...) 命令替换中
+  const match = /--out=\.\/([\w.-]+)/u.exec(args.updateTablesText);
+  if (match?.[1] === undefined) {
+    return ["update-tables.yml 里找不到 --out=./<基线文件名>"];
+  }
+  const expected = path.posix.basename(args.config.r2.baselineObject);
+  return match[1] === expected
+    ? []
+    : [
+        `update-tables.yml 写出的基线文件名 ${match[1]} 与 r2.baselineObject 的 basename 不一致（应为 ${expected}）`,
+      ];
 }
 
 /** 断言 6：版本来源唯一（`.nvmrc` + `packageManager`）。 */
@@ -193,6 +217,10 @@ function main(): void {
     ...routeHostIssues(wranglerRouteHosts(read(repoRoot, "wrangler.jsonc")), config),
     ...hardcodedDomainIssues(workflowFiles, config),
     ...corsCoverageIssues(config),
+    ...baselineFileNameIssues({
+      config,
+      updateTablesText: read(repoRoot, path.join(".github", "workflows", "update-tables.yml")),
+    }),
     ...versionSourceIssues({
       nvmrc: existsSync(nvmrcPath) ? readFileSync(nvmrcPath, "utf8") : null,
       packageJson: readJson(repoRoot, "package.json"),

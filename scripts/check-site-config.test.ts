@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  baselineFileNameIssues,
   collectDomains,
   collectTargetFlags,
   corsCoverageIssues,
@@ -105,6 +106,30 @@ describe("hardcodedDomainIssues / findDomainsInText", () => {
     expect(hardcodedDomainIssues(files, config)).toEqual([expect.stringContaining("b.yml")]);
     expect(findDomainsInText("https://r2.example/x", collectDomains(config))).toEqual([
       "r2.example",
+    ]);
+  });
+});
+
+describe("baselineFileNameIssues", () => {
+  it("文件名与配置的 basename 一致时通过", () => {
+    expect(
+      baselineFileNameIssues({
+        config,
+        updateTablesText:
+          "changed=$(node scripts/detect-mirror-change.ts --out=./last-notified.json)",
+      })
+    ).toEqual([]);
+  });
+
+  it("文件名不一致时报错", () => {
+    const issues = baselineFileNameIssues({ config, updateTablesText: "--out=./baseline.json" });
+    expect(issues).toHaveLength(1);
+    expect(issues.join()).toContain("last-notified.json");
+  });
+
+  it("找不到 --out 时报错", () => {
+    expect(baselineFileNameIssues({ config, updateTablesText: "echo hi" })).toEqual([
+      expect.stringContaining("找不到"),
     ]);
   });
 });
