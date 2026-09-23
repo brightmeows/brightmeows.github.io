@@ -82,9 +82,25 @@ jobs:
         id: result
         run: echo "state=$(jq -r .state out/result.json)" >> "$GITHUB_OUTPUT"
 
+      - name: Check app credentials
+        # 未配置 App 凭据时给出明确提示并跳过部署触发：抓取与上传此时已经完成，
+        # 不该因为缺配置把整轮标红（站点由 6 小时的 schedule 部署兜底）
+        if: steps.result.outputs.state == 'done'
+        id: creds
+        env:
+          APP_ID: ${{ secrets.APP_ID }}
+          APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
+        run: |
+          if [ -z "$APP_ID" ] || [ -z "$APP_PRIVATE_KEY" ]; then
+            echo "::warning::未配置 APP_ID 或 APP_PRIVATE_KEY，跳过部署触发；表数据已上传，站点会在下一轮 schedule 或手动部署时更新"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Generate app token
         # 用 GitHub App 换短时 installation token：没有长期令牌的过期与轮换问题
-        if: steps.result.outputs.state == 'done'
+        if: steps.result.outputs.state == 'done' && steps.creds.outputs.skip != 'true'
         id: app-token
         uses: actions/create-github-app-token@v3
         with:
@@ -92,7 +108,7 @@ jobs:
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
       - name: Trigger site deploy
-        if: steps.result.outputs.state == 'done'
+        if: steps.result.outputs.state == 'done' && steps.creds.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: gh workflow run deploy.yml --ref main
