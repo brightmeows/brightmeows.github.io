@@ -4,6 +4,9 @@
  * 会话是无状态签名 cookie：payload 为 base64url(JSON)、签名用 HMAC-SHA256
  * （SESSION_SECRET）。SameSite=Lax 阻断跨站 POST 携带 cookie，写接口另做同源
  * 校验。OAuth state 存短效 HttpOnly cookie，回调时比对。
+ *
+ * 同一个 GitHub App 还承担服务身份（触发工作流，见 worker/dispatch.ts）；它在
+ * 安装完成后的授权回调也落在本文件的回调地址上，处理方式见 isInstallCallback。
  */
 
 import type { UserRole } from "../src/lib/mirror/user-layer.ts";
@@ -219,6 +222,57 @@ function oauthError(message: string): Response {
   });
 }
 
+/** 镜像表列表页路径（安装回调的落地页入口）。 */
+const MIRROR_LIST_PATH = "/bms/table/mirror/";
+
+/**
+ * 是否为 GitHub App 安装完成后的授权回调。
+ *
+ * App 勾选了 Request user authorization during installation 时，安装完成后也会
+ * 跳到回调地址：带 installation_id 与 setup_action，但**不带 state**（这不是
+ * 站点发起的登录）。不先识别它，就会报成 state 校验失败。
+ */
+function isInstallCallback(url: URL): boolean {
+  const params = url.searchParams;
+  return (
+    params.get("state") === null &&
+    (params.get("installation_id") !== null || params.get("setup_action") !== null)
+  );
+}
+
+/** 安装完成的提示页：App 已就绪，引导用户回站点登录。 */
+function installationNotice(url: URL): Response {
+  const target = new URL(MIRROR_LIST_PATH, url.origin).toString();
+  const html = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GitHub App 已安装</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center;
+         font-family: system-ui, -apple-system, sans-serif; line-height: 1.8; }
+  main { max-width: 34rem; padding: 2rem; text-align: center; }
+  h1 { font-size: 1.25rem; }
+  a { color: inherit; }
+</style>
+</head>
+<body>
+<main>
+  <h1>GitHub App 已安装</h1>
+  <p>安装已完成。要使用添加与删除功能，请回到站点登录一次。</p>
+  <p><a href="${target}">前往镜像表列表</a></p>
+</main>
+</body>
+</html>
+`;
+  return new Response(html, {
+    status: 200,
+    headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
+  });
+}
+
 /** 登录回调：校验 state、换 token、取用户，签发会话并跳回镜像列表页。 */
 export async function handleCallback(
   env: Env,
@@ -226,6 +280,9 @@ export async function handleCallback(
   url: URL,
   now: Date
 ): Promise<Response> {
+  if (isInstallCallback(url)) {
+    return installationNotice(url);
+  }
   const cookies = parseCookies(request.headers.get("cookie"));
   const state = cookies.get(OAUTH_STATE_COOKIE);
   const returnedState = url.searchParams.get("state");
