@@ -1,6 +1,6 @@
 # 镜像表内核（packages/mirror/）— AGENTS.md
 
-本文件收录镜像表内核的约束与镜像数据纪律；站点侧见 `src/AGENTS.md`，Worker 侧见 `worker/AGENTS.md`。
+本文件收录镜像表内核的约束与镜像数据纪律；站点侧见 `src/AGENTS.md`，Worker 侧见 `packages/worker/AGENTS.md`。
 
 ## 约定
 

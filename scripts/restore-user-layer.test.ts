@@ -2,13 +2,13 @@
  * 恢复脚本与 D1 schema 的一致性校验。
  *
  * 备份恢复很少执行，列名漂移不会在 CI 里自然暴露：schema 加了列、恢复脚本没
- * 跟上，直到真的需要恢复时才发现。这里从 worker/schema-sql.ts 的建表语句解析列名，
+ * 跟上，直到真的需要恢复时才发现。这里从 packages/worker/schema-sql.ts 的建表语句解析列名，
  * 与 RESTORE_TABLES 对照，把这类漂移挡在提交前。
  */
 
 import { describe, expect, it } from "vitest";
 
-import { MIGRATION_STEPS } from "../worker/schema-sql.ts";
+import { MIGRATION_STEPS } from "../packages/worker/schema-sql.ts";
 
 import { RESTORE_TABLES } from "./restore-user-layer.ts";
 

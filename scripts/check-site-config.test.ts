@@ -11,6 +11,7 @@ import {
   targetFlagIssues,
   versionSourceIssues,
   wranglerRouteHosts,
+  wranglerVarsIssues,
 } from "./check-site-config.ts";
 import { parseSiteConfig } from "./site-config.ts";
 
@@ -185,5 +186,36 @@ describe("versionSourceIssues", () => {
       workflowFiles: [{ path: "a.yml", text: "node-version-file: .node-version" }],
     });
     expect(issues).toHaveLength(3);
+  });
+});
+
+describe("wranglerVarsIssues", () => {
+  const good = `{
+    "vars": { "R2_BASE": "https://r2.example", "R2_MANIFEST_OBJECT": "tables/tables.json" },
+  }`;
+
+  it("与配置一致且键集受控时通过", () => {
+    expect(wranglerVarsIssues({ config, wranglerText: good })).toEqual([]);
+  });
+
+  it("值不一致与缺少键时报错", () => {
+    const bad = `{ "vars": { "R2_BASE": "https://evil.example" } }`;
+    const issues = wranglerVarsIssues({ config, wranglerText: bad });
+    expect(issues).toHaveLength(2);
+    expect(issues.join()).toContain("R2_MANIFEST_OBJECT");
+    expect(issues.join()).toContain("不一致");
+  });
+
+  it("出现未受配置管理的键时报错", () => {
+    const extra = `{ "vars": { "R2_BASE": "https://r2.example", "R2_MANIFEST_OBJECT": "tables/tables.json", "SURPRISE": "x" } }`;
+    expect(wranglerVarsIssues({ config, wranglerText: extra })).toEqual([
+      expect.stringContaining("SURPRISE"),
+    ]);
+  });
+
+  it("找不到 vars 块时报错", () => {
+    expect(wranglerVarsIssues({ config, wranglerText: "{}" })).toEqual([
+      expect.stringContaining("找不到 vars"),
+    ]);
   });
 });

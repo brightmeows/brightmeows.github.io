@@ -1,7 +1,8 @@
 /**
  * Worker 运行时环境与全局常量。
  *
- * 绑定在 wrangler.jsonc（ASSETS、MIRROR_BUCKET 与 MIRROR_DB），密钥经
+ * 绑定与部署期变量在 wrangler.jsonc（ASSETS、MIRROR_BUCKET、MIRROR_DB 与 R2_BASE、
+ * R2_MANIFEST_OBJECT），密钥经
  * `wrangler secret put` 注入：GitHub App 的用户授权凭据与私钥（登录与触发
  * 工作流共用同一个 App）、会话签名密钥，以及供 Actions 调内部接口的共享 token。
  */
@@ -13,6 +14,10 @@ export interface Env {
   MIRROR_BUCKET: R2Bucket;
   /** 用户层数据库：增删改、审计、限次与抓取状态（wrangler.jsonc 的 d1_databases）。 */
   MIRROR_DB: D1Database;
+  /** R2 公开基址：config/site.json 的 r2.base，经 wrangler.jsonc 的 vars 注入。 */
+  R2_BASE: string;
+  /** 清单对象键：config/site.json 的 r2.manifestObject，经 vars 注入。 */
+  R2_MANIFEST_OBJECT: string;
   /** GitHub App 的用户授权凭据（登录用；App 与 OAuth App 共用同一套 OAuth 流程）。 */
   GITHUB_OAUTH_CLIENT_ID: string;
   GITHUB_OAUTH_CLIENT_SECRET: string;
