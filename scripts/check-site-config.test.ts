@@ -150,7 +150,7 @@ describe("corsCoverageIssues", () => {
 });
 
 describe("versionSourceIssues", () => {
-  const pkg = { packageManager: "pnpm@11.3.0" };
+  const pkg = { devEngines: { packageManager: { name: "pnpm", version: ">=11.25.0 <12.0.0" } } };
 
   it("文件齐全且工作流读文件时通过", () => {
     expect(
@@ -179,13 +179,31 @@ describe("versionSourceIssues", () => {
     ).toEqual([expect.stringContaining("latest")]);
   });
 
-  it("缺 .nvmrc 或 packageManager 时报错", () => {
+  it("缺 .nvmrc 或 devEngines 时报错", () => {
     const issues = versionSourceIssues({
       nvmrc: null,
       packageJson: {},
       workflowFiles: [{ path: "a.yml", text: "node-version-file: .node-version" }],
     });
     expect(issues).toHaveLength(3);
+  });
+
+  it("锁死单点版本时报错", () => {
+    const exact = { devEngines: { packageManager: { name: "pnpm", version: "11.25.0" } } };
+    expect(versionSourceIssues({ nvmrc: "26", packageJson: exact, workflowFiles: [] })).toEqual([
+      expect.stringContaining("锁死"),
+    ]);
+  });
+
+  it("工作流给 pnpm/action-setup 传 version 时报错", () => {
+    const text = "- uses: pnpm/action-setup@v6\n  with:\n    version: 11.25.0\n";
+    expect(
+      versionSourceIssues({
+        nvmrc: "26",
+        packageJson: pkg,
+        workflowFiles: [{ path: "a.yml", text }],
+      })
+    ).toEqual([expect.stringContaining("version")]);
   });
 });
 

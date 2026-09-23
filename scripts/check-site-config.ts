@@ -8,8 +8,9 @@
  * 4. `r2.corsOrigins` 必须覆盖 `origin` 与所有静态目标的 `siteBase`
  * 5. update-tables 写出的基线文件名必须等于 `r2.baselineObject` 的 basename
  *    （rclone copy 保留本地文件名，名字不一致会把对象写到错的键上）
- * 6. `.nvmrc` 与 `package.json` 的 `packageManager` 存在，且工作流通过文件读取版本
- *    （不能读文件的平台允许写字面量，但必须与 `.nvmrc` 相同）
+ * 6. `.nvmrc` 存在，`package.json` 的 `devEngines.packageManager` 声明 pnpm 版本范围，
+ *    且工作流不显式传 pnpm 版本；node 版本通过文件读取（不能读文件的平台允许写
+ *    字面量，但必须与 `.nvmrc` 相同）
  * 7. `wrangler.jsonc` 的 `vars` 与 `r2.base`/`r2.manifestObject` 一致，且不引入
  *    配置之外的键（Worker 从 env 读这两个值，这里是它们的守门）
  *
@@ -134,7 +135,7 @@ export function baselineFileNameIssues(args: {
       ];
 }
 
-/** 断言 6：版本来源唯一（`.nvmrc` + `packageManager`）。 */
+/** 断言 6：版本来源唯一（`.nvmrc` + `devEngines.packageManager`）。 */
 export function versionSourceIssues(args: {
   nvmrc: string | null;
   packageJson: unknown;
@@ -145,12 +146,23 @@ export function versionSourceIssues(args: {
   if (pinned === "") {
     issues.push("缺少 .nvmrc：node 版本没有单一来源");
   }
-  const manager =
+  const root =
     typeof args.packageJson === "object" && args.packageJson !== null
-      ? (args.packageJson as Record<string, unknown>).packageManager
+      ? (args.packageJson as Record<string, unknown>)
+      : {};
+  const devEngines = root.devEngines as { packageManager?: unknown } | undefined;
+  const manager =
+    typeof devEngines?.packageManager === "object" && devEngines.packageManager !== null
+      ? (devEngines.packageManager as { name?: unknown; version?: unknown })
       : undefined;
-  if (typeof manager !== "string" || !manager.startsWith("pnpm@")) {
-    issues.push("package.json 缺少 packageManager（pnpm@<版本>）：pnpm 版本没有单一来源");
+  if (manager === undefined || manager.name !== "pnpm" || typeof manager.version !== "string") {
+    issues.push(
+      "package.json 缺少 devEngines.packageManager（name 为 pnpm、version 为范围）：pnpm 版本没有单一来源"
+    );
+  } else if (/^\d+\.\d+\.\d+$/u.test(manager.version.trim())) {
+    issues.push(
+      `devEngines.packageManager 锁死了单点版本 ${manager.version}：应声明范围（如 >=11.25.0 <12.0.0）`
+    );
   }
   for (const file of args.workflowFiles) {
     for (const match of file.text.matchAll(/node-version(-file)?:\s*(\S+)/g)) {
@@ -165,6 +177,21 @@ export function versionSourceIssues(args: {
         issues.push(
           `${file.path} 写了字面量 node-version: ${value}，与 .nvmrc 的 ${pinned} 不一致（应改用 node-version-file）`
         );
+      }
+    }
+    // pnpm/action-setup 不得显式传 version：否则 pnpm 版本出现第二处来源
+    const lines = file.text.split("\n");
+    for (let i = 0; i < lines.length; i += 1) {
+      if (!/uses:\s*pnpm\/action-setup/u.test(lines[i] ?? "")) continue;
+      for (let j = i + 1; j < lines.length; j += 1) {
+        const line = lines[j] ?? "";
+        if (/^\s*-\s/u.test(line)) break;
+        if (/^\s*version:/u.test(line)) {
+          issues.push(
+            `${file.path} 给 pnpm/action-setup 传了 version：pnpm 版本来源应唯一（devEngines.packageManager）`
+          );
+          break;
+        }
       }
     }
   }
