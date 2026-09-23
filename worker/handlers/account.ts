@@ -4,7 +4,8 @@
  * 路由在 worker/api.ts；这里只放处理逻辑。
  */
 
-import { DAILY_OPERATION_LIMIT } from "../../src/lib/mirror/user-layer.ts";
+import { DAILY_OPERATION_LIMIT } from "@brightmeows/mirror/user-layer";
+
 import { getSession } from "../auth.ts";
 import type { Env } from "../env.ts";
 import { json } from "../http.ts";

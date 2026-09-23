@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import type { MirrorTableItem } from "../types/bms.ts";
-
 import {
   diffTableList,
   injectBmstableMeta,
@@ -11,6 +9,7 @@ import {
   transformTableList,
   type TableListProjection,
 } from "./manifest.ts";
+import type { MirrorTableItem } from "./types.ts";
 
 const SHELL =
   '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8" /><title>x</title></head><body></body></html>';

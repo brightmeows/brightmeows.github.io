@@ -1,0 +1,24 @@
+{
+  "name": "@brightmeows/mirror",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./manifest": {
+      "types": "./src/manifest.ts",
+      "default": "./src/manifest.ts"
+    },
+    "./user-layer": {
+      "types": "./src/user-layer.ts",
+      "default": "./src/user-layer.ts"
+    },
+    "./urls": {
+      "types": "./src/urls.ts",
+      "default": "./src/urls.ts"
+    },
+    "./types": {
+      "types": "./src/types.ts",
+      "default": "./src/types.ts"
+    }
+  }
+}

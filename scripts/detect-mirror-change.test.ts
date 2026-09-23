@@ -2,10 +2,9 @@ import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
+import { serializeTableManifest } from "@brightmeows/mirror/manifest";
+import type { MirrorTableItem } from "@brightmeows/mirror/types";
 import { describe, expect, it } from "vitest";
-
-import { serializeTableManifest } from "../src/lib/mirror/manifest.ts";
-import type { MirrorTableItem } from "../src/lib/types/bms.ts";
 
 import { detectMirrorChange } from "./detect-mirror-change.ts";
 

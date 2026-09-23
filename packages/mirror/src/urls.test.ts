@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import siteConfig from "../../../config/site.json";
-
 import {
   encodeTableId,
   mirrorTablePath,
@@ -9,9 +7,7 @@ import {
   r2TableDataUrl,
   r2TableHeaderUrl,
   r2TablesBase,
-} from "./urls";
-
-import { R2_BASE } from "$lib/constants/r2";
+} from "./urls.ts";
 
 const tableId = "[4uri.web.fc2.com] Youri差分難易度表";
 
@@ -51,16 +47,5 @@ describe("r2 URL 构造", () => {
 describe("镜像页路径", () => {
   it("镜像页路径带编码参数", () => {
     expect(mirrorTablePath(tableId)).toBe(`/bms/table/mirror/${encodeTableId(tableId)}/`);
-  });
-});
-
-describe("config/site.json", () => {
-  it("基址为 https 且不带尾部斜杠", () => {
-    expect(siteConfig.r2.base).toMatch(/^https:\/\//);
-    expect(siteConfig.r2.base.endsWith("/")).toBe(false);
-  });
-
-  it("站点常量与共享配置一致", () => {
-    expect(R2_BASE).toBe(siteConfig.r2.base);
   });
 });

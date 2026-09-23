@@ -17,8 +17,8 @@ import { writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { diffTableList, serializeTableManifest } from "../src/lib/mirror/manifest.ts";
-import type { MirrorTableItem } from "../src/lib/types/bms.ts";
+import { diffTableList, serializeTableManifest } from "@brightmeows/mirror/manifest";
+import type { MirrorTableItem } from "@brightmeows/mirror/types";
 
 import { CONFIG_PATH, readSiteConfig } from "./site-config.ts";
 

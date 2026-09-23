@@ -26,7 +26,7 @@ import {
   parseRemovedEntry,
   parseReplaceEntry,
   type UserLayer,
-} from "../src/lib/mirror/user-layer.ts";
+} from "@brightmeows/mirror/user-layer";
 
 /** 各表的列顺序：与 worker/schema.ts 的建表语句一一对应（有测试守着）。 */
 export const RESTORE_TABLES: Record<string, readonly string[]> = {

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { MirrorTableItem } from "@brightmeows/mirror/types";
   import { onMount, tick } from "svelte";
 
   import GroupedTablesSection from "$lib/components/bms/GroupedTablesSection.svelte";
@@ -10,7 +11,6 @@
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
   import { loadMirrorTables } from "$lib/data/mirror-table-loader";
   import { submitDelete, type CurrentUser } from "$lib/data/mirror-user-api";
-  import type { MirrorTableItem } from "$lib/types/bms";
   import type { JsonPreviewHandle, TocItem } from "$lib/types/ui";
   import { clipboardFeedback } from "$lib/utils/clipboard.svelte";
   import { buildSearchNeedles, filterTables, groupByTags } from "$lib/utils/mirror-tables";

@@ -1,10 +1,10 @@
 <script lang="ts">
+  import type { MirrorTableItem } from "@brightmeows/mirror/types";
   import { cubicIn, cubicOut } from "svelte/easing";
   import { fly } from "svelte/transition";
 
   import Checkbox from "$lib/components/ui/Checkbox.svelte";
   import { jsonPreview } from "$lib/components/ui/JsonPreview.svelte";
-  import type { MirrorTableItem } from "$lib/types/bms";
   import type { JsonPreviewHandle } from "$lib/types/ui";
 
   interface Props {

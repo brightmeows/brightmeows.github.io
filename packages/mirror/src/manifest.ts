@@ -4,8 +4,7 @@
  * 相对导入带 .ts 扩展名。
  */
 
-import type { MirrorTableItem } from "../types/bms.ts";
-
+import type { MirrorTableItem } from "./types.ts";
 import { mirrorTablePath } from "./urls.ts";
 
 /** 站点清单条目：dir_name/url/url_from 均已填充。 */

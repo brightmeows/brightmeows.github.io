@@ -6,7 +6,7 @@
  * 列名（scripts/restore-user-layer.test.ts），同文件会让 D1Database 全局类型
  * 进入脚本与前端的 tsconfig。
  *
- * 表按语义分列：每张表对应一类用户层记录，字段与 src/lib/mirror/user-layer.ts
+ * 表按语义分列：每张表对应一类用户层记录，字段与 packages/mirror/src/user-layer.ts
  * 的类型一一对应；NOT NULL 与 CHECK 在库层挡掉一部分脏数据，读取侧的类型解析
  * 仍保留（数据库不是唯一防线，历史数据与降级路径都要经解析器）。
  */

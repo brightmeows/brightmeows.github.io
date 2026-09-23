@@ -4,7 +4,7 @@
  * 清单来源是主站的 `/bms/table/mirror/tables.json`——它已由 Worker 合成用户增删
  * 与保护标记。静态宿主与主站展示同一份清单，合成逻辑只存在于 Worker 一处；
  * 本脚本负责把 url 字段重写为自己域名并产出等价页面（与 Worker 共用
- * `src/lib/mirror/` 的注入与序列化函数，保证输出逐字节一致）。清单拉取失败即
+ * `packages/mirror/src/` 的注入与序列化函数，保证输出逐字节一致）。清单拉取失败即
  * 整步失败，避免用缺页产物覆盖上一版仍可用的静态站点。
  *
  * 用法：
@@ -25,9 +25,9 @@ import {
   injectBmstableMeta,
   serializeSiteTableList,
   transformTableList,
-} from "../src/lib/mirror/manifest.ts";
-import { normalizeBase, r2TableHeaderUrl } from "../src/lib/mirror/urls.ts";
-import type { MirrorTableItem } from "../src/lib/types/bms.ts";
+} from "@brightmeows/mirror/manifest";
+import type { MirrorTableItem } from "@brightmeows/mirror/types";
+import { normalizeBase, r2TableHeaderUrl } from "@brightmeows/mirror/urls";
 
 import { CONFIG_PATH, findStaticTarget, readSiteConfig } from "./site-config.ts";
 

@@ -1,9 +1,10 @@
 <script lang="ts">
+  import type { MirrorTableItem } from "@brightmeows/mirror/types";
+  import { mirrorTablePath } from "@brightmeows/mirror/urls";
+
   import Checkbox from "$lib/components/ui/Checkbox.svelte";
   import GradientButton from "$lib/components/ui/GradientButton.svelte";
   import { jsonPreview } from "$lib/components/ui/JsonPreview.svelte";
-  import { mirrorTablePath } from "$lib/mirror/urls";
-  import type { MirrorTableItem } from "$lib/types/bms";
   import type { JsonPreviewHandle } from "$lib/types/ui";
   import { clipboardFieldFeedback } from "$lib/utils/clipboard.svelte";
 

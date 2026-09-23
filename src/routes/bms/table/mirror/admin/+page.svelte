@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { MirrorTableItem } from "@brightmeows/mirror/types";
   import { onMount } from "svelte";
 
   import PageShell from "$lib/components/layout/PageShell.svelte";
@@ -16,7 +17,6 @@
   } from "$lib/data/mirror-admin-api";
   import { loadMirrorTables } from "$lib/data/mirror-table-loader";
   import { ApiUnavailableError } from "$lib/data/mirror-user-api";
-  import type { MirrorTableItem } from "$lib/types/bms";
 
   const tablesJsonPath = "/bms/table/mirror/tables.json";
   const baseRoute = "bms/table/mirror";

@@ -41,6 +41,7 @@ jobs:
       - run: pnpm build
       - run: pnpm check
       - run: pnpm check:worker
+      - run: pnpm check:mirror
       - run: pnpm check:config
 
   test:

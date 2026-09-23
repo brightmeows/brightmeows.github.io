@@ -41,6 +41,24 @@ repos:
 
   - repo: local
     hooks:
+      - id: mirror-typecheck
+        name: pnpm check:mirror
+        entry: pnpm check:mirror
+        language: system
+        types: [text]
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: worker-typecheck
+        name: pnpm check:worker
+        entry: pnpm check:worker
+        language: system
+        types: [text]
+        pass_filenames: false
+
+  - repo: local
+    hooks:
       - id: vitest
         name: pnpm test
         entry: pnpm test

@@ -1,27 +1,10 @@
+import type { MirrorTableItem } from "@brightmeows/mirror/types";
+
 /** 难度表列表项 */
 export interface TableEntry {
   id: string;
   name: string;
   symbol?: string | undefined;
-}
-
-/** 镜像表格项 */
-export interface MirrorTableItem {
-  name: string;
-  symbol?: string;
-  url: string;
-  url_from?: string;
-  comment?: string;
-  date?: string;
-  state?: string;
-  tag1?: string;
-  tag2?: string;
-  tag_order?: string | number;
-  dir_name?: string;
-  url_data_json?: string;
-  url_header_json?: string;
-  /** 删除保护标记：由用户层合成写入，不在 R2 原始清单中。 */
-  protected?: boolean;
 }
 
 /** 二级分组（按 tag2） */

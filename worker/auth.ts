@@ -9,7 +9,7 @@
  * 安装完成后的授权回调也落在本文件的回调地址上，处理方式见 isInstallCallback。
  */
 
-import type { UserRole } from "../src/lib/mirror/user-layer.ts";
+import type { UserRole } from "@brightmeows/mirror/user-layer";
 
 import {
   ADMIN_LOGIN,

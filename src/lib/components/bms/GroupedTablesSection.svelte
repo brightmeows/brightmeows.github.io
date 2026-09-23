@@ -1,10 +1,12 @@
 <script lang="ts">
+  import type { MirrorTableItem } from "@brightmeows/mirror/types";
+
   import MirrorTableRow from "./MirrorTableRow.svelte";
 
   import Checkbox from "$lib/components/ui/Checkbox.svelte";
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
   import ScrollSyncGroup from "$lib/components/ui/ScrollSyncGroup.svelte";
-  import type { MirrorTableItem, Tag1Group, Tag2Group } from "$lib/types/bms";
+  import type { Tag1Group, Tag2Group } from "$lib/types/bms";
   import type { JsonPreviewHandle } from "$lib/types/ui";
   import { slugifyTag } from "$lib/utils/mirror-tables";
 

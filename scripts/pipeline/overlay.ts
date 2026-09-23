@@ -7,7 +7,7 @@
  * 调用方负责。
  */
 
-import { normalizeTableUrl, type UserLayer } from "../../src/lib/mirror/user-layer.ts";
+import { normalizeTableUrl, type UserLayer } from "@brightmeows/mirror/user-layer";
 
 import { cloneJson } from "./json-utils.ts";
 import type { ActiveSet, TableInfo } from "./types.ts";

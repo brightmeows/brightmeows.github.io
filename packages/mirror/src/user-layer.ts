@@ -12,7 +12,7 @@
  * 确定后应用；元数据覆盖最后应用；授权标记按 URL 或目录名匹配。
  */
 
-import type { MirrorTableItem } from "../types/bms.ts";
+import type { MirrorTableItem } from "./types.ts";
 
 /** 每账号每日增删操作上限。 */
 export const DAILY_OPERATION_LIMIT = 10;

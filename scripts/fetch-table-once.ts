@@ -17,7 +17,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { serializeUserRecord } from "../src/lib/mirror/user-layer.ts";
+import { serializeUserRecord } from "@brightmeows/mirror/user-layer";
 
 import { callInternal } from "./internal-api.ts";
 import { describeError } from "./pipeline/errors.ts";

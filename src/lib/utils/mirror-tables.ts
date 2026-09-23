@@ -1,4 +1,6 @@
-import type { MirrorTableItem, Tag1Group, Tag2Group } from "$lib/types/bms";
+import type { MirrorTableItem } from "@brightmeows/mirror/types";
+
+import type { Tag1Group, Tag2Group } from "$lib/types/bms";
 import type { StringConverter } from "$lib/types/common";
 
 /**

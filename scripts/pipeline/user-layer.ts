@@ -6,7 +6,7 @@
  * 按空处理并记录告警——用户层是叠加在基线之上的增量，读不到最坏是增删晚一轮
  * 生效，不该中断整轮抓取；日志里区分「接口失败」与「确实为空」，后者不记告警。
  *
- * 条目解析复用 `src/lib/mirror/user-layer.ts` 的解析器，与读取侧同一套语义。
+ * 条目解析复用 `packages/mirror/src/user-layer.ts` 的解析器，与读取侧同一套语义。
  */
 
 import {
@@ -19,7 +19,8 @@ import {
   parseRemovedEntry,
   parseReplaceEntry,
   type UserLayer,
-} from "../../src/lib/mirror/user-layer.ts";
+} from "@brightmeows/mirror/user-layer";
+
 import { callInternal, internalToken } from "../internal-api.ts";
 
 export interface UserLayerLoadResult {
