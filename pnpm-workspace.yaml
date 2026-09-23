@@ -1,6 +1,8 @@
 packages:
   - "packages/*"
 
+engineStrict: true
+
 allowBuilds:
   core-js-pure: false
   esbuild: true
