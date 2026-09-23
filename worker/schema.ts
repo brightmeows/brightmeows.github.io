@@ -9,7 +9,7 @@
 import { MIGRATION_STEPS, SCHEMA_VERSION } from "./schema-sql.ts";
 
 /** 读当前 schema 版本；表不存在（首次运行）返回 0。 */
-export async function readSchemaVersion(db: D1Database): Promise<number> {
+async function readSchemaVersion(db: D1Database): Promise<number> {
   try {
     const row = await db
       .prepare("SELECT MAX(version) AS version FROM schema_version")
@@ -49,9 +49,4 @@ export function ensureSchemaOnce(db: D1Database): Promise<void> {
     throw error;
   });
   return schemaPromise;
-}
-
-/** 仅供测试与本地演练重置缓存。 */
-export function resetSchemaCacheForTests(): void {
-  schemaPromise = null;
 }

@@ -21,7 +21,7 @@ export const BACKUP_PREFIX = "backup/";
 export const BACKUP_RETENTION = 14;
 
 /** 备份对象键：`backup/user-layer-YYYY-MM-DD.json`。 */
-export function backupKey(now: Date): string {
+function backupKey(now: Date): string {
   return `${BACKUP_PREFIX}user-layer-${now.toISOString().slice(0, 10)}.json`;
 }
 

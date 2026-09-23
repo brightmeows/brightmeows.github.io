@@ -17,9 +17,6 @@ const TOKEN_REFRESH_MARGIN_MS = 5 * 60 * 1000;
 /** JWT 有效期（秒）：GitHub 要求不超过 10 分钟。 */
 const JWT_LIFETIME_SECONDS = 9 * 60;
 
-/** 拿不到 expires_at 时的兜底缓存时长（毫秒）。 */
-const FALLBACK_TTL_MS = 30 * 60 * 1000;
-
 interface CachedToken {
   token: string;
   /** 过期时间（毫秒时间戳）。 */
@@ -78,12 +75,8 @@ export function pkcs1ToPkcs8(pkcs1: Uint8Array): Uint8Array {
   return derWrap(0x30, body);
 }
 
-/**
- * PEM 文本转 PKCS#8 的 DER 字节：PKCS#1 的 key 会被包装，PKCS#8 的原样返回。
- * 同时兼容两种常见换行与首尾空白。
- */
+/** GitHub 下载的 PKCS#1 PEM 转成 PKCS#8 的 DER 字节。 */
 export function pemToPkcs8(pem: string): Uint8Array {
-  const isPkcs1 = pem.includes("BEGIN RSA PRIVATE KEY");
   const base64 = pem
     .replace(/-----BEGIN [^-]+-----/gu, "")
     .replace(/-----END [^-]+-----/gu, "")
@@ -93,7 +86,7 @@ export function pemToPkcs8(pem: string): Uint8Array {
   for (let index = 0; index < binary.length; index += 1) {
     der[index] = binary.charCodeAt(index);
   }
-  return isPkcs1 ? pkcs1ToPkcs8(der) : der;
+  return pkcs1ToPkcs8(der);
 }
 
 /** 用 App 私钥签一枚 JWT。 */
@@ -123,7 +116,7 @@ export async function signAppJwt(env: Env, now: Date): Promise<string> {
 }
 
 /** 换取 installation token（缓存到过期前 5 分钟）。 */
-export async function getInstallationToken(env: Env, now: Date = new Date()): Promise<string> {
+async function getInstallationToken(env: Env, now: Date = new Date()): Promise<string> {
   if (cachedToken !== null && cachedToken.expiresAt - TOKEN_REFRESH_MARGIN_MS > now.getTime()) {
     return cachedToken.token;
   }
@@ -146,15 +139,10 @@ export async function getInstallationToken(env: Env, now: Date = new Date()): Pr
     throw new Error(`换取 installation token 失败（HTTP ${response.status}）`);
   }
   const payload = (await response.json()) as { token?: unknown; expires_at?: unknown };
-  if (typeof payload.token !== "string") {
-    throw new Error("installation token 响应缺少 token");
+  if (typeof payload.token !== "string" || typeof payload.expires_at !== "string") {
+    throw new Error("installation token 响应缺少 token 或 expires_at");
   }
-  const parsed =
-    typeof payload.expires_at === "string" ? Date.parse(payload.expires_at) : Number.NaN;
-  cachedToken = {
-    token: payload.token,
-    expiresAt: Number.isFinite(parsed) ? parsed : now.getTime() + FALLBACK_TTL_MS,
-  };
+  cachedToken = { token: payload.token, expiresAt: Date.parse(payload.expires_at) };
   return cachedToken.token;
 }
 
@@ -184,9 +172,4 @@ export async function dispatchWorkflow(
     console.warn(`触发工作流失败：${workflow} HTTP ${response.status} ${note}`);
     throw new Error(`触发工作流失败（HTTP ${response.status}）`);
   }
-}
-
-/** 仅供测试重置 token 缓存。 */
-export function resetTokenCacheForTests(): void {
-  cachedToken = null;
 }
