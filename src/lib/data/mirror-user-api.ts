@@ -1,5 +1,7 @@
 import type { FetchState, UserRole } from "@brightmeows/mirror/user-layer";
 
+import { apiBase } from "$lib/constants/site";
+
 /**
  * 镜像表用户操作接口的客户端封装。
  *
@@ -68,10 +70,11 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   if (!headers.has("content-type")) {
     headers.set("content-type", "application/json");
   }
-  const response = await fetch(path, {
+  // 静态宿主子域上 API 在主站：带基址跨源调用，include 携带同站会话 cookie
+  const response = await fetch(`${apiBase()}${path}`, {
     ...init,
     headers,
-    credentials: "same-origin",
+    credentials: "include",
   });
   if (!response.ok) {
     let message = `请求失败（HTTP ${response.status}）`;

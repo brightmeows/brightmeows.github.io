@@ -18,6 +18,10 @@ export interface Env {
   R2_BASE: string;
   /** 清单对象键：config/site.json 的 r2.manifestObject，经 vars 注入。 */
   R2_MANIFEST_OBJECT: string;
+  /** 跨源 API 的 Origin 白名单（逗号分隔）：站点三域与本地 dev，经 vars 注入。 */
+  SITE_ORIGINS: string;
+  /** 会话 cookie 的 Domain 属性：静态宿主子域与主站共享会话（同站，Lax 保留）。 */
+  COOKIE_DOMAIN: string;
   /** GitHub App 的用户授权凭据（登录用；App 与 OAuth App 共用同一套 OAuth 流程）。 */
   GITHUB_OAUTH_CLIENT_ID: string;
   GITHUB_OAUTH_CLIENT_SECRET: string;

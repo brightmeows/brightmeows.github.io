@@ -5,7 +5,6 @@
   import PageShell from "$lib/components/layout/PageShell.svelte";
   import GlassPanel from "$lib/components/ui/GlassPanel.svelte";
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
-  import { SITE_ORIGIN } from "$lib/constants/site";
   import {
     adminAuthorize,
     adminDisable,
@@ -16,7 +15,6 @@
     type AdminOverview,
   } from "$lib/data/mirror-admin-api";
   import { loadMirrorTables } from "$lib/data/mirror-table-loader";
-  import { ApiUnavailableError } from "$lib/data/mirror-user-api";
 
   const tablesJsonPath = "/bms/table/mirror/tables.json";
   const baseRoute = "bms/table/mirror";
@@ -76,11 +74,8 @@
       tables = list;
       gateError = null;
     } catch (error) {
-      if (error instanceof ApiUnavailableError) {
-        gateError = `后台只在主站提供（当前是静态镜像站）：${SITE_ORIGIN}/bms/table/mirror/admin/`;
-      } else {
-        gateError = error instanceof Error ? error.message : "加载失败";
-      }
+      // 静态宿主子域上 API 同样可用，统一按普通加载失败呈现
+      gateError = error instanceof Error ? error.message : "加载失败";
     } finally {
       loading = false;
     }

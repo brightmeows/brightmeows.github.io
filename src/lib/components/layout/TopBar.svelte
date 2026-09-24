@@ -6,7 +6,7 @@
   import GlassButton from "$lib/components/ui/GlassButton.svelte";
   import GlassPanel from "$lib/components/ui/GlassPanel.svelte";
   import { moreNav, topLevelNav } from "$lib/constants/nav";
-  import { SITE_ORIGIN } from "$lib/constants/site";
+  import { apiBase, SITE_ORIGIN } from "$lib/constants/site";
   import { auth } from "$lib/data/auth-store.svelte";
   import { deriveBreadcrumbs } from "$lib/utils/breadcrumbs";
 
@@ -99,7 +99,14 @@
   // —— 数据 ——
 
   const breadcrumbs = $derived(deriveBreadcrumbs(page.url.pathname, currentLabel));
-  const loginHref = $derived(`/api/auth/login?return_to=${encodeURIComponent(page.url.pathname)}`);
+  // 登录发起地址：静态宿主子域上 API 在主站，return_to 用绝对 URL 回到发起页。
+  // prerender 与水合首帧用相对路径兜底，水合后由 effect 按环境修正。
+  let loginHref = $state("/api/auth/login");
+  $effect(() => {
+    const base = apiBase();
+    const returnTo = base === "" ? page.url.pathname : `${location.origin}${page.url.pathname}`;
+    loginHref = `${base}/api/auth/login?return_to=${encodeURIComponent(returnTo)}`;
+  });
 
   function isActive(href: string): boolean {
     if (href === "/") return page.url.pathname === "/";

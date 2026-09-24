@@ -10,6 +10,8 @@ import type {
 
 import { ApiUnavailableError } from "./mirror-user-api";
 
+import { apiBase } from "$lib/constants/site";
+
 /** 回收站条目（表级聚合）。 */
 export interface TrashEntry {
   trash_prefix: string;
@@ -46,9 +48,10 @@ export interface AdminMutationResult {
 }
 
 async function requestAdmin<T>(path: string, body?: unknown): Promise<T> {
-  const response = await fetch(path, {
+  // 静态宿主子域上 API 在主站：带基址跨源调用，include 携带同站会话 cookie
+  const response = await fetch(`${apiBase()}${path}`, {
     method: body === undefined ? "GET" : "POST",
-    credentials: "same-origin",
+    credentials: "include",
     ...(body === undefined
       ? {}
       : { headers: { "content-type": "application/json" }, body: JSON.stringify(body) }),
