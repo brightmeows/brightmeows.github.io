@@ -8,6 +8,7 @@ import {
   findDomainsInText,
   hardcodedDomainIssues,
   routeHostIssues,
+  staticSiteBaseIssues,
   targetFlagIssues,
   versionSourceIssues,
   wranglerRouteHosts,
@@ -20,8 +21,18 @@ const config = parseSiteConfig(
     origin: "https://miyakomeow.site",
     targets: [
       { name: "cloudflare", kind: "worker", hosts: ["miyakomeow.site", "www.miyakomeow.site"] },
-      { name: "github-pages", kind: "static", siteBase: "https://brightmeows.github.io" },
-      { name: "codeberg-pages", kind: "static", siteBase: "https://brightmeows.codeberg.page" },
+      {
+        name: "github-pages",
+        kind: "static",
+        siteBase: "https://github-pages.miyakomeow.site",
+        legacyHosts: ["brightmeows.github.io"],
+      },
+      {
+        name: "codeberg-pages",
+        kind: "static",
+        siteBase: "https://codeberg-pages.miyakomeow.site",
+        legacyHosts: ["brightmeows.codeberg.page"],
+      },
     ],
     r2: {
       base: "https://r2.example",
@@ -29,6 +40,8 @@ const config = parseSiteConfig(
       baselineObject: "meta/last-notified.json",
       corsOrigins: [
         "https://miyakomeow.site",
+        "https://github-pages.miyakomeow.site",
+        "https://codeberg-pages.miyakomeow.site",
         "https://brightmeows.github.io",
         "https://brightmeows.codeberg.page",
         "http://localhost:5173",
@@ -92,6 +105,8 @@ describe("hardcodedDomainIssues / findDomainsInText", () => {
       [
         "brightmeows.codeberg.page",
         "brightmeows.github.io",
+        "codeberg-pages.miyakomeow.site",
+        "github-pages.miyakomeow.site",
         "miyakomeow.site",
         "r2.example",
         "www.miyakomeow.site",
@@ -209,7 +224,12 @@ describe("versionSourceIssues", () => {
 
 describe("wranglerVarsIssues", () => {
   const good = `{
-    "vars": { "R2_BASE": "https://r2.example", "R2_MANIFEST_OBJECT": "tables/tables.json" },
+    "vars": {
+      "R2_BASE": "https://r2.example",
+      "R2_MANIFEST_OBJECT": "tables/tables.json",
+      "SITE_ORIGINS": "https://miyakomeow.site,https://github-pages.miyakomeow.site,https://codeberg-pages.miyakomeow.site,http://localhost:8787",
+      "COOKIE_DOMAIN": ".miyakomeow.site",
+    },
   }`;
 
   it("与配置一致且键集受控时通过", () => {
@@ -217,15 +237,39 @@ describe("wranglerVarsIssues", () => {
   });
 
   it("值不一致与缺少键时报错", () => {
-    const bad = `{ "vars": { "R2_BASE": "https://evil.example" } }`;
+    const bad = `{ "vars": { "R2_BASE": "https://evil.example", "SITE_ORIGINS": "https://miyakomeow.site,https://github-pages.miyakomeow.site,https://codeberg-pages.miyakomeow.site", "COOKIE_DOMAIN": ".miyakomeow.site" } }`;
     const issues = wranglerVarsIssues({ config, wranglerText: bad });
     expect(issues).toHaveLength(2);
     expect(issues.join()).toContain("R2_MANIFEST_OBJECT");
     expect(issues.join()).toContain("不一致");
   });
 
+  it("SITE_ORIGINS 缺少站点来源时报错", () => {
+    const partial = `{ "vars": {
+      "R2_BASE": "https://r2.example",
+      "R2_MANIFEST_OBJECT": "tables/tables.json",
+      "SITE_ORIGINS": "https://miyakomeow.site",
+      "COOKIE_DOMAIN": ".miyakomeow.site",
+    } }`;
+    const issues = wranglerVarsIssues({ config, wranglerText: partial });
+    expect(issues).toHaveLength(2);
+    expect(issues.join()).toContain("github-pages.miyakomeow.site");
+    expect(issues.join()).toContain("codeberg-pages.miyakomeow.site");
+  });
+
+  it("COOKIE_DOMAIN 与主站 host 不一致时报错", () => {
+    const wrongDomain = `{ "vars": {
+      "R2_BASE": "https://r2.example",
+      "R2_MANIFEST_OBJECT": "tables/tables.json",
+      "SITE_ORIGINS": "https://miyakomeow.site,https://github-pages.miyakomeow.site,https://codeberg-pages.miyakomeow.site",
+      "COOKIE_DOMAIN": ".evil.site",
+    } }`;
+    const issues = wranglerVarsIssues({ config, wranglerText: wrongDomain });
+    expect(issues).toEqual([expect.stringContaining("COOKIE_DOMAIN")]);
+  });
+
   it("出现未受配置管理的键时报错", () => {
-    const extra = `{ "vars": { "R2_BASE": "https://r2.example", "R2_MANIFEST_OBJECT": "tables/tables.json", "SURPRISE": "x" } }`;
+    const extra = `{ "vars": { "R2_BASE": "https://r2.example", "R2_MANIFEST_OBJECT": "tables/tables.json", "SITE_ORIGINS": "https://miyakomeow.site,https://github-pages.miyakomeow.site,https://codeberg-pages.miyakomeow.site", "COOKIE_DOMAIN": ".miyakomeow.site", "SURPRISE": "x" } }`;
     expect(wranglerVarsIssues({ config, wranglerText: extra })).toEqual([
       expect.stringContaining("SURPRISE"),
     ]);
@@ -235,5 +279,30 @@ describe("wranglerVarsIssues", () => {
     expect(wranglerVarsIssues({ config, wranglerText: "{}" })).toEqual([
       expect.stringContaining("找不到 vars"),
     ]);
+  });
+});
+
+describe("staticSiteBaseIssues", () => {
+  it("siteBase 与 target 名对齐时通过", () => {
+    expect(staticSiteBaseIssues(config)).toEqual([]);
+  });
+
+  it("子域与 target 名不对齐时报错", () => {
+    const misaligned = parseSiteConfig(
+      {
+        ...JSON.parse(JSON.stringify(config)),
+        targets: [
+          { name: "cloudflare", kind: "worker", hosts: ["miyakomeow.site"] },
+          {
+            name: "github-pages",
+            kind: "static",
+            siteBase: "https://wrong.miyakomeow.site",
+            legacyHosts: ["brightmeows.github.io"],
+          },
+        ],
+      },
+      "test"
+    );
+    expect(staticSiteBaseIssues(misaligned)).toEqual([expect.stringContaining("github-pages")]);
   });
 });

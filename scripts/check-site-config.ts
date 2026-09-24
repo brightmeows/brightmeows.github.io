@@ -12,7 +12,11 @@
  *    且工作流不显式传 pnpm 版本；node 版本通过文件读取（不能读文件的平台允许写
  *    字面量，但必须与 `.nvmrc` 相同）
  * 7. `wrangler.jsonc` 的 `vars` 与 `r2.base`/`r2.manifestObject` 一致，且不引入
- *    配置之外的键（Worker 从 env 读这两个值，这里是它们的守门）
+ *    配置之外的键（Worker 从 env 读这两个值，这里是它们的守门）；
+ *    另校验派生键 `SITE_ORIGINS`（跨源 API 的 Origin 白名单，必须覆盖站点三域）
+ *    与 `COOKIE_DOMAIN`（等于 `.` 加主站 host，静态宿主子域共享会话）
+ * 8. 静态目标的 `siteBase` 主机必须是 `<name>.<主站 host>`：子域名与 target 名
+ *    对齐是机械规则，断言守住「名字即事实」（会话 cookie 与 CORS 白名单都依赖它）
  *
  * 纯读、不联网、毫秒级，进 pre-commit 与 CI。用法：`node scripts/check-site-config.ts`
  */
@@ -203,6 +207,9 @@ export function versionSourceIssues(args: {
  *
  * Worker 不再 import `config/site.json`（改从 env 读 `R2_BASE` 与 `R2_MANIFEST_OBJECT`），
  * 这两个值的一致性只能靠断言守：值要一致，键集也不得超出配置管理的范围。
+ *
+ * 派生键：`SITE_ORIGINS`（逗号分隔 Origin 白名单，必须覆盖主站与全部静态子域，
+ * 允许额外的本地 dev 端口）与 `COOKIE_DOMAIN`（必须等于 `.` 加主站 host）。
  */
 export function wranglerVarsIssues(args: { config: SiteConfig; wranglerText: string }): string[] {
   const match = /"vars"\s*:\s*\{([^}]*)\}/u.exec(args.wranglerText);
@@ -213,11 +220,11 @@ export function wranglerVarsIssues(args: { config: SiteConfig; wranglerText: str
   for (const item of match[1].matchAll(/"([A-Za-z0-9_]+)"\s*:\s*"([^"]*)"/gu)) {
     entries.set(item[1] ?? "", item[2] ?? "");
   }
+  const issues: string[] = [];
   const expected: [string, string][] = [
     ["R2_BASE", args.config.r2.base],
     ["R2_MANIFEST_OBJECT", args.config.r2.manifestObject],
   ];
-  const issues: string[] = [];
   for (const [key, value] of expected) {
     const actual = entries.get(key);
     if (actual === undefined) {
@@ -226,15 +233,74 @@ export function wranglerVarsIssues(args: { config: SiteConfig; wranglerText: str
       issues.push(`wrangler.jsonc 的 vars.${key} 与 config/site.json 不一致（应为 ${value}）`);
     }
   }
+
+  const siteOrigins = entries.get("SITE_ORIGINS");
+  if (siteOrigins === undefined) {
+    issues.push("wrangler.jsonc 的 vars 缺少 SITE_ORIGINS（跨源 API 的 Origin 白名单）");
+  } else {
+    const items = siteOrigins
+      .split(",")
+      .map((item) => item.trim())
+      .filter((item) => item !== "");
+    const allowed = new Set([
+      args.config.origin,
+      ...args.config.targets
+        .filter((target) => target.kind === "static")
+        .map((target) => target.siteBase),
+    ]);
+    const seen = new Set<string>();
+    for (const item of items) {
+      try {
+        seen.add(new URL(item).origin);
+      } catch {
+        issues.push(`wrangler.jsonc 的 vars.SITE_ORIGINS 含非法 origin：${item}`);
+      }
+    }
+    for (const origin of allowed) {
+      if (!seen.has(origin)) {
+        issues.push(`wrangler.jsonc 的 vars.SITE_ORIGINS 缺少站点来源 ${origin}`);
+      }
+    }
+  }
+
+  const cookieDomain = entries.get("COOKIE_DOMAIN");
+  const expectedCookieDomain = `.${new URL(args.config.origin).host}`;
+  if (cookieDomain === undefined) {
+    issues.push("wrangler.jsonc 的 vars 缺少 COOKIE_DOMAIN（静态宿主子域共享会话）");
+  } else if (cookieDomain !== expectedCookieDomain) {
+    issues.push(
+      `wrangler.jsonc 的 vars.COOKIE_DOMAIN 应为 ${expectedCookieDomain}，实际是 ${cookieDomain}`
+    );
+  }
+
   for (const key of entries.keys()) {
-    if (!expected.some(([managed]) => managed === key)) {
+    if (!["R2_BASE", "R2_MANIFEST_OBJECT", "SITE_ORIGINS", "COOKIE_DOMAIN"].includes(key)) {
       issues.push(`wrangler.jsonc 的 vars 出现未受配置管理的键 ${key}`);
     }
   }
   return issues;
 }
 
-/** 配置里出现过的全部域名（用于断言 3 的扫描列表）。 */
+/**
+ * 断言 8：静态目标的 siteBase 主机必须是 `<name>.<主站 host>`。
+ *
+ * 子域名与 target 名对齐是机械规则：名字即事实，Worker 的 Origin 白名单、
+ * 会话 cookie 的 Domain、CORS 配置都依赖这条规则的可推导性。
+ */
+export function staticSiteBaseIssues(config: SiteConfig): string[] {
+  const mainHost = new URL(config.origin).host;
+  return config.targets
+    .filter((target) => target.kind === "static")
+    .map((target) => {
+      const expectedHost = `${target.name}.${mainHost}`;
+      return new URL(target.siteBase).host === expectedHost
+        ? null
+        : `静态目标 ${target.name} 的 siteBase 主机应为 ${expectedHost}（与 target 名对齐），实际是 ${new URL(target.siteBase).host}`;
+    })
+    .filter((issue): issue is string => issue !== null);
+}
+
+/** 配置里出现过的全部域名（用于断言 3 的扫描列表；含静态目标的原域）。 */
 export function collectDomains(config: SiteConfig): string[] {
   const hostOf = (url: string): string => new URL(url).host;
   return [
@@ -242,7 +308,7 @@ export function collectDomains(config: SiteConfig): string[] {
       hostOf(config.origin),
       hostOf(config.r2.base),
       ...config.targets.flatMap((target) =>
-        target.kind === "static" ? [hostOf(target.siteBase)] : target.hosts
+        target.kind === "static" ? [hostOf(target.siteBase), ...target.legacyHosts] : target.hosts
       ),
     ]),
   ];
@@ -282,6 +348,7 @@ function main(): void {
     ...targetFlagIssues(collectTargetFlags(allWorkflowText), config),
     ...routeHostIssues(wranglerRouteHosts(wranglerText), config),
     ...wranglerVarsIssues({ config, wranglerText }),
+    ...staticSiteBaseIssues(config),
     ...hardcodedDomainIssues(workflowFiles, config),
     ...corsCoverageIssues(config),
     ...baselineFileNameIssues({

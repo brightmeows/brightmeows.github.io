@@ -14,7 +14,10 @@ import { fileURLToPath } from "node:url";
 export interface StaticTarget {
   name: string;
   kind: "static";
+  /** 自定义子域（`<name>.<主站 host>`），API 会话与 CORS 白名单都以此为准。 */
   siteBase: string;
+  /** 平台默认域（如 *.github.io）；浏览器访问会被前端兜底跳转到 siteBase。 */
+  legacyHosts: string[];
 }
 
 /** Worker 目标：hosts 必须与 wrangler.jsonc 的 routes 一致。 */
@@ -67,6 +70,14 @@ function requireString(value: unknown, where: string): string {
   return value;
 }
 
+function requireHost(value: unknown, where: string): string {
+  const raw = requireString(value, where);
+  if (!/^[a-z0-9.-]+$/u.test(raw)) {
+    throw new Error(`${where} 不是合法主机名：${raw}`);
+  }
+  return raw;
+}
+
 function parseTarget(value: unknown, index: number): SiteTarget {
   const where = `targets[${index}]`;
   if (typeof value !== "object" || value === null) {
@@ -75,7 +86,17 @@ function parseTarget(value: unknown, index: number): SiteTarget {
   const record = value as Record<string, unknown>;
   const name = requireString(record.name, `${where}.name`);
   if (record.kind === "static") {
-    return { name, kind: "static", siteBase: requireOrigin(record.siteBase, `${where}.siteBase`) };
+    if (!Array.isArray(record.legacyHosts) || record.legacyHosts.length === 0) {
+      throw new Error(`${where}.legacyHosts 必须是非空数组`);
+    }
+    return {
+      name,
+      kind: "static",
+      siteBase: requireOrigin(record.siteBase, `${where}.siteBase`),
+      legacyHosts: record.legacyHosts.map((host, i) =>
+        requireHost(host, `${where}.legacyHosts[${i}]`)
+      ),
+    };
   }
   if (record.kind === "worker") {
     if (!Array.isArray(record.hosts) || record.hosts.length === 0) {

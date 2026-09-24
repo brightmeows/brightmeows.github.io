@@ -10,7 +10,12 @@ const valid = {
   origin: "https://miyakomeow.site",
   targets: [
     { name: "cloudflare", kind: "worker", hosts: ["miyakomeow.site", "www.miyakomeow.site"] },
-    { name: "github-pages", kind: "static", siteBase: "https://brightmeows.github.io" },
+    {
+      name: "github-pages",
+      kind: "static",
+      siteBase: "https://github-pages.miyakomeow.site",
+      legacyHosts: ["brightmeows.github.io"],
+    },
   ],
   r2: {
     base: "https://r2.example/",
@@ -40,8 +45,26 @@ describe("parseSiteConfig", () => {
     ],
     [
       "静态目标 siteBase 非法",
-      { ...valid, targets: [{ name: "gh", kind: "static", siteBase: "brightmeows.github.io" }] },
+      {
+        ...valid,
+        targets: [
+          {
+            name: "gh",
+            kind: "static",
+            siteBase: "github-pages.miyakomeow.site",
+            legacyHosts: ["brightmeows.github.io"],
+          },
+        ],
+      },
       /siteBase/,
+    ],
+    [
+      "静态目标缺 legacyHosts",
+      {
+        ...valid,
+        targets: [{ name: "gh", kind: "static", siteBase: "https://github-pages.miyakomeow.site" }],
+      },
+      /legacyHosts/,
     ],
     ["kind 非法", { ...valid, targets: [{ name: "x", kind: "ftp" }] }, /kind/],
     ["r2 段缺失", { ...valid, r2: undefined }, /r2/],
@@ -71,7 +94,9 @@ describe("readSiteConfig / findStaticTarget", () => {
     const file = path.join(mkdtempSync(path.join(tmpdir(), "site-config-")), "site.json");
     writeFileSync(file, JSON.stringify(valid));
     const config = readSiteConfig(file);
-    expect(findStaticTarget(config, "github-pages").siteBase).toBe("https://brightmeows.github.io");
+    expect(findStaticTarget(config, "github-pages").siteBase).toBe(
+      "https://github-pages.miyakomeow.site"
+    );
   });
 
   it("目标不存在或不是静态宿主时报错", () => {

@@ -9,12 +9,14 @@
     {
       "name": "github-pages",
       "kind": "static",
-      "siteBase": "https://brightmeows.github.io"
+      "siteBase": "https://github-pages.miyakomeow.site",
+      "legacyHosts": ["brightmeows.github.io"]
     },
     {
       "name": "codeberg-pages",
       "kind": "static",
-      "siteBase": "https://brightmeows.codeberg.page"
+      "siteBase": "https://codeberg-pages.miyakomeow.site",
+      "legacyHosts": ["brightmeows.codeberg.page"]
     }
   ],
   "r2": {
@@ -23,6 +25,8 @@
     "baselineObject": "meta/last-notified.json",
     "corsOrigins": [
       "https://miyakomeow.site",
+      "https://github-pages.miyakomeow.site",
+      "https://codeberg-pages.miyakomeow.site",
       "https://brightmeows.github.io",
       "https://brightmeows.codeberg.page",
       "http://localhost:5173",

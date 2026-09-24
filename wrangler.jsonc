@@ -31,9 +31,13 @@
   // 部署期变量：Worker 的 R2 基址与清单对象键不再 import config/site.json，
   // 改为从 env 读取；config/site.json 仍是权威源，一致性由
   // scripts/check-site-config.ts 的第 7 条断言守住。
+  // SITE_ORIGINS 是跨源 API 的显式 Origin 白名单（站点三域 + 本地 wrangler dev），
+  // COOKIE_DOMAIN 让静态宿主子域与主站共享会话 cookie（同站，SameSite=Lax 保留）。
   "vars": {
     "R2_BASE": "https://bms-table-mirror-r2.miyakomeow.site",
     "R2_MANIFEST_OBJECT": "tables/tables.json",
+    "SITE_ORIGINS": "https://miyakomeow.site,https://github-pages.miyakomeow.site,https://codeberg-pages.miyakomeow.site,http://localhost:8787,http://127.0.0.1:8787",
+    "COOKIE_DOMAIN": ".miyakomeow.site",
   },
   "routes": [
     { "pattern": "miyakomeow.site", "custom_domain": true },
