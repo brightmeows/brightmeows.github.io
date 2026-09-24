@@ -4,7 +4,7 @@
  * 重点在 PKCS#1 到 PKCS#8 的 DER 包装与 JWT 签名：两处写错都要到线上换 token 时
  * 才暴露，而它们完全可以用 Web Crypto 离线验证——用 `crypto.subtle.generateKey`
  * 生成一对 RSA 密钥（与 Workers 运行时同一套 API，不依赖 node:crypto），把导出的
- * PKCS#8 反向拆出 PKCS#1，再走一遍「PEM 转换、导入、签名、用公钥验证」。
+ * PKCS#8 反向拆出 PKCS#1，再走一遍“PEM 转换、导入、签名、用公钥验证”。
  */
 
 import { describe, expect, it } from "vitest";

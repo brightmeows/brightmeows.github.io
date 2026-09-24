@@ -91,15 +91,18 @@ repos:
         language: system
         types: [text]
 
-  # 简体中文横排引号规范（GB/T 15834-2011）：中文正文必须用弯引号。
-  # YAML frontmatter 与 HTML 标签属性中的引号是语法，脚本会跳过。
+  # 中文文本引号规范（GB/T 15834-2011）：中文表达必须用弯引号。
+  # Markdown 扫直引号与直角/全角无向引号（跳过 frontmatter、代码块与
+  # HTML 标签）；代码与配置只扫直角与全角无向引号（ASCII 直引号是语法）。
+  # static/ 是数据资产（含日文原文）不扫；行内含 cn-quotes-ignore 可豁免。
   - repo: local
     hooks:
       - id: cn-quotes
         name: Chinese quotes follow GB/T 15834-2011
         entry: python3 scripts/check-cn-quotes.py
         language: system
-        files: \.(md|svx)$
+        files: \.(md|svx|ts|svelte|js|py|yml|yaml|json|jsonc|toml|css|html)$
+        exclude: ^static/
 
   # 同一事实在不能 import 配置的地方（wrangler.jsonc、工作流 YAML、oxfmt 忽略项、
   # 版本文件）必须与 config/site.json 一致；纯离线、毫秒级。
@@ -112,7 +115,7 @@ repos:
         files: ^(config/site\.json|wrangler\.jsonc|\.oxfmtrc\.json|\.nvmrc|package\.json)$|^\.(github|forgejo)/workflows/.*\.ya?ml$
         pass_filenames: false
 
-  # 提交信息遵循 Conventional Commits（见 AGENTS.md「提交格式」）
+  # 提交信息遵循 Conventional Commits（见 AGENTS.md“提交格式”）
   - repo: local
     hooks:
       - id: conventional-commit

@@ -3,7 +3,7 @@
  *
  * 这是 worker 里少见的纯函数：给定页面文本与地址，返回可用的 header URL。它此前
  * 没有测试覆盖，借分层重构补上——提取逻辑有四种来源（JSON、两种 meta 写法、
- * header 文件名兜底），任一分支回归都只会在预览时表现为「找不到 header」。
+ * header 文件名兜底），任一分支回归都只会在预览时表现为“找不到 header”。
  */
 
 import { describe, expect, it } from "vitest";

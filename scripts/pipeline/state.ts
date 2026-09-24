@@ -41,7 +41,7 @@ function readString(record: Record<string, unknown>, key: string): string | null
   return typeof value === "string" ? value : null;
 }
 
-/** 解析旧的 state.toml；任何结构问题都按「无历史状态」处理。 */
+/** 解析旧的 state.toml；任何结构问题都按“无历史状态”处理。 */
 export function parseStateToml(text: string): SyncState | null {
   let root: unknown;
   try {

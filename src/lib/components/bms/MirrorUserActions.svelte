@@ -206,7 +206,7 @@
         {#if preview}
           <div class="text-[0.9rem] text-white/70">
             预览结果：<strong class="text-white">{preview.name || "（无名称）"}</strong>
-            {preview.symbol ? `（符号 ${preview.symbol}）` : ""}；确认后点击「提交添加」，后台抓取约
+            {preview.symbol ? `（符号 ${preview.symbol}）` : ""}；确认后点击“提交添加”，后台抓取约
             1～3 分钟。
           </div>
         {/if}

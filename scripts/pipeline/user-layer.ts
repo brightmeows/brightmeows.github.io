@@ -4,7 +4,7 @@
  * 用户层存在 D1（Worker 侧），管线不直连数据库：经 `/api/internal/user-layer`
  * 一次拉取全部索引，用共享 token 鉴权（见 scripts/internal-api.ts）。接口不可用时
  * 按空处理并记录告警——用户层是叠加在基线之上的增量，读不到最坏是增删晚一轮
- * 生效，不该中断整轮抓取；日志里区分「接口失败」与「确实为空」，后者不记告警。
+ * 生效，不该中断整轮抓取；日志里区分“接口失败”与“确实为空”，后者不记告警。
  *
  * 条目解析复用 `packages/mirror/src/user-layer.ts` 的解析器，与读取侧同一套语义。
  */
@@ -25,7 +25,7 @@ import { callInternal, internalToken } from "../internal-api.ts";
 
 export interface UserLayerLoadResult {
   layer: UserLayer;
-  /** 接口或解析失败说明；「确实为空」不产生告警。 */
+  /** 接口或解析失败说明；“确实为空”不产生告警。 */
   warnings: string[];
 }
 

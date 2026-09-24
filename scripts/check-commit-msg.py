@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""校验提交信息符合 Conventional Commits（约定见 AGENTS.md「提交格式」）。
+"""校验提交信息符合 Conventional Commits（约定见 AGENTS.md“提交格式”）。
 
 pre-commit 以 commit-msg stage 调用，参数为提交信息文件路径；
 CI 对 PR 中的每个提交调用同一脚本。
