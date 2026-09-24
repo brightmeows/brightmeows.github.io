@@ -18,6 +18,8 @@ export interface StaticTarget {
   siteBase: string;
   /** 平台默认域（如 *.github.io）；浏览器访问会被前端兜底跳转到 siteBase。 */
   legacyHosts: string[];
+  /** git-pages 服务的 TLS 主机名（Codeberg）：自定义域证书就绪前上传时的连接用。 */
+  pagesServer?: string;
 }
 
 /** Worker 目标：hosts 必须与 wrangler.jsonc 的 routes 一致。 */
@@ -96,6 +98,9 @@ function parseTarget(value: unknown, index: number): SiteTarget {
       legacyHosts: record.legacyHosts.map((host, i) =>
         requireHost(host, `${where}.legacyHosts[${i}]`)
       ),
+      ...(record.pagesServer === undefined
+        ? {}
+        : { pagesServer: requireHost(record.pagesServer, `${where}.pagesServer`) }),
     };
   }
   if (record.kind === "worker") {

@@ -15,6 +15,7 @@ const valid = {
       kind: "static",
       siteBase: "https://github-pages.miyakomeow.site",
       legacyHosts: ["brightmeows.github.io"],
+      pagesServer: "codeberg.page",
     },
   ],
   r2: {
@@ -31,6 +32,7 @@ describe("parseSiteConfig", () => {
     expect(config.origin).toBe("https://miyakomeow.site");
     expect(config.r2.base).toBe("https://r2.example");
     expect(config.targets).toHaveLength(2);
+    expect(findStaticTarget(config, "github-pages").pagesServer).toBe("codeberg.page");
   });
 
   it.each([
@@ -65,6 +67,22 @@ describe("parseSiteConfig", () => {
         targets: [{ name: "gh", kind: "static", siteBase: "https://github-pages.miyakomeow.site" }],
       },
       /legacyHosts/,
+    ],
+    [
+      "静态目标 pagesServer 非法",
+      {
+        ...valid,
+        targets: [
+          {
+            name: "gh",
+            kind: "static",
+            siteBase: "https://github-pages.miyakomeow.site",
+            legacyHosts: ["brightmeows.github.io"],
+            pagesServer: "https://codeberg.page/x",
+          },
+        ],
+      },
+      /pagesServer/,
     ],
     ["kind 非法", { ...valid, targets: [{ name: "x", kind: "ftp" }] }, /kind/],
     ["r2 段缺失", { ...valid, r2: undefined }, /r2/],

@@ -16,7 +16,8 @@
       "name": "codeberg-pages",
       "kind": "static",
       "siteBase": "https://codeberg-pages.miyakomeow.site",
-      "legacyHosts": ["brightmeows.codeberg.page"]
+      "legacyHosts": ["brightmeows.codeberg.page"],
+      "pagesServer": "codeberg.page"
     }
   ],
   "r2": {
