@@ -10,7 +10,7 @@ function makeInfo(name: string, url: string): TableInfo {
 describe("sanitizeFilename", () => {
   it("把非法字符替换为全角", () => {
     expect(sanitizeFilename("a/b:c")).toBe("a／b：c");
-    expect(sanitizeFilename('x*?"<>|\\')).toBe("x＊？＂＜＞｜＼");
+    expect(sanitizeFilename('x*?"<>|\\')).toBe("x＊？＂＜＞｜＼"); // cn-quotes-ignore: 全角映射结果是数据
   });
 
   it("把控制字符替换为下划线并折叠连续下划线", () => {

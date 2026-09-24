@@ -1,7 +1,7 @@
 # Codeberg Pages 部署（静态镜像目标之一）。
 #
-# 代码经 mirror.yml 从 GitHub 推到这里，本工作流在 Codeberg 侧跑「构建 + 生成静态
-# 镜像页 + 发布」。目标域名由配置解析（--target），因此这里不出现任何域名；
+# 代码经 mirror.yml 从 GitHub 推到这里，本工作流在 Codeberg 侧跑“构建 + 生成静态
+# 镜像页 + 发布”。目标域名由配置解析（--target），因此这里不出现任何域名；
 # Cloudflare 侧由 Worker 动态生成，不涉及这里。
 name: Deploy to Codeberg Pages
 on:

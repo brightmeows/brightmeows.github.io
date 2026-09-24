@@ -15,7 +15,7 @@ export type TransformedTableItem = MirrorTableItem &
  * 变更判定投影：只保留站点真正消费的字段。
  *
  * 上游清单里的 `comment`/`date`/`state` 属于来源站点的元数据，更新节奏不可控；
- * 表内容更新只影响 R2 上的 data.json/header.json，不进入清单。因此「列表变动」
+ * 表内容更新只影响 R2 上的 data.json/header.json，不进入清单。因此“列表变动”
  * 一律以本投影是否变化判定，避免内容或元数据抖动触发无意义的部署。
  */
 export interface TableListProjection {

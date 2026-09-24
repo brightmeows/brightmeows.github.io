@@ -6,7 +6,7 @@
 #   静态页一起传上去，虽不致命但会白白增加上传量）。
 # - GitHub Pages（静态镜像目标之一）：构建期生成静态镜像页与站点清单后发布。
 # - Codeberg Pages（静态镜像目标之二）：由 .forgejo/workflows/deploy.yml
-#   在 Codeberg 侧跑同样的「构建 + 生成」流程。
+#   在 Codeberg 侧跑同样的“构建 + 生成”流程。
 #
 # 检查（lint/check/test）不在这里重复：main 的提交由 PR 必过门槛与 push 触发的
 # CI 覆盖，唯一绕过 PR 的路径（deploy key 直推快照）只改数据。
@@ -17,7 +17,7 @@ on:
     branches: "main"
   schedule:
     # 6 小时兜底重建：GITHUB_TOKEN 类合并提交（dependabot auto-merge）不触发
-    # push 工作流，也兜住「清单快照在两次代码提交之间更新」的情况
+    # push 工作流，也兜住“清单快照在两次代码提交之间更新”的情况
     - cron: "20 */6 * * *"
 
 # 部署串行：排队执行让最后一次触发的运行最后部署，避免旧提交覆盖新版本

@@ -2,11 +2,11 @@
  * 外部只读比对：把仓库内 `config/site.json` 的 `r2.corsOrigins` 与 Cloudflare 上
  * 桶的 CORS policy 对比。**只读**，不做任何写入。
  *
- * 为什么需要它：桶的 CORS 来源是「改了仓库但线上没跟上就会静默退化」的唯一一项——
+ * 为什么需要它：桶的 CORS 来源是“改了仓库但线上没跟上就会静默退化”的唯一一项——
  * 漏放一个来源时 beatoraja 等原生客户端照常工作，只有浏览器侧失败，很难从现象定位。
  *
  * 需要环境变量：`CLOUDFLARE_API_TOKEN`、`CLOUDFLARE_ACCOUNT_ID`、`R2_BUCKET`
- * （桶名刻意不入库，延续「选公开域而非 R2 绑定」的决定）。
+ * （桶名刻意不入库，延续“选公开域而非 R2 绑定”的决定）。
  *
  * 用法：`node scripts/check-r2-cors.ts`
  * 退出码：0 一致；1 不一致或读取失败。凭据缺失按失败处理，不静默跳过。

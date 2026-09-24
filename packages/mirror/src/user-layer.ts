@@ -4,7 +4,7 @@
  * 用户层承载站长与访客对镜像表集合的编辑意图（添加、删除、禁用、替换、
  * 授权、元数据覆盖），自 2026-09 起存于 D1（表结构见 worker/schema.ts，
  * 读写见 worker/store.ts）。与管线产出的原始清单在读取侧合并——这是
- * 「用户添加的表立刻可见」与「删除由黑名单排除」的实现基础。站点、Worker、
+ * “用户添加的表立刻可见”与“删除由黑名单排除”的实现基础。站点、Worker、
  * 数据管线与构建期脚本共用本模块，必须保持零依赖、可擦除语法、相对导入带
  * .ts 扩展名。
  *
@@ -204,7 +204,7 @@ function findItemByDirName(
   return undefined;
 }
 
-/** 把元数据覆盖应用到条目：空字符串视为「不覆盖」。 */
+/** 把元数据覆盖应用到条目：空字符串视为“不覆盖”。 */
 export function applyMetaOverride(item: MirrorTableItem, override: MetaOverride): MirrorTableItem {
   const next: MirrorTableItem = { ...item };
   if (override.name !== undefined && override.name !== "") next.name = override.name;

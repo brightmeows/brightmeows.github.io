@@ -2,7 +2,7 @@
  * GitHub App 身份：签发 JWT、换取 installation token、触发工作流。
  *
  * 用 GitHub App 而不是长期令牌：installation token 一小时有效、由 App 私钥当场
- * 签发，没有「令牌到期后静默失效」的问题，也不绑定个人账户；私钥只存在 Worker
+ * 签发，没有“令牌到期后静默失效”的问题，也不绑定个人账户；私钥只存在 Worker
  * secret（`GITHUB_APP_PRIVATE_KEY`，PEM 文本）里。
  *
  * JWT 用 RS256 签（GitHub 要求），有效期 9 分钟（上限 10 分钟）；installation

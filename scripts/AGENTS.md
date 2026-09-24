@@ -13,7 +13,7 @@
 
 ## 校验脚本
 
-- `scripts/check-cn-quotes.py` — 中文正文引号规范（GB/T 15834-2011）。跳过 YAML frontmatter、HTML 标签属性、行内代码与围栏代码块，这些位置的引号是语法而非中文文本。
+- `scripts/check-cn-quotes.py` — 中文文本引号规范（GB/T 15834-2011）。两档策略：Markdown（`.md`/`.svx`）扫直引号、全角无向引号与直角引号，跳过 frontmatter、代码块、行内代码与 HTML 标签（这些位置的引号是语法）；代码与配置类型只扫直角引号与全角无向引号（ASCII 直引号在代码里是字符串与语法，无法与注释引号机械区分，不扫）。`static/` 为数据资产（含日文原文）不扫；行内含 `cn-quotes-ignore` 注释可豁免单行（字符映射表、测试断言等“引号即数据”场景，豁免与原因就近可见）。
 - `scripts/check-commit-msg.py` — Conventional Commits 格式校验（见根 `AGENTS.md` 的“提交格式”节），pre-commit commit-msg stage 与 CI 的 PR job 共用。
 - `scripts/check-site-config.ts` — 离线一致性校验（八条断言：`--target` 合法、wrangler routes ⊆ 配置、工作流无硬编码域名、CORS 覆盖全部目标、基线文件名与 `r2.baselineObject` 一致、版本来源唯一（devEngines 范围加工作流不传 pnpm 版本）、wrangler vars 与配置一致（含 `SITE_ORIGINS` 白名单与 `COOKIE_DOMAIN`）、静态目标 siteBase 主机与 target 名对齐）。`pnpm check:config` 调用它，pre-commit 与 CI 都跑。
 - `scripts/check-r2-cors.ts` — 只读比对桶 CORS policy 与配置（需 `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID`/`R2_BUCKET`）；不在日常 CI 跑，由 `config-drift.yml` 在配置变更的 PR 与手动触发时调用。

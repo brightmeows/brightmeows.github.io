@@ -1,5 +1,5 @@
 /**
- * 离线一致性校验：把「不能 import 配置」的消费者钉在 `config/site.json` 上。
+ * 离线一致性校验：把“不能 import 配置”的消费者钉在 `config/site.json` 上。
  *
  * 七条断言，每条都是纯函数（输入为文本），便于单测：
  * 1. 工作流里的 `--target=<名>` 必须存在于配置且是静态目标
@@ -16,7 +16,7 @@
  *    另校验派生键 `SITE_ORIGINS`（跨源 API 的 Origin 白名单，必须覆盖站点三域）
  *    与 `COOKIE_DOMAIN`（等于 `.` 加主站 host，静态宿主子域共享会话）
  * 8. 静态目标的 `siteBase` 主机必须是 `<name>.<主站 host>`：子域名与 target 名
- *    对齐是机械规则，断言守住「名字即事实」（会话 cookie 与 CORS 白名单都依赖它）
+ *    对齐是机械规则，断言守住“名字即事实”（会话 cookie 与 CORS 白名单都依赖它）
  *
  * 纯读、不联网、毫秒级，进 pre-commit 与 CI。用法：`node scripts/check-site-config.ts`
  */
@@ -120,7 +120,7 @@ export function corsCoverageIssues(config: SiteConfig): string[] {
 /**
  * 断言 5：基线文件名与配置的对象键 basename 一致。
  * rclone copy 保留本地文件名，若工作流写出的名字与 `r2.baselineObject` 不符，
- * 对象会被写到另一个键上，下次读取仍视为「首次运行」而重复触发下游重建。
+ * 对象会被写到另一个键上，下次读取仍视为“首次运行”而重复触发下游重建。
  */
 export function baselineFileNameIssues(args: {
   config: SiteConfig;

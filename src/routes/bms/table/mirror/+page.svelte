@@ -58,7 +58,7 @@
 
   let searchNeedles = $derived(buildSearchNeedles(searchQuery, searchConverters));
   let filteredTables = $derived(filterTables(tables, searchNeedles));
-  // 筛选：启用「已授权」时仅保留受删除保护的表
+  // 筛选：启用“已授权”时仅保留受删除保护的表
   let protectedFilteredTables = $derived(
     showProtectedOnly ? filteredTables.filter((t) => t.protected === true) : filteredTables
   );
@@ -106,14 +106,14 @@
     const dirName = item.dir_name;
     if (dirName === undefined || dirName === "") return;
     const label = item.name === "" ? dirName : item.name;
-    if (!window.confirm(`确定删除「${label}」吗？删除后 30 天内可在本页自助恢复。`)) {
+    if (!window.confirm(`确定删除“${label}”吗？删除后 30 天内可在本页自助恢复。`)) {
       return;
     }
     deletingDir = dirName;
     actionNotice = null;
     try {
       await submitDelete(dirName);
-      actionNotice = { kind: "ok", text: `已删除「${label}」，清单约 1 分钟后更新。` };
+      actionNotice = { kind: "ok", text: `已删除“${label}”，清单约 1 分钟后更新。` };
       await loadTables();
       await userActions?.refresh();
     } catch (e) {
