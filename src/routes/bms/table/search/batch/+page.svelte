@@ -7,13 +7,7 @@
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
   import GradientButton from "$lib/components/ui/GradientButton.svelte";
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
-  import type {
-    CandidateEntry,
-    QueryType,
-    TableLoadState,
-    WorkerMessage,
-    WorkerSearchRequest,
-  } from "$lib/data/bms-search";
+  import type { CandidateEntry, QueryType, TableLoadState } from "$lib/data/bms-search";
   import {
     detectQueryType,
     filterChartsByKeys,
@@ -22,34 +16,20 @@
   } from "$lib/data/bms-search";
   import { IncrementalAggregator } from "$lib/data/search-aggregator";
   import type { SearchResult } from "$lib/data/search-aggregator";
+  import { searchConverters } from "$lib/data/search-converters.svelte";
+  import { SearchIndexClient } from "$lib/data/search-index-client.svelte";
   import type { ChartData } from "$lib/types/bms";
   import { buildSearchNeedles } from "$lib/utils/mirror-tables";
-  import { getSearchConverters } from "$lib/utils/opencc-loader";
 
-  // ---- OpenCC（延迟加载，约 1.1MB）----
-  let searchConverters = $state<((input: string) => string)[]>([]);
-  let convertersLoaded = false;
-  function ensureConverters(): void {
-    if (convertersLoaded) return;
-    convertersLoaded = true;
-    void getSearchConverters().then((c) => (searchConverters = c));
-  }
+  // 搜索索引 Worker：创建、索引加载状态与消息协议封装在共享客户端里
+  const indexClient = new SearchIndexClient();
 
   // ---- 输入 ----
   let input = $state("");
   const placeholderText =
     "每行一个搜索词，支持标题、艺术家、MD5、SHA256\n标题/艺术家支持简繁日自动转换\n\n示例：\nANOTHER\n0123456789abcdef0123456789abcdef\n星空の下で";
 
-  // ---- Worker / 索引状态 ----
-  let worker: Worker | null = null;
-  let indexPhase = $state<"loading" | "ready" | "error">("loading");
-  let indexProgress = $state<{ name: string; status: "loading" | "done" | "error" }[]>([
-    { name: "title", status: "loading" },
-    { name: "artist", status: "loading" },
-    { name: "md5", status: "loading" },
-    { name: "sha256", status: "loading" },
-  ]);
-  let indexErrorMessage = $state<string | null>(null);
+  // ---- 搜索索引（加载状态与生命周期在 indexClient）----
 
   // ---- 批量搜索状态 ----
   let batchPhase = $state<"idle" | "index-searching" | "loading-tables" | "aggregating" | "done">(
@@ -60,12 +40,9 @@
   let tableStates = $state(new SvelteMap<string, TableLoadState>());
   let batchResults = $state<Record<string, SearchResult[]>>({});
 
-  // 取消控制
+  // 取消控制（未决索引搜索的取消走 indexClient.cancelPending）
   let batchId = 0;
-  let searchIdCounter = 0;
   let abortController: AbortController | null = null;
-  // 仅异步回调中读写，不参与模板追踪
-  const pendingSearches = new Map<number, (candidates: CandidateEntry[]) => void>();
 
   // 已加载表数据（非响应式：仅异步回调中读写，不参与模板追踪）
   let tableData = new Map<
@@ -101,52 +78,6 @@
       .filter(Boolean).length
   );
   const resultQueries = $derived(Object.keys(batchResults));
-
-  // ---- Worker 消息处理 ----
-
-  function setupWorker(w: Worker): void {
-    w.addEventListener("message", (e: MessageEvent<WorkerMessage>) => {
-      const msg = e.data;
-      switch (msg.type) {
-        case "index-progress": {
-          indexProgress = indexProgress.map((item) =>
-            item.name === msg.name ? { ...item, status: msg.status } : item
-          );
-          break;
-        }
-        case "ready": {
-          if (msg.error) {
-            indexPhase = "error";
-            indexErrorMessage = msg.error;
-          } else {
-            indexPhase = "ready";
-          }
-          break;
-        }
-        case "search-result": {
-          const resolver = pendingSearches.get(msg.searchId);
-          if (resolver) {
-            pendingSearches.delete(msg.searchId);
-            resolver(msg.candidates);
-          }
-          break;
-        }
-      }
-    });
-  }
-
-  /** 发送单次搜索请求并 Promise 化等待结果 */
-  function workerSearch(
-    query: string,
-    needles: string[] | undefined,
-    searchId: number
-  ): Promise<CandidateEntry[]> {
-    return new Promise((resolve) => {
-      pendingSearches.set(searchId, resolve);
-      const req: WorkerSearchRequest = { type: "search", searchId, query, needles };
-      worker!.postMessage(req);
-    });
-  }
 
   // ---- tableStates 更新辅助 ----
 
@@ -229,12 +160,11 @@
       .split("\n")
       .map((l) => l.trim())
       .filter(Boolean);
-    if (queries.length === 0 || !worker || indexPhase !== "ready") return;
+    if (queries.length === 0 || indexClient.phase !== "ready") return;
 
     // 取消上一批次
     abortController?.abort();
-    for (const resolver of pendingSearches.values()) resolver([]);
-    pendingSearches.clear();
+    indexClient.cancelPending();
 
     const ctrl = new AbortController();
     abortController = ctrl;
@@ -254,9 +184,8 @@
       if (!isEpochValid(epoch)) return;
       const queryType = detectQueryType(query);
       const needles =
-        queryType === "text" ? buildSearchNeedles(query, searchConverters) : undefined;
-      const sid = ++searchIdCounter;
-      const candidates = await workerSearch(query, needles, sid);
+        queryType === "text" ? buildSearchNeedles(query, searchConverters.list) : undefined;
+      const candidates = await indexClient.search(query, needles);
       if (!isEpochValid(epoch)) return;
       perQuery.push({ query, queryType, candidates });
       indexSearchProgress = { done: i + 1, total: queries.length };
@@ -314,8 +243,7 @@
     batchId++;
     abortController?.abort();
     abortController = null;
-    for (const resolver of pendingSearches.values()) resolver([]);
-    pendingSearches.clear();
+    indexClient.cancelPending();
     batchPhase = "idle";
     tableStates = new SvelteMap();
   }
@@ -348,22 +276,11 @@
   // ---- 生命周期 ----
 
   onMount(() => {
-    try {
-      const w = new Worker(new URL("$lib/data/bms-search.worker.ts", import.meta.url), {
-        type: "module",
-      });
-      setupWorker(w);
-      worker = w;
-    } catch (err) {
-      console.warn("Web Worker 创建失败:", err);
-      indexPhase = "error";
-      indexErrorMessage = `Worker 创建失败: ${err instanceof Error ? err.message : String(err)}`;
-    }
+    indexClient.start();
   });
 
   onDestroy(() => {
-    worker?.terminate();
-    worker = null;
+    indexClient.dispose();
   });
 </script>
 
@@ -380,13 +297,13 @@
 {/snippet}
 
 {#snippet contentPane()}
-  {#if indexPhase === "loading"}
+  {#if indexClient.phase === "loading"}
     <!-- 索引加载进度 -->
     <div class="p-8 text-center">
       <div class="mb-6 text-[3rem]">⏳</div>
       <p class="mb-4 text-white/80">正在加载搜索索引...</p>
       <div class="mx-auto max-w-xs space-y-2 text-left">
-        {#each indexProgress as item (item.name)}
+        {#each indexClient.progress as item (item.name)}
           <div class="flex items-center gap-3 text-[0.9rem]">
             {#if item.status === "loading"}
               <div
@@ -404,12 +321,12 @@
         {/each}
       </div>
     </div>
-  {:else if indexPhase === "error"}
+  {:else if indexClient.phase === "error"}
     <div class="p-12 text-center">
       <div class="mb-4 text-[4rem]">⚠️</div>
       <h3 class="mb-4 text-[#ff6b6b]">索引加载失败</h3>
       <p class="my-6 rounded-[10px] border-l-4 border-[#ff6b6b] bg-[rgba(255,107,107,0.1)] p-4">
-        {indexErrorMessage ?? "未知错误"}
+        {indexClient.errorMessage ?? "未知错误"}
       </p>
     </div>
   {:else}
@@ -419,7 +336,7 @@
         <div class="relative flex-1">
           <textarea
             bind:value={input}
-            onfocus={ensureConverters}
+            onfocus={searchConverters.ensureLoaded}
             placeholder={placeholderText}
             disabled={isProcessing}
             rows="10"

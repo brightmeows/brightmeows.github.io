@@ -12,10 +12,10 @@
   import { auth } from "$lib/data/auth-store.svelte";
   import { loadMirrorTables } from "$lib/data/mirror-table-loader";
   import { submitDelete } from "$lib/data/mirror-user-api";
+  import { searchConverters } from "$lib/data/search-converters.svelte";
   import type { JsonPreviewHandle, TocItem } from "$lib/types/ui";
   import { clipboardFeedback } from "$lib/utils/clipboard.svelte";
   import { buildSearchNeedles, filterTables, groupByTags } from "$lib/utils/mirror-tables";
-  import { getSearchConverters } from "$lib/utils/opencc-loader";
   import { buildGroupTocItems } from "$lib/utils/toc";
 
   const tablesJsonPath = "/bms/table/mirror/tables.json";
@@ -41,22 +41,14 @@
 
   let mirrorPreview = $state<JsonPreviewHandle | undefined>(undefined);
 
-  let searchConverters = $state<((input: string) => string)[]>([]);
-
-  // opencc-js 约 1.1MB，延迟到用户首次聚焦搜索框时加载，避免进入页面即下载
-  let convertersLoaded = false;
-  function ensureConverters(): void {
-    if (convertersLoaded) return;
-    convertersLoaded = true;
-    void getSearchConverters().then((c) => (searchConverters = c));
-  }
+  // opencc-js 约 1.1MB：转换器在搜索框首次聚焦时才懒加载（共享 store，见 search-converters.svelte）
 
   function copyTables(): void {
     const url = new URL(tablesJsonPath, window.location.origin).toString();
     void cb.copy(url);
   }
 
-  let searchNeedles = $derived(buildSearchNeedles(searchQuery, searchConverters));
+  let searchNeedles = $derived(buildSearchNeedles(searchQuery, searchConverters.list));
   let filteredTables = $derived(filterTables(tables, searchNeedles));
   // 筛选：启用“已授权”时仅保留受删除保护的表
   let protectedFilteredTables = $derived(
@@ -188,7 +180,7 @@
         type="text"
         placeholder="按 名称 / 符号 搜索，支持 简体中文 / 繁体中文 / 日文汉字 自动转换"
         bind:value={searchQuery}
-        onfocus={ensureConverters}
+        onfocus={searchConverters.ensureLoaded}
       />
       {#if searchQuery.trim().length > 0}
         <button

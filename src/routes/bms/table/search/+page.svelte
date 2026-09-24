@@ -5,12 +5,7 @@
   import BmsSearchResult from "$lib/components/bms/BmsSearchResult.svelte";
   import PageShell from "$lib/components/layout/PageShell.svelte";
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
-  import type {
-    CandidateEntry,
-    TableLoadState,
-    WorkerMessage,
-    WorkerSearchRequest,
-  } from "$lib/data/bms-search";
+  import type { CandidateEntry, TableLoadState } from "$lib/data/bms-search";
   import {
     detectQueryType,
     loadTableHeader,
@@ -18,18 +13,12 @@
   } from "$lib/data/bms-search";
   import type { SearchResult } from "$lib/data/search-aggregator";
   import { IncrementalAggregator } from "$lib/data/search-aggregator";
+  import { searchConverters } from "$lib/data/search-converters.svelte";
+  import { SearchIndexClient } from "$lib/data/search-index-client.svelte";
   import { buildSearchNeedles } from "$lib/utils/mirror-tables";
-  import { getSearchConverters } from "$lib/utils/opencc-loader";
 
-  let searchConverters = $state<((input: string) => string)[]>([]);
-
-  // opencc-js 约 1.1MB，延迟到用户首次聚焦搜索框时加载，避免与索引加载争抢带宽
-  let convertersLoaded = false;
-  function ensureConverters(): void {
-    if (convertersLoaded) return;
-    convertersLoaded = true;
-    void getSearchConverters().then((c) => (searchConverters = c));
-  }
+  // 搜索索引 Worker：创建、索引加载状态与消息协议封装在共享客户端里
+  const indexClient = new SearchIndexClient();
 
   // ---- 通用状态 ----
   let query = $state("");
@@ -41,16 +30,7 @@
     return "标题/艺术家子串匹配";
   });
 
-  // ---- Worker 状态 ----
-  let worker: Worker | null = null;
-  let indexPhase = $state<"loading" | "ready" | "error">("loading");
-  let indexProgress = $state<{ name: string; status: "loading" | "done" | "error" }[]>([
-    { name: "title", status: "loading" },
-    { name: "artist", status: "loading" },
-    { name: "md5", status: "loading" },
-    { name: "sha256", status: "loading" },
-  ]);
-  let indexErrorMessage = $state<string | null>(null);
+  // ---- 搜索索引（加载状态与生命周期在 indexClient）----
 
   // ---- 搜索状态 ----
   let searchPhase = $state<"idle" | "searching" | "loading-tables" | "done">("idle");
@@ -82,37 +62,6 @@
       return (a.title ?? "").localeCompare(b.title ?? "", "zh-CN");
     })
   );
-
-  // ---- Worker 消息处理 ----
-
-  function setupWorker(w: Worker): void {
-    w.addEventListener("message", (e: MessageEvent<WorkerMessage>) => {
-      const msg = e.data;
-
-      switch (msg.type) {
-        case "index-progress": {
-          indexProgress = indexProgress.map((item) =>
-            item.name === msg.name ? { ...item, status: msg.status } : item
-          );
-          break;
-        }
-        case "ready": {
-          if (msg.error) {
-            indexPhase = "error";
-            indexErrorMessage = msg.error;
-          } else {
-            indexPhase = "ready";
-          }
-          break;
-        }
-        case "search-result": {
-          if (msg.searchId !== currentSearchId) return;
-          void handleSearchResult(msg.candidates, abortController?.signal);
-          break;
-        }
-      }
-    });
-  }
 
   async function handleSearchResult(
     candidates: CandidateEntry[],
@@ -263,15 +212,15 @@
 
   // ---- 搜索入口 ----
 
-  function performSearch(): void {
+  async function performSearch(): Promise<void> {
     const q = query.trim();
-    if (!q || !worker || indexPhase !== "ready") return;
+    if (!q || indexClient.phase !== "ready") return;
 
     abortController?.abort();
     const ctrl = new AbortController();
     abortController = ctrl;
 
-    const searchId = ++currentSearchId;
+    const epoch = ++currentSearchId;
     currentSearchType = detectQueryType(q);
 
     searchPhase = "searching";
@@ -281,35 +230,25 @@
     aggregator = null;
 
     const needles =
-      currentSearchType === "text" ? buildSearchNeedles(q, searchConverters) : undefined;
+      currentSearchType === "text" ? buildSearchNeedles(q, searchConverters.list) : undefined;
 
-    const msg: WorkerSearchRequest = { type: "search", searchId, query: q, needles };
-    worker.postMessage(msg);
+    const candidates = await indexClient.search(q, needles);
+    if (epoch !== currentSearchId) return; // 已被新搜索取代
+    await handleSearchResult(candidates, abortController?.signal);
   }
 
   function onKeydown(e: KeyboardEvent): void {
-    if (e.key === "Enter") performSearch();
+    if (e.key === "Enter") void performSearch();
   }
 
   // ---- 挂载 ----
 
   onMount(() => {
-    try {
-      const w = new Worker(new URL("$lib/data/bms-search.worker.ts", import.meta.url), {
-        type: "module",
-      });
-      setupWorker(w);
-      worker = w;
-    } catch (err) {
-      console.warn("Web Worker 创建失败:", err);
-      indexPhase = "error";
-      indexErrorMessage = `Worker 创建失败: ${err instanceof Error ? err.message : String(err)}`;
-    }
+    indexClient.start();
   });
 
   onDestroy(() => {
-    worker?.terminate();
-    worker = null;
+    indexClient.dispose();
   });
 </script>
 
@@ -326,13 +265,13 @@
 {/snippet}
 
 {#snippet contentPane()}
-  {#if indexPhase === "loading"}
+  {#if indexClient.phase === "loading"}
     <!-- 索引加载进度 -->
     <div class="p-8 text-center">
       <div class="mb-6 text-[3rem]">⏳</div>
       <p class="mb-4 text-white/80">正在加载搜索索引...</p>
       <div class="mx-auto max-w-xs space-y-2 text-left">
-        {#each indexProgress as item (item.name)}
+        {#each indexClient.progress as item (item.name)}
           <div class="flex items-center gap-3 text-[0.9rem]">
             {#if item.status === "loading"}
               <div
@@ -350,13 +289,13 @@
         {/each}
       </div>
     </div>
-  {:else if indexPhase === "error"}
+  {:else if indexClient.phase === "error"}
     <!-- 索引加载失败 -->
     <div class="p-12 text-center">
       <div class="mb-4 text-[4rem]">⚠️</div>
       <h3 class="mb-4 text-[#ff6b6b]">索引加载失败</h3>
       <p class="my-6 rounded-[10px] border-l-4 border-[#ff6b6b] bg-[rgba(255,107,107,0.1)] p-4">
-        {indexErrorMessage ?? "未知错误"}
+        {indexClient.errorMessage ?? "未知错误"}
       </p>
     </div>
   {:else}
@@ -368,7 +307,7 @@
             type="text"
             bind:value={query}
             onkeydown={onKeydown}
-            onfocus={ensureConverters}
+            onfocus={searchConverters.ensureLoaded}
             placeholder="输入谱面标题、艺术家、MD5 或 SHA256，支持简繁日自动转换..."
             disabled={isSearching}
             class="w-full rounded-[16px] border border-white/20 bg-white/10 px-6 py-4 text-[1.1rem] text-white placeholder-white/40 transition-colors outline-none focus:border-[#64b5f6] focus:bg-white/15 disabled:cursor-not-allowed disabled:opacity-40"
@@ -381,7 +320,7 @@
             if (searchPhase === "loading-tables") {
               cancelSearch();
             } else {
-              performSearch();
+              void performSearch();
             }
           }}
           class="flex w-14 shrink-0 cursor-pointer items-center justify-center rounded-[16px] border border-white/20 bg-white/10 text-[1.3rem] text-white transition-colors hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
