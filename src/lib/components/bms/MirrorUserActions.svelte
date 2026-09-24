@@ -2,18 +2,14 @@
   import { onMount } from "svelte";
 
   import GlassPanel from "$lib/components/ui/GlassPanel.svelte";
-  import GradientButton from "$lib/components/ui/GradientButton.svelte";
   import { SITE_ORIGIN } from "$lib/constants/site";
+  import { auth } from "$lib/data/auth-store.svelte";
   import {
-    ApiUnavailableError,
-    fetchCurrentUser,
     fetchFetchStatus,
     fetchPreview,
     fetchRemoved,
     submitAdd,
-    submitLogout,
     submitRestore,
-    type CurrentUser,
     type PreviewResult,
     type RemovedRecord,
   } from "$lib/data/mirror-user-api";
@@ -21,16 +17,9 @@
   interface Props {
     /** 添加或恢复成功后回调（用于刷新清单）。 */
     onchanged?: (() => void) | undefined;
-    /** 登录态变化时上报（页面据此决定是否显示删除按钮）。 */
-    onuserchange?: ((user: CurrentUser | null) => void) | undefined;
   }
 
-  let { onchanged, onuserchange }: Props = $props();
-
-  let user = $state<CurrentUser | null>(null);
-  let loading = $state(true);
-  /** 静态宿主上没有 /api/*：界面切换为只读并引导到主站。 */
-  let unavailable = $state(false);
+  let { onchanged }: Props = $props();
 
   let url = $state("");
   let preview = $state<PreviewResult | null>(null);
@@ -44,6 +33,19 @@
   let showRemoved = $state(false);
   let restoring = $state<string | null>(null);
 
+  // 登录态在共享 store（顶栏同源）；回收站列表随首次就绪的登录态加载
+  const unavailable = $derived(auth.status === "unavailable");
+  const user = $derived(auth.user);
+
+  let removedLoaded = $state(false);
+
+  $effect(() => {
+    if (auth.status === "ready" && auth.user !== null && !removedLoaded) {
+      removedLoaded = true;
+      void loadRemoved();
+    }
+  });
+
   async function loadRemoved(): Promise<void> {
     try {
       removed = await fetchRemoved();
@@ -52,35 +54,16 @@
     }
   }
 
-  async function refreshUser(): Promise<void> {
-    try {
-      user = await fetchCurrentUser();
-      unavailable = false;
-      if (user !== null) {
-        await loadRemoved();
-      }
-    } catch (error) {
-      if (error instanceof ApiUnavailableError) {
-        unavailable = true;
-      } else {
-        notice = {
-          kind: "error",
-          text: error instanceof Error ? error.message : "读取登录态失败",
-        };
-      }
-    } finally {
-      loading = false;
-      onuserchange?.(unavailable ? null : user);
+  /** 供父组件在删除等操作后刷新配额与回收站列表。 */
+  export async function refresh(): Promise<void> {
+    await auth.refresh();
+    if (auth.user !== null) {
+      await loadRemoved();
     }
   }
 
-  /** 供父组件在删除等操作后刷新登录态与回收站列表。 */
-  export async function refresh(): Promise<void> {
-    await refreshUser();
-  }
-
   onMount(() => {
-    void refreshUser();
+    void auth.ensureLoaded();
   });
 
   async function doPreview(): Promise<void> {
@@ -131,9 +114,7 @@
       url = "";
       preview = null;
       progress = "已提交，等待抓取…";
-      if (user !== null) {
-        user = { ...user, remaining: result.remaining, used: user.limit - result.remaining };
-      }
+      auth.setRemaining(result.remaining);
       void pollStatus(result.requestId);
     } catch (error) {
       notice = { kind: "error", text: error instanceof Error ? error.message : "提交失败" };
@@ -148,23 +129,13 @@
     try {
       const result = await submitRestore(dirName);
       notice = { kind: "ok", text: `已恢复 ${dirName}。` };
-      if (user !== null) {
-        user = { ...user, remaining: result.remaining, used: user.limit - result.remaining };
-      }
+      auth.setRemaining(result.remaining);
       await loadRemoved();
       onchanged?.();
     } catch (error) {
       notice = { kind: "error", text: error instanceof Error ? error.message : "恢复失败" };
     } finally {
       restoring = null;
-    }
-  }
-
-  async function doLogout(): Promise<void> {
-    try {
-      await submitLogout();
-    } finally {
-      window.location.reload();
     }
   }
 
@@ -188,29 +159,18 @@
       rel="noopener noreferrer">主站</a
     >。
   </GlassPanel>
-{:else if !loading}
+{:else if auth.status === "ready"}
   <GlassPanel class="mt-4">
     {#if user === null}
-      <div class="flex flex-wrap items-center gap-3 text-[0.95rem] text-white/75">
-        <span>用 GitHub 登录后可以添加或删除难度表（每账号每日 10 次）。</span>
-        <GradientButton variant="blue" size="sm" href="/api/auth/login">GitHub 登录</GradientButton>
+      <div class="text-[0.95rem] text-white/75">
+        用 GitHub 登录后可以添加或删除难度表（每账号每日 10 次）；登录入口在页面顶栏。
       </div>
     {:else}
       <div class="flex flex-col gap-3">
-        <div class="flex flex-wrap items-center justify-between gap-2 text-[0.95rem] text-white/75">
-          <span>
-            已登录 <strong class="text-white">@{user.login}</strong>{user.role === "admin"
-              ? "（站长）"
-              : ""}，今日剩余 <strong class="text-white">{user.remaining}</strong> / {user.limit} 次
-          </span>
-          <div class="flex items-center gap-2">
-            <button class={smallButton} type="button" onclick={() => (showRemoved = !showRemoved)}>
-              我删除的表（{removed.length}）
-            </button>
-            <button class={smallButton} type="button" onclick={() => void doLogout()}>
-              退出登录
-            </button>
-          </div>
+        <div class="flex justify-end">
+          <button class={smallButton} type="button" onclick={() => (showRemoved = !showRemoved)}>
+            我删除的表（{removed.length}）
+          </button>
         </div>
 
         <form

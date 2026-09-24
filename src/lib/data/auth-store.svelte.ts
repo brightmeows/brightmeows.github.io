@@ -47,6 +47,12 @@ class AuthStore {
     }
   }
 
+  /** 写操作后同步剩余配额（添加/删除/恢复接口都会返回新值）。 */
+  setRemaining(remaining: number): void {
+    if (this.user === null) return;
+    this.user = { ...this.user, remaining, used: this.user.limit - remaining };
+  }
+
   async #fetch(): Promise<void> {
     this.status = "loading";
     try {
