@@ -151,13 +151,13 @@
 
 {#if unavailable}
   <GlassPanel class="mt-4 text-[0.95rem] text-white/75">
-    这里是静态镜像站，只提供浏览。添加或删除难度表请前往
+    用户接口暂不可用，稍后再试，或前往
     <a
       class="link-accent"
       href={`${SITE_ORIGIN}/bms/table/mirror/`}
       target="_blank"
       rel="noopener noreferrer">主站</a
-    >。
+    > 操作。
   </GlassPanel>
 {:else if auth.status === "ready"}
   <GlassPanel class="mt-4">

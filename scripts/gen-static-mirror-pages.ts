@@ -38,6 +38,12 @@ const MIRROR_DIR = path.join("bms", "table", "mirror");
 /** 主站站点清单路径。 */
 const SITE_LIST_PATH = "/bms/table/mirror/tables.json";
 
+/** 各静态目标的域配置提交物：GitHub Pages 的 CNAME 与 Codeberg Pages 的 .domains。 */
+const DOMAIN_FILE_BY_TARGET: Record<string, string> = {
+  "github-pages": "CNAME",
+  "codeberg-pages": ".domains",
+};
+
 export interface GenerateOptions {
   /** 清单来源基址（主站 origin）。 */
   manifestBase: string;
@@ -166,9 +172,20 @@ async function main(argv: string[]): Promise<void> {
   const siteBase = args.siteBase ?? findStaticTarget(config, args.target ?? "").siteBase;
   const manifestBase = args.manifestBase ?? config.origin;
 
+  // 域配置提交物（内容 = 自定义子域 host）：域名从配置派生，不在仓库里维护副本。
+  // --site-base 覆盖（本地演练）时无 target，跳过。
+  const buildDir = args.buildDir ?? path.join(repoRoot, "build");
+  if (args.target !== undefined) {
+    const domainFile = DOMAIN_FILE_BY_TARGET[args.target];
+    if (domainFile !== undefined) {
+      const host = new URL(siteBase).host;
+      writeFileSync(path.join(buildDir, domainFile), `${host}\n`);
+    }
+  }
+
   const list = await fetchSiteTableList(manifestBase);
   const result = generateStaticMirrorPages(list, {
-    buildDir: args.buildDir ?? path.join(repoRoot, "build"),
+    buildDir,
     r2Base: config.r2.base,
     siteBase,
   });
@@ -177,6 +194,9 @@ async function main(argv: string[]): Promise<void> {
   console.log(
     `站点基址：${siteBase}${args.target ? `（目标 ${args.target}）` : "（--site-base 覆盖）"}`
   );
+  if (args.target !== undefined && DOMAIN_FILE_BY_TARGET[args.target] !== undefined) {
+    console.log(`域配置提交物：${DOMAIN_FILE_BY_TARGET[args.target]}`);
+  }
   console.log(`镜像页：${result.pages} 个`);
   console.log(`站点清单：${result.listPath}`);
 }
