@@ -7,7 +7,7 @@
   let { data }: { data: PageData } = $props();
 </script>
 
-<PageShell navChildren={data.navChildren} panes={[titlePane, contentPane]} />
+<PageShell panes={[titlePane, contentPane]} />
 
 {#snippet titlePane()}
   <h1 class="page-title text-center">BMS 难度表</h1>
