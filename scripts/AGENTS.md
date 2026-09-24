@@ -5,7 +5,7 @@
 ## Commands
 
 - `node scripts/detect-mirror-change.ts [--out=<路径>]` — 比对 R2 清单与 R2 基线对象（`meta/last-notified.json`）的投影，stdout 只打印 `true`/`false`，变动时可写出新基线供工作流推回
-- `node scripts/gen-static-mirror-pages.ts --target=<目标名> [--site-base=<域名>]` — 生成静态宿主的镜像页与站点清单（需先 `pnpm build`；从主站拉取已合成清单，需网络；`--site-base` 仅本地演练覆盖）
+- `node scripts/gen-static-mirror-pages.ts --target=<目标名> [--site-base=<域名>]` — 生成静态宿主的镜像页、站点清单与域配置提交物（`CNAME`/`.domains`，域名从配置解析；需先 `pnpm build`；从主站拉取已合成清单，需网络；`--site-base` 仅本地演练覆盖，此时不生成域配置）
 - `node scripts/fetch-tables.ts` — 本地跑数据管线（基线经 rclone 同步自 R2，用户层经站点 Worker 的内部接口读取，需要 `INTERNAL_API_TOKEN`；写 `tables/`、`indexes/`、`warnings.log`；产物已 gitignore）
 - `node scripts/fetch-table-once.ts --url=<表源> --request-id=<id> --out-dir=./out` — 单表抓取（复用管线抓取与命名逻辑）：数据目录供 `fetch-table` 工作流上传到 R2，抓取结果与状态经内部接口写进 D1
 - `pnpm test:parity` — 手动新旧实现对拍（用公开 R2 基线与归档工具 v0.4.2 的二进制，逐对象比对产物；`PARITY_LIMIT` 可只对拍前 N 张表）
@@ -15,7 +15,7 @@
 
 - `scripts/check-cn-quotes.py` — 中文正文引号规范（GB/T 15834-2011）。跳过 YAML frontmatter、HTML 标签属性、行内代码与围栏代码块，这些位置的引号是语法而非中文文本。
 - `scripts/check-commit-msg.py` — Conventional Commits 格式校验（见根 `AGENTS.md` 的“提交格式”节），pre-commit commit-msg stage 与 CI 的 PR job 共用。
-- `scripts/check-site-config.ts` — 离线一致性校验（七条断言：`--target` 合法、wrangler routes ⊆ 配置、工作流无硬编码域名、CORS 覆盖全部目标、基线文件名与 `r2.baselineObject` 一致、版本来源唯一（devEngines 范围加工作流不传 pnpm 版本）、wrangler vars 与配置一致）。`pnpm check:config` 调用它，pre-commit 与 CI 都跑。
+- `scripts/check-site-config.ts` — 离线一致性校验（八条断言：`--target` 合法、wrangler routes ⊆ 配置、工作流无硬编码域名、CORS 覆盖全部目标、基线文件名与 `r2.baselineObject` 一致、版本来源唯一（devEngines 范围加工作流不传 pnpm 版本）、wrangler vars 与配置一致（含 `SITE_ORIGINS` 白名单与 `COOKIE_DOMAIN`）、静态目标 siteBase 主机与 target 名对齐）。`pnpm check:config` 调用它，pre-commit 与 CI 都跑。
 - `scripts/check-r2-cors.ts` — 只读比对桶 CORS policy 与配置（需 `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID`/`R2_BUCKET`）；不在日常 CI 跑，由 `config-drift.yml` 在配置变更的 PR 与手动触发时调用。
 - `scripts/site-config.ts` / `scripts/site-target.ts` — 读取并校验 `config/site.json`、打印某静态目标的站点基址（供工作流把域名从 YAML 里移出）。
 
