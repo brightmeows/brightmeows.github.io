@@ -50,6 +50,10 @@ jobs:
           echo "LEGACY_BASE=$(node scripts/site-target.ts --target=codeberg-pages --legacy-base)" >> "$GITHUB_ENV"
           echo "PAGES_SERVER=$(node scripts/site-target.ts --target=codeberg-pages --server)" >> "$GITHUB_ENV"
       - name: Deploy to Codeberg Pages (custom domain)
+        # 首次向自定义域发布前需 DNS TXT 授权（_git-pages-forge-allowlist.<域> →
+        # 发布仓库地址），否则上传被拒；证书由服务在授权后自动签发，
+        # server 参数提供证书就绪前的 TLS 连接主机。机制与外部状态见
+        # packages/worker/AGENTS.md 的 git-pages 条目。
         uses: https://codeberg.org/git-pages/action@v2
         with:
           site: ${{ env.SITE_BASE }}
