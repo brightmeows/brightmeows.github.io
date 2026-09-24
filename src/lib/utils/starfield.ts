@@ -103,7 +103,8 @@ export function resetMeteor(meteor: MeteorState, viewport: Viewport, rng: Rng = 
   meteor.size = 2 + rng() * 2;
 }
 
-export function updateMeteor(meteor: MeteorState, viewport: Viewport, dt: number): void {
+/** 位移并检查出界；发生入场重置时返回 true */
+export function updateMeteor(meteor: MeteorState, viewport: Viewport, dt: number): boolean {
   meteor.x += meteor.speedX * dt;
   meteor.y += meteor.speedY * dt;
 
@@ -114,7 +115,9 @@ export function updateMeteor(meteor: MeteorState, viewport: Viewport, dt: number
     meteor.y > viewport.height + METEOR_MARGIN
   ) {
     resetMeteor(meteor, viewport);
+    return true;
   }
+  return false;
 }
 
 /** 尾迹末端坐标：默认回看 100/60 秒（原每帧 100px 偏移在 60fps 下的等效时长） */

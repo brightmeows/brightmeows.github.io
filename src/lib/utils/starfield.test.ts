@@ -139,7 +139,7 @@ describe("updateMeteor", () => {
     const meteor = createMeteor(viewport, () => 0.5);
     meteor.x = -METEOR_MARGIN - 1;
     meteor.y = 500;
-    updateMeteor(meteor, viewport, 0);
+    expect(updateMeteor(meteor, viewport, 0)).toBe(true);
     expect(meteor.x).toBeGreaterThanOrEqual(-20);
     expect(meteor.x).toBeLessThanOrEqual(viewport.width + 20);
   });
@@ -149,7 +149,7 @@ describe("updateMeteor", () => {
     meteor.x = -METEOR_MARGIN;
     meteor.y = 500;
     const speedX = meteor.speedX;
-    updateMeteor(meteor, viewport, 0);
+    expect(updateMeteor(meteor, viewport, 0)).toBe(false);
     expect(meteor.speedX).toBe(speedX);
   });
 });
