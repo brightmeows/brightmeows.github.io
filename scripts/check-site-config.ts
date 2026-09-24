@@ -300,7 +300,7 @@ export function staticSiteBaseIssues(config: SiteConfig): string[] {
     .filter((issue): issue is string => issue !== null);
 }
 
-/** 配置里出现过的全部域名（用于断言 3 的扫描列表；含静态目标的原域）。 */
+/** 配置里出现过的全部域名（用于断言 3 的扫描列表；含静态目标的原域与 git-pages 服务主机）。 */
 export function collectDomains(config: SiteConfig): string[] {
   const hostOf = (url: string): string => new URL(url).host;
   return [
@@ -308,7 +308,13 @@ export function collectDomains(config: SiteConfig): string[] {
       hostOf(config.origin),
       hostOf(config.r2.base),
       ...config.targets.flatMap((target) =>
-        target.kind === "static" ? [hostOf(target.siteBase), ...target.legacyHosts] : target.hosts
+        target.kind === "static"
+          ? [
+              hostOf(target.siteBase),
+              ...target.legacyHosts,
+              ...(target.pagesServer === undefined ? [] : [target.pagesServer]),
+            ]
+          : target.hosts
       ),
     ]),
   ];

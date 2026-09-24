@@ -41,11 +41,27 @@ jobs:
       - name: Generate static mirror pages
         # 从主站拉取已合成清单（含用户增删与保护标记）后生成静态镜像页与站点清单
         run: node scripts/gen-static-mirror-pages.ts --target=codeberg-pages
-      - name: Resolve site base from config
-        run: echo "SITE_BASE=$(node scripts/site-target.ts --target=codeberg-pages)" >> "$GITHUB_ENV"
-      - name: Deploy to Codeberg Pages
+      - name: Resolve publish URLs from config
+        # site 是自定义子域（主发布目标）；legacy 是平台原域（同步发布一份带
+        # 兜底跳转逻辑的副本）；server 是 git-pages 服务主机名（自定义域证书
+        # 就绪前上传时的 TLS 连接用）。域名一律从配置派生，不写进工作流。
+        run: |
+          echo "SITE_BASE=$(node scripts/site-target.ts --target=codeberg-pages)" >> "$GITHUB_ENV"
+          echo "LEGACY_BASE=$(node scripts/site-target.ts --target=codeberg-pages --legacy-base)" >> "$GITHUB_ENV"
+          echo "PAGES_SERVER=$(node scripts/site-target.ts --target=codeberg-pages --server)" >> "$GITHUB_ENV"
+      - name: Deploy to Codeberg Pages (custom domain)
         uses: https://codeberg.org/git-pages/action@v2
         with:
           site: ${{ env.SITE_BASE }}
+          server: ${{ env.PAGES_SERVER }}
+          token: "${{ forge.token }}"
+          source: build/
+      - name: Deploy to Codeberg Pages (legacy wildcard domain)
+        # 同步更新平台原域的内容：新前端的兜底跳转随这次发布到位（无此步骤时
+        # 原域会停留在旧版，访客不会收敛到子域）。
+        uses: https://codeberg.org/git-pages/action@v2
+        with:
+          site: ${{ env.LEGACY_BASE }}
+          server: ${{ env.PAGES_SERVER }}
           token: "${{ forge.token }}"
           source: build/
