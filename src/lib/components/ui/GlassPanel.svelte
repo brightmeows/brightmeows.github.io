@@ -49,7 +49,7 @@
 
 <div
   {id}
-  class="glass-base glass-shadow-sm border border-white/20 bg-white/10 {paddingConfig[
+  class="glass-base glass-shadow-sm border border-white/20 bg-glass {paddingConfig[
     padding
   ]} {roundedConfig[rounded]} {className}"
   class:overflow-hidden={overflow}
