@@ -1,125 +1,53 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  class Star {
-    x: number;
-    y: number;
-    size: number;
-    speedX: number;
-    speedY: number;
-    opacity: number;
-    fadeSpeed: number;
-    fadeDirection: number;
+  import {
+    BASE_STAR_COUNT,
+    createMeteor,
+    createStar,
+    meteorTrailTail,
+    updateMeteor,
+    updateStar,
+    type MeteorState,
+    type StarState,
+    type Viewport,
+  } from "$lib/utils/starfield";
 
-    constructor(width: number, height: number) {
-      this.x = Math.random() * width;
-      this.y = Math.random() * height;
-      this.size = Math.random() * 2;
-      this.speedX = (Math.random() - 0.5) * 0.2;
-      this.speedY = (Math.random() - 0.5) * 0.2;
-      this.opacity = Math.random();
-      this.fadeSpeed = 0.01 + Math.random() * 0.02;
-      this.fadeDirection = 1;
-    }
+  const METEOR_COUNT = 8;
+  /** 单帧时长上限（秒）：标签页恢复后的首帧防跳变 */
+  const MAX_DT = 0.1;
 
-    update(width: number, height: number): void {
-      this.x += this.speedX;
-      this.y += this.speedY;
+  let canvasRef: HTMLCanvasElement | null = null;
 
-      if (this.x < 0) this.x = width;
-      if (this.x > width) this.x = 0;
-      if (this.y < 0) this.y = height;
-      if (this.y > height) this.y = 0;
+  onMount(() => {
+    const canvasOrNull = canvasRef;
+    if (!canvasOrNull) return;
+    const canvas: HTMLCanvasElement = canvasOrNull;
 
-      this.opacity += this.fadeSpeed * this.fadeDirection;
-      if (this.opacity > 1) {
-        this.opacity = 1;
-        this.fadeDirection = -1;
-      } else if (this.opacity < 0.2) {
-        this.opacity = 0.2;
-        this.fadeDirection = 1;
-      }
-    }
+    const ctxOrNull = canvas.getContext("2d");
+    if (!ctxOrNull) return;
+    const ctx: CanvasRenderingContext2D = ctxOrNull;
 
-    draw(ctx: CanvasRenderingContext2D): void {
-      ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
+    const viewport: Viewport = { width: window.innerWidth, height: window.innerHeight };
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+
+    const stars: StarState[] = Array.from({ length: BASE_STAR_COUNT }, () => createStar(viewport));
+    const meteors: MeteorState[] = Array.from({ length: METEOR_COUNT }, () =>
+      createMeteor(viewport)
+    );
+
+    function drawStar(star: StarState): void {
+      ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
       ctx.beginPath();
-      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
       ctx.fill();
     }
-  }
 
-  class Meteor {
-    x: number;
-    y: number;
-    prevX: number;
-    prevY: number;
-    speedX: number;
-    speedY: number;
-    size: number;
-    trailLength: number;
-    active: boolean;
+    function drawMeteor(meteor: MeteorState): void {
+      const tail = meteorTrailTail(meteor);
 
-    constructor(width: number, height: number) {
-      this.x = 0;
-      this.y = 0;
-      this.prevX = 0;
-      this.prevY = 0;
-      this.speedX = 0;
-      this.speedY = 0;
-      this.size = 0;
-      this.trailLength = 0;
-      this.active = true;
-      this.init(width, height);
-    }
-
-    init(width: number, height: number): void {
-      const side = Math.floor(Math.random() * 4);
-
-      if (side === 0) {
-        this.x = Math.random() * width;
-        this.y = -20;
-      } else if (side === 1) {
-        this.x = Math.random() * width;
-        this.y = height + 20;
-      } else if (side === 2) {
-        this.x = -20;
-        this.y = Math.random() * height;
-      } else {
-        this.x = width + 20;
-        this.y = Math.random() * height;
-      }
-
-      this.prevX = this.x;
-      this.prevY = this.y;
-
-      const angle = (90 + 30) * (Math.PI / 180);
-      const speed = 1.5 + Math.random() * 0.5;
-
-      this.speedX = speed * Math.cos(angle);
-      this.speedY = speed * Math.sin(angle);
-
-      this.size = 2 + Math.random() * 2;
-      this.trailLength = 150 + Math.random() * 100;
-    }
-
-    update(width: number, height: number): void {
-      this.prevX = this.x;
-      this.prevY = this.y;
-
-      this.x += this.speedX;
-      this.y += this.speedY;
-
-      if (this.x < -300 || this.x > width + 300 || this.y < -300 || this.y > height + 300) {
-        this.init(width, height);
-      }
-    }
-
-    draw(ctx: CanvasRenderingContext2D): void {
-      const trailX = this.x - this.speedX * 100;
-      const trailY = this.y - this.speedY * 100;
-
-      const gradient = ctx.createLinearGradient(trailX, trailY, this.x, this.y);
+      const gradient = ctx.createLinearGradient(tail.x, tail.y, meteor.x, meteor.y);
 
       gradient.addColorStop(0, "rgba(255, 255, 255, 0)");
       gradient.addColorStop(0.5, "rgba(255, 255, 255, 0.3)");
@@ -127,80 +55,52 @@
       gradient.addColorStop(1, "rgba(255, 255, 255, 1)");
 
       ctx.strokeStyle = gradient;
-      ctx.lineWidth = this.size * 1.5;
+      ctx.lineWidth = meteor.size * 1.5;
       ctx.lineCap = "round";
 
       ctx.beginPath();
-      ctx.moveTo(trailX, trailY);
-      ctx.lineTo(this.x, this.y);
+      ctx.moveTo(tail.x, tail.y);
+      ctx.lineTo(meteor.x, meteor.y);
       ctx.stroke();
 
       ctx.fillStyle = "rgba(255, 255, 255, 1)";
       ctx.beginPath();
-      ctx.arc(this.x, this.y, this.size * 1.2, 0, Math.PI * 2);
+      ctx.arc(meteor.x, meteor.y, meteor.size * 1.2, 0, Math.PI * 2);
       ctx.fill();
-
       ctx.shadowBlur = 15;
       ctx.shadowColor = "rgba(255, 255, 255, 0.8)";
       ctx.fill();
       ctx.shadowBlur = 0;
     }
-  }
-
-  let canvasRef: HTMLCanvasElement | null = null;
-
-  onMount(() => {
-    const canvas = canvasRef;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d") as CanvasRenderingContext2D | null;
-    if (!ctx) return;
-
-    let width = window.innerWidth;
-    let height = window.innerHeight;
-
-    canvas.width = width;
-    canvas.height = height;
-
-    const stars: Star[] = [];
-    const STAR_COUNT = 200;
-
-    for (let i = 0; i < STAR_COUNT; i++) {
-      stars.push(new Star(width, height));
-    }
-
-    const meteors: Meteor[] = [];
-    const METEOR_COUNT = 8;
-
-    for (let i = 0; i < METEOR_COUNT; i++) {
-      meteors.push(new Meteor(width, height));
-    }
 
     let animationId: number | null = null;
+    let lastTime: number | null = null;
 
-    function animate(): void {
-      if (!ctx) return;
-      ctx.clearRect(0, 0, width, height);
+    function animate(now: number): void {
+      const dt = lastTime === null ? 1 / 60 : Math.min((now - lastTime) / 1000, MAX_DT);
+      lastTime = now;
 
-      stars.forEach((star) => {
-        star.update(width, height);
-        star.draw(ctx);
-      });
+      ctx.clearRect(0, 0, viewport.width, viewport.height);
 
-      meteors.forEach((meteor) => {
-        meteor.update(width, height);
-        meteor.draw(ctx);
-      });
+      for (const star of stars) {
+        updateStar(star, viewport, dt);
+        drawStar(star);
+      }
+
+      for (const meteor of meteors) {
+        updateMeteor(meteor, viewport, dt);
+        drawMeteor(meteor);
+      }
 
       animationId = requestAnimationFrame(animate);
     }
 
-    const handleResize = (): void => {
-      width = window.innerWidth;
-      height = window.innerHeight;
-      canvas.width = width;
-      canvas.height = height;
-    };
+    function handleResize(): void {
+      viewport.width = window.innerWidth;
+      viewport.height = window.innerHeight;
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+    }
 
     function handleVisibility(): void {
       if (document.hidden) {
@@ -208,14 +108,15 @@
           cancelAnimationFrame(animationId);
           animationId = null;
         }
-      } else if (!animationId) {
-        animate();
+      } else if (animationId === null) {
+        lastTime = null;
+        animationId = requestAnimationFrame(animate);
       }
     }
 
     window.addEventListener("resize", handleResize);
     document.addEventListener("visibilitychange", handleVisibility);
-    animate();
+    animationId = requestAnimationFrame(animate);
 
     return () => {
       window.removeEventListener("resize", handleResize);
