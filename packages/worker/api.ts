@@ -17,11 +17,46 @@ import {
   handleRestore,
   handleStatus,
 } from "./handlers/tables.ts";
-import { checkSameOrigin, failure } from "./http.ts";
+import { allowedOrigins, checkAllowedOrigin, failure } from "./http.ts";
 
 /** 分发 `/api/*` 请求；未匹配的路径返回 404。 */
-/** 分发 `/api/*` 请求；未匹配的路径返回 404。 */
+/** 给白名单内 Origin 的响应补 CORS 头；同源请求（无 Origin 头）原样返回。 */
+function withCors(request: Request, env: Env, response: Response): Response {
+  const origin = request.headers.get("origin");
+  if (origin === null || !allowedOrigins(env).includes(origin)) {
+    return response;
+  }
+  const headers = new Headers(response.headers);
+  headers.set("access-control-allow-origin", origin);
+  headers.set("access-control-allow-credentials", "true");
+  headers.append("vary", "Origin");
+  return new Response(response.body, { status: response.status, headers });
+}
+
+/** 分发 `/api/*` 请求；未匹配的路径返回 404。白名单内 Origin 的预检在此响应。 */
 export async function handleApi(request: Request, env: Env, url: URL): Promise<Response> {
+  if (request.method === "OPTIONS") {
+    const origin = request.headers.get("origin");
+    if (origin === null || !allowedOrigins(env).includes(origin)) {
+      return failure(403, "来源不在白名单");
+    }
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "access-control-allow-origin": origin,
+        "access-control-allow-credentials": "true",
+        "access-control-allow-methods": "GET, POST",
+        "access-control-allow-headers": "content-type",
+        "access-control-max-age": "86400",
+        vary: "Origin",
+      },
+    });
+  }
+  return withCors(request, env, await routeApi(request, env, url));
+}
+
+/** 路由表主体：路径与方法分派。 */
+async function routeApi(request: Request, env: Env, url: URL): Promise<Response> {
   const now = new Date();
   const path = url.pathname;
   if (path === "/api/admin" || path.startsWith("/api/admin/")) {
@@ -37,22 +72,22 @@ export async function handleApi(request: Request, env: Env, url: URL): Promise<R
     return handleCallback(env, request, url, now);
   }
   if (path === "/api/auth/logout" && request.method === "POST") {
-    if (!checkSameOrigin(request, url)) {
+    if (!checkAllowedOrigin(request, allowedOrigins(env))) {
       return failure(403, "来源校验失败");
     }
-    return handleLogout(url);
+    return handleLogout(env, url);
   }
   if (path === "/api/tables/preview" && request.method === "POST") {
-    return handlePreview(request, env, url, now);
+    return handlePreview(request, env, now);
   }
   if (path === "/api/tables/add" && request.method === "POST") {
-    return handleAdd(request, env, url, now);
+    return handleAdd(request, env, now);
   }
   if (path === "/api/tables/delete" && request.method === "POST") {
-    return handleDelete(request, env, url, now);
+    return handleDelete(request, env, now);
   }
   if (path === "/api/tables/restore" && request.method === "POST") {
-    return handleRestore(request, env, url, now);
+    return handleRestore(request, env, now);
   }
   if (path === "/api/tables/removed" && request.method === "GET") {
     return handleRemoved(request, env, now);

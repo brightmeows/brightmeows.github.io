@@ -15,7 +15,7 @@ import {
 import { getSession, type Session } from "../auth.ts";
 import { dispatchWorkflow } from "../dispatch.ts";
 import type { Env } from "../env.ts";
-import { checkSameOrigin, failure, json, readJsonBody } from "../http.ts";
+import { allowedOrigins, checkAllowedOrigin, failure, json, readJsonBody } from "../http.ts";
 import { invalidateMergedManifest, loadMergedManifest } from "../manifest.ts";
 import {
   RateLimitError,
@@ -48,13 +48,8 @@ async function consume(env: Env, session: Session, now: Date): Promise<number | 
   }
 }
 
-export async function handleAdd(
-  request: Request,
-  env: Env,
-  url: URL,
-  now: Date
-): Promise<Response> {
-  if (!checkSameOrigin(request, url)) {
+export async function handleAdd(request: Request, env: Env, now: Date): Promise<Response> {
+  if (!checkAllowedOrigin(request, allowedOrigins(env))) {
     return failure(403, "来源校验失败");
   }
   const session = await getSession(env, request, now);
@@ -148,13 +143,8 @@ export async function handleAdd(
   });
 }
 
-export async function handleDelete(
-  request: Request,
-  env: Env,
-  url: URL,
-  now: Date
-): Promise<Response> {
-  if (!checkSameOrigin(request, url)) {
+export async function handleDelete(request: Request, env: Env, now: Date): Promise<Response> {
+  if (!checkAllowedOrigin(request, allowedOrigins(env))) {
     return failure(403, "来源校验失败");
   }
   const session = await getSession(env, request, now);
@@ -230,13 +220,8 @@ export async function handleDelete(
   });
 }
 
-export async function handleRestore(
-  request: Request,
-  env: Env,
-  url: URL,
-  now: Date
-): Promise<Response> {
-  if (!checkSameOrigin(request, url)) {
+export async function handleRestore(request: Request, env: Env, now: Date): Promise<Response> {
+  if (!checkAllowedOrigin(request, allowedOrigins(env))) {
     return failure(403, "来源校验失败");
   }
   const session = await getSession(env, request, now);

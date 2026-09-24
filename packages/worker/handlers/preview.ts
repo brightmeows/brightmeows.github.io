@@ -7,7 +7,7 @@
 
 import { getSession } from "../auth.ts";
 import { PREVIEW_MAX_BYTES, PREVIEW_TIMEOUT_MS, PREVIEW_USER_AGENT, type Env } from "../env.ts";
-import { checkSameOrigin, failure, json, readJsonBody } from "../http.ts";
+import { allowedOrigins, checkAllowedOrigin, failure, json, readJsonBody } from "../http.ts";
 
 async function fetchTextLimited(url: string): Promise<string> {
   const response = await fetch(url, {
@@ -74,13 +74,8 @@ export function extractHeaderUrl(text: string, pageUrl: string): string | null {
   return null;
 }
 
-export async function handlePreview(
-  request: Request,
-  env: Env,
-  url: URL,
-  now: Date
-): Promise<Response> {
-  if (!checkSameOrigin(request, url)) {
+export async function handlePreview(request: Request, env: Env, now: Date): Promise<Response> {
+  if (!checkAllowedOrigin(request, allowedOrigins(env))) {
     return failure(403, "来源校验失败");
   }
   const session = await getSession(env, request, now);

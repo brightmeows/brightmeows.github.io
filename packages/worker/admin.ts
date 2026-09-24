@@ -15,7 +15,7 @@ import {
   handleOverview,
   handleReplace,
 } from "./handlers/governance.ts";
-import { checkSameOrigin, failure } from "./http.ts";
+import { allowedOrigins, checkAllowedOrigin, failure } from "./http.ts";
 
 /** 分发 `/api/admin/*`；未匹配的路径返回 404。 */
 /** 分发 `/api/admin/*`；未匹配的路径返回 404。 */
@@ -35,7 +35,7 @@ export async function handleAdmin(request: Request, env: Env, url: URL): Promise
   if (request.method !== "POST") {
     return failure(405, "仅支持 POST");
   }
-  if (!checkSameOrigin(request, url)) {
+  if (!checkAllowedOrigin(request, allowedOrigins(env))) {
     return failure(403, "来源校验失败");
   }
   if (path === "/api/admin/authorize") {
