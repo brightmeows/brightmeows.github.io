@@ -9,8 +9,9 @@
   import Checkbox from "$lib/components/ui/Checkbox.svelte";
   import JsonPreview from "$lib/components/ui/JsonPreview.svelte";
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
+  import { auth } from "$lib/data/auth-store.svelte";
   import { loadMirrorTables } from "$lib/data/mirror-table-loader";
-  import { submitDelete, type CurrentUser } from "$lib/data/mirror-user-api";
+  import { submitDelete } from "$lib/data/mirror-user-api";
   import type { JsonPreviewHandle, TocItem } from "$lib/types/ui";
   import { clipboardFeedback } from "$lib/utils/clipboard.svelte";
   import { buildSearchNeedles, filterTables, groupByTags } from "$lib/utils/mirror-tables";
@@ -32,9 +33,8 @@
   let showProtectedOnly = $state(false);
   let tocItems = $state<TocItem[]>([]);
 
-  // 登录态由 MirrorUserActions 上报：非空时列表行显示删除按钮
-  let currentUser = $state<CurrentUser | null>(null);
-  /** MirrorUserActions 实例：删除后刷新其登录态与回收站列表。 */
+  // 登录态在共享 store（与顶栏同源）：非空时列表行显示删除按钮
+  /** MirrorUserActions 实例：删除后刷新其配额与回收站列表。 */
   let userActions = $state<{ refresh: () => Promise<void> } | undefined>(undefined);
   let deletingDir = $state<string | null>(null);
   let actionNotice = $state<{ kind: "ok" | "error"; text: string } | null>(null);
@@ -154,11 +154,7 @@
 
 {#snippet contentPane()}
   <div class="flex flex-col gap-3">
-    <MirrorUserActions
-      bind:this={userActions}
-      onchanged={handleUserChanged}
-      onuserchange={(value: CurrentUser | null) => (currentUser = value)}
-    />
+    <MirrorUserActions bind:this={userActions} onchanged={handleUserChanged} />
 
     {#if actionNotice}
       <div
@@ -231,7 +227,7 @@
       bind:selectedMap
       groups={groupedByTags}
       {mirrorPreview}
-      showDelete={currentUser !== null}
+      showDelete={auth.user !== null}
       {deletingDir}
       ondelete={(item: MirrorTableItem) => void handleDelete(item)}
     />

@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount, tick } from "svelte";
 
-  import type { PageData } from "./$types";
   import BmsContent from "./index.md";
 
   import MarkdownContent from "$lib/components/content/MarkdownContent.svelte";
@@ -9,7 +8,6 @@
   import PageShell from "$lib/components/layout/PageShell.svelte";
   import type { TocItem } from "$lib/types/ui";
 
-  let { data }: { data: PageData } = $props();
   let tocItems = $state<TocItem[]>([]);
 
   onMount(async () => {
@@ -18,7 +16,7 @@
   });
 </script>
 
-<PageShell {tocItems} navChildren={data.navChildren} panes={[titlePane, contentPane]} />
+<PageShell {tocItems} panes={[titlePane, contentPane]} />
 
 {#snippet titlePane()}
   <h1 class="page-title text-center">BMS</h1>

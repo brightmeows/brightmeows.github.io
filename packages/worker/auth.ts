@@ -7,6 +7,9 @@
  *
  * 同一个 GitHub App 还承担服务身份（触发工作流，见 worker/dispatch.ts）；它在
  * 安装完成后的授权回调也落在本文件的回调地址上，处理方式见 isInstallCallback。
+ *
+ * 登录发起时可带 return_to（发起页路径，经 safeReturnTo 校验），与 state 一起
+ * 存进短效 HttpOnly cookie，登录成功后跳回该页；缺省回落镜像列表页。
  */
 
 import type { UserRole } from "@brightmeows/mirror/user-layer";
@@ -189,17 +192,70 @@ export function clearSessionCookie(): string {
   return `${SESSION_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
 }
 
-function stateCookie(state: string): string {
-  return `${OAUTH_STATE_COOKIE}=${state}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600`;
+function stateCookie(payload: OAuthStatePayload): string {
+  return `${OAUTH_STATE_COOKIE}=${encodeStatePayload(payload)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=600`;
 }
 
 function clearStateCookie(): string {
   return `${OAUTH_STATE_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
 }
 
-/** 登录入口：生成 state、写 cookie、302 到 GitHub 授权页。 */
+/** OAuth state cookie 的负载：state 防 CSRF，returnTo 记录登录发起页。 */
+interface OAuthStatePayload {
+  state: string;
+  /** 登录成功后的站内落点（经 safeReturnTo 校验才写入）。 */
+  returnTo?: string;
+}
+
+function encodeStatePayload(payload: OAuthStatePayload): string {
+  return encodeJson(payload);
+}
+
+function decodeStatePayload(text: string): OAuthStatePayload | null {
+  try {
+    const value = decodeJson(text);
+    if (typeof value !== "object" || value === null) {
+      return null;
+    }
+    const record = value as Record<string, unknown>;
+    if (typeof record.state !== "string" || record.state === "") {
+      return null;
+    }
+    return {
+      state: record.state,
+      ...(typeof record.returnTo === "string" ? { returnTo: record.returnTo } : {}),
+    };
+  } catch {
+    // 部署窗口内残留旧版（纯 state 字符串）cookie 会走到这里，按校验失败处理
+    return null;
+  }
+}
+
+/**
+ * 校验登录回跳地址：只接受站内绝对路径。
+ *
+ * 拒绝协议相对（"//"）与反斜杠绕过（"/\\"，浏览器会把 `\\` 规范化为 `/`，
+ * 使其变成协议相对跳转），以及控制字符（防响应拆分）；其余一律回落默认落点。
+ */
+export function safeReturnTo(raw: string | null | undefined): string | undefined {
+  if (raw === undefined || raw === null || raw === "") {
+    return undefined;
+  }
+  if (!raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) {
+    return undefined;
+  }
+  // 控制字符匹配是刻意的：拦 CR/LF 等防 Location 头注入
+  // oxlint-disable-next-line no-control-regex
+  if (/[\u0000-\u001f\u007f]/u.test(raw)) {
+    return undefined;
+  }
+  return raw;
+}
+
+/** 登录入口：生成 state、写 cookie（含发起页 returnTo）、302 到 GitHub 授权页。 */
 export function handleLogin(env: Env, url: URL): Response {
   const state = crypto.randomUUID();
+  const returnTo = safeReturnTo(url.searchParams.get("return_to"));
   const authorize = new URL("https://github.com/login/oauth/authorize");
   authorize.searchParams.set("client_id", env.GITHUB_OAUTH_CLIENT_ID);
   authorize.searchParams.set("redirect_uri", `${url.origin}${OAUTH_CALLBACK_PATH}`);
@@ -209,7 +265,7 @@ export function handleLogin(env: Env, url: URL): Response {
     status: 302,
     headers: {
       location: authorize.toString(),
-      "set-cookie": stateCookie(state),
+      "set-cookie": stateCookie({ state, ...(returnTo === undefined ? {} : { returnTo }) }),
       "cache-control": "no-store",
     },
   });
@@ -284,9 +340,9 @@ export async function handleCallback(
     return installationNotice(url);
   }
   const cookies = parseCookies(request.headers.get("cookie"));
-  const state = cookies.get(OAUTH_STATE_COOKIE);
+  const statePayload = decodeStatePayload(cookies.get(OAUTH_STATE_COOKIE) ?? "");
   const returnedState = url.searchParams.get("state");
-  if (state === undefined || returnedState === null || state !== returnedState) {
+  if (statePayload === null || returnedState === null || statePayload.state !== returnedState) {
     return oauthError("state 校验失败，请重新登录。");
   }
   const code = url.searchParams.get("code");
@@ -339,8 +395,9 @@ export async function handleCallback(
     // 登录流程只有在 SESSION_SECRET 未配置时才会走到这里
     return oauthError("服务端会话密钥未配置，请联系站长。");
   }
+  const landing = statePayload.returnTo ?? MIRROR_LIST_PATH;
   const headers = new Headers({
-    location: new URL("/bms/table/mirror/", url.origin).toString(),
+    location: new URL(landing, url.origin).toString(),
     "cache-control": "no-store",
   });
   headers.append("set-cookie", sessionCookie(token));

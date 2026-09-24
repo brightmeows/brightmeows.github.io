@@ -17,12 +17,7 @@
   });
 </script>
 
-<PageShell
-  {tocItems}
-  navChildren={data.navChildren}
-  navShortcuts={data.navShortcuts}
-  panes={[titlePane, contentPane]}
-/>
+<PageShell {tocItems} panes={[titlePane, contentPane]} />
 
 {#snippet titlePane()}
   <h1 class="page-title text-center">欢迎来到白喵斯的小屋！</h1>
