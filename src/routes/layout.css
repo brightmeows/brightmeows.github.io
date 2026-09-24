@@ -62,6 +62,11 @@
   --color-cyan-hover-from: #4dd0e1;
   --color-cyan-hover-to: #00bcd4;
 
+  /* 玻璃面板底色体系（单一来源：bg-glass / bg-glass-light / bg-glass-hover） */
+  --color-glass: rgb(255 255 255 / 0.07);
+  --color-glass-light: rgb(255 255 255 / 0.12);
+  --color-glass-hover: rgb(255 255 255 / 0.05);
+
   /* 玻璃圆角体系 */
   --radius-glass-sm: 10px;
   --radius-glass-md: 14px;
@@ -154,7 +159,7 @@
 
   /* ===== 弹出框 ===== */
   .popover-glass {
-    @apply fixed z-2000 overflow-hidden rounded-xl border border-white/20 bg-white/10 shadow-[0_10px_24px_rgba(0,0,0,0.45)] backdrop-blur-sm;
+    @apply fixed z-2000 overflow-hidden rounded-xl border border-white/20 bg-glass shadow-[0_10px_24px_rgba(0,0,0,0.45)] backdrop-blur-sm;
   }
 
   /* ===== 分段标题下边框 ===== */

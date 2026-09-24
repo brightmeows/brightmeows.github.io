@@ -50,9 +50,9 @@
 
   const variantClass = $derived(
     variant === "default"
-      ? "bg-white/10 border border-white/10"
+      ? "bg-glass border border-white/10"
       : variant === "light"
-        ? "bg-white/15 border border-white/15"
+        ? "bg-glass-light border border-white/15"
         : "bg-black/20 border border-white/5"
   );
 </script>
