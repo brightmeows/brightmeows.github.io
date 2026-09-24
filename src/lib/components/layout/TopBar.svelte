@@ -251,48 +251,8 @@
         <div class="hidden flex-1 md:block"></div>
       {/if}
 
-      <!-- 右区：语言与主题占位、登录状态 -->
+      <!-- 右区（从右往左）：语言、主题占位，登录状态 -->
       <div class="ml-auto flex shrink-0 items-center gap-1.5">
-        <button
-          type="button"
-          disabled
-          class="flex size-9 cursor-not-allowed items-center justify-center rounded-full text-white/60 opacity-50"
-          title="即将推出"
-          aria-label="语言切换（即将推出）"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            class="size-5"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            aria-hidden="true"
-          >
-            <circle cx="12" cy="12" r="9" />
-            <path
-              d="M3 12h18M12 3c2.5 2.6 3.9 5.7 3.9 9s-1.4 6.4-3.9 9c-2.5-2.6-3.9-5.7-3.9-9s1.4-6.4 3.9-9z"
-            />
-          </svg>
-        </button>
-        <button
-          type="button"
-          disabled
-          class="flex size-9 cursor-not-allowed items-center justify-center rounded-full text-white/60 opacity-50"
-          title="即将推出"
-          aria-label="主题切换（即将推出）"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            class="size-5"
-            fill="currentColor"
-            aria-hidden="true"
-          >
-            <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
-          </svg>
-        </button>
-
         <div class="relative">
           {#if auth.status === "unavailable"}
             <a
@@ -341,6 +301,46 @@
             <div class="h-9 w-16 animate-pulse rounded-full bg-white/10" aria-hidden="true"></div>
           {/if}
         </div>
+
+        <button
+          type="button"
+          disabled
+          class="flex size-9 cursor-not-allowed items-center justify-center rounded-full text-white/60 opacity-50"
+          title="即将推出"
+          aria-label="主题切换（即将推出）"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            class="size-5"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          disabled
+          class="flex size-9 cursor-not-allowed items-center justify-center rounded-full text-white/60 opacity-50"
+          title="即将推出"
+          aria-label="语言切换（即将推出）"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            class="size-5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="9" />
+            <path
+              d="M3 12h18M12 3c2.5 2.6 3.9 5.7 3.9 9s-1.4 6.4-3.9 9c-2.5-2.6-3.9-5.7-3.9-9s1.4-6.4 3.9-9z"
+            />
+          </svg>
+        </button>
       </div>
     </div>
   </GlassPanel>

@@ -160,7 +160,8 @@
 
   const positionConfig = {
     "top-left": "top-4 left-4",
-    "top-right": "top-4 right-4",
+    // 右上角让位给常驻顶栏（约 76px 高），浮钮从顶栏下方展开
+    "top-right": "top-20 right-4",
     "bottom-left": "bottom-4 left-4",
     "bottom-right": "bottom-4 right-4",
   };
