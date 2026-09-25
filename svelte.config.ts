@@ -45,8 +45,9 @@ const config: Config = {
   kit: {
     adapter: adapter({
       fallback: "404.html",
-      pages: "build",
-      assets: "build",
+      // 双语构建的单遍输出目录由 BUILD_OUT 注入（scripts/build-site.ts）
+      pages: process.env.BUILD_OUT ?? "build",
+      assets: process.env.BUILD_OUT ?? "build",
     }),
     paths: {
       base: "",
