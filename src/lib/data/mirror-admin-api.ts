@@ -12,6 +12,7 @@ import { ApiUnavailableError } from "./mirror-user-api";
 
 import { apiBase } from "$lib/constants/site";
 import { m } from "$lib/paraglide/messages.js";
+import { messageInputs, translateMessage } from "$lib/utils/i18n";
 
 /** 回收站条目（表级聚合）。 */
 export interface TrashEntry {
@@ -60,8 +61,18 @@ async function requestAdmin<T>(path: string, body?: unknown): Promise<T> {
   if (!response.ok) {
     let message: string = m["common.request_failed"]({ status: response.status });
     try {
-      const payload = (await response.json()) as { error?: unknown };
-      if (typeof payload.error === "string" && payload.error !== "") {
+      const payload = (await response.json()) as {
+        error?: unknown;
+        code?: unknown;
+        params?: unknown;
+      };
+      const translated =
+        typeof payload.code === "string"
+          ? translateMessage(payload.code, messageInputs(payload.params))
+          : null;
+      if (translated !== null) {
+        message = translated;
+      } else if (typeof payload.error === "string" && payload.error !== "") {
         message = payload.error;
       }
     } catch {

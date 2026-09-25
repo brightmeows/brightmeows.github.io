@@ -59,10 +59,10 @@ async function handleFetchResult(request: Request, env: Env, now: Date): Promise
   const url = bodyString(body, "url");
   const state = bodyString(body, "state");
   if (requestId === undefined || url === undefined) {
-    return failure(400, "需要提供 requestId 与 url");
+    return failure(400, "requestId and url are required");
   }
   if (state !== "done" && state !== "failed") {
-    return failure(400, "state 只能是 done 或 failed");
+    return failure(400, "state must be done or failed");
   }
   const at = now.toISOString();
 
@@ -70,7 +70,7 @@ async function handleFetchResult(request: Request, env: Env, now: Date): Promise
     const dirName = bodyString(body, "dir_name");
     const name = bodyString(body, "name");
     if (dirName === undefined || name === undefined) {
-      return failure(400, "state 为 done 时需要 dir_name 与 name");
+      return failure(400, "dir_name and name are required when state is done");
     }
     const symbol = bodyString(body, "symbol");
     const entry: FetchedEntry = {
@@ -109,7 +109,8 @@ async function handleBackupNow(env: Env): Promise<Response> {
 /** 分发 `/api/internal/*`；未匹配或鉴权失败时返回 404 与 401。 */
 export async function handleInternal(request: Request, env: Env, url: URL): Promise<Response> {
   if (!isAuthorized(env, request)) {
-    return failure(401, "鉴权失败");
+    // 机器对机器的内部接口：英文报文，无 code（不经前端展示）
+    return failure(401, "Authentication failed");
   }
   const path = url.pathname;
   if (path === "/api/internal/user-layer" && request.method === "GET") {
@@ -121,5 +122,5 @@ export async function handleInternal(request: Request, env: Env, url: URL): Prom
   if (path === "/api/internal/backup-now" && request.method === "POST") {
     return handleBackupNow(env);
   }
-  return failure(404, "未知内部接口");
+  return failure(404, "Unknown internal endpoint");
 }

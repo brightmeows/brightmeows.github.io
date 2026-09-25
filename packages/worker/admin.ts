@@ -23,20 +23,20 @@ export async function handleAdmin(request: Request, env: Env, url: URL): Promise
   const now = new Date();
   const session = await getSession(env, request, now);
   if (session === null) {
-    return failure(401, "请先登录 GitHub");
+    return failure(401, "Log in with GitHub first", { code: "api.login_required" });
   }
   if (session.login.toLowerCase() !== ADMIN_LOGIN.toLowerCase()) {
-    return failure(403, "仅站长可访问");
+    return failure(403, "Site owner only", { code: "api.owner_only" });
   }
   const path = url.pathname;
   if (path === "/api/admin/overview" && request.method === "GET") {
     return handleOverview(env);
   }
   if (request.method !== "POST") {
-    return failure(405, "仅支持 POST");
+    return failure(405, "POST only", { code: "api.post_only" });
   }
   if (!checkAllowedOrigin(request, allowedOrigins(env))) {
-    return failure(403, "来源校验失败");
+    return failure(403, "Origin check failed", { code: "api.origin_check_failed" });
   }
   if (path === "/api/admin/authorize") {
     return handleAuthorize(request, env, session, now);
@@ -53,5 +53,5 @@ export async function handleAdmin(request: Request, env: Env, url: URL): Promise
   if (path === "/api/admin/restore") {
     return handleAdminRestore(request, env, session, now);
   }
-  return failure(404, "未知后台接口");
+  return failure(404, "Unknown admin endpoint", { code: "api.unknown_admin_endpoint" });
 }

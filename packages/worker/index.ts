@@ -32,12 +32,17 @@ import { r2TableHeaderUrl } from "@brightmeows/mirror/urls";
 import { handleApi } from "./api.ts";
 import { backupUserLayer } from "./backup.ts";
 import type { Env } from "./env.ts";
+import {
+  detectLocale,
+  localizedAssetPath,
+  pageText,
+  shellPath,
+  ZH_PREFIX,
+  type Locale,
+} from "./i18n.ts";
 import { handleInternal } from "./internal.ts";
 import { MANIFEST_MAX_AGE, loadMergedManifest } from "./manifest.ts";
 import { ensureSchemaOnce } from "./schema.ts";
-
-/** 注入 meta 用的站点 SPA 外壳（adapter-static 的 fallback 产物）。 */
-const SITE_SHELL_PATH = "/404.html";
 
 const MIRROR_ROOT = "/bms/table/mirror/";
 
@@ -66,8 +71,8 @@ function decodePath(pathname: string): string | null {
  * 这类路径不在清单里，若交给静态资源的 404-page 处理会返回 404 状态码（
  * 页面内容虽然能渲染，但语义错误）。与表页一样取外壳，但不注入 bmstable meta。
  */
-async function handleSpaShell(env: Env, url: URL): Promise<Response> {
-  const shellRes = await env.ASSETS.fetch(new URL(SITE_SHELL_PATH, url.origin));
+async function handleSpaShell(env: Env, url: URL, locale: Locale): Promise<Response> {
+  const shellRes = await env.ASSETS.fetch(new URL(shellPath(locale), url.origin));
   const shell = await shellRes.text();
   return new Response(shell, {
     status: 200,
@@ -83,21 +88,24 @@ async function handleTablePage(
   request: Request,
   env: Env,
   url: URL,
-  tableId: string
+  tableId: string,
+  locale: Locale
 ): Promise<Response> {
   const manifest = await loadMergedManifest(env);
   if (manifest === null) {
-    return textResponse("镜像表清单暂不可用，请稍后重试。", 503, {
+    return textResponse(pageText(locale, "manifest_unavailable"), 503, {
       "cache-control": "no-store",
       "retry-after": String(MANIFEST_MAX_AGE),
     });
   }
   if (!manifest.some((item) => item.dir_name === tableId)) {
-    // 交给静态资源处理：not_found_handling 会返回 404 页，客户端路由渲染错误页
+    // 中文树手动回中文 404 页（not_found_handling 会回落到根树的英文 404）；
+    // 英文直接交静态资源处理，客户端路由渲染错误页
+    if (locale === "zh-cn") return zhNotFound(env, url);
     return env.ASSETS.fetch(request);
   }
 
-  const shellRes = await env.ASSETS.fetch(new URL(SITE_SHELL_PATH, url.origin));
+  const shellRes = await env.ASSETS.fetch(new URL(shellPath(locale), url.origin));
   const shell = await shellRes.text();
   const headerUrl = r2TableHeaderUrl(env.R2_BASE, tableId);
   // 与构建期脚本共用同一段注入逻辑，保证两种输出逐字节等价
@@ -112,11 +120,24 @@ async function handleTablePage(
   });
 }
 
+/** 中文树的 404 页（状态码 404，内容为中文外壳）。 */
+async function zhNotFound(env: Env, url: URL): Promise<Response> {
+  const res = await env.ASSETS.fetch(new URL(shellPath("zh-cn"), url.origin));
+  const body = await res.text();
+  return new Response(body, {
+    status: 404,
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "public, max-age=0, must-revalidate",
+    },
+  });
+}
+
 /** 清单路由：从 R2 清单叠加用户层后生成站点清单。 */
-async function handleTablesJson(env: Env, url: URL): Promise<Response> {
+async function handleTablesJson(env: Env, url: URL, locale: Locale): Promise<Response> {
   const manifest = await loadMergedManifest(env);
   if (manifest === null) {
-    return textResponse("镜像表清单暂不可用，请稍后重试。", 503, {
+    return textResponse(pageText(locale, "manifest_unavailable"), 503, {
       "cache-control": "no-store",
       "retry-after": String(MANIFEST_MAX_AGE),
     });
@@ -126,7 +147,9 @@ async function handleTablesJson(env: Env, url: URL): Promise<Response> {
     body = serializeSiteTableList(transformTableList(manifest, url.origin));
   } catch (error) {
     return textResponse(
-      `清单数据不完整：${error instanceof Error ? error.message : String(error)}`,
+      pageText(locale, "manifest_incomplete", {
+        error: error instanceof Error ? error.message : String(error),
+      }),
       500,
       { "cache-control": "no-store" }
     );
@@ -143,6 +166,8 @@ async function handleTablesJson(env: Env, url: URL): Promise<Response> {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
+    // 语言判定一次贯穿：页面级文案、SPA 外壳与静态树映射共用（见 worker/i18n.ts）
+    const locale = detectLocale(request);
 
     // www 统一跳到 apex：证书与 canonical 只认 apex
     if (url.hostname.startsWith("www.")) {
@@ -153,7 +178,14 @@ export default {
 
     const path = decodePath(url.pathname);
     if (path === null) {
-      return textResponse("URL 编码非法。", 400);
+      return textResponse(pageText(locale, "url_invalid"), 400);
+    }
+
+    // 直接访问内部前缀：301 回干净 URL（内部前缀永不进入用户可见地址；
+    // 正常构建不产出带前缀的引用，命中即历史链接或误入）
+    if (path.startsWith(ZH_PREFIX)) {
+      const clean = path.slice(ZH_PREFIX.length) || "/";
+      return Response.redirect(new URL(`${clean}${url.search}`, url.origin).toString(), 301);
     }
 
     // 用户层在 D1（见 worker/store.ts）：首个请求初始化 schema（isolate 内只执行一次）。
@@ -164,7 +196,7 @@ export default {
       } catch (error) {
         console.warn("用户层初始化失败", error);
         if (path === "/api" || path.startsWith("/api/")) {
-          return textResponse("用户层暂不可用，请稍后重试。", 503, {
+          return textResponse(pageText(locale, "user_layer_unavailable"), 503, {
             "cache-control": "no-store",
             "retry-after": String(MANIFEST_MAX_AGE),
           });
@@ -183,20 +215,20 @@ export default {
     }
 
     if (request.method !== "GET" && request.method !== "HEAD") {
-      return textResponse("仅支持 GET / HEAD。", 405, { allow: "GET, HEAD" });
+      return textResponse(pageText(locale, "method_not_allowed"), 405, { allow: "GET, HEAD" });
     }
 
     if (path === `${MIRROR_ROOT}tables.json`) {
-      return handleTablesJson(env, url);
+      return handleTablesJson(env, url, locale);
     }
 
     if (path === ADMIN_ROOT || path.startsWith(ADMIN_ROOT)) {
-      return handleSpaShell(env, url);
+      return handleSpaShell(env, url, locale);
     }
 
     const withSlash = /^\/bms\/table\/mirror\/(.+)\/$/.exec(path);
     if (withSlash?.[1]) {
-      return handleTablePage(request, env, url, withSlash[1]);
+      return handleTablePage(request, env, url, withSlash[1], locale);
     }
 
     // 与站点全局 trailingSlash="always" 对齐：无尾斜杠补成带尾斜杠
@@ -206,7 +238,27 @@ export default {
       return Response.redirect(new URL(target, url.origin).toString(), 301);
     }
 
-    return env.ASSETS.fetch(request);
+    // 静态树分发：共享资源（/_app、/assets，构建期已合并双语产物）按原样取，
+    // 其余路径按语言映射到对应树；重定向 Location 若携带内部前缀则改写回干净路径
+    const assetPath = localizedAssetPath(url.pathname, locale);
+    if (assetPath === url.pathname) {
+      return env.ASSETS.fetch(request);
+    }
+    const localized = await env.ASSETS.fetch(new URL(assetPath, url.origin));
+    const location = localized.headers.get("location");
+    if (location?.includes(ZH_PREFIX)) {
+      // 静态资源层的尾斜杠等重定向会带上内部前缀，改写回干净路径
+      const target = new URL(location, url.origin);
+      target.pathname = target.pathname.replace(ZH_PREFIX, "") || "/";
+      const headers = new Headers(localized.headers);
+      headers.set("location", target.toString());
+      return new Response(localized.body, { status: localized.status, headers });
+    }
+    if (localized.status === 404) {
+      // 树内缺失：回中文 404 页而不是根树的英文 404
+      return zhNotFound(env, url);
+    }
+    return localized;
   },
 
   /** 定时任务：每天导出一次用户层快照（见 worker/backup.ts）。 */

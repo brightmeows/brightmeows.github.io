@@ -50,11 +50,11 @@ async function consume(env: Env, session: Session, now: Date): Promise<number | 
 
 export async function handleAdd(request: Request, env: Env, now: Date): Promise<Response> {
   if (!checkAllowedOrigin(request, allowedOrigins(env))) {
-    return failure(403, "来源校验失败");
+    return failure(403, "Origin check failed", { code: "api.origin_check_failed" });
   }
   const session = await getSession(env, request, now);
   if (session === null) {
-    return failure(401, "请先登录 GitHub");
+    return failure(401, "Log in with GitHub first", { code: "api.login_required" });
   }
   const body = await readJsonBody(request);
   const rawUrl = typeof body?.url === "string" ? body.url.trim() : "";
@@ -62,12 +62,14 @@ export async function handleAdd(request: Request, env: Env, now: Date): Promise<
   try {
     targetUrl = new URL(rawUrl).href;
   } catch {
-    return failure(400, "URL 非法");
+    return failure(400, "Invalid URL", { code: "api.url_invalid" });
   }
 
   const [user, manifest] = await Promise.all([loadUserLayer(env), loadMergedManifest(env)]);
   if (manifest === null) {
-    return failure(503, "清单暂不可用，请稍后重试");
+    return failure(503, "Manifest temporarily unavailable, please retry later", {
+      code: "api.manifest_unavailable",
+    });
   }
 
   const key = normalizeTableUrl(targetUrl);
@@ -76,16 +78,20 @@ export async function handleAdd(request: Request, env: Env, now: Date): Promise<
       normalizeTableUrl(item.url) === key || normalizeTableUrl(item.url_from ?? item.url) === key
   );
   if (alreadyListed) {
-    return failure(409, "该表已在镜像列表中");
+    return failure(409, "Table is already in the mirror list", { code: "api.already_in_mirror" });
   }
   if (user.added.some((entry) => normalizeTableUrl(entry.url) === key)) {
-    return failure(409, "该表已在添加记录中");
+    return failure(409, "Table already has a pending add request", { code: "api.already_pending" });
   }
   if (user.removed.some((entry) => normalizeTableUrl(entry.url) === key)) {
-    return failure(409, "该表曾被删除：30 天内可自助恢复，逾期需联系站长解除");
+    return failure(
+      409,
+      "Table was deleted before: self-restore within 30 days, contact the owner afterwards",
+      { code: "api.was_deleted" }
+    );
   }
   if (user.disabled.some((entry) => normalizeTableUrl(entry.url) === key)) {
-    return failure(409, "该表已被站长禁用");
+    return failure(409, "Table disabled by the owner", { code: "api.disabled_by_owner" });
   }
 
   const replaceHit = user.replace.find((rule) => normalizeTableUrl(rule.from) === key);
@@ -93,7 +99,10 @@ export async function handleAdd(request: Request, env: Env, now: Date): Promise<
 
   const consumed = await consume(env, session, now);
   if (consumed === null) {
-    return failure(429, `已达每日操作上限（${DAILY_OPERATION_LIMIT} 次）`);
+    return failure(429, `Daily operation limit reached (${DAILY_OPERATION_LIMIT} per day)`, {
+      code: "api.daily_limit",
+      params: { limit: DAILY_OPERATION_LIMIT },
+    });
   }
 
   const requestId = crypto.randomUUID();
@@ -131,10 +140,17 @@ export async function handleAdd(request: Request, env: Env, now: Date): Promise<
     await writeFetchStatus(env, {
       ...pending,
       state: "failed",
-      message: "触发抓取工作流失败，请联系站长",
+      // 存的是错误码而非自由文本：前端按 messages 翻译（见 mirror-user-api）
+      message: "api.fetch_dispatch_failed",
       updated_at: new Date().toISOString(),
     });
-    return failure(502, "已记录添加，但触发抓取工作流失败，请联系站长");
+    return failure(
+      502,
+      "Add recorded, but triggering the fetch workflow failed; contact the owner",
+      {
+        code: "api.fetch_dispatch_failed",
+      }
+    );
   }
   return json({
     requestId,
@@ -145,22 +161,24 @@ export async function handleAdd(request: Request, env: Env, now: Date): Promise<
 
 export async function handleDelete(request: Request, env: Env, now: Date): Promise<Response> {
   if (!checkAllowedOrigin(request, allowedOrigins(env))) {
-    return failure(403, "来源校验失败");
+    return failure(403, "Origin check failed", { code: "api.origin_check_failed" });
   }
   const session = await getSession(env, request, now);
   if (session === null) {
-    return failure(401, "请先登录 GitHub");
+    return failure(401, "Log in with GitHub first", { code: "api.login_required" });
   }
   const body = await readJsonBody(request);
   const dirName = typeof body?.dir_name === "string" ? body.dir_name.trim() : "";
   const urlKey = typeof body?.url === "string" ? normalizeTableUrl(body.url.trim()) : "";
   if (dirName === "" && urlKey === "") {
-    return failure(400, "需要提供 dir_name 或 url");
+    return failure(400, "dir_name or url is required", { code: "api.need_dir_or_url" });
   }
 
   const manifest = await loadMergedManifest(env);
   if (manifest === null) {
-    return failure(503, "清单暂不可用，请稍后重试");
+    return failure(503, "Manifest temporarily unavailable, please retry later", {
+      code: "api.manifest_unavailable",
+    });
   }
   const entry = manifest.find(
     (item) =>
@@ -168,19 +186,24 @@ export async function handleDelete(request: Request, env: Env, now: Date): Promi
       (urlKey !== "" && normalizeTableUrl(item.url) === urlKey)
   );
   if (entry === undefined) {
-    return failure(404, "清单里没有这张表");
+    return failure(404, "Table not found in the manifest", { code: "api.not_in_manifest" });
   }
   const targetDir = entry.dir_name;
   if (targetDir === undefined || targetDir === "") {
-    return failure(500, "清单条目缺少目录名");
+    return failure(500, "Manifest entry is missing dir_name", { code: "api.missing_dir_name" });
   }
   if (entry.protected === true) {
-    return failure(403, "该表受站长保护，不能删除");
+    return failure(403, "Table is owner-protected and cannot be deleted", {
+      code: "api.protected_no_delete",
+    });
   }
 
   const consumed = await consume(env, session, now);
   if (consumed === null) {
-    return failure(429, `已达每日操作上限（${DAILY_OPERATION_LIMIT} 次）`);
+    return failure(429, `Daily operation limit reached (${DAILY_OPERATION_LIMIT} per day)`, {
+      code: "api.daily_limit",
+      params: { limit: DAILY_OPERATION_LIMIT },
+    });
   }
 
   const at = now.toISOString();
@@ -222,34 +245,42 @@ export async function handleDelete(request: Request, env: Env, now: Date): Promi
 
 export async function handleRestore(request: Request, env: Env, now: Date): Promise<Response> {
   if (!checkAllowedOrigin(request, allowedOrigins(env))) {
-    return failure(403, "来源校验失败");
+    return failure(403, "Origin check failed", { code: "api.origin_check_failed" });
   }
   const session = await getSession(env, request, now);
   if (session === null) {
-    return failure(401, "请先登录 GitHub");
+    return failure(401, "Log in with GitHub first", { code: "api.login_required" });
   }
   const body = await readJsonBody(request);
   const dirName = typeof body?.dir_name === "string" ? body.dir_name.trim() : "";
   if (dirName === "") {
-    return failure(400, "需要提供 dir_name");
+    return failure(400, "dir_name is required", { code: "api.need_dir_name" });
   }
 
   const removed = await listRemoved(env);
   const record = removed.find((item) => item.dir_name === dirName);
   if (record === undefined) {
-    return failure(404, "回收站里没有这张表");
+    return failure(404, "Table not found in the trash", { code: "api.not_in_trash" });
   }
   if (record.author !== session.login && session.role !== "admin") {
-    return failure(403, "只能恢复自己删除的表");
+    return failure(403, "You can only restore tables you deleted", {
+      code: "api.only_own_deletes",
+    });
   }
   const ageMs = now.getTime() - Date.parse(record.removed_at);
   if (!Number.isFinite(ageMs) || ageMs > RESTORE_WINDOW_MS) {
-    return failure(410, `已超过 ${TRASH_RETENTION_DAYS} 天恢复期`);
+    return failure(410, `Restore window expired (${TRASH_RETENTION_DAYS} days)`, {
+      code: "api.trash_expired",
+      params: { days: TRASH_RETENTION_DAYS },
+    });
   }
 
   const consumed = await consume(env, session, now);
   if (consumed === null) {
-    return failure(429, `已达每日操作上限（${DAILY_OPERATION_LIMIT} 次）`);
+    return failure(429, `Daily operation limit reached (${DAILY_OPERATION_LIMIT} per day)`, {
+      code: "api.daily_limit",
+      params: { limit: DAILY_OPERATION_LIMIT },
+    });
   }
 
   const restoredObjects = await restoreTableFromTrash(env, record.trash_prefix, record.dir_name);
@@ -282,7 +313,7 @@ export async function handleRestore(request: Request, env: Env, now: Date): Prom
 export async function handleStatus(env: Env, requestId: string): Promise<Response> {
   const status = await readFetchStatus(env, requestId);
   if (status === null) {
-    return failure(404, "没有该请求的记录");
+    return failure(404, "Request record not found", { code: "api.no_request_record" });
   }
   return json(status);
 }
@@ -294,7 +325,7 @@ export async function handleStatus(env: Env, requestId: string): Promise<Respons
 export async function handleRemoved(request: Request, env: Env, now: Date): Promise<Response> {
   const session = await getSession(env, request, now);
   if (session === null) {
-    return failure(401, "请先登录 GitHub");
+    return failure(401, "Log in with GitHub first", { code: "api.login_required" });
   }
   const removed = await listRemoved(env);
   const cutoff = now.getTime() - RESTORE_WINDOW_MS;

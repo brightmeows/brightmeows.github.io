@@ -10,8 +10,24 @@ export function json(body: unknown, status = 200): Response {
   });
 }
 
-export function failure(status: number, message: string): Response {
-  return json({ error: message }, status);
+export interface FailureOptions {
+  /** 前端翻译用的稳定错误码（`api.*` 命名空间，条目在 messages 里）。 */
+  code?: string;
+  /** 文案参数，与消息占位符对应。 */
+  params?: Record<string, string | number>;
+}
+
+/**
+ * API 错误体：`error` 是英文兜底（直连响应与日志可读），`code` 供前端
+ * 按当前语言查 messages 精确翻译（见 scripts/check-i18n-coverage 的码表校验）。
+ */
+export function failure(status: number, message: string, options?: FailureOptions): Response {
+  const body: Record<string, unknown> = { error: message };
+  if (options?.code !== undefined) {
+    body.code = options.code;
+    if (options.params !== undefined) body.params = options.params;
+  }
+  return json(body, status);
 }
 
 export async function readJsonBody(request: Request): Promise<Record<string, unknown> | null> {

@@ -76,11 +76,11 @@ export function extractHeaderUrl(text: string, pageUrl: string): string | null {
 
 export async function handlePreview(request: Request, env: Env, now: Date): Promise<Response> {
   if (!checkAllowedOrigin(request, allowedOrigins(env))) {
-    return failure(403, "来源校验失败");
+    return failure(403, "Origin check failed", { code: "api.origin_check_failed" });
   }
   const session = await getSession(env, request, now);
   if (session === null) {
-    return failure(401, "请先登录 GitHub");
+    return failure(401, "Log in with GitHub first", { code: "api.login_required" });
   }
   const body = await readJsonBody(request);
   const rawUrl = typeof body?.url === "string" ? body.url.trim() : "";
@@ -88,7 +88,7 @@ export async function handlePreview(request: Request, env: Env, now: Date): Prom
   try {
     pageUrl = new URL(rawUrl).href;
   } catch {
-    return failure(400, "URL 非法");
+    return failure(400, "Invalid URL", { code: "api.url_invalid" });
   }
   try {
     const page = await fetchTextLimited(pageUrl);
@@ -96,7 +96,10 @@ export async function handlePreview(request: Request, env: Env, now: Date): Prom
     if (headerUrl === null) {
       return failure(
         422,
-        "页面里找不到 bmstable 或 header JSON，仍可尝试提交（后台会用完整逻辑重试）"
+        "No bmstable or header JSON found on the page; you can still submit (the backend retries with full logic)",
+        {
+          code: "api.no_bmstable_hint",
+        }
       );
     }
     const headerText = await fetchTextLimited(headerUrl);
@@ -104,10 +107,10 @@ export async function handlePreview(request: Request, env: Env, now: Date): Prom
     try {
       parsed = JSON.parse(headerText);
     } catch {
-      return failure(422, "header 不是合法 JSON");
+      return failure(422, "header is not valid JSON", { code: "api.header_invalid_json" });
     }
     if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-      return failure(422, "header 应为 JSON 对象");
+      return failure(422, "header must be a JSON object", { code: "api.header_not_object" });
     }
     const record = parsed as Record<string, unknown>;
     return json({
@@ -117,6 +120,8 @@ export async function handlePreview(request: Request, env: Env, now: Date): Prom
       symbol: typeof record.symbol === "string" ? record.symbol : "",
     });
   } catch (error) {
-    return failure(422, error instanceof Error ? error.message : "抓取失败");
+    return failure(422, error instanceof Error ? error.message : "Fetch failed", {
+      code: "api.preview_fetch_failed",
+    });
   }
 }

@@ -38,7 +38,7 @@ export async function handleApi(request: Request, env: Env, url: URL): Promise<R
   if (request.method === "OPTIONS") {
     const origin = request.headers.get("origin");
     if (origin === null || !allowedOrigins(env).includes(origin)) {
-      return failure(403, "来源不在白名单");
+      return failure(403, "Origin not in the allowlist", { code: "api.origin_not_allowed" });
     }
     return new Response(null, {
       status: 204,
@@ -73,7 +73,7 @@ async function routeApi(request: Request, env: Env, url: URL): Promise<Response>
   }
   if (path === "/api/auth/logout" && request.method === "POST") {
     if (!checkAllowedOrigin(request, allowedOrigins(env))) {
-      return failure(403, "来源校验失败");
+      return failure(403, "Origin check failed", { code: "api.origin_check_failed" });
     }
     return handleLogout(env, url);
   }
@@ -96,5 +96,5 @@ async function routeApi(request: Request, env: Env, url: URL): Promise<Response>
   if (statusMatch?.[1] !== undefined && request.method === "GET") {
     return handleStatus(env, statusMatch[1]);
   }
-  return failure(404, "未知接口");
+  return failure(404, "Unknown endpoint", { code: "api.unknown_endpoint" });
 }

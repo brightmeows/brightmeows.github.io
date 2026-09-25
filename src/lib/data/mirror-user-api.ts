@@ -2,6 +2,7 @@ import type { FetchState, UserRole } from "@brightmeows/mirror/user-layer";
 
 import { apiBase } from "$lib/constants/site";
 import { m } from "$lib/paraglide/messages.js";
+import { messageInputs, translateMessage } from "$lib/utils/i18n";
 
 /**
  * 镜像表用户操作接口的客户端封装。
@@ -80,8 +81,14 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   if (!response.ok) {
     let message: string = m["common.request_failed"]({ status: response.status });
     try {
-      const body = (await response.json()) as { error?: unknown };
-      if (typeof body.error === "string" && body.error !== "") {
+      const body = (await response.json()) as { error?: unknown; code?: unknown; params?: unknown };
+      const translated =
+        typeof body.code === "string"
+          ? translateMessage(body.code, messageInputs(body.params))
+          : null;
+      if (translated !== null) {
+        message = translated;
+      } else if (typeof body.error === "string" && body.error !== "") {
         message = body.error;
       }
     } catch {
@@ -165,7 +172,9 @@ export async function fetchFetchStatus(requestId: string): Promise<FetchStatus> 
     id: typeof body.id === "string" ? body.id : requestId,
     url: typeof body.url === "string" ? body.url : "",
     state,
-    ...(typeof body.message === "string" && body.message !== "" ? { message: body.message } : {}),
+    ...(typeof body.message === "string" && body.message !== ""
+      ? { message: translateMessage(body.message) ?? body.message }
+      : {}),
     updated_at: typeof body.updated_at === "string" ? body.updated_at : "",
   };
 }
