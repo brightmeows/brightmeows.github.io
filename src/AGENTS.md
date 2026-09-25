@@ -9,7 +9,7 @@
 ### 基础设施与构建
 
 - **`hooks.server.ts` 不存在** — 纯 SSG 项目不需要 server handle，meta 注入已走标准数据流。不要重新添加。
-- **Paraglide i18n 基础设施全局加载但仅 `/demo/paraglide/` 生效** — `hooks.ts` 和 `+layout.svelte` 无条件导入 runtime（SSG 构建无法 tree-shake），但 `reroute` 钩子只对 `/demo/paraglide/` 路径触发。不要将 paraglide 扩展到其他路由。
+- **Paraglide 全站双语，渲染语言由构建期固定** — 消息在 `messages/{en,zh-cn}.json`（按域点号命名空间，`m["key"]()` 计算访问，量级数百条）；渲染语言来自 vite define 的 `__SITE_LOCALE__`，在 `src/routes/+layout.ts` 模块级 `overwriteGetLocale` 固定——因此**模块顶层不能调用 `m`**（求值必须发生在函数或渲染期，早于 load 注入即错位），水合与静态 HTML 恒一致，`PARAGLIDE_LOCALE` cookie 只供边缘分发选树、不参与渲染求值。strategy 收敛为 `["cookie","baseLocale"]`（cookie 仅为切换器持久化），`hooks.ts` 的 reroute 随 URL 不再承载语言而删除。切换器是 TopBar 的语言占位钮（点击写 cookie 后整页 reload，交边缘分发），静态目标产物（vite define 的 `__STATIC_TARGET__`）隐藏该钮；`bms/index.zh.md`/`index.en.md` 双份源按 locale 选用，博客正文与 frontmatter、注释、测试不翻。覆盖由 `pnpm check:i18n` 机械守住（两语 key 对称、占位符一致、引用存在、死 key、源码 CJK 残留、英文值漏翻；豁免口径见 `scripts/check-i18n-coverage.ts` 头注）。oxlint 的 `import/namespace` 因点号 key 必须计算访问而显式关停——key 存在性由 svelte-check 与该门槛兜住。
 - **`vite.config.ts` 中 `server.fs.allow: ["content"]`** — Vite dev server 默认仅允许 `src/`、`.svelte-kit/`、`node_modules/` 内的文件被访问。`content/` 不在其中，`import()` 请求会被拦截（404/403）。需要在 `vite.config.ts` 中显式添加。build 时无此限制。
 - **`static/_headers` 只对 Cloudflare 生效** — `/_app/immutable/*` 是 hash 命名的构建产物，设一年 `immutable` 缓存；`/*` 只加 `X-Content-Type-Options: nosniff` 与 `Referrer-Policy: strict-origin-when-cross-origin`（刻意不含 HSTS 与 X-Frame-Options：前者有浏览器记忆期、后者会拦掉跨站嵌入场景）。两条注意：不要在 `/*` 上设 Cache-Control（会与 immutable 规则叠加出冲突值）；GitHub Pages 与 Codeberg 不解析该文件，它只会作为无害文本出现在这两个站点根。
 

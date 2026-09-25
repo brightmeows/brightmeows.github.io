@@ -21,14 +21,15 @@
 pre-commit run --all-files --quiet    # 手动触发全部 hooks
 ```
 
-Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`、`pnpm check:worker`、`pnpm test`、no-confusable-unicode、cn-quotes、conventional-commit（commit-msg stage 校验提交信息）。
+Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`、`pnpm check:worker`、`pnpm check:config`、`pnpm check:i18n`、`pnpm test`、no-confusable-unicode、cn-quotes、site-config、i18n-coverage、conventional-commit（commit-msg stage 校验提交信息）。
 
 ### 手动命令
 
 - `pnpm dev`
-- `pnpm build`
+- `pnpm build` — 三遍 flavor 构建并组装双语产物（`scripts/build-site.ts`，见 `scripts/AGENTS.md`）
 - `pnpm test`
 - `pnpm check:config` — 配置一致性校验（离线，毫秒级）
+- `pnpm check:i18n` — i18n 覆盖校验（两语 key 对称与占位符、引用/死 key、源码 CJK 残留、英文漏翻；离线，毫秒级）
 
 域内命令见子文档：部署与 wrangler 相关在 `packages/worker/AGENTS.md`；管线、抓取、对拍与校验脚本在 `scripts/AGENTS.md`。
 
@@ -62,7 +63,7 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`�
 
 ## 架构边界
 
-- **纯 SSG（含一处边缘例外）** — `@sveltejs/adapter-static` + 全局 `prerender = true`，不加 server routes / API endpoints。例外是 Cloudflare Worker（`packages/worker/index.ts`）承担的镜像表动态路由与写接口：它先接管 `/bms/table/mirror/*` 与 `/api/*`（`assets.run_worker_first`），其余请求全部回落静态资源。
+- **纯 SSG（含一处边缘例外）** — `@sveltejs/adapter-static` + 全局 `prerender = true`，不加 server routes / API endpoints。例外是 Cloudflare Worker（`packages/worker/index.ts`）：`assets.run_worker_first` 为全量 `true`，每个请求先过 Worker——先做镜像表动态路由与写接口，再做边缘语言分发（按 cookie、无 cookie 时按 Accept-Language 把请求映射到 `build/` 里的 en 根树或 `_i18n/zh-cn` 内部树；内部前缀永不进入用户 URL，命中即 301 回干净路径），其余请求回落静态资源。双语产物由 `pnpm build`（`scripts/build-site.ts`）三遍 flavor 构建组装，静态宿主发单独的 `build-static/` 单语产物。
 
 ## 技术栈
 
@@ -73,7 +74,7 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`�
 - tsconfig 已开启 `noUncheckedIndexedAccess` 与 `exactOptionalPropertyTypes`（2026-09）—— 两者分别修复 45 处与 27 处真实未定义状态问题后开启。批量修法：`exactOptionalPropertyTypes` 要求给类型定义的可选属性显式写 `| undefined`（项目里确实存在“显式传 undefined”的语义，如调用方把 `string | undefined` 直接放进字面量）；`noUncheckedIndexedAccess` 优先真修（用 `entries()` 遍历消除索引访问、用解构加逐项检查替代 `some` 加 `as` 断言），确证安全处（循环内已保证边界、测试里已有前置断言）用 `!`。开启后 oxlint 的 `prefer-nullish-coalescing` 会多报几处，属预期。
 - Vitest 5（纯函数单测，Node 环境）
 - Node 版本以 `.nvmrc` 为准（工作流用 `node-version-file: .nvmrc`）；pnpm 版本以 `package.json` 的 `devEngines.packageManager` 范围为准（工作流不传 `version`，解析结果记入 lockfile）。两者都由 `pnpm check:config` 断言
-- Paraglide JS（i18n，仅 demo 用）
+- Paraglide JS（i18n，全站双语 en/zh-cn，边缘分发）
 
 ## 依赖升级挂起项
 

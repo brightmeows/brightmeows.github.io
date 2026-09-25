@@ -201,7 +201,11 @@ function main(): void {
     (rel) => [rel, readFileSync(path.join(root, rel), "utf8")] as const
   );
 
-  const refs = srcTexts.flatMap(([, text]) => collectMessageRefs(text));
+  // 消息引用只从代码文件收集：文档里的示例 `m["key"]()` 不是真实引用
+  const CODE_EXTENSIONS = new Set([".ts", ".svelte", ".js"]);
+  const refs = srcTexts
+    .filter(([rel]) => CODE_EXTENSIONS.has(path.extname(rel)))
+    .flatMap(([, text]) => collectMessageRefs(text));
   const workerCodes = workerTexts.flatMap(([, text]) => collectWorkerCodes(text));
 
   const issues = [
