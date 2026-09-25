@@ -105,6 +105,7 @@
 
   import { browser } from "$app/environment";
   import FloatingPanel from "$lib/components/ui/FloatingPanel.svelte";
+  import { m } from "$lib/paraglide/messages.js";
 
   interface FlatTocItem {
     id: string;
@@ -118,7 +119,7 @@
     title?: string;
   }
 
-  let { items = [], title = "目录" }: Props = $props();
+  let { items = [], title = m["toc.title"]() }: Props = $props();
 
   let activeId = $state<string | null>(null);
   let _scrollScheduled = false;
@@ -226,7 +227,7 @@
     initiallyOpen={false}
     position="top-right"
     size="medium"
-    ariaLabel="目录"
+    ariaLabel={m["toc.title"]()}
   >
     <div class="mb-3 flex items-center justify-between gap-3">
       <div class="text-[0.95rem] font-semibold text-white/90">{title}</div>

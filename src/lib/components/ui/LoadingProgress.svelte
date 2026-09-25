@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { m } from "$lib/paraglide/messages.js";
+
   interface Props {
     /** 进度 0-100（确定模式）。不确定模式时无需传此值 */
     progress?: number;
@@ -20,7 +22,7 @@
     progress = 0,
     message,
     detail,
-    title = "正在加载数据...",
+    title = m["common.loading_data"](),
     variant = "determinate",
     showPercentage = true,
     class: className = "",
@@ -77,7 +79,7 @@
     </div>
 
     <div class="flex flex-col gap-2">
-      <span class="text-[0.9rem] text-white/60">当前步骤:</span>
+      <span class="text-[0.9rem] text-white/60">{m["progress.current_step"]()}:</span>
       <span class="font-medium text-white">{message}</span>
       {#if detail}
         <span class="text-[0.85rem] text-white/50">{detail}</span>

@@ -8,6 +8,8 @@
   import { moreNav, topLevelNav } from "$lib/constants/nav";
   import { apiBase, SITE_ORIGIN } from "$lib/constants/site";
   import { auth } from "$lib/data/auth-store.svelte";
+  import { m } from "$lib/paraglide/messages.js";
+  import { getLocale, setLocale } from "$lib/paraglide/runtime";
   import { deriveBreadcrumbs } from "$lib/utils/breadcrumbs";
 
   interface Props {
@@ -131,7 +133,7 @@
         <button
           type="button"
           class="cursor-pointer rounded-full border-2 border-transparent transition-colors duration-150 hover:border-white/40"
-          aria-label="个人信息卡"
+          aria-label={m["topbar.profile_card_aria"]()}
           aria-expanded={openPanel === "profile"}
           onclick={() => togglePanel("profile")}
         >
@@ -154,10 +156,10 @@
                 <h2
                   class="m-0 bg-[linear-gradient(90deg,#a78bfa,#f472b6,#60a5fa)] bg-clip-text text-3xl text-transparent"
                 >
-                  白喵斯
+                  {m["topbar.nickname"]()}
                 </h2>
-                <p class="mt-1 mb-4 text-[#a5b4fc]">喵喵喵！</p>
-                <p class="mb-5 text-sm leading-relaxed text-white/90">追逐成就感中</p>
+                <p class="mt-1 mb-4 text-[#a5b4fc]">{m["topbar.motto"]()}</p>
+                <p class="mb-5 text-sm leading-relaxed text-white/90">{m["topbar.bio"]()}</p>
                 <div class="flex flex-wrap justify-center gap-3">
                   <GlassButton
                     href="https://codeberg.org/brightmeows"
@@ -182,7 +184,7 @@
       </div>
 
       <!-- 左区：顶层导航（窄屏折进“更多”） -->
-      <nav aria-label="站内导航" class="hidden shrink-0 items-center sm:flex">
+      <nav aria-label={m["topbar.nav_aria"]()} class="hidden shrink-0 items-center sm:flex">
         {#each topLevelNav as item (item.href)}
           <a
             href={resolve(item.href, {})}
@@ -191,7 +193,7 @@
               : 'text-white/85 hover:bg-white/10 hover:text-white'}"
             aria-current={isActive(item.href) ? "page" : undefined}
           >
-            {item.label}
+            {item.label()}
           </a>
         {/each}
       </nav>
@@ -204,7 +206,7 @@
           aria-expanded={openPanel === "more"}
           onclick={() => togglePanel("more")}
         >
-          更多
+          {m["topbar.more"]()}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
@@ -221,12 +223,12 @@
             <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
               <div class="sm:hidden">
                 {#each topLevelNav as item (item.href)}
-                  <a href={resolve(item.href, {})} class={menuItemClass}>{item.label}</a>
+                  <a href={resolve(item.href, {})} class={menuItemClass}>{item.label()}</a>
                 {/each}
                 <div class="mx-2 my-1 border-t border-white/15"></div>
               </div>
               {#each moreNav as item (item.href)}
-                <a href={resolve(item.href, {})} class={menuItemClass}>{item.label}</a>
+                <a href={resolve(item.href, {})} class={menuItemClass}>{item.label()}</a>
               {/each}
             </GlassPanel>
           </div>
@@ -235,7 +237,10 @@
 
       <!-- 中区：面包屑（首页无路径可导，隐藏中段；窄屏隐藏） -->
       {#if breadcrumbs.length > 1}
-        <nav aria-label="面包屑" class="hidden min-w-0 flex-1 justify-center md:flex">
+        <nav
+          aria-label={m["topbar.breadcrumb_aria"]()}
+          class="hidden min-w-0 flex-1 justify-center md:flex"
+        >
           <div class="flex min-w-0 items-center gap-1 overflow-hidden px-2">
             {#each breadcrumbs as item, index (index)}
               {#if index > 0}
@@ -265,13 +270,13 @@
             <a
               href={SITE_ORIGIN}
               class="{linkBase} block text-white/85 hover:bg-white/10 hover:text-white"
-              title="当前为静态镜像，登录与相关功能请前往主站"
+              title={m["topbar.static_hint_title"]()}
             >
-              前往主站
+              {m["topbar.go_main_site"]()}
             </a>
           {:else if auth.status === "ready" && auth.user === null}
             <a href={loginHref} class="{linkBase} block bg-white/15 text-white hover:bg-white/25">
-              登录
+              {m["topbar.login"]()}
             </a>
           {:else if auth.status === "ready" && auth.user !== null}
             {@const user = auth.user}
@@ -287,11 +292,11 @@
               <div class="absolute top-full right-0 mt-2 w-56">
                 <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
                   <div class="px-3 py-2 text-sm text-white/70">
-                    今日剩余 {user.remaining} 次
+                    {m["topbar.remaining"]({ count: user.remaining })}
                   </div>
                   {#if user.role === "admin"}
                     <a href={resolve("/bms/table/mirror/admin", {})} class={menuItemClass}>
-                      站长后台
+                      {m["topbar.admin_panel"]()}
                     </a>
                   {/if}
                   <button
@@ -299,7 +304,7 @@
                     class="{menuItemClass} w-full"
                     onclick={() => void doLogout()}
                   >
-                    登出
+                    {m["topbar.logout"]()}
                   </button>
                 </GlassPanel>
               </div>
@@ -313,8 +318,8 @@
           type="button"
           disabled
           class="flex size-9 cursor-not-allowed items-center justify-center rounded-full text-white/60 opacity-50"
-          title="即将推出"
-          aria-label="主题切换（即将推出）"
+          title={m["topbar.soon"]()}
+          aria-label={m["topbar.theme_aria"]()}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -326,28 +331,33 @@
             <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
           </svg>
         </button>
-        <button
-          type="button"
-          disabled
-          class="flex size-9 cursor-not-allowed items-center justify-center rounded-full text-white/60 opacity-50"
-          title="即将推出"
-          aria-label="语言切换（即将推出）"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            class="size-5"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            aria-hidden="true"
+        {#if !__STATIC_TARGET__}
+          {@const targetLocale = getLocale() === "en" ? "zh-cn" : "en"}
+          <button
+            type="button"
+            class="flex size-9 cursor-pointer items-center justify-center rounded-full text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+            title={targetLocale === "en" ? m["topbar.switch_to_en"]() : m["topbar.switch_to_zh"]()}
+            aria-label={targetLocale === "en"
+              ? m["topbar.switch_to_en"]()
+              : m["topbar.switch_to_zh"]()}
+            onclick={() => setLocale(targetLocale)}
           >
-            <circle cx="12" cy="12" r="9" />
-            <path
-              d="M3 12h18M12 3c2.5 2.6 3.9 5.7 3.9 9s-1.4 6.4-3.9 9c-2.5-2.6-3.9-5.7-3.9-9s1.4-6.4 3.9-9z"
-            />
-          </svg>
-        </button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              class="size-5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="9" />
+              <path
+                d="M3 12h18M12 3c2.5 2.6 3.9 5.7 3.9 9s-1.4 6.4-3.9 9c-2.5-2.6-3.9-5.7-3.9-9s1.4-6.4 3.9-9z"
+              />
+            </svg>
+          </button>
+        {/if}
       </div>
     </div>
   </GlassPanel>

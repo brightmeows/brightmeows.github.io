@@ -3,6 +3,7 @@
   import { onDestroy, onMount } from "svelte";
   import type { Snippet } from "svelte";
 
+  import { m } from "$lib/paraglide/messages.js";
   import { slugifyHeadingText } from "$lib/utils/slugify";
 
   interface Props {
@@ -43,7 +44,7 @@
       anchor.className =
         "heading-anchor absolute -left-7 top-[0.2em] inline-flex size-5 items-center justify-center rounded text-white/40 opacity-0 transition hover:text-white/80 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30";
       anchor.setAttribute("href", `#${id}`);
-      anchor.setAttribute("aria-label", "跳转到此标题");
+      anchor.setAttribute("aria-label", m["toc.anchor_jump"]());
       anchor.innerHTML =
         '<svg viewBox="0 0 24 24" class="size-4" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 13a5 5 0 0 1 0-7.07l1.41-1.42a5 5 0 0 1 7.07 7.07L17.07 13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 11a5 5 0 0 1 0 7.07l-1.41 1.42a5 5 0 0 1-7.07-7.07L6.93 11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 

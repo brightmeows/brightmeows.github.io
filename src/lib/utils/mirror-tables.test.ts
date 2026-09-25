@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 
 import { buildSearchNeedles, filterTables, groupByTags, slugifyTag } from "./mirror-tables";
 
+import { m } from "$lib/paraglide/messages.js";
+
 describe("buildSearchNeedles", () => {
   it("空白输入返回空数组，非空白做 NFKC 与小写归一", () => {
     expect(buildSearchNeedles("   ", [])).toEqual([]);
@@ -72,9 +74,9 @@ describe("groupByTags", () => {
     ]);
   });
 
-  it("缺省标签回落为 未分类 与 其它", () => {
+  it("缺省标签回落为消息文案（未分类 / 其它）", () => {
     const groups = groupByTags([{ name: "x", url: "u" }]);
-    expect(groups[0]!.tag1).toBe("未分类");
-    expect(groups[0]!.subgroups[0]!.tag2).toBe("其它");
+    expect(groups[0]!.tag1).toBe(m["mirror.untagged"]());
+    expect(groups[0]!.subgroups[0]!.tag2).toBe(m["mirror.other"]());
   });
 });

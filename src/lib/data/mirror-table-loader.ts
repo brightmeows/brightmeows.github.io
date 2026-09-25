@@ -1,5 +1,7 @@
 import type { MirrorTableItem } from "@brightmeows/mirror/types";
 
+import { m } from "$lib/paraglide/messages.js";
+
 /**
  * 加载镜像表列表并修正 URL
  */
@@ -10,12 +12,12 @@ export async function loadMirrorTables(
   const url = new URL(tablesJsonPath, window.location.origin).toString();
   const res = await fetch(url, { redirect: "follow" });
   if (!res.ok) {
-    throw new Error(`无法加载 tables.json: ${res.status}`);
+    throw new Error(m["mirror.tables_load_failed"]({ status: res.status }));
   }
 
   const data = (await res.json()) as unknown;
   if (!Array.isArray(data)) {
-    throw new Error("tables.json 格式错误：不是数组");
+    throw new Error(m["mirror.tables_invalid"]());
   }
 
   return (data as MirrorTableItem[]).map((item) => {

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { resolve } from "$app/paths";
+  import { m } from "$lib/paraglide/messages.js";
   import type { TableEntry } from "$lib/types/bms";
 
   interface Props {
@@ -10,7 +11,7 @@
 </script>
 
 <div>
-  <h2 class="section-title text-center">难度表列表</h2>
+  <h2 class="section-title text-center">{m["table.list_heading"]()}</h2>
   <div class="table-wrapper mt-4">
     <table class="table-glass">
       <colgroup>
@@ -20,8 +21,8 @@
       </colgroup>
       <thead>
         <tr>
-          <th class="table-th-glass">符号</th>
-          <th class="table-th-glass">名称</th>
+          <th class="table-th-glass">{m["common.th_symbol"]()}</th>
+          <th class="table-th-glass">{m["common.th_name"]()}</th>
           <th class="table-th-glass">ID</th>
         </tr>
       </thead>

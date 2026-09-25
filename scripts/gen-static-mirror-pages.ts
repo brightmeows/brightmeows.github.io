@@ -8,7 +8,7 @@
  * 整步失败，避免用缺页产物覆盖上一版仍可用的静态站点。
  *
  * 用法：
- *   node scripts/gen-static-mirror-pages.ts --target=github-pages [--build-dir=build]
+ *   node scripts/gen-static-mirror-pages.ts --target=github-pages [--build-dir=build-static]
  *   node scripts/gen-static-mirror-pages.ts --site-base=https://example.com   # 显式覆盖（本地演练用）
  *
  * `--manifest-base=https://…` 可覆盖清单来源基址，缺省取 config/site.json 的 origin。
@@ -174,7 +174,7 @@ async function main(argv: string[]): Promise<void> {
 
   // 域配置提交物（内容 = 自定义子域 host）：域名从配置派生，不在仓库里维护副本。
   // --site-base 覆盖（本地演练）时无 target，跳过。
-  const buildDir = args.buildDir ?? path.join(repoRoot, "build");
+  const buildDir = args.buildDir ?? path.join(repoRoot, "build-static");
   if (args.target !== undefined) {
     const domainFile = DOMAIN_FILE_BY_TARGET[args.target];
     if (domainFile !== undefined) {

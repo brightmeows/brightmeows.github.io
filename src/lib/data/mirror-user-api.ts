@@ -1,6 +1,8 @@
 import type { FetchState, UserRole } from "@brightmeows/mirror/user-layer";
 
 import { apiBase } from "$lib/constants/site";
+import { m } from "$lib/paraglide/messages.js";
+import { messageInputs, translateMessage } from "$lib/utils/i18n";
 
 /**
  * 镜像表用户操作接口的客户端封装。
@@ -77,10 +79,16 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
     credentials: "include",
   });
   if (!response.ok) {
-    let message = `请求失败（HTTP ${response.status}）`;
+    let message: string = m["common.request_failed"]({ status: response.status });
     try {
-      const body = (await response.json()) as { error?: unknown };
-      if (typeof body.error === "string" && body.error !== "") {
+      const body = (await response.json()) as { error?: unknown; code?: unknown; params?: unknown };
+      const translated =
+        typeof body.code === "string"
+          ? translateMessage(body.code, messageInputs(body.params))
+          : null;
+      if (translated !== null) {
+        message = translated;
+      } else if (typeof body.error === "string" && body.error !== "") {
         message = body.error;
       }
     } catch {
@@ -138,7 +146,7 @@ export async function submitAdd(url: string): Promise<AddResult> {
     { method: "POST", body: JSON.stringify({ url }) }
   );
   if (typeof body.requestId !== "string") {
-    throw new Error("接口未返回请求 id");
+    throw new Error(m["userapi.no_request_id"]());
   }
   return {
     requestId: body.requestId,
@@ -158,13 +166,15 @@ export async function fetchFetchStatus(requestId: string): Promise<FetchStatus> 
   }>(`/api/tables/status/${encodeURIComponent(requestId)}`);
   const state = body.state;
   if (state !== "pending" && state !== "fetching" && state !== "done" && state !== "failed") {
-    throw new Error("状态取值未知");
+    throw new Error(m["userapi.unknown_state"]());
   }
   return {
     id: typeof body.id === "string" ? body.id : requestId,
     url: typeof body.url === "string" ? body.url : "",
     state,
-    ...(typeof body.message === "string" && body.message !== "" ? { message: body.message } : {}),
+    ...(typeof body.message === "string" && body.message !== ""
+      ? { message: translateMessage(body.message) ?? body.message }
+      : {}),
     updated_at: typeof body.updated_at === "string" ? body.updated_at : "",
   };
 }

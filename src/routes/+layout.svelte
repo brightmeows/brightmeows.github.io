@@ -3,6 +3,7 @@
 
   import { page } from "$app/state";
   import { LEGACY_ORIGIN_REDIRECTS, SITE_ORIGIN } from "$lib/constants/site";
+  import { m } from "$lib/paraglide/messages.js";
   import { getLocale } from "$lib/paraglide/runtime";
 
   import "./layout.css";
@@ -30,7 +31,7 @@
   {#if page.data.bmstableMeta}
     <meta name="bmstable" content={page.data.bmstableMeta} />
   {/if}
-  <title>{page.data.title ?? "白喵斯的小屋"}</title>
+  <title>{page.data.title ?? m["site.name"]()}</title>
   <link rel="canonical" href={`${SITE_ORIGIN}${page.url.pathname}`} />
   <link rel="icon" href="https://codeberg.org/brightmeows.png" />
 </svelte:head>

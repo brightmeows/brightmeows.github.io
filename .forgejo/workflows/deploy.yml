@@ -59,7 +59,7 @@ jobs:
           site: ${{ env.SITE_BASE }}
           server: ${{ env.PAGES_SERVER }}
           token: "${{ forge.token }}"
-          source: build/
+          source: build-static/
       - name: Deploy to Codeberg Pages (legacy wildcard domain)
         # 同步更新平台原域的内容：新前端的兜底跳转随这次发布到位（无此步骤时
         # 原域会停留在旧版，访客不会收敛到子域）。
@@ -68,4 +68,4 @@ jobs:
           site: ${{ env.LEGACY_BASE }}
           server: ${{ env.PAGES_SERVER }}
           token: "${{ forge.token }}"
-          source: build/
+          source: build-static/

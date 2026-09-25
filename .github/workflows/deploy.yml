@@ -2,9 +2,10 @@
 #
 # - Cloudflare Workers（主站）：静态资源 + Worker，镜像表页面与
 #   tables.json 由 Worker 运行时生成，因此 Cloudflare 侧**不**需要构建期产出的
-#   镜像页——所以 `wrangler deploy` 必须排在生成步骤之前（顺序反了会把 443 个
-#   静态页一起传上去，虽不致命但会白白增加上传量）。
-# - GitHub Pages（静态镜像目标之一）：构建期生成静态镜像页与站点清单后发布。
+#   镜像页；镜像页只写进 build-static/（静态宿主产物），与主站的 build/
+#   （en 根 + _i18n/zh-cn 双语树）天然隔离。
+# - GitHub Pages（静态镜像目标之一）：构建期生成静态镜像页与站点清单后发布
+#   build-static/（静态单语 flavor，隐藏语言切换器）。
 # - Codeberg Pages（静态镜像目标之二）：由 .forgejo/workflows/deploy.yml
 #   在 Codeberg 侧跑同样的“构建 + 生成”流程。
 #
@@ -48,13 +49,14 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - name: Generate static mirror pages
         # 从主站拉取已合成清单（含用户增删与保护标记）后生成静态镜像页与站点清单；
-        # 失败即整步失败，避免用缺页产物覆盖上一版仍可用的 GitHub Pages 站点
+        # 写入 build-static/（静态宿主产物），失败即整步失败，避免用缺页产物
+        # 覆盖上一版仍可用的 GitHub Pages 站点
         run: node scripts/gen-static-mirror-pages.ts --target=github-pages
       - name: Upload Artifacts
         uses: actions/upload-pages-artifact@v5
         with:
-          # this should match the `pages` option in your adapter-static options
-          path: "build/"
+          # 静态宿主发单语产物（scripts/build-site.ts 的 static flavor）
+          path: "build-static/"
   deploy:
     needs: build_site
     runs-on: ubuntu-latest

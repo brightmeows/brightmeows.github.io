@@ -6,6 +6,7 @@
   import Checkbox from "$lib/components/ui/Checkbox.svelte";
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
   import ScrollSyncGroup from "$lib/components/ui/ScrollSyncGroup.svelte";
+  import { m } from "$lib/paraglide/messages.js";
   import type { Tag1Group, Tag2Group } from "$lib/types/bms";
   import type { JsonPreviewHandle } from "$lib/types/ui";
   import { slugifyTag } from "$lib/utils/mirror-tables";
@@ -109,7 +110,7 @@
 </script>
 
 {#if groups.length === 0}
-  <EmptyState title="暂无镜像数据" description="未找到镜像列表。" />
+  <EmptyState title={m["mirror.empty_title"]()} description={m["mirror.empty_desc"]()} />
 {:else}
   <div class="mt-8">
     <ScrollSyncGroup watchKeys={groups}>
@@ -179,11 +180,11 @@
                     </colgroup>
                     <thead>
                       <tr>
-                        <th class="table-th-glass">选择</th>
-                        <th class="table-th-glass">符号</th>
-                        <th class="table-th-glass">名称</th>
-                        <th class="table-th-glass">镜像</th>
-                        <th class="table-th-glass">原链接</th>
+                        <th class="table-th-glass">{m["common.th_select"]()}</th>
+                        <th class="table-th-glass">{m["common.th_symbol"]()}</th>
+                        <th class="table-th-glass">{m["common.th_name"]()}</th>
+                        <th class="table-th-glass">{m["common.th_mirror"]()}</th>
+                        <th class="table-th-glass">{m["common.th_origin"]()}</th>
                       </tr>
                     </thead>
                     <tbody>

@@ -43,6 +43,7 @@ jobs:
       - run: pnpm check:worker
       - run: pnpm check:mirror
       - run: pnpm check:config
+      - run: pnpm check:i18n
 
   test:
     runs-on: ubuntu-latest

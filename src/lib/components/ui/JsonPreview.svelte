@@ -48,6 +48,7 @@
   import { cubicOut } from "svelte/easing";
   import { fade, fly } from "svelte/transition";
 
+  import { m } from "$lib/paraglide/messages.js";
   import { writeToClipboard } from "$lib/utils/clipboard.svelte";
 
   let open = $state(false);
@@ -226,14 +227,14 @@
           type="button"
           onclick={copyJson}
         >
-          {copied ? "已复制" : "复制"}
+          {copied ? m["common.copied"]() : m["common.copy"]()}
         </button>
         <button
           class="cursor-pointer rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-[0.85rem] font-semibold text-white transition-all duration-200 ease-in-out hover:bg-white/15"
           type="button"
           onclick={hideNow}
         >
-          关闭
+          {m["common.close"]()}
         </button>
       </div>
     </div>

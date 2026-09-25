@@ -13,13 +13,14 @@
   import { loadMirrorTables } from "$lib/data/mirror-table-loader";
   import { submitDelete } from "$lib/data/mirror-user-api";
   import { searchConverters } from "$lib/data/search-converters.svelte";
+  import { m } from "$lib/paraglide/messages.js";
   import type { JsonPreviewHandle, TocItem } from "$lib/types/ui";
   import { clipboardFeedback } from "$lib/utils/clipboard.svelte";
   import { buildSearchNeedles, filterTables, groupByTags } from "$lib/utils/mirror-tables";
   import { buildGroupTocItems } from "$lib/utils/toc";
 
   const tablesJsonPath = "/bms/table/mirror/tables.json";
-  const pageTitle = "BMS 难度表镜像";
+  const pageTitle = m["mirror.page_title"]();
   const baseRoute = "bms/table/mirror";
 
   let loading = $state(true);
@@ -71,7 +72,7 @@
       },
       {
         id: "mirror-list",
-        title: "镜像列表",
+        title: m["mirror.list_heading"](),
         href: "#mirror-list",
         children: tagItems,
       },
@@ -83,7 +84,7 @@
       tables = await loadMirrorTables(tablesJsonPath, baseRoute);
       error = null;
     } catch (e) {
-      error = e instanceof Error ? e.message : "未知错误";
+      error = e instanceof Error ? e.message : m["common.unknown_error"]();
     } finally {
       loading = false;
     }
@@ -98,18 +99,21 @@
     const dirName = item.dir_name;
     if (dirName === undefined || dirName === "") return;
     const label = item.name === "" ? dirName : item.name;
-    if (!window.confirm(`确定删除“${label}”吗？删除后 30 天内可在本页自助恢复。`)) {
+    if (!window.confirm(m["mirror.delete_confirm"]({ name: label }))) {
       return;
     }
     deletingDir = dirName;
     actionNotice = null;
     try {
       await submitDelete(dirName);
-      actionNotice = { kind: "ok", text: `已删除“${label}”，清单约 1 分钟后更新。` };
+      actionNotice = { kind: "ok", text: m["mirror.deleted"]({ name: label }) };
       await loadTables();
       await userActions?.refresh();
     } catch (e) {
-      actionNotice = { kind: "error", text: e instanceof Error ? e.message : "删除失败" };
+      actionNotice = {
+        kind: "error",
+        text: e instanceof Error ? e.message : m["mirror.delete_failed"](),
+      };
     } finally {
       deletingDir = null;
     }
@@ -127,19 +131,21 @@
   <h1 id="bms-table-mirror" class="page-title mb-2 scroll-mt-5 text-center">{pageTitle}</h1>
 
   <div class="mt-1 text-center text-[1.1rem] text-white/70 italic">
-    对于BeMusicSeeker用户，可以使用tables.json链接（
-    <button class="link-accent" type="button" onclick={copyTables}> 点击复制 </button>
-    ），导入难度表清单至BeMusicSeeker。
+    {m["mirror.bms_hint_before"]()}
+    <button class="link-accent" type="button" onclick={copyTables}>
+      {m["common.click_copy"]()}
+    </button>
+    {m["mirror.bms_hint_after"]()}
     <a
       class="link-accent"
       href="https://darksabun.club/table/tablelist.html"
       target="_blank"
       rel="noopener noreferrer"
     >
-      使用教程
+      {m["mirror.tutorial"]()}
     </a>
     {#if cb.copied}
-      <span class="ml-2 text-[#4caf50]">已复制</span>
+      <span class="ml-2 text-[#4caf50]">{m["common.copied"]()}</span>
     {/if}
   </div>
 {/snippet}
@@ -159,7 +165,7 @@
     {/if}
 
     <div class="flex flex-wrap items-center justify-center gap-3">
-      <h2 class="section-title">全部难度表</h2>
+      <h2 class="section-title">{m["mirror.all_tables"]()}</h2>
       <label
         class="flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-[0.35rem] text-[0.85rem] transition-colors duration-200 select-none {showProtectedOnly
           ? 'border-[#ffd54f] bg-[#ffd54f]/20 text-[#ffd54f]'
@@ -170,7 +176,7 @@
           checked={showProtectedOnly}
           onchange={(v: boolean) => (showProtectedOnly = v)}
         />
-        已授权（受保护）
+        {m["mirror.protected_filter"]()}
       </label>
     </div>
 
@@ -178,7 +184,7 @@
       <input
         class="w-full rounded-xl border border-white/20 bg-black/20 px-4 py-3 pr-12 text-white outline-none placeholder:text-white/50 focus:border-[#64b5f6]/60 focus:ring-2 focus:ring-[#64b5f6]/30"
         type="text"
-        placeholder="按 名称 / 符号 搜索，支持 简体中文 / 繁体中文 / 日文汉字 自动转换"
+        placeholder={m["mirror.search_placeholder"]()}
         bind:value={searchQuery}
         onfocus={searchConverters.ensureLoaded}
       />
@@ -186,7 +192,7 @@
         <button
           class="absolute top-1/2 right-2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg border border-white/20 bg-white/10 p-0 text-[1.25rem] leading-none text-white transition-all duration-200 ease-in-out hover:bg-white/20"
           type="button"
-          aria-label="清空搜索"
+          aria-label={m["common.clear_search"]()}
           onclick={() => (searchQuery = "")}
         >
           ×
@@ -195,24 +201,23 @@
     </div>
     {#if searchQuery.trim().length > 0 || showProtectedOnly}
       <div class="text-[0.95rem] text-white/60">
-        匹配 {protectedFilteredTables.length} / {tables.length}
+        {m["common.matched"]({
+          shown: protectedFilteredTables.length,
+          total: tables.length,
+        })}
       </div>
     {/if}
   </div>
 
   {#if loading}
     <div class="mt-6">
-      <LoadingProgress
-        variant="indeterminate"
-        message="正在加载镜像列表..."
-        title="BMS 难度表镜像"
-      />
+      <LoadingProgress variant="indeterminate" message={m["mirror.loading"]()} title={pageTitle} />
     </div>
   {:else if error}
-    <div class="mt-6 text-red-300">加载失败：{error}</div>
+    <div class="mt-6 text-red-300">{m["common.load_failed_with_error"]({ error })}</div>
   {:else if groupedByTags.length === 0}
     <div class="mt-6 text-white/70">
-      {showProtectedOnly ? "没有匹配的已授权难度表" : "没有匹配的难度表"}
+      {showProtectedOnly ? m["mirror.no_match_protected"]() : m["mirror.no_match"]()}
     </div>
   {:else}
     <GroupedTablesSection

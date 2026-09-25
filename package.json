@@ -11,7 +11,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build",
+    "build": "node scripts/build-site.ts",
+    "build:flavor": "vite build",
     "preview": "vite preview",
     "prepare": "paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide && svelte-kit sync || echo ''",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --fail-on-warnings",
@@ -25,7 +26,8 @@
     "lint:fix": "oxlint --fix",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
-    "check:config": "node scripts/check-site-config.ts"
+    "check:config": "node scripts/check-site-config.ts",
+    "check:i18n": "node scripts/check-i18n-coverage.ts"
   },
   "exports": {},
   "dependencies": {

@@ -18,6 +18,7 @@
   import type { SearchResult } from "$lib/data/search-aggregator";
   import { searchConverters } from "$lib/data/search-converters.svelte";
   import { SearchIndexClient } from "$lib/data/search-index-client.svelte";
+  import { m } from "$lib/paraglide/messages.js";
   import type { ChartData } from "$lib/types/bms";
   import { buildSearchNeedles } from "$lib/utils/mirror-tables";
 
@@ -26,8 +27,7 @@
 
   // ---- 输入 ----
   let input = $state("");
-  const placeholderText =
-    "每行一个搜索词，支持标题、艺术家、MD5、SHA256\n标题/艺术家支持简繁日自动转换\n\n示例：\nANOTHER\n0123456789abcdef0123456789abcdef\n星空の下で";
+  const placeholderText = m["batch.placeholder"]();
 
   // ---- 搜索索引（加载状态与生命周期在 indexClient）----
 
@@ -143,7 +143,7 @@
 
       const current = tableStates.get(tableId);
       const name = current && "name" in current ? current.name : tableId;
-      setError(tableId, name, err instanceof Error ? err.message : "未知错误");
+      setError(tableId, name, err instanceof Error ? err.message : m["common.unknown_error"]());
     }
   }
 
@@ -287,11 +287,11 @@
 <PageShell panes={[titlePane, contentPane]} />
 
 {#snippet titlePane()}
-  <h1 class="page-title text-center">批量谱面搜索</h1>
-  <p class="mt-2 text-center text-[1.1rem] text-white/70">每行一个搜索词，批量搜索并导出 JSON</p>
+  <h1 class="page-title text-center">{m["batch.page_title"]()}</h1>
+  <p class="mt-2 text-center text-[1.1rem] text-white/70">{m["batch.subtitle"]()}</p>
   <p class="mt-3 text-center text-[0.95rem] text-white/40">
     <a class="text-accent underline-offset-2 hover:underline" href="/bms/table/search">
-      ← 返回单次搜索
+      {m["batch.back_link"]()}
     </a>
   </p>
 {/snippet}
@@ -301,7 +301,7 @@
     <!-- 索引加载进度 -->
     <div class="p-8 text-center">
       <div class="mb-6 text-[3rem]">⏳</div>
-      <p class="mb-4 text-white/80">正在加载搜索索引...</p>
+      <p class="mb-4 text-white/80">{m["search.loading_index"]()}</p>
       <div class="mx-auto max-w-xs space-y-2 text-left">
         {#each indexClient.progress as item (item.name)}
           <div class="flex items-center gap-3 text-[0.9rem]">
@@ -324,9 +324,9 @@
   {:else if indexClient.phase === "error"}
     <div class="p-12 text-center">
       <div class="mb-4 text-[4rem]">⚠️</div>
-      <h3 class="mb-4 text-[#ff6b6b]">索引加载失败</h3>
+      <h3 class="mb-4 text-[#ff6b6b]">{m["search.index_load_failed"]()}</h3>
       <p class="my-6 rounded-[10px] border-l-4 border-[#ff6b6b] bg-[rgba(255,107,107,0.1)] p-4">
-        {indexClient.errorMessage ?? "未知错误"}
+        {indexClient.errorMessage ?? m["common.unknown_error"]()}
       </p>
     </div>
   {:else}
@@ -355,7 +355,9 @@
               }
             }}
             class="flex h-14 flex-1 cursor-pointer items-center justify-center rounded-[16px] border border-white/20 bg-white/10 text-[1.3rem] text-white transition-colors hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
-            aria-label={batchPhase === "loading-tables" ? "取消" : "搜索"}
+            aria-label={batchPhase === "loading-tables"
+              ? m["common.cancel"]()
+              : m["search.search"]()}
           >
             {#if batchPhase === "loading-tables" || batchPhase === "index-searching"}
               ✕
@@ -371,12 +373,13 @@
       </div>
       <div class="mt-2 flex items-center gap-4">
         {#if queryCount > 0}
-          <span class="text-[0.95rem] text-white/50">{queryCount} 个搜索词</span>
+          <span class="text-[0.95rem] text-white/50"
+            >{m["batch.query_count"]({ count: queryCount })}</span
+          >
         {/if}
       </div>
       <p class="mt-3 text-[0.95rem] text-white/40">
-        每行一个搜索词。32 位十六进制自动识别为 MD5，64 位为 SHA256；其他内容按标题/艺术家模糊匹配。
-        搜索结果按谱面聚合（跨表去重），完成后可下载 JSON。词数越多耗时越长，每张难度表只加载一次。
+        {m["batch.help"]()}
       </p>
     </div>
 
@@ -384,7 +387,7 @@
     {#if batchPhase === "index-searching"}
       <LoadingProgress
         variant="indeterminate"
-        title="正在搜索关键词…"
+        title={m["batch.searching_queries"]()}
         message="{indexSearchProgress.done}/{indexSearchProgress.total}"
         showPercentage={false}
         class="mb-8"
@@ -392,15 +395,18 @@
     {:else if batchPhase === "loading-tables"}
       <LoadingProgress
         progress={tableSummary.total > 0 ? (tableSummary.processed / tableSummary.total) * 100 : 0}
-        title="正在加载难度表…"
-        message="{tableSummary.processed}/{tableSummary.total} 张表已处理"
+        title={m["batch.loading_tables"]()}
+        message={m["batch.processed"]({
+          processed: tableSummary.processed,
+          total: tableSummary.total,
+        })}
         class="mb-8"
       />
     {:else if batchPhase === "aggregating"}
       <LoadingProgress
         variant="indeterminate"
-        title="正在聚合结果…"
-        message="按搜索词过滤并跨表聚合"
+        title={m["batch.aggregating"]()}
+        message={m["batch.aggregate_desc"]()}
         showPercentage={false}
         class="mb-8"
       />
@@ -409,22 +415,26 @@
     <!-- ===== 结果区 ===== -->
     {#if batchPhase === "done"}
       {#if resultQueries.length === 0 || totalCharts === 0}
-        <EmptyState title="未找到结果" description="所有搜索词均无匹配谱面。" emoji="🔍" />
+        <EmptyState
+          title={m["batch.no_results_title"]()}
+          description={m["batch.no_results_desc"]()}
+          emoji="🔍"
+        />
       {:else}
         <!-- 下载 + 摘要 -->
         <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
             <p class="text-white/80">
-              完成：{resultQueries.length} 个搜索词，共 {totalCharts} 个谱面
+              {m["batch.summary"]({ queries: resultQueries.length, charts: totalCharts })}
             </p>
             {#if tableSummary.error > 0}
               <p class="mt-1 text-[0.9rem] text-[#ff6b6b]/70">
-                {tableSummary.error} 张难度表加载失败（已跳过）
+                {m["batch.tables_failed"]({ count: tableSummary.error })}
               </p>
             {/if}
           </div>
           <GradientButton variant="green" size="md" onclick={() => downloadJson()}>
-            📥 下载 JSON
+            📥 {m["batch.download"]()}
           </GradientButton>
         </div>
 
@@ -447,7 +457,7 @@
                 <span
                   class="shrink-0 rounded-[6px] bg-white/10 px-2.5 py-1 text-[0.85rem] text-white/70"
                 >
-                  {results.length} 个谱面
+                  {m["batch.chart_count"]({ count: results.length })}
                 </span>
               </button>
               {#if expandedQuery === query}
@@ -462,11 +472,7 @@
         </div>
       {/if}
     {:else if batchPhase === "idle" && queryCount === 0}
-      <EmptyState
-        title="输入搜索词开始批量搜索"
-        description="在上方文本框中每行输入一个搜索词，点击搜索按钮执行。"
-        emoji="📋"
-      />
+      <EmptyState title={m["batch.idle_title"]()} description={m["batch.idle_desc"]()} emoji="📋" />
     {/if}
   {/if}
 {/snippet}

@@ -141,7 +141,7 @@ export async function handleAuthorize(
   const body = await readJsonBody(request);
   const url = normalizeBodyUrl(body);
   if (url === null) {
-    return failure(400, "需要提供合法的 url");
+    return failure(400, "A valid url is required", { code: "api.need_valid_url" });
   }
   const dirName = bodyString(body, "dir_name");
   const action = body?.action === "remove" ? "remove" : "add";
@@ -177,7 +177,7 @@ export async function handleDisable(
   const body = await readJsonBody(request);
   const url = normalizeBodyUrl(body);
   if (url === null) {
-    return failure(400, "需要提供合法的 url");
+    return failure(400, "A valid url is required", { code: "api.need_valid_url" });
   }
   const dirName = bodyString(body, "dir_name");
   const note = bodyString(body, "note");
@@ -216,7 +216,7 @@ export async function handleReplace(
   const fromRaw = bodyString(body, "from");
   const toRaw = bodyString(body, "to");
   if (fromRaw === undefined) {
-    return failure(400, "需要提供 from");
+    return failure(400, "from is required", { code: "api.need_from" });
   }
   const from = (() => {
     try {
@@ -226,20 +226,20 @@ export async function handleReplace(
     }
   })();
   if (from === null) {
-    return failure(400, "from 不是合法 URL");
+    return failure(400, "from is not a valid URL", { code: "api.from_invalid" });
   }
   const action = body?.action === "remove" ? "remove" : "add";
   const at = now.toISOString();
 
   if (action === "add") {
     if (toRaw === undefined) {
-      return failure(400, "需要提供 to");
+      return failure(400, "to is required", { code: "api.need_to" });
     }
     let to: string;
     try {
       to = new URL(toRaw).href;
     } catch {
-      return failure(400, "to 不是合法 URL");
+      return failure(400, "to is not a valid URL", { code: "api.to_invalid" });
     }
     await upsertReplaceRule(env, { from, to, author: session.login, updated_at: at });
   } else {
@@ -266,7 +266,7 @@ export async function handleMeta(
   const body = await readJsonBody(request);
   const url = normalizeBodyUrl(body);
   if (url === null) {
-    return failure(400, "需要提供合法的 url");
+    return failure(400, "A valid url is required", { code: "api.need_valid_url" });
   }
   const at = now.toISOString();
   const name = bodyString(body, "name");
@@ -315,12 +315,12 @@ export async function handleAdminRestore(
   const body = await readJsonBody(request);
   const dirName = bodyString(body, "dir_name");
   if (dirName === undefined) {
-    return failure(400, "需要提供 dir_name");
+    return failure(400, "dir_name is required", { code: "api.need_dir_name" });
   }
   const removed = await listRemoved(env);
   const record = removed.find((item) => item.dir_name === dirName);
   if (record === undefined) {
-    return failure(404, "回收站里没有这张表");
+    return failure(404, "Table not found in the trash", { code: "api.not_in_trash" });
   }
   const restoredObjects = await restoreTableFromTrash(env, record.trash_prefix, record.dir_name);
   await deleteRemovedByDirName(env, dirName);

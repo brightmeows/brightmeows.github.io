@@ -1,3 +1,5 @@
+import { m } from "$lib/paraglide/messages.js";
+
 export interface BreadcrumbItem {
   label: string;
   href?: string;
@@ -9,10 +11,10 @@ export interface BreadcrumbItem {
  * 可通过 `currentLabel` 覆写最后一段的标签。
  */
 const segmentLabelMap: Record<string, string> = {
-  bms: "BMS",
-  table: "难度表",
-  mirror: "难度表镜像",
-  blog: "博客",
+  bms: "nav.bms",
+  table: "nav.table",
+  mirror: "nav.mirror",
+  blog: "nav.blog",
 };
 
 /**
@@ -28,7 +30,7 @@ const segmentLabelMap: Record<string, string> = {
  */
 export function deriveBreadcrumbs(pathname: string, currentLabel?: string): BreadcrumbItem[] {
   const segments = pathname.split("/").filter(Boolean);
-  const items: BreadcrumbItem[] = [{ label: "主页", href: "/" }];
+  const items: BreadcrumbItem[] = [{ label: m["nav.home"](), href: "/" }];
   let currentPath = "";
 
   for (const [i, segment] of segments.entries()) {
@@ -38,7 +40,8 @@ export function deriveBreadcrumbs(pathname: string, currentLabel?: string): Brea
     if (isLast && currentLabel !== undefined) {
       items.push({ label: currentLabel });
     } else {
-      const label = segmentLabelMap[segment] ?? segment;
+      const mapped = segmentLabelMap[segment];
+      const label = mapped !== undefined ? m[mapped as "nav.bms"]() : segment;
       if (isLast) {
         items.push({ label });
       } else {

@@ -5,6 +5,8 @@
 
   import GlassPanel from "./GlassPanel.svelte";
 
+  import { m } from "$lib/paraglide/messages.js";
+
   interface Props {
     sessionKey: string;
     initiallyOpen: boolean;
@@ -26,7 +28,7 @@
     autoCloseMs = 3000,
     position = "top-right",
     size = "medium",
-    ariaLabel = "面板",
+    ariaLabel = m["panel.default"](),
     containerClass = "",
     panelClass = "",
     children,
@@ -218,7 +220,7 @@
         easing: cubicInOut,
       }}
       role="button"
-      aria-label={keyedOpen ? ariaLabel : `打开${ariaLabel}`}
+      aria-label={keyedOpen ? ariaLabel : m["panel.open"]({ name: ariaLabel })}
       aria-expanded={keyedOpen}
       tabindex={0}
       onclick={() => {

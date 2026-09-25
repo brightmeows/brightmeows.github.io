@@ -1,5 +1,6 @@
 <script lang="ts">
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
+  import { m } from "$lib/paraglide/messages.js";
   import type { LevelRefItem } from "$lib/types/bms";
   import { resolveUrl } from "$lib/utils/url";
 
@@ -58,7 +59,7 @@
       const levelRefUrl = buildLevelRefUrl(header);
       if (!levelRefUrl) {
         loadState = "error";
-        loadErrorMessage = "无法构建 level-ref URL";
+        loadErrorMessage = m["levelref.url_build_failed"]();
         return;
       }
 
@@ -75,17 +76,17 @@
         } else {
           console.warn("level-ref.json 格式不正确，应为数组");
           loadState = "error";
-          loadErrorMessage = "数据格式错误";
+          loadErrorMessage = m["levelref.bad_format"]();
         }
       } else if (response.status === 404) {
         loadState = "not-found";
       } else {
-        throw new Error(`加载失败: ${response.status} ${response.statusText}`);
+        throw new Error(`HTTP ${response.status} ${response.statusText}`);
       }
     } catch (err) {
       console.error("加载难度对照表数据失败:", err);
       loadState = "error";
-      loadErrorMessage = err instanceof Error ? err.message : "未知错误";
+      loadErrorMessage = err instanceof Error ? err.message : m["common.unknown_error"]();
     }
   }
 
@@ -99,15 +100,15 @@
 </script>
 
 {#if loadState === "loading"}
-  <h3 class="section-title mt-0 mb-6 text-center">难度对照表</h3>
-  <LoadingProgress variant="compact" message="正在加载难度对照表..." />
+  <h3 class="section-title mt-0 mb-6 text-center">{m["levelref.heading"]()}</h3>
+  <LoadingProgress variant="compact" message={m["levelref.loading"]()} />
 {:else if loadState === "error"}
-  <h3 class="section-title mt-0 mb-6 text-center">难度对照表</h3>
+  <h3 class="section-title mt-0 mb-6 text-center">{m["levelref.heading"]()}</h3>
   <div class="message-error">
-    加载失败：{loadErrorMessage}
+    {m["common.load_failed_with_error"]({ error: loadErrorMessage })}
   </div>
 {:else if hasContent}
-  <h3 class="section-title mt-0 mb-6 text-center">难度对照表</h3>
+  <h3 class="section-title mt-0 mb-6 text-center">{m["levelref.heading"]()}</h3>
   <div class="flex flex-wrap items-start justify-center gap-8">
     {#each tableHalves as half (half.id)}
       <div class="min-w-[18rem] flex-1">
@@ -119,7 +120,7 @@
           </colgroup>
           <thead>
             <tr>
-              {#each ["难度等级", "对应难度"] as label (label)}
+              {#each [m["levelref.col_level"](), m["levelref.col_ref"]()] as label (label)}
                 <th class="table-th-glass text-center">
                   {label}
                 </th>
