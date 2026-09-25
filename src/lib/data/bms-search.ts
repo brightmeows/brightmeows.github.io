@@ -1,4 +1,5 @@
 import { r2TableHeaderUrl, r2TableDataUrl } from "$lib/constants/r2";
+import { m } from "$lib/paraglide/messages.js";
 import type { ChartData } from "$lib/types/bms";
 import { fetchStream } from "$lib/utils/fetch-stream";
 
@@ -160,7 +161,7 @@ export async function loadFullTableData(
   const text = new TextDecoder().decode(bytes);
   const parsed: unknown = JSON.parse(text);
   if (!Array.isArray(parsed)) {
-    throw new Error(`谱面数据格式无效：期望数组，实际 ${typeof parsed}`);
+    throw new Error(m["search.chart_array_expected"]({ actual: typeof parsed }));
   }
   return parsed as ChartData[];
 }
@@ -198,6 +199,6 @@ export async function loadTableHeader(
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init);
-  if (!res.ok) throw new Error(`加载 ${url} 失败: ${res.status}`);
+  if (!res.ok) throw new Error(m["search.load_url_failed"]({ url, status: res.status }));
   return (await res.json()) as T;
 }

@@ -1,3 +1,4 @@
+import { m } from "$lib/paraglide/messages.js";
 import type { BlogFrontmatter } from "$lib/types/blog";
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -93,5 +94,5 @@ export function extractFirstSentence(markdown: string): string {
 
   // 如果没有找到有效行,返回前 100 个字符
   const fallback = withoutHeadings.slice(0, 100).trim();
-  return fallback.length > 0 ? fallback + "..." : "暂无预览";
+  return fallback.length > 0 ? fallback + "..." : m["blog.no_preview"]();
 }

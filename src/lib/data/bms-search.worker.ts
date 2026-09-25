@@ -95,7 +95,7 @@ async function loadIndices(): Promise<void> {
   // Step 2: IDB miss — fetch from network
   const fresh = await fetchAllIndices();
   if (!fresh) {
-    post({ type: "ready", source: "network", error: "加载搜索索引失败" });
+    post({ type: "ready", source: "network", error: "index-load-failed" });
     return;
   }
 

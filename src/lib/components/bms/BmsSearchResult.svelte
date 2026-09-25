@@ -7,6 +7,7 @@
   import GradientButton from "$lib/components/ui/GradientButton.svelte";
   import type { TableLoadState } from "$lib/data/bms-search";
   import type { SearchResult } from "$lib/data/search-aggregator";
+  import { m } from "$lib/paraglide/messages.js";
   import type { ChartData } from "$lib/types/bms";
   import { clipboardFieldFeedback } from "$lib/utils/clipboard.svelte";
   import { formatBytes } from "$lib/utils/format";
@@ -45,21 +46,23 @@
   <!-- 谱面基本信息 + 外部链接（同行） -->
   <div class="mb-4 flex items-start justify-between gap-4">
     <div class="min-w-0">
-      <h3 class="mb-1 text-[1.2rem] font-bold text-white">{result.title ?? "(无标题)"}</h3>
-      <p class="text-white/70">{result.artist ?? "(未知艺术家)"}</p>
+      <h3 class="mb-1 text-[1.2rem] font-bold text-white">
+        {result.title ?? m["search.untitled"]()}
+      </h3>
+      <p class="text-white/70">{result.artist ?? m["search.unknown_artist"]()}</p>
     </div>
     <div class="flex shrink-0 flex-wrap items-center justify-end gap-2">
       {#if result.md5}
         <button
           type="button"
           onclick={() => void cb.copy("md5", result.md5!)}
-          title={cb.copiedField === "md5" ? "已复制" : `MD5: ${result.md5}`}
+          title={cb.copiedField === "md5" ? m["common.copied"]() : `MD5: ${result.md5}`}
           class="cursor-pointer rounded-[6px] px-2 py-1 text-[0.75rem] font-medium text-white transition-colors {cb.copiedField ===
           'md5'
             ? 'bg-success'
             : 'bg-[#607d8b] hover:bg-[#78909c]'}"
         >
-          {cb.copiedField === "md5" ? "已复制" : "复制MD5"}
+          {cb.copiedField === "md5" ? m["common.copied"]() : m["search.copy_md5"]()}
         </button>
       {/if}
       {#if result.sha256}
@@ -67,14 +70,14 @@
           type="button"
           onclick={() => void cb.copy("sha256", result.sha256!)}
           title={cb.copiedField === "sha256"
-            ? "已复制"
+            ? m["common.copied"]()
             : `SHA256: ${result.sha256.slice(0, 16)}...`}
           class="cursor-pointer rounded-[6px] px-2 py-1 text-[0.75rem] font-medium text-white transition-colors {cb.copiedField ===
           'sha256'
             ? 'bg-success'
             : 'bg-[#607d8b] hover:bg-[#78909c]'}"
         >
-          {cb.copiedField === "sha256" ? "已复制" : "复制SHA256"}
+          {cb.copiedField === "sha256" ? m["common.copied"]() : m["search.copy_sha256"]()}
         </button>
       {/if}
       <BmsLinkButtons chart={chartLike} />
@@ -84,7 +87,7 @@
   <!-- 跨表信息 -->
   <div class="space-y-3">
     <h4 class="text-[1rem] font-semibold text-accent">
-      出现在 {result.appearances.length} 个难度表中
+      {m["search.appears_in"]({ count: result.appearances.length })}
     </h4>
     {#each sortedAppearances as entry (entry.tableId)}
       {@const loadState = tableStates.get(entry.tableId)}
@@ -123,7 +126,7 @@
                   rel="noopener noreferrer"
                   size="sm"
                 >
-                  📦 同捆
+                  📦 {m["common.bundle"]()}
                 </GradientButton>
               {/if}
               {#if diffUrl}
@@ -134,7 +137,7 @@
                   rel="noopener noreferrer"
                   size="sm"
                 >
-                  🔄 差分
+                  🔄 {m["common.diff"]()}
                 </GradientButton>
               {/if}
             </div>
@@ -177,7 +180,9 @@
             {loadState.name}
           </a>
           <span class="shrink-0 text-[0.8rem] text-white/40">
-            {loadState.status === "loading-header" ? "加载表头..." : "解析中..."}
+            {loadState.status === "loading-header"
+              ? m["search.loading_header"]()
+              : m["search.parsing"]()}
           </span>
         </div>
       {:else if loadState?.status === "error"}
@@ -193,7 +198,7 @@
             onclick={() => onretry(entry.tableId)}
             class="cursor-pointer rounded-md border border-white/20 bg-white/10 px-3 py-1 text-[0.8rem] text-white/80 transition-colors hover:bg-white/20"
           >
-            重试
+            {m["common.retry"]()}
           </button>
         </div>
       {:else}
@@ -206,7 +211,7 @@
           >
             {entry.tableName}
           </a>
-          <span class="shrink-0 text-[0.8rem] text-white/30">等待中...</span>
+          <span class="shrink-0 text-[0.8rem] text-white/30">{m["search.waiting"]()}</span>
         </div>
       {/if}
     {/each}

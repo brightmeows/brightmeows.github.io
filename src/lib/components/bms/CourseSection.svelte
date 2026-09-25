@@ -1,6 +1,7 @@
 <script lang="ts">
   import Checkbox from "$lib/components/ui/Checkbox.svelte";
   import { formatConstraint, trophyEmoji } from "$lib/constants/bms";
+  import { m } from "$lib/paraglide/messages.js";
   import type { ResolvedCourseGroup } from "$lib/types/bms";
 
   interface Props {
@@ -41,7 +42,7 @@
       onclick={() => (collapsed = !collapsed)}
       aria-expanded={!collapsed}
     >
-      段位认定
+      {m["course.heading"]()}
       <span
         class="text-[0.8rem] text-white/50 transition-transform duration-200 {collapsed
           ? ''
@@ -58,7 +59,7 @@
           : 'border-white/20 text-white/50 hover:border-white/40 hover:text-white/70'}"
       >
         <Checkbox size="sm" checked={groupMode} onchange={(v: boolean) => (groupMode = v)} />
-        分组显示
+        {m["course.grouped_display"]()}
       </label>
     {/if}
   </div>
@@ -67,7 +68,7 @@
     {#each effectiveGroups as group, gi (gi)}
       {#if groupMode && effectiveGroups.length > 1}
         <h4 class="mt-6 mb-4 text-center text-[1.2rem] font-semibold text-white/80 first:mt-0">
-          段位组 {gi + 1}
+          {m["course.group_n"]({ n: gi + 1 })}
         </h4>
       {/if}
 
@@ -140,14 +141,16 @@
                         <span class="font-mono text-white/40">
                           {hashPrefix(chart.md5 ?? chart.sha256)}
                         </span>
-                        <span class="ml-1.5 text-[0.75rem] text-warning/60">（未匹配）</span>
+                        <span class="ml-1.5 text-[0.75rem] text-warning/60">
+                          {m["course.unmatched"]()}
+                        </span>
                       {/if}
                     </span>
                   </li>
                 {/each}
               </ol>
             {:else}
-              <p class="text-[0.85rem] text-white/40 italic">无谱面数据</p>
+              <p class="text-[0.85rem] text-white/40 italic">{m["course.no_charts"]()}</p>
             {/if}
           </div>
         {/each}

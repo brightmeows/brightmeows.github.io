@@ -115,6 +115,17 @@ repos:
         files: ^(config/site\.json|wrangler\.jsonc|\.oxfmtrc\.json|\.nvmrc|package\.json)$|^\.(github|forgejo)/workflows/.*\.ya?ml$
         pass_filenames: false
 
+  # i18n 覆盖：两语 key 对称与占位符一致、引用/死 key、残留中日韩字符
+  # 与英文值漏翻；纯离线、毫秒级。
+  - repo: local
+    hooks:
+      - id: i18n-coverage
+        name: i18n messages coverage and CJK residue
+        entry: node scripts/check-i18n-coverage.ts
+        language: system
+        types: [text]
+        pass_filenames: false
+
   # 提交信息遵循 Conventional Commits（见 AGENTS.md“提交格式”）
   - repo: local
     hooks:

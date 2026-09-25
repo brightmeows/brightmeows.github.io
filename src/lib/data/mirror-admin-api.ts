@@ -11,6 +11,7 @@ import type {
 import { ApiUnavailableError } from "./mirror-user-api";
 
 import { apiBase } from "$lib/constants/site";
+import { m } from "$lib/paraglide/messages.js";
 
 /** 回收站条目（表级聚合）。 */
 export interface TrashEntry {
@@ -57,7 +58,7 @@ async function requestAdmin<T>(path: string, body?: unknown): Promise<T> {
       : { headers: { "content-type": "application/json" }, body: JSON.stringify(body) }),
   });
   if (!response.ok) {
-    let message = `请求失败（HTTP ${response.status}）`;
+    let message: string = m["common.request_failed"]({ status: response.status });
     try {
       const payload = (await response.json()) as { error?: unknown };
       if (typeof payload.error === "string" && payload.error !== "") {

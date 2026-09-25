@@ -5,6 +5,7 @@
   import Checkbox from "$lib/components/ui/Checkbox.svelte";
   import GradientButton from "$lib/components/ui/GradientButton.svelte";
   import { jsonPreview } from "$lib/components/ui/JsonPreview.svelte";
+  import { m } from "$lib/paraglide/messages.js";
   import type { JsonPreviewHandle } from "$lib/types/ui";
   import { clipboardFieldFeedback } from "$lib/utils/clipboard.svelte";
 
@@ -48,7 +49,7 @@
           preview: mirrorPreview,
           options: {
             value: item,
-            label: `${item.name ?? "难度表"} JSON`,
+            label: `${item.name ?? m["mirror.default_name"]()} JSON`,
             maxHeightRem: 14,
           },
         }}
@@ -58,7 +59,7 @@
       {#if item.protected}
         <span
           class="rounded border border-[#ffd54f]/40 bg-[#ffd54f]/15 px-1.5 py-[0.1rem] text-[0.75rem] text-[#ffd54f]"
-          title="站长已授权保护，不能删除">已授权</span
+          title={m["mirror.protected_title"]()}>{m["mirror.authorized_badge"]()}</span
         >
       {/if}
       {#if deletable && ondelete}
@@ -68,7 +69,7 @@
           disabled={deleting}
           onclick={() => ondelete(item)}
         >
-          {deleting ? "删除中…" : "删除"}
+          {deleting ? m["mirror.deleting"]() : m["mirror.delete"]()}
         </button>
       {/if}
     </div>
@@ -83,17 +84,17 @@
         target="_blank"
         rel="noopener noreferrer"
       >
-        镜像
+        {m["mirror.mirror_link"]()}
       </GradientButton>
       {#if cb.copiedField === "mirror"}
-        <span class="badge-copied">已复制!</span>
+        <span class="badge-copied">{m["common.copied_bang"]()}</span>
       {:else}
         <button
           class="flex-none cursor-pointer rounded-md border border-white/20 bg-white/10 px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-white/80 transition-all duration-200 ease-in-out hover:bg-white/20 hover:text-white"
           onclick={() => cb.copy("mirror", new URL(item.url, window.location.origin).toString())}
-          aria-label="复制镜像链接"
+          aria-label={m["mirror.copy_mirror_aria"]()}
         >
-          复制
+          {m["common.copy"]()}
         </button>
       {/if}
     </div>
@@ -109,22 +110,22 @@
           target="_blank"
           rel="noopener noreferrer"
         >
-          原链接
+          {m["mirror.original_link"]()}
         </GradientButton>
         {#if cb.copiedField === "original"}
-          <span class="badge-copied">已复制!</span>
+          <span class="badge-copied">{m["common.copied_bang"]()}</span>
         {:else}
           <button
             class="flex-none cursor-pointer rounded-md border border-white/20 bg-white/10 px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-white/80 transition-all duration-200 ease-in-out hover:bg-white/20 hover:text-white"
             onclick={() => cb.copy("original", item.url_from!)}
-            aria-label="复制原链接"
+            aria-label={m["mirror.copy_original_aria"]()}
           >
-            复制
+            {m["common.copy"]()}
           </button>
         {/if}
       </div>
     {:else}
-      <span class="text-white/50">无</span>
+      <span class="text-white/50">{m["common.none"]()}</span>
     {/if}
   </td>
 </tr>

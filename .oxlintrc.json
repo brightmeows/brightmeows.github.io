@@ -12,7 +12,9 @@
     "$effect": "readonly",
     "$inspect": "readonly",
     "$host": "readonly",
-    "$bindable": "readonly"
+    "$bindable": "readonly",
+    "__SITE_LOCALE__": "readonly",
+    "__STATIC_TARGET__": "readonly"
   },
   "ignorePatterns": [
     ".svelte-kit/",
@@ -39,6 +41,7 @@
   ],
   "rules": {
     "constructor-super": "error",
+    "import/namespace": "off",
     "for-direction": "error",
     "getter-return": "error",
     "no-async-promise-executor": "error",

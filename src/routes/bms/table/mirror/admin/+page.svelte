@@ -15,6 +15,7 @@
     type AdminOverview,
   } from "$lib/data/mirror-admin-api";
   import { loadMirrorTables } from "$lib/data/mirror-table-loader";
+  import { m } from "$lib/paraglide/messages.js";
 
   const tablesJsonPath = "/bms/table/mirror/tables.json";
   const baseRoute = "bms/table/mirror";
@@ -75,7 +76,7 @@
       gateError = null;
     } catch (error) {
       // 静态宿主子域上 API 同样可用，统一按普通加载失败呈现
-      gateError = error instanceof Error ? error.message : "加载失败";
+      gateError = error instanceof Error ? error.message : m["common.load_failed"]();
     } finally {
       loading = false;
     }
@@ -87,7 +88,7 @@
 
   function requireSelected(): MirrorTableItem | null {
     if (selectedTable === null) {
-      notice = { kind: "error", text: "请先在顶部选择一张表" };
+      notice = { kind: "error", text: m["admin.select_first"]() };
       return null;
     }
     return selectedTable;
@@ -101,7 +102,10 @@
       notice = { kind: "ok", text: okText };
       await load();
     } catch (error) {
-      notice = { kind: "error", text: error instanceof Error ? error.message : "操作失败" };
+      notice = {
+        kind: "error",
+        text: error instanceof Error ? error.message : m["admin.action_failed"](),
+      };
     } finally {
       busy = false;
     }
@@ -113,7 +117,9 @@
     const dirName = table.dir_name;
     void run(
       () => adminAuthorize(sourceUrl(table), dirName, action),
-      action === "add" ? `已加入授权名单：${table.name}` : `已移出授权名单：${table.name}`
+      action === "add"
+        ? m["admin.joined"]({ name: table.name })
+        : m["admin.removed"]({ name: table.name })
     );
   }
 
@@ -122,7 +128,9 @@
     if (table === null) return;
     void run(
       () => adminDisable(sourceUrl(table), table.dir_name, action, disableNote),
-      action === "add" ? `已禁用：${table.name}` : `已启用：${table.name}`
+      action === "add"
+        ? m["admin.disabled"]({ name: table.name })
+        : m["admin.enabled"]({ name: table.name })
     );
   }
 
@@ -138,19 +146,21 @@
           tag2: metaTag2,
           tag_order: metaTagOrder,
         }),
-      action === "set" ? `已保存元数据覆盖：${table.name}` : `已清除元数据覆盖：${table.name}`
+      action === "set"
+        ? m["admin.meta_saved"]({ name: table.name })
+        : m["admin.meta_cleared"]({ name: table.name })
     );
   }
 
   function onReplace(action: "add" | "remove", from: string, to?: string): void {
     void run(
       () => adminReplace(from, action === "add" ? to : undefined, action),
-      action === "add" ? "已添加替换规则" : "已移除替换规则"
+      action === "add" ? m["admin.rule_added"]() : m["admin.rule_removed"]()
     );
   }
 
   function onRestore(dirName: string): void {
-    void run(() => adminRestore(dirName), `已恢复：${dirName}`);
+    void run(() => adminRestore(dirName), m["admin.restored"]({ dir: dirName }));
   }
 
   function formatTime(value: string | number): string {
@@ -163,16 +173,20 @@
 <PageShell panes={[titlePane, contentPane]} />
 
 {#snippet titlePane()}
-  <h1 class="page-title mb-2 text-center">镜像表后台</h1>
+  <h1 class="page-title mb-2 text-center">{m["admin.page_title"]()}</h1>
   <div class="mt-1 text-center text-[1.05rem] text-white/70">
-    <a class="link-accent" href="/bms/table/mirror/">返回镜像列表</a>
+    <a class="link-accent" href="/bms/table/mirror/">{m["admin.back_to_list"]()}</a>
   </div>
 {/snippet}
 
 {#snippet contentPane()}
   {#if loading}
     <div class="mt-6">
-      <LoadingProgress variant="indeterminate" message="正在加载后台数据..." title="镜像表后台" />
+      <LoadingProgress
+        variant="indeterminate"
+        message={m["admin.loading"]()}
+        title={m["admin.page_title"]()}
+      />
     </div>
   {:else if gateError}
     <GlassPanel class="mt-4 text-[0.95rem] text-red-300">{gateError}</GlassPanel>
@@ -189,17 +203,17 @@
       {/if}
 
       <GlassPanel>
-        <h2 class="mb-2 text-[1.05rem] font-semibold text-white">选择表</h2>
+        <h2 class="mb-2 text-[1.05rem] font-semibold text-white">{m["admin.select_heading"]()}</h2>
         <div class="flex flex-wrap items-center gap-2">
           <input
             class={fieldInput}
             type="text"
             bind:value={searchQuery}
-            placeholder="按名称或目录名过滤"
-            aria-label="过滤清单"
+            placeholder={m["admin.filter_placeholder"]()}
+            aria-label={m["admin.filter_aria"]()}
           />
-          <select class={fieldInput} bind:value={selectedUrl} aria-label="选择镜像表">
-            <option value="">（选择一张表）</option>
+          <select class={fieldInput} bind:value={selectedUrl} aria-label={m["admin.select_aria"]()}>
+            <option value="">{m["admin.select_prompt"]()}</option>
             {#each filteredTables as item (item.url)}
               <option value={item.url}>{item.name}｜{item.dir_name}</option>
             {/each}
@@ -207,8 +221,11 @@
         </div>
         {#if selectedTable}
           <div class="mt-2 text-[0.9rem] text-white/70">
-            已选：<strong class="text-white">{selectedTable.name}</strong>
-            {#if selectedTable.protected}<span class="ml-2 text-[#ffd54f]">已授权</span>{/if}
+            {m["admin.selected_prefix"]()}
+            <strong class="text-white">{selectedTable.name}</strong>
+            {#if selectedTable.protected}
+              <span class="ml-2 text-[#ffd54f]">{m["admin.authorized_tag"]()}</span>
+            {/if}
             {#if selectedTable.dir_name}<span class="ml-2 text-white/50"
                 >{selectedTable.dir_name}</span
               >{/if}
@@ -219,49 +236,49 @@
             class={smallButton}
             type="button"
             disabled={busy}
-            onclick={() => onAuthorize("add")}>加入授权名单</button
+            onclick={() => onAuthorize("add")}>{m["admin.authorize_add"]()}</button
           >
           <button
             class={smallButton}
             type="button"
             disabled={busy}
-            onclick={() => onAuthorize("remove")}>移出授权名单</button
+            onclick={() => onAuthorize("remove")}>{m["admin.authorize_remove"]()}</button
           >
           <input
             class={fieldInput}
             type="text"
             bind:value={disableNote}
-            placeholder="禁用原因（可选）"
-            aria-label="禁用原因"
+            placeholder={m["admin.disable_placeholder"]()}
+            aria-label={m["admin.disable_note_aria"]()}
           />
           <button class={smallButton} type="button" disabled={busy} onclick={() => onDisable("add")}
-            >禁用</button
+            >{m["admin.disable"]()}</button
           >
           <button
             class={smallButton}
             type="button"
             disabled={busy}
-            onclick={() => onDisable("remove")}>启用</button
+            onclick={() => onDisable("remove")}>{m["admin.enable"]()}</button
           >
         </div>
       </GlassPanel>
 
       <GlassPanel>
-        <h2 class="mb-2 text-[1.05rem] font-semibold text-white">元数据覆盖（作用于已选表）</h2>
+        <h2 class="mb-2 text-[1.05rem] font-semibold text-white">{m["admin.meta_heading"]()}</h2>
         <div class="flex flex-wrap items-center gap-2">
           <input
             class={fieldInput}
             type="text"
             bind:value={metaName}
-            placeholder="名称"
-            aria-label="名称"
+            placeholder={m["admin.meta_name"]()}
+            aria-label={m["admin.meta_name"]()}
           />
           <input
             class={fieldInput}
             type="text"
             bind:value={metaSymbol}
-            placeholder="符号"
-            aria-label="符号"
+            placeholder={m["admin.meta_symbol"]()}
+            aria-label={m["admin.meta_symbol"]()}
           />
           <input
             class={fieldInput}
@@ -285,10 +302,10 @@
             aria-label="tag_order"
           />
           <button class={smallButton} type="button" disabled={busy} onclick={() => onMeta("set")}
-            >保存覆盖</button
+            >{m["admin.meta_save"]()}</button
           >
           <button class={smallButton} type="button" disabled={busy} onclick={() => onMeta("clear")}
-            >清除覆盖</button
+            >{m["admin.meta_clear"]()}</button
           >
         </div>
         {#if overview.meta.length > 0}
@@ -310,21 +327,21 @@
       </GlassPanel>
 
       <GlassPanel>
-        <h2 class="mb-2 text-[1.05rem] font-semibold text-white">替换规则</h2>
+        <h2 class="mb-2 text-[1.05rem] font-semibold text-white">{m["admin.replace_heading"]()}</h2>
         <div class="flex flex-wrap items-center gap-2">
           <input
             class={fieldInput}
             type="text"
             bind:value={replaceFrom}
-            placeholder="旧 URL（from）"
-            aria-label="替换来源"
+            placeholder={m["admin.replace_from"]()}
+            aria-label={m["admin.replace_from_aria"]()}
           />
           <input
             class={fieldInput}
             type="text"
             bind:value={replaceTo}
-            placeholder="新 URL（to）"
-            aria-label="替换目标"
+            placeholder={m["admin.replace_to"]()}
+            aria-label={m["admin.replace_to_aria"]()}
           />
           <button
             class={smallButton}
@@ -332,19 +349,20 @@
             disabled={busy || replaceFrom.trim() === "" || replaceTo.trim() === ""}
             onclick={() => onReplace("add", replaceFrom.trim(), replaceTo.trim())}
           >
-            添加规则
+            {m["admin.replace_add"]()}
           </button>
         </div>
         {#if overview.replace.length > 0}
           <ul class="mt-3 flex flex-col gap-1 text-[0.85rem] text-white/70">
             {#each overview.replace as rule (rule.from)}
               <li class="flex flex-wrap items-center gap-2">
-                <span>{rule.from} 替换为 {rule.to}</span>
+                <span>{m["admin.replace_item"]({ from: rule.from, to: rule.to })}</span>
                 <button
                   class={smallButton}
                   type="button"
                   disabled={busy}
-                  onclick={() => onReplace("remove", rule.from)}>移除</button
+                  onclick={() => onReplace("remove", rule.from)}
+                  >{m["admin.replace_remove"]()}</button
                 >
               </li>
             {/each}
@@ -354,13 +372,16 @@
 
       <GlassPanel>
         <h2 class="mb-2 text-[1.05rem] font-semibold text-white">
-          授权名单（{overview.counts.authorized}）与禁用表（{overview.counts.disabled}）
+          {m["admin.list_heading"]({
+            authorized: overview.counts.authorized,
+            disabled: overview.counts.disabled,
+          })}
         </h2>
         <div class="grid gap-3 md:grid-cols-2">
           <div>
-            <div class="mb-1 text-[0.9rem] text-white/60">授权名单</div>
+            <div class="mb-1 text-[0.9rem] text-white/60">{m["admin.authorized_list"]()}</div>
             {#if overview.authorized.length === 0}
-              <div class="text-[0.85rem] text-white/50">（空）</div>
+              <div class="text-[0.85rem] text-white/50">{m["admin.empty"]()}</div>
             {:else}
               <ul class="flex flex-col gap-1 text-[0.85rem] text-white/70">
                 {#each overview.authorized as item (item.url)}
@@ -370,15 +391,15 @@
             {/if}
           </div>
           <div>
-            <div class="mb-1 text-[0.9rem] text-white/60">禁用表</div>
+            <div class="mb-1 text-[0.9rem] text-white/60">{m["admin.disabled_list"]()}</div>
             {#if overview.disabled.length === 0}
-              <div class="text-[0.85rem] text-white/50">（空）</div>
+              <div class="text-[0.85rem] text-white/50">{m["admin.empty"]()}</div>
             {:else}
               <ul class="flex flex-col gap-1 text-[0.85rem] text-white/70">
                 {#each overview.disabled as item (item.url)}
                   <li>
                     {item.dir_name ?? item.url}{#if item.note}<span class="ml-2 text-white/45"
-                        >（{item.note}）</span
+                        >{m["admin.note_wrap"]({ note: item.note })}</span
                       >{/if}
                   </li>
                 {/each}
@@ -390,10 +411,10 @@
 
       <GlassPanel>
         <h2 class="mb-2 text-[1.05rem] font-semibold text-white">
-          回收站（{overview.counts.trash}）
+          {m["admin.trash_heading"]({ count: overview.counts.trash })}
         </h2>
         {#if overview.trash.length === 0}
-          <div class="text-[0.85rem] text-white/50">（空）</div>
+          <div class="text-[0.85rem] text-white/50">{m["admin.empty"]()}</div>
         {:else}
           <ul class="flex flex-col gap-1 text-[0.85rem] text-white/70">
             {#each overview.trash as item (item.trash_prefix)}
@@ -406,7 +427,7 @@
                   class={smallButton}
                   type="button"
                   disabled={busy}
-                  onclick={() => onRestore(item.dir_name)}>恢复</button
+                  onclick={() => onRestore(item.dir_name)}>{m["admin.restore"]()}</button
                 >
               </li>
             {/each}
@@ -416,10 +437,10 @@
 
       <GlassPanel>
         <h2 class="mb-2 text-[1.05rem] font-semibold text-white">
-          最近审计（{overview.audit.length}）
+          {m["admin.audit_heading"]({ count: overview.audit.length })}
         </h2>
         {#if overview.audit.length === 0}
-          <div class="text-[0.85rem] text-white/50">（空）</div>
+          <div class="text-[0.85rem] text-white/50">{m["admin.empty"]()}</div>
         {:else}
           <ul class="flex flex-col gap-1 text-[0.85rem] text-white/70">
             {#each overview.audit as entry}

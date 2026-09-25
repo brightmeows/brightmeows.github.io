@@ -1,3 +1,4 @@
+import { m } from "$lib/paraglide/messages.js";
 import type { ChartData, HeaderData, ProgressCallback } from "$lib/types/bms";
 import { fetchStream } from "$lib/utils/fetch-stream";
 import { formatBytes } from "$lib/utils/format";
@@ -48,15 +49,15 @@ async function fetchWithProgress(url: string, onProgress?: ProgressCallback): Pr
           onProgress({
             percent: pct,
             phase: "downloading",
-            message: "下载中...",
+            message: m["progress.downloading"](),
             detail: `${formatBytes(loaded)} / ${formatBytes(total)}`,
           });
         } else {
           onProgress({
             percent: 50,
             phase: "downloading",
-            message: "下载中...",
-            detail: `已下载 ${formatBytes(loaded)}`,
+            message: m["progress.downloading"](),
+            detail: m["progress.downloaded"]({ bytes: formatBytes(loaded) }),
           });
         }
       }
@@ -69,7 +70,7 @@ async function fetchWithProgress(url: string, onProgress?: ProgressCallback): Pr
     onProgress({
       percent: 100,
       phase: "downloading",
-      message: "下载完成",
+      message: m["progress.download_done"](),
       detail: "",
     });
   }
@@ -86,36 +87,44 @@ export async function fetchBmsHeader(
 ): Promise<HeaderData> {
   const headerUrlBase = resolveUrl(headerUrl);
 
-  onProgress?.({ percent: 0, phase: "connecting", message: "正在请求表头信息..." });
+  onProgress?.({ percent: 0, phase: "connecting", message: m["bmsdata.requesting_header"]() });
 
   let headerResponse: Response;
   try {
     headerResponse = await fetchWithProgress(headerUrlBase, onProgress);
   } catch (err) {
-    throw new Error(`无法加载表头信息: ${err instanceof Error ? err.message : String(err)}`, {
-      cause: err,
-    });
+    throw new Error(
+      m["bmsdata.header_load_failed"]({
+        error: err instanceof Error ? err.message : String(err),
+      }),
+      { cause: err }
+    );
   }
 
   // percent=100 确保经上级 *0.35 映射后不低于下载阶段已达的 35%
-  onProgress?.({ percent: 100, phase: "parsing", message: "正在解析表头信息..." });
+  onProgress?.({ percent: 100, phase: "parsing", message: m["bmsdata.parsing_header"]() });
   let data: unknown;
   try {
     data = await headerResponse.json();
   } catch (err) {
-    throw new Error(`表头数据格式无效: ${err instanceof Error ? err.message : String(err)}`, {
-      cause: err,
-    });
+    throw new Error(
+      m["bmsdata.header_format_invalid"]({
+        error: err instanceof Error ? err.message : String(err),
+      }),
+      { cause: err }
+    );
   }
 
   // 运行时校验：确保 header.json 是对象而非数组或其他类型
   if (typeof data !== "object" || data === null || Array.isArray(data)) {
     throw new Error(
-      "表头数据格式无效：期望 JSON 对象，实际接收 " + (Array.isArray(data) ? "数组" : typeof data)
+      m["bmsdata.header_invalid_type"]({
+        actual: Array.isArray(data) ? m["bmsdata.actual_array"]() : String(typeof data),
+      })
     );
   }
 
-  onProgress?.({ percent: 100, phase: "done", message: "表头信息加载完成" });
+  onProgress?.({ percent: 100, phase: "done", message: m["bmsdata.header_done"]() });
   return data as HeaderData;
 }
 
@@ -140,17 +149,18 @@ export async function fetchBmsTableData(
 
   let tableDataRaw: unknown;
   if (isJsonp) {
-    onProgress?.({ percent: 0, phase: "connecting", message: "等待 JSONP 响应..." });
+    onProgress?.({ percent: 0, phase: "connecting", message: m["bmsdata.waiting_jsonp"]() });
     try {
       tableDataRaw = await fetchJsonp(finalDataUrl);
     } catch (err) {
-      throw new Error(`JSONP 请求失败: ${err instanceof Error ? err.message : String(err)}`, {
-        cause: err,
-      });
+      throw new Error(
+        m["bmsdata.jsonp_failed"]({ error: err instanceof Error ? err.message : String(err) }),
+        { cause: err }
+      );
     }
-    onProgress?.({ percent: 85, phase: "parsing", message: "JSONP 数据接收完成，解析中..." });
+    onProgress?.({ percent: 85, phase: "parsing", message: m["bmsdata.jsonp_received"]() });
   } else {
-    onProgress?.({ percent: 5, phase: "connecting", message: "连接谱面数据源..." });
+    onProgress?.({ percent: 5, phase: "connecting", message: m["bmsdata.connecting"]() });
     try {
       const { response: dataResponse } = await fetchStream(
         finalDataUrl,
@@ -161,39 +171,43 @@ export async function fetchBmsTableData(
               onProgress({
                 percent: 5 + Math.round(pct * 0.8),
                 phase: "downloading",
-                message: "下载中...",
+                message: m["progress.downloading"](),
               });
             }
           : undefined
       );
-      onProgress?.({ percent: 88, phase: "parsing", message: "解析谱面数据..." });
+      onProgress?.({ percent: 88, phase: "parsing", message: m["bmsdata.parsing_charts"]() });
       try {
         tableDataRaw = await dataResponse.json();
       } catch (err) {
-        throw new Error(`谱面数据格式无效: ${err instanceof Error ? err.message : String(err)}`, {
-          cause: err,
-        });
+        throw new Error(
+          m["bmsdata.chart_format_invalid"]({
+            error: err instanceof Error ? err.message : String(err),
+          }),
+          { cause: err }
+        );
       }
     } catch (err) {
-      throw new Error(`无法加载谱面数据: ${err instanceof Error ? err.message : String(err)}`, {
-        cause: err,
-      });
+      throw new Error(
+        m["bmsdata.chart_load_failed"]({ error: err instanceof Error ? err.message : String(err) }),
+        { cause: err }
+      );
     }
   }
 
   if (!Array.isArray(tableDataRaw)) {
-    let apiError = "谱面数据格式无效";
+    let apiError: string = m["bmsdata.chart_invalid"]();
     if (typeof tableDataRaw === "object" && tableDataRaw !== null && "error" in tableDataRaw) {
       const err = (tableDataRaw as Record<string, unknown>).error;
       if (err !== undefined) {
         apiError = typeof err === "string" ? err : JSON.stringify(err);
       } else {
-        apiError = "未知错误";
+        apiError = m["common.unknown_error"]();
       }
     }
-    throw new Error(`无法解析谱面数据: ${apiError}`);
+    throw new Error(m["bmsdata.chart_parse_failed"]({ error: apiError }));
   }
 
-  onProgress?.({ percent: 100, phase: "done", message: "谱面数据加载完成" });
+  onProgress?.({ percent: 100, phase: "done", message: m["bmsdata.chart_done"]() });
   return { data: tableDataRaw as ChartData[], fetchUrl: finalDataUrl };
 }

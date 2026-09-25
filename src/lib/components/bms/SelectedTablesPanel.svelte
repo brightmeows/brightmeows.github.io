@@ -5,6 +5,7 @@
 
   import Checkbox from "$lib/components/ui/Checkbox.svelte";
   import { jsonPreview } from "$lib/components/ui/JsonPreview.svelte";
+  import { m } from "$lib/paraglide/messages.js";
   import type { JsonPreviewHandle } from "$lib/types/ui";
 
   interface Props {
@@ -55,15 +56,15 @@
   );
 
   let urlToOrigin = $derived.by(() => {
-    const m: Record<string, string> = {};
+    const urlMap: Record<string, string> = {};
     for (const t of tables) {
       if (!t.url) continue;
       const mirrorAbs = new URL(t.url, window.location.origin).toString();
       const rawOri = String(t.url_from ?? "").trim();
       const oriAbs = rawOri.length > 0 ? new URL(rawOri, window.location.origin).toString() : "";
-      m[mirrorAbs] = oriAbs;
+      urlMap[mirrorAbs] = oriAbs;
     }
-    return m;
+    return urlMap;
   });
 
   let selectedOriginArray = $derived(
@@ -86,7 +87,7 @@
         onchange={(v: boolean) => handleSelectAll(v)}
       />
       <div class="font-semibold whitespace-nowrap text-white">
-        已选中 {selectedCount} / {totalCount}
+        {m["common.selected_count"]({ selected: selectedCount, total: totalCount })}
       </div>
       <div class="flex flex-nowrap gap-3">
         <button
@@ -96,12 +97,12 @@
             preview: mirrorPreview,
             options: {
               value: selectedMirrorArray,
-              label: "镜像链接 JSON",
+              label: m["selected.mirror_json"](),
               maxHeightRem: 12,
             },
           }}
         >
-          镜像链接 JSON
+          {m["selected.mirror_json"]()}
         </button>
         <button
           class="gradient-btn gradient-btn-orange rounded-lg px-[0.8rem] py-2 text-[0.9rem]"
@@ -110,12 +111,12 @@
             preview: mirrorPreview,
             options: {
               value: selectedOriginArray,
-              label: "原链接 JSON",
+              label: m["selected.origin_json"](),
               maxHeightRem: 12,
             },
           }}
         >
-          原链接 JSON
+          {m["selected.origin_json"]()}
         </button>
       </div>
     </div>

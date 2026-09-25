@@ -1,6 +1,7 @@
 import type { FetchState, UserRole } from "@brightmeows/mirror/user-layer";
 
 import { apiBase } from "$lib/constants/site";
+import { m } from "$lib/paraglide/messages.js";
 
 /**
  * 镜像表用户操作接口的客户端封装。
@@ -77,7 +78,7 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
     credentials: "include",
   });
   if (!response.ok) {
-    let message = `请求失败（HTTP ${response.status}）`;
+    let message: string = m["common.request_failed"]({ status: response.status });
     try {
       const body = (await response.json()) as { error?: unknown };
       if (typeof body.error === "string" && body.error !== "") {
@@ -138,7 +139,7 @@ export async function submitAdd(url: string): Promise<AddResult> {
     { method: "POST", body: JSON.stringify({ url }) }
   );
   if (typeof body.requestId !== "string") {
-    throw new Error("接口未返回请求 id");
+    throw new Error(m["userapi.no_request_id"]());
   }
   return {
     requestId: body.requestId,
@@ -158,7 +159,7 @@ export async function fetchFetchStatus(requestId: string): Promise<FetchStatus> 
   }>(`/api/tables/status/${encodeURIComponent(requestId)}`);
   const state = body.state;
   if (state !== "pending" && state !== "fetching" && state !== "done" && state !== "failed") {
-    throw new Error("状态取值未知");
+    throw new Error(m["userapi.unknown_state"]());
   }
   return {
     id: typeof body.id === "string" ? body.id : requestId,

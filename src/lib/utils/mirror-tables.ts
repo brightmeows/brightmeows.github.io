@@ -1,5 +1,6 @@
 import type { MirrorTableItem } from "@brightmeows/mirror/types";
 
+import { m } from "$lib/paraglide/messages.js";
 import type { Tag1Group, Tag2Group } from "$lib/types/bms";
 import type { StringConverter } from "$lib/types/common";
 
@@ -67,8 +68,8 @@ export function groupByTags(tables: MirrorTableItem[]): Tag1Group[] {
     {};
 
   tables.forEach((item) => {
-    const tag1 = item.tag1 ?? "未分类";
-    const tag2 = item.tag2 ?? "其它";
+    const tag1 = item.tag1 ?? m["mirror.untagged"]();
+    const tag2 = item.tag2 ?? m["mirror.other"]();
     const orderRaw = item.tag_order;
     const order = typeof orderRaw === "number" ? orderRaw : parseInt(String(orderRaw ?? "999"), 10);
 

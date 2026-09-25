@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { m } from "$lib/paraglide/messages.js";
+
   function scrollToTop(): void {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -8,8 +10,8 @@
   <button
     class="flex size-14 items-center justify-center rounded-full border border-white/25 bg-white/15 text-white shadow-[0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur-sm transition-all hover:bg-white/25"
     type="button"
-    aria-label="回到顶部"
-    title="回到顶部"
+    aria-label={m["common.back_to_top"]()}
+    title={m["common.back_to_top"]()}
     onclick={scrollToTop}
   >
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="size-15" fill="currentColor">

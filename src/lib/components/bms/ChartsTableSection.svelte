@@ -3,6 +3,7 @@
 
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
   import JsonPreview from "$lib/components/ui/JsonPreview.svelte";
+  import { m } from "$lib/paraglide/messages.js";
   import type { ChartData, DifficultyGroup } from "$lib/types/bms";
   import type { JsonPreviewHandle } from "$lib/types/ui";
   import { validateUrl } from "$lib/utils/url";
@@ -45,9 +46,11 @@
 </script>
 
 {#if groups.length === 0}
-  <EmptyState title="暂无谱面数据" description="难度表中没有找到谱面数据。" />
+  <EmptyState title={m["table.no_charts_title"]()} description={m["table.no_charts_desc"]()} />
 {:else}
-  <h3 class="section-title mb-6 text-center">谱面列表 ({totalCharts} 个)</h3>
+  <h3 class="section-title mb-6 text-center">
+    {m["table.charts_heading"]({ count: totalCharts })}
+  </h3>
 
   {#if groups.length > 1}
     <div class="mb-8">
@@ -84,12 +87,12 @@
       </colgroup>
       <thead>
         <tr>
-          <th class="table-th-glass text-center whitespace-nowrap"> 等级 </th>
-          <th class="table-th-glass text-center whitespace-nowrap"> 下载 </th>
-          <th class="table-th-glass text-center whitespace-nowrap"> BMS网站 </th>
-          <th class="table-th-glass text-center whitespace-nowrap"> 标题 </th>
-          <th class="table-th-glass text-center whitespace-nowrap"> 艺术家 </th>
-          <th class="table-th-glass text-center whitespace-nowrap"> 备注 </th>
+          <th class="table-th-glass text-center whitespace-nowrap"> {m["table.th_level"]()} </th>
+          <th class="table-th-glass text-center whitespace-nowrap"> {m["table.th_download"]()} </th>
+          <th class="table-th-glass text-center whitespace-nowrap"> {m["table.th_site"]()} </th>
+          <th class="table-th-glass text-center whitespace-nowrap"> {m["table.th_title"]()} </th>
+          <th class="table-th-glass text-center whitespace-nowrap"> {m["table.th_artist"]()} </th>
+          <th class="table-th-glass text-center whitespace-nowrap"> {m["table.th_comment"]()} </th>
         </tr>
       </thead>
       {#each groups as group, gIndex (group.level)}
@@ -105,7 +108,7 @@
                   {symbol}{group.level}
                 </span>
                 <span class="text-[1.1rem] text-white/80">
-                  {group.charts.length} 个谱面
+                  {m["table.chart_count"]({ count: group.charts.length })}
                 </span>
               </div>
             </td>

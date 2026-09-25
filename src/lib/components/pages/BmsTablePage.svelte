@@ -8,6 +8,7 @@
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
   import { fetchBmsHeader, fetchBmsTableData } from "$lib/data/bms-data";
+  import { m } from "$lib/paraglide/messages.js";
   import type { ChartData, HeaderData, ProgressCallback } from "$lib/types/bms";
   import { sortDifficultyGroups } from "$lib/utils/bms-table";
   import { groupChartsByLevel, computeTableStats, resolveCourses } from "$lib/utils/bms-transform";
@@ -32,10 +33,10 @@
   let dataFetchUrl = $state<string | null>(null);
   let dataError = $state<string | null>(null);
   let dataProgressPercent = $state(0);
-  let dataProgressMessage = $state("正在加载谱面数据...");
+  let dataProgressMessage = $state<string>(m["table.loading_charts"]());
   let dataProgressDetail = $state("");
 
-  let pageTitle = $state("加载难度表header中");
+  let pageTitle = $state<string>(m["table.loading_header"]());
   let cb = clipboardFeedback();
 
   /**
@@ -60,17 +61,17 @@
       headerLoadState = "loading";
       headerError = null;
       headerData = null;
-      pageTitle = "加载难度表header中";
+      pageTitle = m["table.loading_header"]();
 
       const result = await fetchBmsHeader(headerUrl);
       headerData = result;
-      pageTitle = String(result.name ?? "未命名");
+      pageTitle = String(result.name ?? m["common.unnamed"]());
       headerLoadState = "loaded";
 
       // header 加载完成后自动启动 data 加载
       void loadData(result.data_url);
     } catch (err) {
-      headerError = err instanceof Error ? err.message : "未知错误";
+      headerError = err instanceof Error ? err.message : m["common.unknown_error"]();
       headerLoadState = "error";
       console.error("加载BMS难度表header失败:", err);
     }
@@ -79,7 +80,7 @@
   // ---- Data 加载（独立错误处理，不影响 header/段位显示） ----
   async function loadData(dataUrl: string | undefined): Promise<void> {
     if (!dataUrl) {
-      dataError = "表头信息中未找到 data_url";
+      dataError = m["table.data_url_missing"]();
       dataLoadState = "error";
       return;
     }
@@ -89,7 +90,7 @@
       dataError = null;
       tableData = null;
       dataProgressPercent = 0;
-      dataProgressMessage = "正在加载谱面数据...";
+      dataProgressMessage = m["table.loading_charts"]();
       dataProgressDetail = "";
 
       const onProgress: ProgressCallback = (event) => {
@@ -105,7 +106,7 @@
       dataFetchUrl = result.fetchUrl;
       dataLoadState = "loaded";
     } catch (err) {
-      dataError = err instanceof Error ? err.message : "未知错误";
+      dataError = err instanceof Error ? err.message : m["common.unknown_error"]();
       dataLoadState = "error";
       console.error("加载BMS谱面数据失败:", err);
     }
@@ -113,7 +114,7 @@
 
   function retryData(): void {
     dataProgressPercent = 0;
-    dataProgressMessage = "正在加载谱面数据...";
+    dataProgressMessage = m["table.loading_charts"]();
     dataProgressDetail = "";
     void loadData(headerData?.data_url);
   }
@@ -140,7 +141,7 @@
       const id = `difficulty-group-${g.level}`;
       return {
         id,
-        title: `难度 ${g.level} (${g.charts.length})`,
+        title: m["table.toc_difficulty"]({ level: g.level, count: g.charts.length }),
         href: `#${id}`,
       };
     });
@@ -155,16 +156,16 @@
     }[] = [];
 
     if (levelRefHasData) {
-      items.push({ id: "level-ref", title: "等级参考", href: "#level-ref" });
+      items.push({ id: "level-ref", title: m["table.toc_level_ref"](), href: "#level-ref" });
     }
 
     if (courseGroups.length > 0) {
-      items.push({ id: "course-list", title: "段位认定", href: "#course-list" });
+      items.push({ id: "course-list", title: m["table.toc_course"](), href: "#course-list" });
     }
 
     items.push({
       id: "charts-list",
-      title: "谱面列表",
+      title: m["table.toc_charts"](),
       href: "#charts-list",
       children: difficultyTocItems,
     });
@@ -187,7 +188,7 @@
 </svelte:head>
 
 <PageShell
-  currentLabel={headerData?.name ?? "加载难度表header中"}
+  currentLabel={headerData?.name ?? m["table.loading_header"]()}
   {tocItems}
   panes={headerLoadState === "loading"
     ? [titlePane, headerLoadingPane]
@@ -210,25 +211,27 @@
     </h1>
     {#if headerData?.symbol}
       <div class="text-[1.2rem] text-white/70 italic">
-        难度表符号: {headerData.symbol}
+        {m["table.symbol"]({ symbol: headerData.symbol })}
       </div>
     {/if}
     <div class="mt-2 text-[1.2rem] text-white/70 italic">
-      本页地址可直接用于导入（beatoraja / BeMusicSeeker）：
+      {m["table.import_hint"]()}
       {#if importUrl}
         <span class="font-mono text-[0.95rem] break-all text-white/85">{importUrl}</span>
-        <button class="link-accent" type="button" onclick={copyImportUrl}> 点击复制 </button>
+        <button class="link-accent" type="button" onclick={copyImportUrl}>
+          {m["common.click_copy"]()}
+        </button>
       {:else}
-        <span class="text-white/50">读取中…</span>
+        <span class="text-white/50">{m["table.reading"]()}</span>
       {/if}
       {#if cb.copied}
-        <span class="ml-2 text-[#4caf50]">已复制</span>
+        <span class="ml-2 text-[#4caf50]">{m["common.copied"]()}</span>
       {/if}
     </div>
     <div class="mt-2 text-[1.2rem] text-white/70 italic">
       {#if headerUrl}
         <a class="link-accent" href={headerUrl} target="_blank" rel="noopener noreferrer">
-          查看header.json
+          {m["table.view_header"]()}
         </a>
       {/if}
       {#if headerUrl && dataFetchUrl}
@@ -236,19 +239,22 @@
       {/if}
       {#if dataFetchUrl}
         <a class="link-accent" href={dataFetchUrl} target="_blank" rel="noopener noreferrer">
-          查看data.json
+          {m["table.view_data"]()}
         </a>
       {/if}
     </div>
     {#if dataLoaded && tableStats}
       <div class="mt-2 text-[1.2rem] text-white/70 italic">
-        总谱面数: {tableStats.totalCharts} | 难度等级数: {tableStats.difficulties.length}
+        {m["table.stats"]({
+          total: tableStats.totalCharts,
+          difficulties: tableStats.difficulties.length,
+        })}
       </div>
     {/if}
   </div>
 {/snippet}
 
-{#snippet loadingDisplayPane(message: string, title = "正在加载数据...")}
+{#snippet loadingDisplayPane(message: string, title = m["common.loading_data"]())}
   <div class="p-8">
     <LoadingProgress {message} {title} progress={0} variant="indeterminate" />
   </div>
@@ -279,15 +285,15 @@
 {/snippet}
 
 {#snippet headerLoadingPane()}
-  {@render loadingDisplayPane("正在请求表头信息...", "正在加载BMS难度表数据...")}
+  {@render loadingDisplayPane(m["table.loading_header_request"](), m["table.loading_data_title"]())}
 {/snippet}
 
 {#snippet headerErrorPane()}
   {@render errorDisplayPane(
-    "加载失败",
-    headerError ?? "未知错误",
-    "请检查网络连接或稍后重试。",
-    "重新加载",
+    m["common.load_failed"](),
+    headerError ?? m["common.unknown_error"](),
+    m["common.check_network"](),
+    m["common.reload"](),
     retryAll
   )}
 {/snippet}
@@ -307,7 +313,7 @@
 {#snippet dataLoadingPane()}
   <div class="p-8">
     <LoadingProgress
-      title="正在加载谱面数据..."
+      title={m["table.loading_charts"]()}
       message={dataProgressMessage}
       progress={dataProgressPercent}
       detail={dataProgressDetail}
@@ -318,10 +324,10 @@
 
 {#snippet dataErrorPane()}
   {@render errorDisplayPane(
-    "谱面数据加载失败",
-    dataError ?? "未知错误",
-    "段位数据已显示，谱面列表加载失败。您可以重试或稍后刷新页面。",
-    "重试加载谱面数据",
+    m["table.data_load_failed_title"](),
+    dataError ?? m["common.unknown_error"](),
+    m["table.data_load_failed_tip"](),
+    m["table.retry_load_charts"](),
     retryData
   )}
 {/snippet}
@@ -335,7 +341,7 @@
         symbol={headerData?.symbol ?? ""}
       />
     {:else}
-      <EmptyState title="暂无谱面数据" description="难度表中没有找到谱面数据。" />
+      <EmptyState title={m["table.no_charts_title"]()} description={m["table.no_charts_desc"]()} />
     {/if}
   </div>
 {/snippet}

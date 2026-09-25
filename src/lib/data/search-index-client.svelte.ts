@@ -1,5 +1,7 @@
 import type { CandidateEntry, WorkerMessage, WorkerSearchRequest } from "./bms-search";
 
+import { m } from "$lib/paraglide/messages.js";
+
 /** 索引加载阶段。 */
 export type IndexPhase = "loading" | "ready" | "error";
 
@@ -49,7 +51,9 @@ export class SearchIndexClient {
     } catch (err) {
       console.warn("Web Worker 创建失败:", err);
       this.phase = "error";
-      this.errorMessage = `Worker 创建失败: ${err instanceof Error ? err.message : String(err)}`;
+      this.errorMessage = m["search.worker_create_failed"]({
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   }
 
@@ -100,7 +104,9 @@ export class SearchIndexClient {
       case "ready": {
         if (msg.error) {
           this.phase = "error";
-          this.errorMessage = msg.error;
+          // Worker 无 DOM 上下文无法按 locale 求值消息，发代码由主线程翻译
+          this.errorMessage =
+            msg.error === "index-load-failed" ? m["search.index_load_failed"]() : msg.error;
         } else {
           this.phase = "ready";
         }

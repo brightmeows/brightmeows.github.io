@@ -13,6 +13,7 @@
     type PreviewResult,
     type RemovedRecord,
   } from "$lib/data/mirror-user-api";
+  import { m } from "$lib/paraglide/messages.js";
 
   interface Props {
     /** 添加或恢复成功后回调（用于刷新清单）。 */
@@ -74,7 +75,7 @@
     try {
       preview = await fetchPreview(url.trim());
     } catch (error) {
-      previewError = error instanceof Error ? error.message : "预览失败";
+      previewError = error instanceof Error ? error.message : m["mirror.preview_failed"]();
     } finally {
       previewing = false;
     }
@@ -88,22 +89,27 @@
         const status = await fetchFetchStatus(requestId);
         if (status.state === "done") {
           progress = null;
-          notice = { kind: "ok", text: "抓取完成，清单马上更新。" };
+          notice = { kind: "ok", text: m["mirror.fetch_done"]() };
           onchanged?.();
           return;
         }
         if (status.state === "failed") {
           progress = null;
-          notice = { kind: "error", text: `抓取失败：${status.message ?? "未知原因"}` };
+          notice = {
+            kind: "error",
+            text: m["mirror.fetch_failed"]({
+              reason: status.message ?? m["mirror.unknown_reason"](),
+            }),
+          };
           return;
         }
-        progress = `抓取中，已等待 ${String((attempt + 1) * 3)} 秒…`;
+        progress = m["mirror.fetch_waiting"]({ seconds: (attempt + 1) * 3 });
       } catch {
         // 单次查询失败继续轮询
       }
     }
     progress = null;
-    notice = { kind: "error", text: "等待超时，稍后刷新页面查看结果。" };
+    notice = { kind: "error", text: m["mirror.fetch_timeout"]() };
   }
 
   async function doAdd(): Promise<void> {
@@ -113,11 +119,14 @@
       const result = await submitAdd(url.trim());
       url = "";
       preview = null;
-      progress = "已提交，等待抓取…";
+      progress = m["mirror.submitted"]();
       auth.setRemaining(result.remaining);
       void pollStatus(result.requestId);
     } catch (error) {
-      notice = { kind: "error", text: error instanceof Error ? error.message : "提交失败" };
+      notice = {
+        kind: "error",
+        text: error instanceof Error ? error.message : m["mirror.submit_failed"](),
+      };
     } finally {
       submitting = false;
     }
@@ -128,12 +137,15 @@
     notice = null;
     try {
       const result = await submitRestore(dirName);
-      notice = { kind: "ok", text: `已恢复 ${dirName}。` };
+      notice = { kind: "ok", text: m["mirror.restored_done"]({ dir: dirName }) };
       auth.setRemaining(result.remaining);
       await loadRemoved();
       onchanged?.();
     } catch (error) {
-      notice = { kind: "error", text: error instanceof Error ? error.message : "恢复失败" };
+      notice = {
+        kind: "error",
+        text: error instanceof Error ? error.message : m["mirror.restore_failed"](),
+      };
     } finally {
       restoring = null;
     }
@@ -151,25 +163,25 @@
 
 {#if unavailable}
   <GlassPanel class="mt-4 text-[0.95rem] text-white/75">
-    用户接口暂不可用，稍后再试，或前往
+    {m["mirror.api_unavailable_before"]()}
     <a
       class="link-accent"
       href={`${SITE_ORIGIN}/bms/table/mirror/`}
       target="_blank"
-      rel="noopener noreferrer">主站</a
-    > 操作。
+      rel="noopener noreferrer">{m["mirror.api_unavailable_link"]()}</a
+    >{m["mirror.api_unavailable_after"]()}
   </GlassPanel>
 {:else if auth.status === "ready"}
   <GlassPanel class="mt-4">
     {#if user === null}
       <div class="text-[0.95rem] text-white/75">
-        用 GitHub 登录后可以添加或删除难度表（每账号每日 10 次）；登录入口在页面顶栏。
+        {m["mirror.login_hint"]()}
       </div>
     {:else}
       <div class="flex flex-col gap-3">
         <div class="flex justify-end">
           <button class={smallButton} type="button" onclick={() => (showRemoved = !showRemoved)}>
-            我删除的表（{removed.length}）
+            {m["mirror.removed_count"]({ count: removed.length })}
           </button>
         </div>
 
@@ -184,8 +196,8 @@
             class="min-w-60 flex-1 rounded-xl border border-white/20 bg-black/20 px-3 py-2 text-white outline-none placeholder:text-white/50 focus:border-[#64b5f6]/60 focus:ring-2 focus:ring-[#64b5f6]/30"
             type="url"
             bind:value={url}
-            placeholder="难度表页面或 header.json 的 URL"
-            aria-label="要添加的难度表 URL"
+            placeholder={m["mirror.add_url_placeholder"]()}
+            aria-label={m["mirror.add_url_aria"]()}
           />
           <button
             class={smallButton}
@@ -193,10 +205,10 @@
             disabled={previewing || url.trim() === ""}
             onclick={() => void doPreview()}
           >
-            {previewing ? "预览中…" : "预览"}
+            {previewing ? m["mirror.previewing"]() : m["mirror.preview"]()}
           </button>
           <button class={smallButton} type="submit" disabled={submitting || preview === null}>
-            {submitting ? "提交中…" : "提交添加"}
+            {submitting ? m["mirror.submitting"]() : m["mirror.submit"]()}
           </button>
         </form>
 
@@ -205,9 +217,11 @@
         {/if}
         {#if preview}
           <div class="text-[0.9rem] text-white/70">
-            预览结果：<strong class="text-white">{preview.name || "（无名称）"}</strong>
-            {preview.symbol ? `（符号 ${preview.symbol}）` : ""}；确认后点击“提交添加”，后台抓取约
-            1～3 分钟。
+            {m["mirror.preview_result"]()}
+            <strong class="text-white">{preview.name || m["mirror.no_name"]()}</strong>
+            {preview.symbol ? m["mirror.preview_symbol"]({ symbol: preview.symbol }) : ""}{m[
+              "mirror.preview_hint"
+            ]()}
           </div>
         {/if}
         {#if progress}
@@ -222,7 +236,7 @@
         {#if showRemoved}
           <div class="rounded-lg border border-white/15 bg-black/20 p-3">
             {#if removed.length === 0}
-              <div class="text-[0.9rem] text-white/60">30 天内没有你删除的表。</div>
+              <div class="text-[0.9rem] text-white/60">{m["mirror.no_removed"]()}</div>
             {:else}
               <ul class="flex flex-col gap-2">
                 {#each removed as record (record.dir_name)}
@@ -239,7 +253,9 @@
                       disabled={restoring === record.dir_name}
                       onclick={() => void doRestore(record.dir_name)}
                     >
-                      {restoring === record.dir_name ? "恢复中…" : "恢复"}
+                      {restoring === record.dir_name
+                        ? m["mirror.restoring"]()
+                        : m["mirror.restore"]()}
                     </button>
                   </li>
                 {/each}

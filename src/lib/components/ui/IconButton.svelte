@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
 
+  import { m } from "$lib/paraglide/messages.js";
   import { styleToString } from "$lib/utils/style";
 
   interface Props {
@@ -56,7 +57,7 @@
     clickShrink = true,
     style = {},
     onclick,
-    ariaLabel = "图标按钮",
+    ariaLabel = m["iconbutton.default"](),
     target,
     rel,
     title,

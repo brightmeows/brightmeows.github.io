@@ -1,6 +1,7 @@
 import type { PageServerLoad } from "./$types";
 
 import { getBlogPosts } from "$lib/loaders";
+import { m } from "$lib/paraglide/messages.js";
 import { formatTitle } from "$lib/utils/title";
 
 export const load: PageServerLoad = () => {
@@ -8,6 +9,6 @@ export const load: PageServerLoad = () => {
 
   return {
     recentPosts: posts.slice(0, 5),
-    title: formatTitle("欢迎来到白喵斯的小屋！"),
+    title: formatTitle(m["home.title"]()),
   };
 };

@@ -3,6 +3,7 @@
 
   import GradientButton from "$lib/components/ui/GradientButton.svelte";
   import { jsonPreview } from "$lib/components/ui/JsonPreview.svelte";
+  import { m } from "$lib/paraglide/messages.js";
   import type { ChartData } from "$lib/types/bms";
   import type { JsonPreviewHandle } from "$lib/types/ui";
 
@@ -40,12 +41,12 @@
     <div class="flex flex-row flex-nowrap justify-center gap-[0.3rem]">
       {#if bundleUrl}
         <GradientButton variant="green" href={bundleUrl} target="_blank" rel="noopener noreferrer">
-          📦 同捆
+          📦 {m["common.bundle"]()}
         </GradientButton>
       {/if}
       {#if diffUrl}
         <GradientButton variant="blue" href={diffUrl} target="_blank" rel="noopener noreferrer">
-          🔄 差分
+          🔄 {m["common.diff"]()}
         </GradientButton>
       {/if}
     </div>
@@ -62,16 +63,16 @@
         preview: chartPreview,
         options: {
           value: { ...chart, groupLevel },
-          label: "谱面 JSON",
+          label: m["common.chart_json"](),
           maxHeightRem: 14,
         },
       }}
     >
-      {chart.title ?? "未知标题"}
+      {chart.title ?? m["common.unknown_title"]()}
     </strong>
   </td>
   <td class="table-td-glass wrap-break-word">
-    {chart.artist ?? "未知艺术家"}
+    {chart.artist ?? m["common.unknown_artist"]()}
   </td>
   <td class="table-td-glass wrap-break-word">
     {chart.comment ?? ""}

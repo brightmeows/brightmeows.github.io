@@ -15,6 +15,7 @@
   import { IncrementalAggregator } from "$lib/data/search-aggregator";
   import { searchConverters } from "$lib/data/search-converters.svelte";
   import { SearchIndexClient } from "$lib/data/search-index-client.svelte";
+  import { m } from "$lib/paraglide/messages.js";
   import { buildSearchNeedles } from "$lib/utils/mirror-tables";
 
   // 搜索索引 Worker：创建、索引加载状态与消息协议封装在共享客户端里
@@ -25,9 +26,9 @@
   let queryTypeHint = $derived.by(() => {
     if (!query.trim()) return "";
     const type = detectQueryType(query);
-    if (type === "md5") return "MD5 哈希精确匹配";
-    if (type === "sha256") return "SHA256 哈希精确匹配";
-    return "标题/艺术家子串匹配";
+    if (type === "md5") return m["search.hint_md5"]();
+    if (type === "sha256") return m["search.hint_sha256"]();
+    return m["search.hint_text"]();
   });
 
   // ---- 搜索索引（加载状态与生命周期在 indexClient）----
@@ -188,7 +189,7 @@
       // 清理 aggregator 中该表的占位 appearance，避免残缺数据残留
       aggregator?.removeTable(tableId);
 
-      const errorMessage = err instanceof Error ? err.message : "未知错误";
+      const errorMessage = err instanceof Error ? err.message : m["common.unknown_error"]();
       const current = tableStates.get(tableId);
       const name = current && "name" in current ? current.name : tableId;
       setError(tableId, name, errorMessage);
@@ -255,11 +256,11 @@
 <PageShell panes={[titlePane, contentPane]} />
 
 {#snippet titlePane()}
-  <h1 class="page-title text-center">BMS 谱面搜索</h1>
-  <p class="mt-2 text-center text-[1.1rem] text-white/70">搜索谱面并查看其在所有难度表中的信息</p>
+  <h1 class="page-title text-center">{m["search.page_title"]()}</h1>
+  <p class="mt-2 text-center text-[1.1rem] text-white/70">{m["search.subtitle"]()}</p>
   <p class="mt-3 text-center text-[0.95rem] text-white/40">
     <a class="text-accent underline-offset-2 hover:underline" href="/bms/table/search/batch">
-      批量搜索并导出 JSON →
+      {m["search.batch_link"]()}
     </a>
   </p>
 {/snippet}
@@ -269,7 +270,7 @@
     <!-- 索引加载进度 -->
     <div class="p-8 text-center">
       <div class="mb-6 text-[3rem]">⏳</div>
-      <p class="mb-4 text-white/80">正在加载搜索索引...</p>
+      <p class="mb-4 text-white/80">{m["search.loading_index"]()}</p>
       <div class="mx-auto max-w-xs space-y-2 text-left">
         {#each indexClient.progress as item (item.name)}
           <div class="flex items-center gap-3 text-[0.9rem]">
@@ -293,9 +294,9 @@
     <!-- 索引加载失败 -->
     <div class="p-12 text-center">
       <div class="mb-4 text-[4rem]">⚠️</div>
-      <h3 class="mb-4 text-[#ff6b6b]">索引加载失败</h3>
+      <h3 class="mb-4 text-[#ff6b6b]">{m["search.index_load_failed"]()}</h3>
       <p class="my-6 rounded-[10px] border-l-4 border-[#ff6b6b] bg-[rgba(255,107,107,0.1)] p-4">
-        {indexClient.errorMessage ?? "未知错误"}
+        {indexClient.errorMessage ?? m["common.unknown_error"]()}
       </p>
     </div>
   {:else}
@@ -308,7 +309,7 @@
             bind:value={query}
             onkeydown={onKeydown}
             onfocus={searchConverters.ensureLoaded}
-            placeholder="输入谱面标题、艺术家、MD5 或 SHA256，支持简繁日自动转换..."
+            placeholder={m["search.input_placeholder"]()}
             disabled={isSearching}
             class="w-full rounded-[16px] border border-white/20 bg-white/10 px-6 py-4 text-[1.1rem] text-white placeholder-white/40 transition-colors outline-none focus:border-[#64b5f6] focus:bg-white/15 disabled:cursor-not-allowed disabled:opacity-40"
           />
@@ -324,7 +325,9 @@
             }
           }}
           class="flex w-14 shrink-0 cursor-pointer items-center justify-center rounded-[16px] border border-white/20 bg-white/10 text-[1.3rem] text-white transition-colors hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
-          aria-label={searchPhase === "loading-tables" ? "取消搜索" : "搜索"}
+          aria-label={searchPhase === "loading-tables"
+            ? m["search.cancel"]()
+            : m["search.search"]()}
         >
           {#if searchPhase === "loading-tables"}
             ✕
@@ -343,16 +346,16 @@
         {/if}
       </div>
       <p class="mt-3 text-[0.95rem] text-white/40">
-        按 <kbd class="rounded bg-white/10 px-1.5 py-0.5 text-white/60">Enter</kbd> 或点击搜索按钮执行搜索。
-        输入 32 位十六进制自动识别为 MD5，64 位为 SHA256；其他内容按标题/艺术家模糊匹配，支持简体中文/繁体中文/日文汉字自动转换。
-        搜索结果按谱面聚合，展示该谱面在所有难度表中的出现情况。
+        {m["search.help_prefix"]()}
+        <kbd class="rounded bg-white/10 px-1.5 py-0.5 text-white/60">Enter</kbd>
+        {m["search.help_rest"]()}
       </p>
     </div>
 
     <!-- ===== 搜索结果 ===== -->
     {#if searchResults.length > 0}
       <div>
-        <p class="mb-4 text-white/70">找到 {searchResults.length} 个谱面</p>
+        <p class="mb-4 text-white/70">{m["search.found_count"]({ count: searchResults.length })}</p>
         {#each sortedSearchResults as result (result.id)}
           <BmsSearchResult {result} {tableStates} onretry={retryTable} />
         {/each}
@@ -360,19 +363,23 @@
     {:else if searchPhase === "searching"}
       <div class="p-12 text-center">
         <div class="mb-4 text-[4rem]">🔍</div>
-        <p class="text-white/70">正在搜索...</p>
+        <p class="text-white/70">{m["search.searching"]()}</p>
       </div>
     {:else if searchPhase === "loading-tables"}
       <div class="p-12 text-center">
         <div class="mb-4 text-[4rem]">⏳</div>
-        <p class="text-white/70">正在加载难度表...</p>
+        <p class="text-white/70">{m["search.loading_tables"]()}</p>
       </div>
     {:else if hasNoResults}
-      <EmptyState title="未找到结果" description="没有匹配的谱面，请尝试其他关键词。" emoji="🔍" />
+      <EmptyState
+        title={m["search.no_results_title"]()}
+        description={m["search.no_results_desc"]()}
+        emoji="🔍"
+      />
     {:else if searchPhase === "idle"}
       <EmptyState
-        title="输入关键词开始搜索"
-        description="按 Enter 或点击搜索按钮搜索。支持标题、艺术家、MD5、SHA256。"
+        title={m["search.idle_title"]()}
+        description={m["search.idle_desc"]()}
         emoji="🔎"
       />
     {/if}

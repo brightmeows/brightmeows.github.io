@@ -25,7 +25,8 @@
     "lint:fix": "oxlint --fix",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
-    "check:config": "node scripts/check-site-config.ts"
+    "check:config": "node scripts/check-site-config.ts",
+    "check:i18n": "node scripts/check-i18n-coverage.ts"
   },
   "exports": {},
   "dependencies": {
