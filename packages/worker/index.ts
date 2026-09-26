@@ -46,9 +46,6 @@ import { ensureSchemaOnce } from "./schema.ts";
 
 const MIRROR_ROOT = "/bms/table/mirror/";
 
-/** 后台页路径前缀：纯客户端路由，不参与清单校验。 */
-const ADMIN_ROOT = `${MIRROR_ROOT}admin/`;
-
 function textResponse(body: string, status: number, extra: Record<string, string> = {}): Response {
   return new Response(body, {
     status,
@@ -63,24 +60,6 @@ function decodePath(pathname: string): string | null {
   } catch {
     return null;
   }
-}
-
-/**
- * 客户端路由页（后台）：取站点 SPA 外壳并返回 200。
- *
- * 这类路径不在清单里，若交给静态资源的 404-page 处理会返回 404 状态码（
- * 页面内容虽然能渲染，但语义错误）。与表页一样取外壳，但不注入 bmstable meta。
- */
-async function handleSpaShell(env: Env, url: URL, locale: Locale): Promise<Response> {
-  const shellRes = await env.ASSETS.fetch(new URL(shellPath(locale), url.origin));
-  const shell = await shellRes.text();
-  return new Response(shell, {
-    status: 200,
-    headers: {
-      "content-type": "text/html; charset=utf-8",
-      "cache-control": "no-store",
-    },
-  });
 }
 
 /** 单表页：校验表存在后，把该表的 bmstable meta 注入站点 SPA 外壳。 */
@@ -220,10 +199,6 @@ export default {
 
     if (path === `${MIRROR_ROOT}tables.json`) {
       return handleTablesJson(env, url, locale);
-    }
-
-    if (path === ADMIN_ROOT || path.startsWith(ADMIN_ROOT)) {
-      return handleSpaShell(env, url, locale);
     }
 
     const withSlash = /^\/bms\/table\/mirror\/(.+)\/$/.exec(path);
