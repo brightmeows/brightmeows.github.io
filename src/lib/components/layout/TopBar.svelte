@@ -295,7 +295,7 @@
                     {m["topbar.remaining"]({ count: user.remaining })}
                   </div>
                   {#if user.role === "admin"}
-                    <a href={resolve("/bms/table/mirror/admin", {})} class={menuItemClass}>
+                    <a href={resolve("/bms/table/mirror#mirror-admin", {})} class={menuItemClass}>
                       {m["topbar.admin_panel"]()}
                     </a>
                   {/if}
