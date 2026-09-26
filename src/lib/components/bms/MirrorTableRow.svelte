@@ -47,6 +47,7 @@
   const authTitle = $derived(
     item.protected === true ? m["mirror.protected_title"]() : m["mirror.unprotected_title"]()
   );
+  const authActionTitle = $derived(m["mirror.auth_icon_action"]({ status: authTitle }));
   const deleteLabel = $derived(
     deleting ? m["mirror.deleting"]() : m["mirror.delete_aria"]({ name: tableLabelOf(item) })
   );
@@ -83,10 +84,9 @@
       <button
         class={iconButtonClass}
         type="button"
-        title={authTitle}
-        aria-label={authTitle}
-        disabled={adminUi.busy}
-        onclick={() => adminUi.authorize(item)}
+        title={authActionTitle}
+        aria-label={authActionTitle}
+        onclick={() => adminUi.openEdit(item)}
       >
         {#if item.protected === true}
           <svg
@@ -291,6 +291,7 @@
       tag1Options={adminUi.tag1Options}
       tag2Options={adminUi.tag2Options}
       nextTagOrder={adminUi.nextTagOrder}
+      onauthorize={(item2: MirrorTableItem) => adminUi.authorize(item2)}
       ondisable={(note: string) => adminUi.disable(item, note)}
       onmetasave={(fields) => adminUi.saveMeta(item, fields)}
       onmetaclear={() => adminUi.clearMeta(item)}

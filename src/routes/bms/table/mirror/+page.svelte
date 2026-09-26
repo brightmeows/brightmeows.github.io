@@ -217,6 +217,13 @@
     if (expandedUrl !== null) void loadOverview();
   }
 
+  /** 打开编辑面板（幂等）：授权图标点击用，已展开时保持展开。 */
+  function openEdit(item: MirrorTableItem): void {
+    if (!isAdmin) return;
+    expandedUrl = item.url;
+    void loadOverview();
+  }
+
   function toggleAdminPanel(): void {
     adminPanelOpen = !adminPanelOpen;
     if (adminPanelOpen) void loadOverview();
@@ -330,6 +337,7 @@
     busy: adminBusy,
     overrideOf: (item: MirrorTableItem) => findMetaOverride(overview?.meta ?? null, item),
     toggleEdit: (item: MirrorTableItem) => toggleEdit(item),
+    openEdit: (item: MirrorTableItem) => openEdit(item),
     authorize: (item: MirrorTableItem) => handleAuthorize(item),
     disable: (item: MirrorTableItem, note: string) => handleDisable(item, note),
     saveMeta: (item: MirrorTableItem, fields: MirrorMetaFields) => handleMetaSave(item, fields),

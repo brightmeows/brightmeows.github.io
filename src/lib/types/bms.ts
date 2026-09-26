@@ -115,6 +115,7 @@ export interface MirrorAdminUi {
   busy: boolean;
   overrideOf: (item: MirrorTableItem) => MetaOverride | null;
   toggleEdit: (item: MirrorTableItem) => void;
+  openEdit: (item: MirrorTableItem) => void;
   authorize: (item: MirrorTableItem) => void;
   disable: (item: MirrorTableItem, note: string) => void;
   saveMeta: (item: MirrorTableItem, fields: MirrorMetaFields) => void;
