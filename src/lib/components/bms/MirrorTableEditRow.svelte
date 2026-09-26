@@ -22,6 +22,7 @@
     tag2Options: string[];
     /** 下一个可用的一级标签序号（用于新标签的占位建议）。 */
     nextTagOrder: string;
+    onauthorize: (item: MirrorTableItem) => void;
     ondisable: (note: string) => void;
     onmetasave: (fields: MirrorMetaFields) => void;
     onmetaclear: () => void;
@@ -39,6 +40,7 @@
     tag1Options,
     tag2Options,
     nextTagOrder,
+    onauthorize,
     ondisable,
     onmetasave,
     onmetaclear,
@@ -60,6 +62,7 @@
     "cursor-pointer rounded-md border border-white/20 bg-white/10 px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-white/80 transition-all duration-200 ease-in-out hover:bg-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
   const dangerButton =
     "cursor-pointer rounded-md border border-red-300/30 bg-red-400/10 px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-red-200 transition-colors duration-200 hover:bg-red-400/20 disabled:cursor-not-allowed disabled:opacity-50";
+  const helpText = "text-[0.8rem] text-white/45";
 
   const tagOrderPlaceholder = $derived.by(() => {
     if (shouldSuggestTagOrder(tag1, tag1Options)) {
@@ -102,6 +105,30 @@
       </div>
 
       <section class="flex flex-col gap-2">
+        <h4 class="text-[0.95rem] font-semibold text-white/90">{m["admin.auth_section"]()}</h4>
+        <p class={helpText}>{m["admin.auth_help"]()}</p>
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-[0.85rem] text-white/70">
+            {item.protected === true
+              ? m["mirror.protected_title"]()
+              : m["mirror.unprotected_title"]()}
+          </span>
+          <button
+            class={smallButton}
+            type="button"
+            disabled={busy}
+            onclick={() => onauthorize(item)}
+          >
+            {item.protected === true ? m["admin.authorize_remove"]() : m["admin.authorize_add"]()}
+          </button>
+        </div>
+      </section>
+
+      <div class="border-t border-white/10"></div>
+
+      <section class="flex flex-col gap-2">
+        <h4 class="text-[0.95rem] font-semibold text-white/90">{m["admin.danger_section"]()}</h4>
+        <p class={helpText}>{m["admin.danger_help"]()}</p>
         <div class="flex flex-wrap items-end gap-2">
           <div class="flex min-w-60 flex-1 flex-col gap-1">
             <label class="text-[0.8rem] text-white/60" for="mirror-edit-disable-note">
@@ -130,7 +157,7 @@
               {m["admin.delete_table"]()}
             </button>
           {/if}
-          {#if item.protected === true}
+          {#if item.protected === true && canDelete && ondelete}
             <span class="text-[0.8rem] text-white/45">{m["admin.delete_protected"]()}</span>
           {/if}
         </div>
@@ -140,6 +167,7 @@
 
       <section class="flex flex-col gap-3">
         <h4 class="text-[0.95rem] font-semibold text-white/90">{m["admin.meta_heading"]()}</h4>
+        <p class={helpText}>{m["admin.meta_help"]()}</p>
         <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <div class="flex flex-col gap-1">
             <label class="text-[0.8rem] text-white/60" for="mirror-edit-name">
@@ -181,6 +209,7 @@
                   inputmode="numeric"
                   bind:value={tagOrder}
                   placeholder={tagOrderPlaceholder}
+                  title={m["admin.tag_order_help"]()}
                   disabled={busy}
                 />
               </div>
@@ -195,6 +224,7 @@
                   bind:value={tag1}
                   list="mirror-tag1-options"
                   placeholder={item.tag1 ?? ""}
+                  title={m["admin.tag1_help"]()}
                   disabled={busy}
                 />
               </div>
@@ -211,6 +241,7 @@
               bind:value={tag2}
               list="mirror-tag2-options"
               placeholder={item.tag2 ?? ""}
+              title={m["admin.tag2_help"]()}
               disabled={busy}
             />
           </div>
