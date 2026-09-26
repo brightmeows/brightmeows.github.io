@@ -12,6 +12,7 @@ import { ApiUnavailableError } from "./mirror-user-api";
 
 import { apiBase } from "$lib/constants/site";
 import { m } from "$lib/paraglide/messages.js";
+import type { MirrorMetaFields } from "$lib/types/bms";
 import { messageInputs, translateMessage } from "$lib/utils/i18n";
 
 /** 回收站条目（表级聚合）。 */
@@ -136,7 +137,7 @@ export async function adminReplace(
 export async function adminMeta(
   url: string,
   action: "set" | "clear",
-  fields: { name?: string; symbol?: string; tag1?: string; tag2?: string; tag_order?: string }
+  fields: MirrorMetaFields
 ): Promise<AdminMutationResult> {
   return requestAdmin("/api/admin/meta", { action, url, ...fields });
 }

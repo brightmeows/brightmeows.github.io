@@ -1,4 +1,6 @@
 import type { MirrorTableItem } from "@brightmeows/mirror/types";
+import type { MetaOverride } from "@brightmeows/mirror/user-layer";
+import { normalizeTableUrl } from "@brightmeows/mirror/user-layer";
 
 import { m } from "$lib/paraglide/messages.js";
 import type { Tag1Group, Tag2Group } from "$lib/types/bms";
@@ -101,4 +103,39 @@ export function groupByTags(tables: MirrorTableItem[]): Tag1Group[] {
 
   tag1Groups.sort((a, b) => a.order - b.order || a.tag1.localeCompare(b.tag1));
   return tag1Groups;
+}
+
+/** 清单条目的源 URL：加载器把 `url` 重写为站内镜像路径后，原始来源存在 `url_from`。 */
+export function sourceUrlOf(item: MirrorTableItem): string {
+  return item.url_from ?? item.url;
+}
+
+/** 按源 URL 归一化匹配该条目的元数据覆盖记录。 */
+export function findMetaOverride(
+  overrides: readonly MetaOverride[] | null,
+  item: MirrorTableItem
+): MetaOverride | null {
+  if (overrides === null) return null;
+  const key = normalizeTableUrl(sourceUrlOf(item));
+  for (const override of overrides) {
+    if (normalizeTableUrl(override.url) === key) return override;
+  }
+  return null;
+}
+
+/** 本地更新授权标记（按清单条目的站内 url 定位，保持数组顺序）。 */
+export function setTableProtected(
+  tables: readonly MirrorTableItem[],
+  url: string,
+  protectedValue: boolean
+): MirrorTableItem[] {
+  return tables.map((item) => (item.url === url ? { ...item, protected: protectedValue } : item));
+}
+
+/** 本地移除条目（管理员禁用后立即从列表消失）。 */
+export function removeTableByUrl(
+  tables: readonly MirrorTableItem[],
+  url: string
+): MirrorTableItem[] {
+  return tables.filter((item) => item.url !== url);
 }

@@ -7,7 +7,7 @@
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
   import ScrollSyncGroup from "$lib/components/ui/ScrollSyncGroup.svelte";
   import { m } from "$lib/paraglide/messages.js";
-  import type { Tag1Group, Tag2Group } from "$lib/types/bms";
+  import type { MirrorAdminUi, Tag1Group, Tag2Group } from "$lib/types/bms";
   import type { JsonPreviewHandle } from "$lib/types/ui";
   import { slugifyTag } from "$lib/utils/mirror-tables";
 
@@ -22,6 +22,7 @@
   type CheckboxState = (typeof CheckboxState)[keyof typeof CheckboxState];
 
   interface Props {
+    adminUi: MirrorAdminUi;
     groups?: Tag1Group[];
     selectedMap?: Record<string, boolean>;
     mirrorPreview?: JsonPreviewHandle | undefined;
@@ -33,6 +34,7 @@
   }
 
   let {
+    adminUi,
     groups = [],
     selectedMap = $bindable({}),
     mirrorPreview,
@@ -175,16 +177,26 @@
                       <col class="w-15" />
                       <col class="w-30" />
                       <col class="w-[320px]" />
+                      <col class="w-16" />
                       <col class="w-40" />
                       <col class="w-40" />
+                      {#if adminUi.isAdmin}<col class="w-16" />{/if}
                     </colgroup>
                     <thead>
                       <tr>
                         <th class="table-th-glass">{m["common.th_select"]()}</th>
                         <th class="table-th-glass">{m["common.th_symbol"]()}</th>
                         <th class="table-th-glass">{m["common.th_name"]()}</th>
+                        <th class="table-th-glass px-2 whitespace-nowrap"
+                          >{m["mirror.th_auth"]()}</th
+                        >
                         <th class="table-th-glass">{m["common.th_mirror"]()}</th>
                         <th class="table-th-glass">{m["common.th_origin"]()}</th>
+                        {#if adminUi.isAdmin}
+                          <th class="table-th-glass px-2 whitespace-nowrap"
+                            >{m["mirror.th_actions"]()}</th
+                          >
+                        {/if}
                       </tr>
                     </thead>
                     <tbody>
@@ -193,6 +205,7 @@
                           {item}
                           selected={!!selectedMap[item.url]}
                           onchange={(checked: boolean) => onRowChange(checked, item.url)}
+                          {adminUi}
                           {mirrorPreview}
                           deletable={showDelete && item.protected !== true}
                           deleting={deletingDir === item.dir_name}

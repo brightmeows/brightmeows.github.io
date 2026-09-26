@@ -2,10 +2,13 @@
   import type { MirrorTableItem } from "@brightmeows/mirror/types";
   import { mirrorTablePath } from "@brightmeows/mirror/urls";
 
+  import MirrorTableEditRow from "./MirrorTableEditRow.svelte";
+
   import Checkbox from "$lib/components/ui/Checkbox.svelte";
   import GradientButton from "$lib/components/ui/GradientButton.svelte";
   import { jsonPreview } from "$lib/components/ui/JsonPreview.svelte";
   import { m } from "$lib/paraglide/messages.js";
+  import type { MirrorAdminUi } from "$lib/types/bms";
   import type { JsonPreviewHandle } from "$lib/types/ui";
   import { clipboardFieldFeedback } from "$lib/utils/clipboard.svelte";
 
@@ -13,6 +16,7 @@
     item: MirrorTableItem;
     selected: boolean;
     onchange: (checked: boolean) => void;
+    adminUi: MirrorAdminUi;
     mirrorPreview?: JsonPreviewHandle | undefined;
     /** 是否显示删除按钮（已登录且非受保护）。 */
     deletable?: boolean;
@@ -25,6 +29,7 @@
     item,
     selected,
     onchange,
+    adminUi,
     mirrorPreview,
     deletable = false,
     deleting = false,
@@ -32,6 +37,14 @@
   }: Props = $props();
 
   let cb = clipboardFieldFeedback();
+
+  const isExpanded = $derived(adminUi.expandedUrl === item.url);
+  const columnCount = $derived(adminUi.isAdmin ? 7 : 6);
+  const authTitle = $derived(
+    item.protected === true ? m["mirror.protected_title"]() : m["mirror.unprotected_title"]()
+  );
+  const authButtonClass =
+    "flex size-7 cursor-pointer items-center justify-center rounded-md transition-colors duration-200 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50";
 </script>
 
 <tr class="hover:bg-white/5 last:[&>td]:border-b-0">
@@ -56,12 +69,6 @@
       >
         {item.name}
       </strong>
-      {#if item.protected}
-        <span
-          class="rounded border border-[#ffd54f]/40 bg-[#ffd54f]/15 px-1.5 py-[0.1rem] text-[0.75rem] text-[#ffd54f]"
-          title={m["mirror.protected_title"]()}>{m["mirror.authorized_badge"]()}</span
-        >
-      {/if}
       {#if deletable && ondelete}
         <button
           class="cursor-pointer rounded-md border border-red-300/30 bg-red-400/10 px-2 py-[0.2rem] text-[0.8rem] text-red-200 transition-colors duration-200 hover:bg-red-400/20 disabled:cursor-not-allowed disabled:opacity-50"
@@ -73,6 +80,89 @@
         </button>
       {/if}
     </div>
+  </td>
+  <td class="table-td-glass px-2">
+    {#if adminUi.isAdmin}
+      <button
+        class={authButtonClass}
+        type="button"
+        title={authTitle}
+        aria-label={authTitle}
+        disabled={adminUi.busy}
+        onclick={() => adminUi.authorize(item)}
+      >
+        {#if item.protected === true}
+          <svg
+            class="size-4 text-success"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M20 6 9 17l-5-5" />
+          </svg>
+        {:else}
+          <svg
+            class="size-4 text-[#ffd54f]"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path
+              d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"
+            />
+            <path d="M12 9v4" />
+            <path d="M12 17h.01" />
+          </svg>
+        {/if}
+      </button>
+    {:else}
+      <span
+        class="flex size-7 items-center justify-center"
+        title={authTitle}
+        role="img"
+        aria-label={authTitle}
+      >
+        {#if item.protected === true}
+          <svg
+            class="size-4 text-success"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M20 6 9 17l-5-5" />
+          </svg>
+        {:else}
+          <svg
+            class="size-4 text-[#ffd54f]"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path
+              d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"
+            />
+            <path d="M12 9v4" />
+            <path d="M12 17h.01" />
+          </svg>
+        {/if}
+      </span>
+    {/if}
   </td>
   <td class="table-td-glass min-w-32.5 wrap-break-word">
     <div class="flex items-center gap-1">
@@ -128,4 +218,51 @@
       <span class="text-white/50">{m["common.none"]()}</span>
     {/if}
   </td>
+  {#if adminUi.isAdmin}
+    <td class="table-td-glass px-2">
+      <button
+        class={authButtonClass}
+        type="button"
+        title={m["mirror.edit_table_title"]()}
+        aria-label={m["mirror.edit_table_title"]()}
+        aria-expanded={isExpanded}
+        onclick={() => adminUi.toggleEdit(item)}
+      >
+        <svg
+          class="size-4 text-white/70"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M12 20h9" />
+          <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+        </svg>
+      </button>
+    </td>
+  {/if}
 </tr>
+
+{#if adminUi.isAdmin && isExpanded}
+  {#if adminUi.overviewState === "idle" || adminUi.overviewState === "loading"}
+    <tr class="bg-black/30 last:[&>td]:border-b-0">
+      <td colspan={columnCount} class="table-td-glass text-[0.9rem] text-white/60">
+        {m["mirror.loading_override"]()}
+      </td>
+    </tr>
+  {:else}
+    <MirrorTableEditRow
+      {item}
+      colCount={columnCount}
+      override={adminUi.overrideOf(item)}
+      busy={adminUi.busy}
+      ondisable={(note: string) => adminUi.disable(item, note)}
+      onmetasave={(fields) => adminUi.saveMeta(item, fields)}
+      onmetaclear={() => adminUi.clearMeta(item)}
+      oncollapse={() => adminUi.toggleEdit(item)}
+    />
+  {/if}
+{/if}
