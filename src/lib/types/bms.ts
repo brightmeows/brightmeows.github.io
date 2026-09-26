@@ -119,4 +119,10 @@ export interface MirrorAdminUi {
   disable: (item: MirrorTableItem, note: string) => void;
   saveMeta: (item: MirrorTableItem, fields: MirrorMetaFields) => void;
   clearMeta: (item: MirrorTableItem) => void;
+  /** 清单中出现过的一级标签值（去重排序，供编辑建议）。 */
+  tag1Options: string[];
+  /** 清单中出现过的二级标签值（去重排序，供编辑建议）。 */
+  tag2Options: string[];
+  /** 下一个可用的一级标签序号（现有最大值加一）。 */
+  nextTagOrder: string;
 }

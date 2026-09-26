@@ -31,12 +31,15 @@
   import { clipboardFeedback } from "$lib/utils/clipboard.svelte";
   import {
     buildSearchNeedles,
+    collectTagValues,
     filterTables,
     findMetaOverride,
     groupByTags,
+    nextTagOrder,
     removeTableByUrl,
     setTableProtected,
     sourceUrlOf,
+    tableLabelOf,
   } from "$lib/utils/mirror-tables";
   import { buildGroupTocItems } from "$lib/utils/toc";
 
@@ -73,6 +76,11 @@
   let currentHash = $state("");
 
   const isAdmin = $derived(auth.status === "ready" && auth.user?.role === "admin");
+
+  // 标签编辑建议：现有值去重排序，新标签序号取现有最大值加一
+  const tag1Options = $derived(collectTagValues(tables, "tag1"));
+  const tag2Options = $derived(collectTagValues(tables, "tag2"));
+  const nextOrder = $derived(nextTagOrder(tables));
 
   // opencc-js 约 1.1MB：转换器在搜索框首次聚焦时才懒加载（共享 store，见 search-converters.svelte）
 
@@ -203,11 +211,6 @@
     }
   }
 
-  function tableLabel(item: MirrorTableItem): string {
-    if (item.name !== "") return item.name;
-    return item.dir_name ?? m["mirror.default_name"]();
-  }
-
   function toggleEdit(item: MirrorTableItem): void {
     if (!isAdmin) return;
     expandedUrl = expandedUrl === item.url ? null : item.url;
@@ -222,7 +225,7 @@
   function handleAuthorize(item: MirrorTableItem): void {
     if (!isAdmin) return;
     const action: "add" | "remove" = item.protected === true ? "remove" : "add";
-    const label = tableLabel(item);
+    const label = tableLabelOf(item);
     const confirmText =
       action === "add"
         ? m["mirror.auth_confirm_add"]({ name: label })
@@ -240,7 +243,7 @@
 
   function handleDisable(item: MirrorTableItem, note: string): void {
     if (!isAdmin) return;
-    const label = tableLabel(item);
+    const label = tableLabelOf(item);
     if (!window.confirm(m["mirror.disable_confirm"]({ name: label }))) return;
     void runAdmin(
       async () => {
@@ -256,7 +259,7 @@
 
   function handleMetaSave(item: MirrorTableItem, fields: MirrorMetaFields): void {
     if (!isAdmin) return;
-    const label = tableLabel(item);
+    const label = tableLabelOf(item);
     void runAdmin(
       async () => {
         await adminMeta(sourceUrlOf(item), "set", fields);
@@ -270,7 +273,7 @@
 
   function handleMetaClear(item: MirrorTableItem): void {
     if (!isAdmin) return;
-    const label = tableLabel(item);
+    const label = tableLabelOf(item);
     void runAdmin(
       async () => {
         await adminMeta(sourceUrlOf(item), "clear", {});
@@ -331,6 +334,9 @@
     disable: (item: MirrorTableItem, note: string) => handleDisable(item, note),
     saveMeta: (item: MirrorTableItem, fields: MirrorMetaFields) => handleMetaSave(item, fields),
     clearMeta: (item: MirrorTableItem) => handleMetaClear(item),
+    tag1Options,
+    tag2Options,
+    nextTagOrder: nextOrder,
   });
 
   onMount(() => {

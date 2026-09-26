@@ -4,13 +4,17 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildSearchNeedles,
+  collectTagValues,
   filterTables,
   findMetaOverride,
   groupByTags,
+  nextTagOrder,
   removeTableByUrl,
   setTableProtected,
+  shouldSuggestTagOrder,
   slugifyTag,
   sourceUrlOf,
+  tableLabelOf,
 } from "./mirror-tables";
 
 import { m } from "$lib/paraglide/messages.js";
@@ -100,6 +104,14 @@ describe("sourceUrlOf", () => {
   });
 });
 
+describe("tableLabelOf", () => {
+  it("优先名称，其次目录名，最后默认文案", () => {
+    expect(tableLabelOf({ name: "表", url: "u" })).toBe("表");
+    expect(tableLabelOf({ name: "", dir_name: "[x] y", url: "u" })).toBe("[x] y");
+    expect(tableLabelOf({ name: "", url: "u" })).toBe(m["mirror.default_name"]());
+  });
+});
+
 describe("findMetaOverride", () => {
   const override: MetaOverride = {
     url: "https://src.example/table.html",
@@ -145,5 +157,42 @@ describe("removeTableByUrl", () => {
     ];
     expect(removeTableByUrl(items, "u1")).toEqual([items[1]]);
     expect(removeTableByUrl(items, "missing")).toEqual(items);
+  });
+});
+
+describe("collectTagValues", () => {
+  it("去重、去空白、按本地化排序，空值忽略", () => {
+    const items: MirrorTableItem[] = [
+      { name: "a", url: "u1", tag1: "SP" },
+      { name: "b", url: "u2", tag1: "DP" },
+      { name: "c", url: "u3", tag1: " SP " },
+      { name: "d", url: "u4", tag2: "Personal" },
+      { name: "e", url: "u5", tag1: "" },
+    ];
+    expect(collectTagValues(items, "tag1")).toEqual(["DP", "SP"]);
+    expect(collectTagValues(items, "tag2")).toEqual(["Personal"]);
+  });
+});
+
+describe("nextTagOrder", () => {
+  it("取数字序号最大值加一，忽略非法值", () => {
+    const items: MirrorTableItem[] = [
+      { name: "a", url: "u1", tag_order: "1" },
+      { name: "b", url: "u2", tag_order: "4" },
+      { name: "c", url: "u3", tag_order: 3 },
+      { name: "d", url: "u4", tag_order: "abc" },
+      { name: "e", url: "u5" },
+    ];
+    expect(nextTagOrder(items)).toBe("5");
+    expect(nextTagOrder([])).toBe("1");
+  });
+});
+
+describe("shouldSuggestTagOrder", () => {
+  it("新值给出建议，已有值与空值不给", () => {
+    expect(shouldSuggestTagOrder("NEW", ["SP", "DP"])).toBe(true);
+    expect(shouldSuggestTagOrder(" SP ", ["SP", "DP"])).toBe(false);
+    expect(shouldSuggestTagOrder("", ["SP"])).toBe(false);
+    expect(shouldSuggestTagOrder("  ", ["SP"])).toBe(false);
   });
 });

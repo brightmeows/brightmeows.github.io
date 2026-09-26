@@ -43,6 +43,9 @@
     ondelete,
   }: Props = $props();
 
+  // 操作列需容纳“编辑与删除”：管理员或已登录用户可见；匿名访客保持六列
+  const showActions = $derived(adminUi.isAdmin || showDelete);
+
   function scrollToTag1(tag1: string): void {
     const id = `tag1-group-${slugifyTag(tag1)}`;
     const el = document.getElementById(id);
@@ -180,7 +183,7 @@
                       <col class="w-16" />
                       <col class="w-40" />
                       <col class="w-40" />
-                      {#if adminUi.isAdmin}<col class="w-16" />{/if}
+                      {#if showActions}<col class="w-16" />{/if}
                     </colgroup>
                     <thead>
                       <tr>
@@ -192,7 +195,7 @@
                         >
                         <th class="table-th-glass">{m["common.th_mirror"]()}</th>
                         <th class="table-th-glass">{m["common.th_origin"]()}</th>
-                        {#if adminUi.isAdmin}
+                        {#if showActions}
                           <th class="table-th-glass px-2 whitespace-nowrap"
                             >{m["mirror.th_actions"]()}</th
                           >
@@ -206,8 +209,9 @@
                           selected={!!selectedMap[item.url]}
                           onchange={(checked: boolean) => onRowChange(checked, item.url)}
                           {adminUi}
+                          {showActions}
+                          canDelete={showDelete}
                           {mirrorPreview}
-                          deletable={showDelete && item.protected !== true}
                           deleting={deletingDir === item.dir_name}
                           {ondelete}
                         />
