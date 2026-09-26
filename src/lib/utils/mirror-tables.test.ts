@@ -1,7 +1,17 @@
 import type { MirrorTableItem } from "@brightmeows/mirror/types";
+import type { MetaOverride } from "@brightmeows/mirror/user-layer";
 import { describe, expect, it } from "vitest";
 
-import { buildSearchNeedles, filterTables, groupByTags, slugifyTag } from "./mirror-tables";
+import {
+  buildSearchNeedles,
+  filterTables,
+  findMetaOverride,
+  groupByTags,
+  removeTableByUrl,
+  setTableProtected,
+  slugifyTag,
+  sourceUrlOf,
+} from "./mirror-tables";
 
 import { m } from "$lib/paraglide/messages.js";
 
@@ -78,5 +88,62 @@ describe("groupByTags", () => {
     const groups = groupByTags([{ name: "x", url: "u" }]);
     expect(groups[0]!.tag1).toBe(m["mirror.untagged"]());
     expect(groups[0]!.subgroups[0]!.tag2).toBe(m["mirror.other"]());
+  });
+});
+
+describe("sourceUrlOf", () => {
+  it("优先返回 url_from，缺失时回落到 url", () => {
+    expect(
+      sourceUrlOf({ name: "a", url: "https://site/mirror/x/", url_from: "https://src/x" })
+    ).toBe("https://src/x");
+    expect(sourceUrlOf({ name: "a", url: "https://src/x" })).toBe("https://src/x");
+  });
+});
+
+describe("findMetaOverride", () => {
+  const override: MetaOverride = {
+    url: "https://src.example/table.html",
+    name: "覆盖名",
+    updated_at: "t",
+  };
+  const item: MirrorTableItem = {
+    name: "原名",
+    url: "https://site/bms/table/mirror/x/",
+    url_from: "https://src.example/table.html",
+  };
+
+  it("按源 URL 归一化匹配覆盖记录", () => {
+    expect(findMetaOverride([override], item)).toBe(override);
+  });
+
+  it("无覆盖或未命中时返回 null", () => {
+    expect(findMetaOverride(null, item)).toBeNull();
+    expect(findMetaOverride([], item)).toBeNull();
+    expect(findMetaOverride([{ ...override, url: "https://other.example/" }], item)).toBeNull();
+  });
+});
+
+describe("setTableProtected", () => {
+  it("只改命中条目的标记，返回新数组", () => {
+    const items: MirrorTableItem[] = [
+      { name: "a", url: "u1" },
+      { name: "b", url: "u2", protected: true },
+    ];
+    const next = setTableProtected(items, "u1", true);
+    expect(next).not.toBe(items);
+    expect(next[0]!.protected).toBe(true);
+    expect(next[1]!.protected).toBe(true);
+    expect(items[0]!.protected).toBeUndefined();
+  });
+});
+
+describe("removeTableByUrl", () => {
+  it("移除命中条目，未命中时内容不变", () => {
+    const items: MirrorTableItem[] = [
+      { name: "a", url: "u1" },
+      { name: "b", url: "u2" },
+    ];
+    expect(removeTableByUrl(items, "u1")).toEqual([items[1]]);
+    expect(removeTableByUrl(items, "missing")).toEqual(items);
   });
 });

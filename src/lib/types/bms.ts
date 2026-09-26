@@ -1,4 +1,5 @@
 import type { MirrorTableItem } from "@brightmeows/mirror/types";
+import type { MetaOverride } from "@brightmeows/mirror/user-layer";
 
 /** 难度表列表项 */
 export interface TableEntry {
@@ -93,3 +94,29 @@ export interface LoadProgressEvent {
 
 /** 加载进度回调 */
 export type ProgressCallback = (event: LoadProgressEvent) => void;
+
+/** 元数据覆盖的可编辑字段（留空表示不覆盖该项）。 */
+export interface MirrorMetaFields {
+  name?: string | undefined;
+  symbol?: string | undefined;
+  tag1?: string | undefined;
+  tag2?: string | undefined;
+  tag_order?: string | undefined;
+}
+
+/** 管理区 overview 的加载状态。 */
+export type MirrorOverviewState = "idle" | "loading" | "ready" | "error";
+
+/** 列表页向行组件传递的管理交互面（非管理员时 isAdmin 为 false）。 */
+export interface MirrorAdminUi {
+  isAdmin: boolean;
+  overviewState: MirrorOverviewState;
+  expandedUrl: string | null;
+  busy: boolean;
+  overrideOf: (item: MirrorTableItem) => MetaOverride | null;
+  toggleEdit: (item: MirrorTableItem) => void;
+  authorize: (item: MirrorTableItem) => void;
+  disable: (item: MirrorTableItem, note: string) => void;
+  saveMeta: (item: MirrorTableItem, fields: MirrorMetaFields) => void;
+  clearMeta: (item: MirrorTableItem) => void;
+}

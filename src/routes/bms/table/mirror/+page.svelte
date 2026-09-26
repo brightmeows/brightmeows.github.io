@@ -1,8 +1,10 @@
 <script lang="ts">
   import type { MirrorTableItem } from "@brightmeows/mirror/types";
+  import type { DisabledEntry } from "@brightmeows/mirror/user-layer";
   import { onMount, tick } from "svelte";
 
   import GroupedTablesSection from "$lib/components/bms/GroupedTablesSection.svelte";
+  import MirrorAdminPanel from "$lib/components/bms/MirrorAdminPanel.svelte";
   import MirrorUserActions from "$lib/components/bms/MirrorUserActions.svelte";
   import SelectedTablesPanel from "$lib/components/bms/SelectedTablesPanel.svelte";
   import PageShell from "$lib/components/layout/PageShell.svelte";
@@ -10,13 +12,32 @@
   import JsonPreview from "$lib/components/ui/JsonPreview.svelte";
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
   import { auth } from "$lib/data/auth-store.svelte";
+  import {
+    adminAuthorize,
+    adminDisable,
+    adminMeta,
+    adminReplace,
+    adminRestore,
+    fetchAdminOverview,
+    type AdminOverview,
+    type TrashEntry,
+  } from "$lib/data/mirror-admin-api";
   import { loadMirrorTables } from "$lib/data/mirror-table-loader";
   import { submitDelete } from "$lib/data/mirror-user-api";
   import { searchConverters } from "$lib/data/search-converters.svelte";
   import { m } from "$lib/paraglide/messages.js";
+  import type { MirrorAdminUi, MirrorMetaFields, MirrorOverviewState } from "$lib/types/bms";
   import type { JsonPreviewHandle, TocItem } from "$lib/types/ui";
   import { clipboardFeedback } from "$lib/utils/clipboard.svelte";
-  import { buildSearchNeedles, filterTables, groupByTags } from "$lib/utils/mirror-tables";
+  import {
+    buildSearchNeedles,
+    filterTables,
+    findMetaOverride,
+    groupByTags,
+    removeTableByUrl,
+    setTableProtected,
+    sourceUrlOf,
+  } from "$lib/utils/mirror-tables";
   import { buildGroupTocItems } from "$lib/utils/toc";
 
   const tablesJsonPath = "/bms/table/mirror/tables.json";
@@ -41,6 +62,17 @@
   let actionNotice = $state<{ kind: "ok" | "error"; text: string } | null>(null);
 
   let mirrorPreview = $state<JsonPreviewHandle | undefined>(undefined);
+
+  // ---- 管理交互（仅 ADMIN_LOGIN 角色可见，服务端权限不变） ----
+  let expandedUrl = $state<string | null>(null);
+  let overview = $state<AdminOverview | null>(null);
+  let overviewState = $state<MirrorOverviewState>("idle");
+  let overviewError = $state<string | null>(null);
+  let adminBusy = $state(false);
+  let adminPanelOpen = $state(false);
+  let currentHash = $state("");
+
+  const isAdmin = $derived(auth.status === "ready" && auth.user?.role === "admin");
 
   // opencc-js 约 1.1MB：转换器在搜索框首次聚焦时才懒加载（共享 store，见 search-converters.svelte）
 
@@ -79,9 +111,24 @@
     ];
   });
 
-  async function loadTables(): Promise<void> {
+  // 顶栏管理入口以 #mirror-admin 锚点落页：登录态就绪后展开管理区并滚动到位
+  $effect(() => {
+    if (!isAdmin || currentHash !== "#mirror-admin") return;
+    if (!adminPanelOpen) {
+      adminPanelOpen = true;
+      void loadOverview();
+    }
+    void tick().then(() => {
+      document.getElementById("mirror-admin")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  });
+
+  async function loadTables(cacheBust = false): Promise<void> {
     try {
-      tables = await loadMirrorTables(tablesJsonPath, baseRoute);
+      tables = await loadMirrorTables(tablesJsonPath, baseRoute, { cacheBust });
       error = null;
     } catch (e) {
       error = e instanceof Error ? e.message : m["common.unknown_error"]();
@@ -92,7 +139,7 @@
 
   /** 用户操作（添加/删除/恢复）后刷新清单与登录态。 */
   function handleUserChanged(): void {
-    void loadTables();
+    void loadTables(true);
   }
 
   async function handleDelete(item: MirrorTableItem): Promise<void> {
@@ -107,7 +154,7 @@
     try {
       await submitDelete(dirName);
       actionNotice = { kind: "ok", text: m["mirror.deleted"]({ name: label }) };
-      await loadTables();
+      await loadTables(true);
       await userActions?.refresh();
     } catch (e) {
       actionNotice = {
@@ -119,9 +166,181 @@
     }
   }
 
+  // ---- 管理区与行内治理 ----
+
+  async function loadOverview(force = false): Promise<void> {
+    if (!isAdmin) return;
+    if (!force && overview !== null) return;
+    if (overviewState === "loading") return;
+    overviewState = "loading";
+    try {
+      overview = await fetchAdminOverview();
+      overviewState = "ready";
+      overviewError = null;
+    } catch (e) {
+      overviewError = e instanceof Error ? e.message : m["common.unknown_error"]();
+      overviewState = overview === null ? "error" : "ready";
+    }
+  }
+
+  /** 串行执行管理写操作：成功后提示，失败展示错误；忙时忽略新点击。 */
+  async function runAdmin(action: () => Promise<void>, okText: string): Promise<boolean> {
+    if (adminBusy) return false;
+    adminBusy = true;
+    actionNotice = null;
+    try {
+      await action();
+      actionNotice = { kind: "ok", text: okText };
+      return true;
+    } catch (e) {
+      actionNotice = {
+        kind: "error",
+        text: e instanceof Error ? e.message : m["admin.action_failed"](),
+      };
+      return false;
+    } finally {
+      adminBusy = false;
+    }
+  }
+
+  function tableLabel(item: MirrorTableItem): string {
+    if (item.name !== "") return item.name;
+    return item.dir_name ?? m["mirror.default_name"]();
+  }
+
+  function toggleEdit(item: MirrorTableItem): void {
+    if (!isAdmin) return;
+    expandedUrl = expandedUrl === item.url ? null : item.url;
+    if (expandedUrl !== null) void loadOverview();
+  }
+
+  function toggleAdminPanel(): void {
+    adminPanelOpen = !adminPanelOpen;
+    if (adminPanelOpen) void loadOverview();
+  }
+
+  function handleAuthorize(item: MirrorTableItem): void {
+    if (!isAdmin) return;
+    const action: "add" | "remove" = item.protected === true ? "remove" : "add";
+    const label = tableLabel(item);
+    const confirmText =
+      action === "add"
+        ? m["mirror.auth_confirm_add"]({ name: label })
+        : m["mirror.auth_confirm_remove"]({ name: label });
+    if (!window.confirm(confirmText)) return;
+    void runAdmin(
+      async () => {
+        await adminAuthorize(sourceUrlOf(item), item.dir_name, action);
+        tables = setTableProtected(tables, item.url, action === "add");
+        await loadTables(true);
+      },
+      action === "add" ? m["admin.joined"]({ name: label }) : m["admin.removed"]({ name: label })
+    );
+  }
+
+  function handleDisable(item: MirrorTableItem, note: string): void {
+    if (!isAdmin) return;
+    const label = tableLabel(item);
+    if (!window.confirm(m["mirror.disable_confirm"]({ name: label }))) return;
+    void runAdmin(
+      async () => {
+        await adminDisable(sourceUrlOf(item), item.dir_name, "add", note === "" ? undefined : note);
+        tables = removeTableByUrl(tables, item.url);
+        if (expandedUrl === item.url) expandedUrl = null;
+        await loadTables(true);
+        await loadOverview(true);
+      },
+      m["admin.disabled"]({ name: label })
+    );
+  }
+
+  function handleMetaSave(item: MirrorTableItem, fields: MirrorMetaFields): void {
+    if (!isAdmin) return;
+    const label = tableLabel(item);
+    void runAdmin(
+      async () => {
+        await adminMeta(sourceUrlOf(item), "set", fields);
+        expandedUrl = null;
+        await loadTables(true);
+        await loadOverview(true);
+      },
+      m["admin.meta_saved"]({ name: label })
+    );
+  }
+
+  function handleMetaClear(item: MirrorTableItem): void {
+    if (!isAdmin) return;
+    const label = tableLabel(item);
+    void runAdmin(
+      async () => {
+        await adminMeta(sourceUrlOf(item), "clear", {});
+        expandedUrl = null;
+        await loadTables(true);
+        await loadOverview(true);
+      },
+      m["admin.meta_cleared"]({ name: label })
+    );
+  }
+
+  function handleReplaceAdd(from: string, to: string): Promise<boolean> {
+    return runAdmin(async () => {
+      await adminReplace(from, to, "add");
+      await loadTables(true);
+      await loadOverview(true);
+    }, m["admin.rule_added"]());
+  }
+
+  function handleReplaceRemove(from: string): Promise<boolean> {
+    return runAdmin(async () => {
+      await adminReplace(from, undefined, "remove");
+      await loadTables(true);
+      await loadOverview(true);
+    }, m["admin.rule_removed"]());
+  }
+
+  function handleEnable(entry: DisabledEntry): Promise<boolean> {
+    return runAdmin(
+      async () => {
+        await adminDisable(entry.url, entry.dir_name, "remove");
+        await loadTables(true);
+        await loadOverview(true);
+      },
+      m["admin.enabled"]({ name: entry.dir_name ?? entry.url })
+    );
+  }
+
+  function handleRestore(entry: TrashEntry): Promise<boolean> {
+    return runAdmin(
+      async () => {
+        await adminRestore(entry.dir_name);
+        await loadTables(true);
+        await loadOverview(true);
+      },
+      m["admin.restored"]({ dir: entry.dir_name })
+    );
+  }
+
+  const adminUi = $derived<MirrorAdminUi>({
+    isAdmin,
+    overviewState,
+    expandedUrl,
+    busy: adminBusy,
+    overrideOf: (item: MirrorTableItem) => findMetaOverride(overview?.meta ?? null, item),
+    toggleEdit: (item: MirrorTableItem) => toggleEdit(item),
+    authorize: (item: MirrorTableItem) => handleAuthorize(item),
+    disable: (item: MirrorTableItem, note: string) => handleDisable(item, note),
+    saveMeta: (item: MirrorTableItem, fields: MirrorMetaFields) => handleMetaSave(item, fields),
+    clearMeta: (item: MirrorTableItem) => handleMetaClear(item),
+  });
+
   onMount(() => {
     void loadTables();
-    void tick();
+    const syncHash = (): void => {
+      currentHash = window.location.hash;
+    };
+    syncHash();
+    window.addEventListener("hashchange", syncHash);
+    return () => window.removeEventListener("hashchange", syncHash);
   });
 </script>
 
@@ -178,6 +397,18 @@
         />
         {m["mirror.protected_filter"]()}
       </label>
+      {#if isAdmin}
+        <button
+          class="cursor-pointer rounded-md border px-2 py-[0.35rem] text-[0.85rem] transition-colors duration-200 {adminPanelOpen
+            ? 'border-[#64b5f6]/60 bg-[#64b5f6]/20 text-[#64b5f6]'
+            : 'border-white/20 text-white/50 hover:border-white/40 hover:text-white/70'}"
+          type="button"
+          aria-expanded={adminPanelOpen}
+          onclick={toggleAdminPanel}
+        >
+          {m["mirror.manage"]()}
+        </button>
+      {/if}
     </div>
 
     <div class="relative w-full">
@@ -207,6 +438,24 @@
         })}
       </div>
     {/if}
+
+    {#if isAdmin}
+      <div id="mirror-admin" class="scroll-mt-5">
+        {#if adminPanelOpen}
+          <MirrorAdminPanel
+            {overviewState}
+            error={overviewError}
+            {overview}
+            busy={adminBusy}
+            onretry={() => void loadOverview(true)}
+            onreplaceadd={handleReplaceAdd}
+            onreplaceremove={handleReplaceRemove}
+            onenable={handleEnable}
+            onrestore={handleRestore}
+          />
+        {/if}
+      </div>
+    {/if}
   </div>
 
   {#if loading}
@@ -223,6 +472,7 @@
     <GroupedTablesSection
       bind:selectedMap
       groups={groupedByTags}
+      {adminUi}
       {mirrorPreview}
       showDelete={auth.user !== null}
       {deletingDir}
