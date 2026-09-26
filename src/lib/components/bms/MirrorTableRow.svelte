@@ -11,15 +11,18 @@
   import type { MirrorAdminUi } from "$lib/types/bms";
   import type { JsonPreviewHandle } from "$lib/types/ui";
   import { clipboardFieldFeedback } from "$lib/utils/clipboard.svelte";
+  import { tableLabelOf } from "$lib/utils/mirror-tables";
 
   interface Props {
     item: MirrorTableItem;
     selected: boolean;
     onchange: (checked: boolean) => void;
     adminUi: MirrorAdminUi;
+    /** 是否渲染行尾操作列（管理员或已登录用户）。 */
+    showActions: boolean;
+    /** 是否能执行删除（已登录）；管理员删除在编辑卡片内，贡献者在行尾。 */
+    canDelete?: boolean;
     mirrorPreview?: JsonPreviewHandle | undefined;
-    /** 是否显示删除按钮（已登录且非受保护）。 */
-    deletable?: boolean;
     /** 删除进行中：按钮禁用。 */
     deleting?: boolean;
     ondelete?: ((item: MirrorTableItem) => void) | undefined;
@@ -30,8 +33,9 @@
     selected,
     onchange,
     adminUi,
+    showActions,
+    canDelete = false,
     mirrorPreview,
-    deletable = false,
     deleting = false,
     ondelete,
   }: Props = $props();
@@ -39,12 +43,17 @@
   let cb = clipboardFieldFeedback();
 
   const isExpanded = $derived(adminUi.expandedUrl === item.url);
-  const columnCount = $derived(adminUi.isAdmin ? 7 : 6);
+  const columnCount = $derived(showActions ? 7 : 6);
   const authTitle = $derived(
     item.protected === true ? m["mirror.protected_title"]() : m["mirror.unprotected_title"]()
   );
-  const authButtonClass =
+  const deleteLabel = $derived(
+    deleting ? m["mirror.deleting"]() : m["mirror.delete_aria"]({ name: tableLabelOf(item) })
+  );
+  const iconButtonClass =
     "flex size-7 cursor-pointer items-center justify-center rounded-md transition-colors duration-200 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50";
+  const trashButtonClass =
+    "flex size-7 cursor-pointer items-center justify-center rounded-md text-red-200/80 transition-colors duration-200 hover:bg-red-400/20 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-50";
 </script>
 
 <tr class="hover:bg-white/5 last:[&>td]:border-b-0">
@@ -55,36 +64,24 @@
     {item.symbol ?? ""}
   </td>
   <td class="table-td-glass min-w-50 wrap-break-word">
-    <div class="flex flex-wrap items-center gap-2">
-      <strong
-        class="cursor-default"
-        use:jsonPreview={{
-          preview: mirrorPreview,
-          options: {
-            value: item,
-            label: `${item.name ?? m["mirror.default_name"]()} JSON`,
-            maxHeightRem: 14,
-          },
-        }}
-      >
-        {item.name}
-      </strong>
-      {#if deletable && ondelete}
-        <button
-          class="cursor-pointer rounded-md border border-red-300/30 bg-red-400/10 px-2 py-[0.2rem] text-[0.8rem] text-red-200 transition-colors duration-200 hover:bg-red-400/20 disabled:cursor-not-allowed disabled:opacity-50"
-          type="button"
-          disabled={deleting}
-          onclick={() => ondelete(item)}
-        >
-          {deleting ? m["mirror.deleting"]() : m["mirror.delete"]()}
-        </button>
-      {/if}
-    </div>
+    <strong
+      class="cursor-default"
+      use:jsonPreview={{
+        preview: mirrorPreview,
+        options: {
+          value: item,
+          label: `${item.name ?? m["mirror.default_name"]()} JSON`,
+          maxHeightRem: 14,
+        },
+      }}
+    >
+      {item.name}
+    </strong>
   </td>
   <td class="table-td-glass px-2">
     {#if adminUi.isAdmin}
       <button
-        class={authButtonClass}
+        class={iconButtonClass}
         type="button"
         title={authTitle}
         aria-label={authTitle}
@@ -218,30 +215,60 @@
       <span class="text-white/50">{m["common.none"]()}</span>
     {/if}
   </td>
-  {#if adminUi.isAdmin}
+  {#if showActions}
     <td class="table-td-glass px-2">
-      <button
-        class={authButtonClass}
-        type="button"
-        title={m["mirror.edit_table_title"]()}
-        aria-label={m["mirror.edit_table_title"]()}
-        aria-expanded={isExpanded}
-        onclick={() => adminUi.toggleEdit(item)}
-      >
-        <svg
-          class="size-4 text-white/70"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M12 20h9" />
-          <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
-        </svg>
-      </button>
+      <div class="flex items-center gap-1">
+        {#if adminUi.isAdmin}
+          <button
+            class={iconButtonClass}
+            type="button"
+            title={m["mirror.edit_table_title"]()}
+            aria-label={m["mirror.edit_table_title"]()}
+            aria-expanded={isExpanded}
+            onclick={() => adminUi.toggleEdit(item)}
+          >
+            <svg
+              class="size-4 text-white/70"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+            </svg>
+          </button>
+        {:else if canDelete && item.protected !== true && ondelete}
+          <button
+            class={trashButtonClass}
+            type="button"
+            title={deleteLabel}
+            aria-label={deleteLabel}
+            disabled={deleting}
+            onclick={() => ondelete(item)}
+          >
+            <svg
+              class="size-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M3 6h18" />
+              <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+              <path d="M10 11v6" />
+              <path d="M14 11v6" />
+            </svg>
+          </button>
+        {/if}
+      </div>
     </td>
   {/if}
 </tr>
@@ -259,9 +286,15 @@
       colCount={columnCount}
       override={adminUi.overrideOf(item)}
       busy={adminUi.busy}
+      {canDelete}
+      {deleting}
+      tag1Options={adminUi.tag1Options}
+      tag2Options={adminUi.tag2Options}
+      nextTagOrder={adminUi.nextTagOrder}
       ondisable={(note: string) => adminUi.disable(item, note)}
       onmetasave={(fields) => adminUi.saveMeta(item, fields)}
       onmetaclear={() => adminUi.clearMeta(item)}
+      {ondelete}
       oncollapse={() => adminUi.toggleEdit(item)}
     />
   {/if}

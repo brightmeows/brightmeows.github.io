@@ -123,6 +123,44 @@ export function findMetaOverride(
   return null;
 }
 
+/** 列表内展示用名称：空名称回落到目录名，再回落到默认文案。 */
+export function tableLabelOf(item: MirrorTableItem): string {
+  if (item.name !== "") return item.name;
+  return item.dir_name ?? m["mirror.default_name"]();
+}
+
+/** 收集清单中出现过的标签值（去重、按本地化比较排序）。 */
+export function collectTagValues(
+  tables: readonly MirrorTableItem[],
+  key: "tag1" | "tag2"
+): string[] {
+  const values = new Set<string>();
+  for (const item of tables) {
+    const value = item[key];
+    if (typeof value === "string" && value.trim() !== "") {
+      values.add(value.trim());
+    }
+  }
+  return [...values].sort((a, b) => a.localeCompare(b));
+}
+
+/** 下一个可用的一级标签序号：现有数字序号的最大值加一，无有效值时为 "1"。 */
+export function nextTagOrder(tables: readonly MirrorTableItem[]): string {
+  let max = 0;
+  for (const item of tables) {
+    const raw = item.tag_order;
+    const value = typeof raw === "number" ? raw : parseInt(String(raw ?? ""), 10);
+    if (Number.isFinite(value) && value > max) max = value;
+  }
+  return String(max + 1);
+}
+
+/** 标签 1 名称是否为清单中不存在的新值（决定序号占位是否给出建议）。 */
+export function shouldSuggestTagOrder(draftTag1: string, knownTag1: readonly string[]): boolean {
+  const draft = draftTag1.trim();
+  return draft !== "" && !knownTag1.includes(draft);
+}
+
 /** 本地更新授权标记（按清单条目的站内 url 定位，保持数组顺序）。 */
 export function setTableProtected(
   tables: readonly MirrorTableItem[],
