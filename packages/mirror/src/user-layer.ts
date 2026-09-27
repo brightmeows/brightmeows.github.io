@@ -126,10 +126,17 @@ export interface AuditEntry {
     | "enable"
     | "replace"
     | "meta"
-    | "migrate";
+    | "migrate"
+    | "shared_create"
+    | "shared_save"
+    | "shared_rename"
+    | "shared_remove"
+    | "shared_restore";
   url?: string | undefined;
   dir_name?: string | undefined;
   detail?: string | undefined;
+  /** 折叠计数：保存类审计同表同日只留一行，次数累加在此（首行默认 1）。 */
+  count?: number | undefined;
 }
 
 /** 部署触发节流状态。 */

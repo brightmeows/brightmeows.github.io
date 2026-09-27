@@ -29,6 +29,7 @@ export const topLevelNav: NavItem[] = [
 export const moreNav: NavItem[] = [
   { href: "/bms/table", label: () => m["nav.table"]() },
   { href: "/bms/table/mirror", label: () => m["nav.mirror"]() },
+  { href: "/bms/table/shared", label: () => m["nav.shared"]() },
   { href: "/bms/table/search", label: () => m["nav.search"]() },
   { href: "/bms/table/self-sp", label: () => m["nav.self_sp"]() },
   { href: "/bms/table/self-dp", label: () => m["nav.self_dp"]() },

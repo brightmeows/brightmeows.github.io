@@ -42,16 +42,16 @@ export class RateLimitError extends Error {
 }
 
 /** 角色列：CHECK 约束保证只有这两个取值，转换保持宽松以免历史数据卡住读取。 */
-function toRole(value: unknown): UserRole {
+export function toRole(value: unknown): UserRole {
   return value === "admin" ? "admin" : "user";
 }
 
 /** 可空文本列转可选字段：空串与 NULL 都视为不存在。 */
-function optionalText(value: unknown): string | undefined {
+export function optionalText(value: unknown): string | undefined {
   return typeof value === "string" && value !== "" ? value : undefined;
 }
 
-function text(value: unknown): string {
+export function text(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
 
@@ -164,6 +164,11 @@ function toAuditEntry(row: Record<string, unknown>): AuditEntry | null {
       "replace",
       "meta",
       "migrate",
+      "shared_create",
+      "shared_save",
+      "shared_rename",
+      "shared_remove",
+      "shared_restore",
     ].includes(action)
   ) {
     return null;
@@ -171,6 +176,7 @@ function toAuditEntry(row: Record<string, unknown>): AuditEntry | null {
   const url = optionalText(row.url);
   const dirName = optionalText(row.dir_name);
   const detail = optionalText(row.detail);
+  const count = typeof row.count === "number" ? row.count : undefined;
   return {
     at: text(row.at),
     actor: text(row.actor),
@@ -179,6 +185,7 @@ function toAuditEntry(row: Record<string, unknown>): AuditEntry | null {
     ...(url === undefined ? {} : { url }),
     ...(dirName === undefined ? {} : { dir_name: dirName }),
     ...(detail === undefined ? {} : { detail }),
+    ...(count === undefined ? {} : { count }),
   };
 }
 
@@ -430,11 +437,44 @@ export async function writeAudit(env: Env, entry: AuditEntry): Promise<void> {
 /** 最近的审计记录（后台展示用）。 */
 export async function listAudit(env: Env, limit: number): Promise<AuditEntry[]> {
   const { results } = await env.MIRROR_DB.prepare(
-    "SELECT at, actor, role, action, url, dir_name, detail FROM audit ORDER BY id DESC LIMIT ?"
+    "SELECT at, actor, role, action, url, dir_name, detail, count FROM audit ORDER BY id DESC LIMIT ?"
   )
     .bind(limit)
     .all<Record<string, unknown>>();
   return results.map(toAuditEntry).filter((entry): entry is AuditEntry => entry !== null);
+}
+
+/**
+ * 折叠审计：同一 actor/action/dir_name/UTC 日只保留一行，次数累加到 count，
+ * 行的 at 别新到最近一次。共享表的高频“保存”用它控量（不限频的对价），
+ * 创建/删除/改 id 仍走 writeAudit 逐次记录。
+ */
+export async function writeFoldedAudit(env: Env, entry: AuditEntry): Promise<void> {
+  const day = entry.at.slice(0, 10);
+  const existing = await env.MIRROR_DB.prepare(
+    "SELECT id FROM audit WHERE actor = ? AND action = ? AND dir_name IS ? AND substr(at, 1, 10) = ? ORDER BY id DESC LIMIT 1"
+  )
+    .bind(entry.actor, entry.action, entry.dir_name ?? null, day)
+    .first<{ id: number }>();
+  if (existing !== null) {
+    await env.MIRROR_DB.prepare("UPDATE audit SET at = ?, count = count + 1 WHERE id = ?")
+      .bind(entry.at, existing.id)
+      .run();
+    return;
+  }
+  await env.MIRROR_DB.prepare(
+    "INSERT INTO audit (at, actor, role, action, url, dir_name, detail, count) VALUES (?, ?, ?, ?, ?, ?, ?, 1)"
+  )
+    .bind(
+      entry.at,
+      entry.actor,
+      entry.role,
+      entry.action,
+      entry.url ?? null,
+      entry.dir_name ?? null,
+      entry.detail ?? null
+    )
+    .run();
 }
 
 /** 检查并消耗一次操作配额；超限抛 RateLimitError。返回消耗后的当日次数。 */
@@ -500,26 +540,7 @@ export async function triggerDeploy(env: Env, now: Date): Promise<boolean> {
 
 /** 把表目录整体移入回收站（复制后删除原对象），返回回收站前缀。 */
 export async function moveTableToTrash(env: Env, dirName: string, stamp: string): Promise<string> {
-  const sourcePrefix = `tables/${dirName}/`;
-  const trashPrefix = `trash/${stamp}/${dirName}`;
-  let cursor: string | undefined;
-  do {
-    const listed = await env.MIRROR_BUCKET.list({
-      prefix: sourcePrefix,
-      ...(cursor === undefined ? {} : { cursor }),
-    });
-    for (const object of listed.objects) {
-      const body = await env.MIRROR_BUCKET.get(object.key);
-      if (body === null) {
-        continue;
-      }
-      const relative = object.key.slice(sourcePrefix.length);
-      await env.MIRROR_BUCKET.put(`${trashPrefix}/${relative}`, await body.arrayBuffer());
-      await env.MIRROR_BUCKET.delete(object.key);
-    }
-    cursor = listed.truncated ? listed.cursor : undefined;
-  } while (cursor !== undefined);
-  return trashPrefix;
+  return movePrefixToTrash(env, `tables/${dirName}/`, dirName, stamp);
 }
 
 /** 从回收站恢复表目录，返回恢复的对象数。 */
@@ -528,7 +549,51 @@ export async function restoreTableFromTrash(
   trashPrefix: string,
   dirName: string
 ): Promise<number> {
-  const prefix = `${trashPrefix}/`;
+  return restorePrefixFromTrash(env, trashPrefix, `tables/${dirName}/`);
+}
+
+/**
+ * 把任意前缀下的对象整体移入回收站（复制后删除原对象），返回回收站前缀。
+ * 镜像表（tables/）与共享表（shared/）共用：前缀作为参数传入，回收站布局
+ * 统一为 `trash/<时间戳>/<名字>/`，过期清理由管线的 `rclone delete --min-age`
+ * 一并覆盖。
+ */
+export async function movePrefixToTrash(
+  env: Env,
+  sourcePrefix: string,
+  trashName: string,
+  stamp: string
+): Promise<string> {
+  const source = sourcePrefix.endsWith("/") ? sourcePrefix : `${sourcePrefix}/`;
+  const trashPrefix = `trash/${stamp}/${trashName}`;
+  let cursor: string | undefined;
+  do {
+    const listed = await env.MIRROR_BUCKET.list({
+      prefix: source,
+      ...(cursor === undefined ? {} : { cursor }),
+    });
+    for (const object of listed.objects) {
+      const body = await env.MIRROR_BUCKET.get(object.key);
+      if (body === null) {
+        continue;
+      }
+      const relative = object.key.slice(source.length);
+      await env.MIRROR_BUCKET.put(`${trashPrefix}/${relative}`, await body.arrayBuffer());
+      await env.MIRROR_BUCKET.delete(object.key);
+    }
+    cursor = listed.truncated ? listed.cursor : undefined;
+  } while (cursor !== undefined);
+  return trashPrefix;
+}
+
+/** 从回收站恢复任意前缀下的对象，返回恢复的对象数。 */
+export async function restorePrefixFromTrash(
+  env: Env,
+  trashPrefix: string,
+  targetPrefix: string
+): Promise<number> {
+  const prefix = `${trashPrefix.replace(/\/+$/u, "")}/`;
+  const target = targetPrefix.endsWith("/") ? targetPrefix : `${targetPrefix}/`;
   let restored = 0;
   let cursor: string | undefined;
   do {
@@ -542,7 +607,7 @@ export async function restoreTableFromTrash(
         continue;
       }
       const relative = object.key.slice(prefix.length);
-      await env.MIRROR_BUCKET.put(`tables/${dirName}/${relative}`, await body.arrayBuffer());
+      await env.MIRROR_BUCKET.put(`${target}${relative}`, await body.arrayBuffer());
       await env.MIRROR_BUCKET.delete(object.key);
       restored += 1;
     }

@@ -11,6 +11,15 @@ import { OAUTH_CALLBACK_PATH, type Env } from "./env.ts";
 import { handleMe } from "./handlers/account.ts";
 import { handlePreview } from "./handlers/preview.ts";
 import {
+  handleSharedCheckId,
+  handleSharedCreate,
+  handleSharedDelete,
+  handleSharedRemoved,
+  handleSharedRename,
+  handleSharedRestore,
+  handleSharedSave,
+} from "./handlers/shared.ts";
+import {
   handleAdd,
   handleDelete,
   handleRemoved,
@@ -95,6 +104,28 @@ async function routeApi(request: Request, env: Env, url: URL): Promise<Response>
   const statusMatch = /^\/api\/tables\/status\/([A-Za-z0-9-]+)$/u.exec(path);
   if (statusMatch?.[1] !== undefined && request.method === "GET") {
     return handleStatus(env, statusMatch[1]);
+  }
+  // 共享表：写操作五件套加 id 查询与回收站列表（见 handlers/shared.ts）
+  if (path === "/api/shared/create" && request.method === "POST") {
+    return handleSharedCreate(request, env, now);
+  }
+  if (path === "/api/shared/save" && request.method === "POST") {
+    return handleSharedSave(request, env, now);
+  }
+  if (path === "/api/shared/rename" && request.method === "POST") {
+    return handleSharedRename(request, env, now);
+  }
+  if (path === "/api/shared/delete" && request.method === "POST") {
+    return handleSharedDelete(request, env, now);
+  }
+  if (path === "/api/shared/restore" && request.method === "POST") {
+    return handleSharedRestore(request, env, now);
+  }
+  if (path === "/api/shared/check-id" && request.method === "GET") {
+    return handleSharedCheckId(request, env, url, now);
+  }
+  if (path === "/api/shared/removed" && request.method === "GET") {
+    return handleSharedRemoved(request, env, now);
   }
   return failure(404, "Unknown endpoint", { code: "api.unknown_endpoint" });
 }

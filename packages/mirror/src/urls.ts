@@ -32,3 +32,23 @@ export function r2TableDataUrl(r2Base: string, tableId: string): string {
 export function mirrorTablePath(tableId: string): string {
   return `/bms/table/mirror/${encodeTableId(tableId)}/`;
 }
+
+/** R2 上共享表数据目录的基址：与 `tables/` 平行的独立命名空间。 */
+export function r2SharedBase(r2Base: string): string {
+  return `${normalizeBase(r2Base)}/shared`;
+}
+
+/** R2 上指定共享表的 header.json 完整 URL（公开地址，id 经百分号编码）。 */
+export function r2SharedHeaderUrl(r2Base: string, id: string): string {
+  return `${r2SharedBase(r2Base)}/${encodeTableId(id)}/header.json`;
+}
+
+/** R2 上指定共享表的 data.json 完整 URL（公开地址，id 经百分号编码）。 */
+export function r2SharedDataUrl(r2Base: string, id: string): string {
+  return `${r2SharedBase(r2Base)}/${encodeTableId(id)}/data.json`;
+}
+
+/** 站点内共享表页面的根相对路径。 */
+export function sharedTablePath(id: string): string {
+  return `/bms/table/shared/${encodeTableId(id)}/`;
+}
