@@ -306,8 +306,8 @@ export default {
       return handleSharedPage(request, env, url, sharedEdit[1], locale, false);
     }
     const sharedView = /^\/bms\/table\/shared\/([^/]+)\/$/.exec(path);
-    if (sharedView?.[1] !== undefined) {
-      if (sharedView[1] === "new") return env.ASSETS.fetch(request);
+    if (sharedView?.[1] !== undefined && sharedView[1] !== "new") {
+      // `new/` 是预渲染页，不在此分支：让它落入下方的静态树分发（带语言映射）
       return handleSharedPage(request, env, url, sharedView[1], locale, true);
     }
     const sharedWithoutSlash =
