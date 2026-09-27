@@ -36,6 +36,7 @@
     textToLevelOrder,
     downloadJsonFile,
   } from "$lib/utils/shared-table";
+  import { formatTitle } from "$lib/utils/title";
 
   /**
    * 共享表编辑器：整包编辑（头部核心子集 + 条目表 + 导入面板），
@@ -303,6 +304,10 @@
   const inputClass =
     "w-full rounded-lg border border-white/20 bg-black/20 px-3 py-2 font-mono text-[0.9rem] text-white outline-none placeholder:text-white/40 focus:border-[#64b5f6]/60 focus:ring-1 focus:ring-[#64b5f6]/30 disabled:opacity-60";
 </script>
+
+<svelte:head>
+  <title>{formatTitle(isNew ? m["shared.new_title"]() : tableId)}</title>
+</svelte:head>
 
 <PageShell
   panes={[titlePane, contentPane]}
