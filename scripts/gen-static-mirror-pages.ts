@@ -26,8 +26,13 @@ import {
   serializeSiteTableList,
   transformTableList,
 } from "@brightmeows/mirror/manifest";
+import {
+  serializeSharedTableList,
+  transformSharedTableList,
+  type SharedTableItem,
+} from "@brightmeows/mirror/shared";
 import type { MirrorTableItem } from "@brightmeows/mirror/types";
-import { normalizeBase, r2TableHeaderUrl } from "@brightmeows/mirror/urls";
+import { normalizeBase, r2SharedHeaderUrl, r2TableHeaderUrl } from "@brightmeows/mirror/urls";
 
 import { CONFIG_PATH, findStaticTarget, readSiteConfig } from "./site-config.ts";
 
@@ -37,6 +42,10 @@ const SITE_SHELL_PATH = "404.html";
 const MIRROR_DIR = path.join("bms", "table", "mirror");
 /** 主站站点清单路径。 */
 const SITE_LIST_PATH = "/bms/table/mirror/tables.json";
+/** 共享表页面与清单在构建产物里的目录。 */
+const SHARED_DIR = path.join("bms", "table", "shared");
+/** 主站共享表清单路径。 */
+const SHARED_LIST_PATH = "/bms/table/shared/tables.json";
 
 /** 各静态目标的域配置提交物：GitHub Pages 的 CNAME 与 Codeberg Pages 的 .domains。 */
 const DOMAIN_FILE_BY_TARGET: Record<string, string> = {
@@ -87,6 +96,62 @@ export interface StaticGenerateOptions {
   buildDir: string;
   r2Base: string;
   siteBase: string;
+}
+
+/**
+ * 拉取主站共享表清单。与镜像清单同一口径：拉取失败即整步失败，
+ * 避免缺页产物覆盖上一版（主站先行部署，清单必已存在）。
+ */
+export async function fetchSharedTableList(
+  manifestBase: string,
+  fetchImpl: typeof fetch = fetch
+): Promise<SharedTableItem[]> {
+  const url = `${normalizeBase(manifestBase)}${SHARED_LIST_PATH}`;
+  const response = await fetchImpl(url);
+  if (!response.ok) {
+    throw new Error(`拉取主站共享表清单失败：${url} 返回 ${response.status}`);
+  }
+  const parsed: unknown = await response.json();
+  if (!Array.isArray(parsed)) {
+    throw new Error(`主站共享表清单不是数组：${url}`);
+  }
+  return parsed as SharedTableItem[];
+}
+
+/**
+ * 按清单生成共享表页与站点清单（与 Worker 的注入逐字节同源）：
+ * `<buildDir>/bms/table/shared/<id>/index.html` 与 `.../tables.json`。
+ * 编辑页是纯客户端路由且属写功能，静态宿主不生成（写降级引导到主站）。
+ */
+export function generateStaticSharedPages(
+  list: readonly SharedTableItem[],
+  options: StaticGenerateOptions
+): { pages: number; listPath: string } {
+  const shellPath = path.join(options.buildDir, SITE_SHELL_PATH);
+  if (!existsSync(shellPath)) {
+    throw new Error(`构建产物里找不到 SPA 外壳：${shellPath}（先跑 pnpm build）`);
+  }
+  const shell = readFileSync(shellPath, "utf8");
+  const sharedDir = path.join(options.buildDir, SHARED_DIR);
+
+  for (const item of list) {
+    const id = item.id;
+    if (typeof id !== "string" || id.trim() === "") {
+      throw new Error(`共享表清单条目缺少 id：${item.name ?? "(unnamed)"}`);
+    }
+    const page = injectBmstableMeta(shell, r2SharedHeaderUrl(options.r2Base, id));
+    const target = path.join(sharedDir, id, "index.html");
+    mkdirSync(path.dirname(target), { recursive: true });
+    writeFileSync(target, page);
+  }
+
+  mkdirSync(sharedDir, { recursive: true });
+  const listPath = path.join(SHARED_DIR, "tables.json");
+  writeFileSync(
+    path.join(options.buildDir, listPath),
+    serializeSharedTableList(transformSharedTableList([...list], options.siteBase))
+  );
+  return { pages: list.length, listPath: listPath.split(path.sep).join("/") };
 }
 
 /**
@@ -189,6 +254,12 @@ async function main(argv: string[]): Promise<void> {
     r2Base: config.r2.base,
     siteBase,
   });
+  const sharedList = await fetchSharedTableList(manifestBase);
+  const sharedResult = generateStaticSharedPages(sharedList, {
+    buildDir,
+    r2Base: config.r2.base,
+    siteBase,
+  });
 
   console.log(`清单来源：${normalizeBase(manifestBase)}${SITE_LIST_PATH}（${list.length} 张表）`);
   console.log(
@@ -199,6 +270,8 @@ async function main(argv: string[]): Promise<void> {
   }
   console.log(`镜像页：${result.pages} 个`);
   console.log(`站点清单：${result.listPath}`);
+  console.log(`共享表页：${sharedResult.pages} 个`);
+  console.log(`共享表清单：${sharedResult.listPath}`);
 }
 
 const isMain =
