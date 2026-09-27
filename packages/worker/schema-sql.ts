@@ -12,7 +12,7 @@
  */
 
 /** 当前 schema 版本；新增升级步骤时同步递增。 */
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 /** 把分行的 SQL 片段合成单行。D1 的 `exec()` 按换行切分语句，batch 里的语句
  * 也保持单行最不容易出错。 */
@@ -138,5 +138,43 @@ export const MIGRATION_STEPS: readonly (readonly string[])[] = [
       "migrated_at TEXT NOT NULL",
       ")"
     ),
+  ],
+  // 版本 3：共享表（/bms/table/shared）的元数据、id 别名与回收站，
+  // 外加审计折叠计数列（保存类审计同表同日只留一行，次数进 count）。
+  // ALTER TABLE 在版本步骤里是安全的：整批原子执行，失败回滚后可重跑。
+  [
+    sql(
+      "CREATE TABLE IF NOT EXISTS shared_tables (",
+      "id TEXT PRIMARY KEY,",
+      "author TEXT NOT NULL,",
+      "role TEXT NOT NULL CHECK (role IN ('admin', 'user')),",
+      "name TEXT NOT NULL,",
+      "symbol TEXT NOT NULL,",
+      "created_at TEXT NOT NULL,",
+      "updated_at TEXT NOT NULL,",
+      "entries INTEGER NOT NULL DEFAULT 0",
+      ")"
+    ),
+    sql(
+      "CREATE TABLE IF NOT EXISTS shared_alias (",
+      "alias TEXT PRIMARY KEY,",
+      "target TEXT NOT NULL,",
+      "created_at TEXT NOT NULL",
+      ")"
+    ),
+    sql(
+      "CREATE TABLE IF NOT EXISTS shared_trash (",
+      "id TEXT PRIMARY KEY,",
+      "author TEXT NOT NULL,",
+      "role TEXT NOT NULL CHECK (role IN ('admin', 'user')),",
+      "name TEXT NOT NULL,",
+      "symbol TEXT NOT NULL,",
+      "created_at TEXT NOT NULL,",
+      "entries INTEGER NOT NULL DEFAULT 0,",
+      "removed_at TEXT NOT NULL,",
+      "trash_prefix TEXT NOT NULL",
+      ")"
+    ),
+    "ALTER TABLE audit ADD COLUMN count INTEGER NOT NULL DEFAULT 1",
   ],
 ];

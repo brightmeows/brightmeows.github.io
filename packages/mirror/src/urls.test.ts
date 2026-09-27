@@ -4,9 +4,13 @@ import {
   encodeTableId,
   mirrorTablePath,
   normalizeBase,
+  r2SharedBase,
+  r2SharedDataUrl,
+  r2SharedHeaderUrl,
   r2TableDataUrl,
   r2TableHeaderUrl,
   r2TablesBase,
+  sharedTablePath,
 } from "./urls.ts";
 
 const tableId = "[4uri.web.fc2.com] Youri差分難易度表";
@@ -47,5 +51,21 @@ describe("r2 URL 构造", () => {
 describe("镜像页路径", () => {
   it("镜像页路径带编码参数", () => {
     expect(mirrorTablePath(tableId)).toBe(`/bms/table/mirror/${encodeTableId(tableId)}/`);
+  });
+});
+
+describe("共享表 URL 构造", () => {
+  it("拼接 shared 基址（与 tables/ 平行）", () => {
+    expect(r2SharedBase("https://r2.test/")).toBe("https://r2.test/shared");
+  });
+
+  it("构造共享表 header/data 绝对 URL 与站内路径", () => {
+    expect(r2SharedHeaderUrl("https://r2.test", "我的表")).toBe(
+      `https://r2.test/shared/${encodeTableId("我的表")}/header.json`
+    );
+    expect(r2SharedDataUrl("https://r2.test/", "我的表")).toBe(
+      `https://r2.test/shared/${encodeTableId("我的表")}/data.json`
+    );
+    expect(sharedTablePath("我的表")).toBe(`/bms/table/shared/${encodeTableId("我的表")}/`);
   });
 });

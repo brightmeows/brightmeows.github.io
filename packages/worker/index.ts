@@ -27,7 +27,8 @@ import {
   serializeSiteTableList,
   transformTableList,
 } from "@brightmeows/mirror/manifest";
-import { r2TableHeaderUrl } from "@brightmeows/mirror/urls";
+import { serializeSharedTableList, transformSharedTableList } from "@brightmeows/mirror/shared";
+import { r2SharedHeaderUrl, r2TableHeaderUrl, sharedTablePath } from "@brightmeows/mirror/urls";
 
 import { handleApi } from "./api.ts";
 import { backupUserLayer } from "./backup.ts";
@@ -43,8 +44,10 @@ import {
 import { handleInternal } from "./internal.ts";
 import { MANIFEST_MAX_AGE, loadMergedManifest } from "./manifest.ts";
 import { ensureSchemaOnce } from "./schema.ts";
+import { getSharedAlias, getSharedRow, listSharedRows, sharedRowToItem } from "./store-shared.ts";
 
 const MIRROR_ROOT = "/bms/table/mirror/";
+const SHARED_ROOT = "/bms/table/shared/";
 
 function textResponse(body: string, status: number, extra: Record<string, string> = {}): Response {
   return new Response(body, {
@@ -142,6 +145,81 @@ async function handleTablesJson(env: Env, url: URL, locale: Locale): Promise<Res
   });
 }
 
+/** 共享表清单：纯 D1 元数据合成（不读 R2），缓存口径与镜像清单一致。 */
+async function handleSharedTablesJson(env: Env, url: URL, locale: Locale): Promise<Response> {
+  try {
+    const rows = await listSharedRows(env);
+    const body = serializeSharedTableList(
+      transformSharedTableList(rows.map(sharedRowToItem), url.origin)
+    );
+    return new Response(body, {
+      status: 200,
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+        "cache-control": `public, max-age=${MANIFEST_MAX_AGE}`,
+      },
+    });
+  } catch (error) {
+    console.error("共享表清单读取失败", error);
+    return textResponse(pageText(locale, "user_layer_unavailable"), 503, {
+      "cache-control": "no-store",
+      "retry-after": String(MANIFEST_MAX_AGE),
+    });
+  }
+}
+
+/** 取 SPA 外壳（对应语言树的 404.html）。 */
+async function loadShell(env: Env, url: URL, locale: Locale): Promise<string> {
+  const shellRes = await env.ASSETS.fetch(new URL(shellPath(locale), url.origin));
+  return shellRes.text();
+}
+
+/**
+ * 共享表单表页：现役表注入 bmstable meta（指向 R2 的 header.json）；
+ * 已改 id 的旧地址走别名 301（别名指向最新 id，单跳）；两者皆无回落 404。
+ * `injectMeta` 为 false 时只发外壳（编辑页），供客户端路由渲染。
+ */
+async function handleSharedPage(
+  request: Request,
+  env: Env,
+  url: URL,
+  id: string,
+  locale: Locale,
+  injectMeta: boolean
+): Promise<Response> {
+  try {
+    const row = await getSharedRow(env, id);
+    if (row === null) {
+      const alias = await getSharedAlias(env, id);
+      if (alias !== null) {
+        const target = new URL(`${sharedTablePath(alias)}${url.search}`, url.origin);
+        return new Response(null, {
+          status: 301,
+          headers: { location: target.toString(), "cache-control": `max-age=${MANIFEST_MAX_AGE}` },
+        });
+      }
+      // 中文树手动回中文 404 页；英文交静态资源，由客户端路由渲染错误页
+      if (locale === "zh-cn") return zhNotFound(env, url);
+      return env.ASSETS.fetch(request);
+    }
+    const shell = await loadShell(env, url, locale);
+    const page = injectMeta ? injectBmstableMeta(shell, r2SharedHeaderUrl(env.R2_BASE, id)) : shell;
+    return new Response(page, {
+      status: 200,
+      headers: {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": `public, max-age=${MANIFEST_MAX_AGE}`,
+      },
+    });
+  } catch (error) {
+    console.error("共享表页面生成失败", error);
+    return textResponse(pageText(locale, "user_layer_unavailable"), 503, {
+      "cache-control": "no-store",
+      "retry-after": String(MANIFEST_MAX_AGE),
+    });
+  }
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
@@ -169,7 +247,12 @@ export default {
 
     // 用户层在 D1（见 worker/store.ts）：首个请求初始化 schema（isolate 内只执行一次）。
     // 读取路径容忍失败并按纯管线清单降级；写接口依赖 D1，初始化失败即报错。
-    if (path.startsWith(MIRROR_ROOT) || path === "/api" || path.startsWith("/api/")) {
+    if (
+      path.startsWith(MIRROR_ROOT) ||
+      path.startsWith(SHARED_ROOT) ||
+      path === "/api" ||
+      path.startsWith("/api/")
+    ) {
       try {
         await ensureSchemaOnce(env.MIRROR_DB);
       } catch (error) {
@@ -210,6 +293,29 @@ export default {
     const withoutSlash = /^\/bms\/table\/mirror\/([^/]+)$/.exec(path);
     if (withoutSlash?.[1]) {
       const target = `${MIRROR_ROOT}${encodeURIComponent(withoutSlash[1])}/`;
+      return Response.redirect(new URL(target, url.origin).toString(), 301);
+    }
+
+    // 共享表：清单、编辑页外壳、查看页（含别名 301）与尾斜杠重定向；
+    // `new/` 是构建期预渲染页，直接交静态资源（不走外壳注入）
+    if (path === `${SHARED_ROOT}tables.json`) {
+      return handleSharedTablesJson(env, url, locale);
+    }
+    const sharedEdit = /^\/bms\/table\/shared\/([^/]+)\/edit\/$/.exec(path);
+    if (sharedEdit?.[1] !== undefined) {
+      return handleSharedPage(request, env, url, sharedEdit[1], locale, false);
+    }
+    const sharedView = /^\/bms\/table\/shared\/([^/]+)\/$/.exec(path);
+    if (sharedView?.[1] !== undefined) {
+      if (sharedView[1] === "new") return env.ASSETS.fetch(request);
+      return handleSharedPage(request, env, url, sharedView[1], locale, true);
+    }
+    const sharedWithoutSlash =
+      /^\/bms\/table\/shared\/([^/]+)\/edit$/.exec(path) ??
+      /^\/bms\/table\/shared\/([^/]+)$/.exec(path);
+    if (sharedWithoutSlash?.[1] !== undefined) {
+      const id = encodeURIComponent(sharedWithoutSlash[1]);
+      const target = path.endsWith("/edit") ? `${SHARED_ROOT}${id}/edit/` : `${SHARED_ROOT}${id}/`;
       return Response.redirect(new URL(target, url.origin).toString(), 301);
     }
 

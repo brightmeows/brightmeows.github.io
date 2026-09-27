@@ -6,7 +6,7 @@
 
 - `pnpm build` — 双语构建入口（`scripts/build-site.ts`）：en 主站、zh-cn 主站、en 静态三遍 flavor（各自经 `BUILD_OUT` 落临时目录），组装出 `build/`（en 根 + `_i18n/zh-cn` 内部树，`_app` 双语 chunk 合并到共享根、`version.json` 统一取 en、中文树 `html lang` 改写）与 `build-static/`（静态宿主单语，隐藏语言切换器）；`pnpm build:flavor` 跑单遍
 - `node scripts/detect-mirror-change.ts [--out=<路径>]` — 比对 R2 清单与 R2 基线对象（`meta/last-notified.json`）的投影，stdout 只打印 `true`/`false`，变动时可写出新基线供工作流推回
-- `node scripts/gen-static-mirror-pages.ts --target=<目标名> [--site-base=<域名>]` — 生成静态宿主的镜像页、站点清单与域配置提交物（`CNAME`/`.domains`，域名从配置解析；需先 `pnpm build`；默认写入 `build-static/`，`--build-dir` 可覆盖；从主站拉取已合成清单，需网络；`--site-base` 仅本地演练覆盖，此时不生成域配置）
+- `node scripts/gen-static-mirror-pages.ts --target=<目标名> [--site-base=<域名>]` — 生成静态宿主的镜像页、共享表页、两份站点清单与域配置提交物（`CNAME`/`.domains`，域名从配置解析；需先 `pnpm build`；默认写入 `build-static/`，`--build-dir` 可覆盖；从主站拉取已合成的镜像与共享清单（两次拉取任一失败即整步失败），需网络；`--site-base` 仅本地演练覆盖，此时不生成域配置）
 - `node scripts/fetch-tables.ts` — 本地跑数据管线（基线经 rclone 同步自 R2，用户层经站点 Worker 的内部接口读取，需要 `INTERNAL_API_TOKEN`；写 `tables/`、`indexes/`、`warnings.log`；产物已 gitignore）
 - `node scripts/fetch-table-once.ts --url=<表源> --request-id=<id> --out-dir=./out` — 单表抓取（复用管线抓取与命名逻辑）：数据目录供 `fetch-table` 工作流上传到 R2，抓取结果与状态经内部接口写进 D1
 - `pnpm test:parity` — 手动新旧实现对拍（用公开 R2 基线与归档工具 v0.4.2 的二进制，逐对象比对产物；`PARITY_LIMIT` 可只对拍前 N 张表）

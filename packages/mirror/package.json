@@ -16,6 +16,10 @@
       "types": "./src/urls.ts",
       "default": "./src/urls.ts"
     },
+    "./shared": {
+      "types": "./src/shared.ts",
+      "default": "./src/shared.ts"
+    },
     "./types": {
       "types": "./src/types.ts",
       "default": "./src/types.ts"

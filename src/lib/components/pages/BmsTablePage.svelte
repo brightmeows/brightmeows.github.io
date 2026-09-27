@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, type Snippet } from "svelte";
 
   import ChartsTableSection from "$lib/components/bms/ChartsTableSection.svelte";
   import CourseSection from "$lib/components/bms/CourseSection.svelte";
@@ -18,9 +18,14 @@
 
   interface Props {
     headerUrl: string;
+    /**
+     * 标题区的操作槽（共享表查看页用）：不传时输出与不带该槽的版本逐字节一致，
+     * 镜像表页与自托管表页因此零改动。
+     */
+    actions?: Snippet | undefined;
   }
 
-  let { headerUrl }: Props = $props();
+  let { headerUrl, actions }: Props = $props();
 
   // ---- Header 加载状态 ----
   let headerLoadState = $state<"loading" | "loaded" | "error">("loading");
@@ -243,6 +248,11 @@
         </a>
       {/if}
     </div>
+    {#if actions}
+      <div class="mt-3 flex flex-wrap items-center justify-center gap-2">
+        {@render actions()}
+      </div>
+    {/if}
     {#if dataLoaded && tableStats}
       <div class="mt-2 text-[1.2rem] text-white/70 italic">
         {m["table.stats"]({

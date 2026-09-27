@@ -173,6 +173,11 @@
   </GlassPanel>
 {:else if auth.status === "ready"}
   <GlassPanel class="mt-4">
+    <div class="text-[0.9rem] text-white/60">
+      {m["shared.cross_before"]()}
+      <a class="link-accent" href="/bms/table/shared/">{m["nav.shared"]()}</a>
+      {m["shared.cross_after"]()}
+    </div>
     {#if user === null}
       <div class="text-[0.95rem] text-white/75">
         {m["mirror.login_hint"]()}
