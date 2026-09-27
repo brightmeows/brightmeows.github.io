@@ -18,7 +18,9 @@
 - **`static/bms/table/search/` 不存在** — 搜索索引已移至 R2，由 `bms-search.worker.ts` 在客户端运行时从 R2 拉取。不要尝试在仓库内重新创建此目录。
 - **列表页的用户操作区与“已授权”筛选** — 登录入口与配额展示在页面顶栏（全局共享登录态 store），列表页顶部只保留添加表单（预览后提交、轮询抓取状态）与“我删除的表”回收站入口；登录后每行出现行尾操作列：管理员是编辑铅笔（删除收进编辑卡片），贡献者是删除图标（受保护行不显示），表状态标识由授权图标列承担（管理员点击图标打开编辑卡片，非管理员只读，行内不再有文字徽章），“我删除的表”可自助恢复；勾选框由原来的“精选难度表”改为“已授权（受保护）”筛选（`FEATURED_TABLES` 常量与配套排序已随精选概念一并删除）。静态宿主（子域）上 API 由主站提供（跨源、会话 cookie 同站共享），功能与主站一致；平台原域访问会由前端兜底跳到子域；仅主站 API 故障时登录位与列表页降级为引导到主站（`SITE_ORIGIN`）。注意：页面内写操作通过带 `?t=` 的拉取穿透 60 秒边缘缓存（`MANIFEST_MAX_AGE`）即时刷新，其他访客仍可能读到最长一分钟的旧清单。
 - **管理功能并入镜像列表页，旧后台路径已移除** — `/bms/table/mirror/admin/` 不再存在（访问得到 404，Worker 里也没有对应的 SPA 外壳分支），治理操作全部收进列表页：授权列（名称列后的窄图标列，绿勾为已授权、黄色警告为未授权，管理员点击打开编辑卡片、非管理员只读）与行尾铅笔展开的行内编辑卡片（顶部“授权保护”分区：状态行加加入或移出名单按钮，弹确认后切换；禁用加可选原因、删除此表（受保护时禁用并提示先取消授权）；元数据覆盖分组字段：名称、符号、标签 1（序号加名称）与标签 2，覆盖值来自 `GET /api/admin/overview` 的预填；标签输入提供现有值建议并允许自定义值，序号占位在标签 1 为新值时给出“现有最大值加一”建议；各分区带一句帮助说明、关键字段带原生 title）；替换规则、禁用名单、回收站（不限作者恢复）与最近 50 条审计在列表上方“管理”折叠区，顶栏入口以 `#mirror-admin` 锚点直达并自动展开。权限模型不变：`/api/admin/*` 仍只认 `ADMIN_LOGIN`，前端仅按角色显隐控件。清单条目的 `url` 在客户端被重写为站内镜像路径，提交前用 `url_from` 还原源 URL（接口以源 URL 为键）。写操作写审计、触发部署（10 分钟节流），页面内以带 `?t=` 的拉取穿透 60 秒边缘缓存即时刷新。
-- **`r2.ts` 集中管理 R2 端点** — `src/lib/constants/r2.ts` 定义了 `R2_BASE`/`R2_TABLES_BASE`/`R2_INDEXES_BASE` 三个常量和 `r2TableHeaderUrl()`/`r2TableDataUrl()` 两个路径构造函数。修改 R2 地址时仅改此文件。该文件位于 `$lib/constants/`（环境无关层），可供构建时和客户端代码共同使用。
+- **`r2.ts` 集中管理 R2 端点** — `src/lib/constants/r2.ts` 定义了 `R2_BASE`/`R2_TABLES_BASE`/`R2_INDEXES_BASE` 三个常量和 `r2TableHeaderUrl()`/`r2TableDataUrl()` 与共享表的 `r2SharedHeaderUrl()`/`r2SharedDataUrl()` 两对构造函数。修改 R2 地址时仅改此文件。该文件位于 `$lib/constants/`（环境无关层），可供构建时和客户端代码共同使用。
+- **共享表（`/bms/table/shared`）是独立于镜像的第二套表体系** — 用户自建、公开浏览、每人持有上限 3 张（含 admin，回收站不占名额）。四条路由：列表（预渲染，客户端拉 `/bms/table/shared/tables.json`）、`new/`（预渲染前置屏：id 实时预览与查重、可选 name/symbol 种子，**不创建**，首次保存才创建）、`[id]/`（查看器薄壳，复用 `BmsTablePage`，Worker 注入 meta）、`[id]/edit/`（编辑器，整包保存；`[id]/+layout.ts` 把整个子树设为 `prerender = false`）。编辑器核心子集可编辑、未知自定义字段经 `applyEntryFields` 原样保留、导入支持粘贴/上传/镜像 fork（客户端直连 R2）；写操作不消耗每日配额（防线是持有上限 + 全操作审计 + admin 删除）。查看页 `actions` snippet 是 `BmsTablePage` 的可选扩展点：不传时输出与旧版逐字节一致，镜像/自托管页零改动。分组列表（`SharedTablesSection`）按作者分组、自己的组置顶——它与镜像列表是两套组件（列结构与交互差异大），但共用同一套玻璃表格样式与滚动同步原语，不要把两者硬抽成泛型组件。
+- **静态宿主上共享表只读** — 列表与查看页由 `gen-static-mirror-pages.ts` 构建期生成（拉主站共享清单，失败即整步失败）；`new/` 预渲染产物存在但查重接口不可用，前端按 `ApiUnavailableError` 切换为“去主站”引导（与镜像同一降级口径），`[id]/edit/` 静态宿主不生成（写功能只在主站）。
 
 ### SvelTeX（Markdown 管线）
 
@@ -40,7 +42,7 @@
 
 ## 架构边界
 
-- **BMS 数据源分流** — `static/bms/table/` 下只有自托管表（`self-sp/`、`self-dp/`、`satellite-skill-analyzer-3rd-preview/`、`starlight-preview/`）在 git 中；镜像表的一切（单表 meta 页、`tables.json`、表数据 `header.json`/`data.json`、搜索索引）都是运行时取数：Cloudflare 由 Worker 生成，静态宿主由构建期脚本从快照生成。修改数据入口时区分来源。
+- **BMS 数据源分流** — `static/bms/table/` 下只有自托管表（`self-sp/`、`self-dp/`、`satellite-skill-analyzer-3rd-preview/`、`starlight-preview/`）在 git 中；镜像表的一切（单表 meta 页、`tables.json`、表数据 `header.json`/`data.json`、搜索索引）都是运行时取数：Cloudflare 由 Worker 生成，静态宿主由构建期脚本从快照生成；共享表同属运行时取数（R2 `shared/` 前缀 + Worker 动态路由）。修改数据入口时区分来源。
 - **`src/lib/loaders/`** — 构建时数据加载层（Node.js 环境）。博客扫描、BMS 表枚举与列表条目 header 读取（`getBmsTableEntries`）入口在此，不走路由内联。`blog-scanner.ts`、`blog-metadata.ts` 也在此目录。
 - **`src/lib/data/`** — 客户端数据获取层（浏览器环境）。BMS 谱面数据 fetch/JSONP、镜像表加载编排，以及搜索页的共享接线（`search-converters.svelte.ts` 的 opencc 懒加载 store、`search-index-client.svelte.ts` 的索引 Worker 客户端，镜像列表/单搜/批量搜三页共用，勿再各自复制）在此。fetch 仅在 `onMount` 中调用。
 - **`src/lib/utils/`** — 纯函数。无副作用、无平台特定 API 依赖（轻量 DOM 工具如 `clipboard.ts`、`url.ts` 除外）。任何环境可调用。
