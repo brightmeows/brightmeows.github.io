@@ -56,6 +56,10 @@
   // 地址栏 origin 只在客户端有意义；预览在 SSR 期先渲染站内相对路径
   onMount(() => {
     origin = window.location.origin;
+    // 从编辑器“另存为共享表”跳来时预填名称与符号（草稿认领由编辑器侧承担）
+    const seed = sharedNewSeed.peek();
+    name = seed.name;
+    symbol = seed.symbol;
     void auth.ensureLoaded();
     const returnTo = `${window.location.pathname}`;
     loginHref = `${apiBase()}/api/auth/login?return_to=${encodeURIComponent(returnTo)}`;

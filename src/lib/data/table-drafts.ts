@@ -4,6 +4,7 @@ import type { DraftPayload } from "$lib/utils/table-editor";
  * 表编辑器草稿的 IndexedDB 存储：单快照、按表键隔离、结构克隆直存
  * （不做 JSON 文本序列化，避免大表在每次落盘时阻塞输入）。
  * 隐私模式或配额不足时读返回 null、写返回 unavailable/quota，由调用方降级提示。
+ * 同源的“另存为共享表”草稿认领也用 sessionStorage 记录源草稿键（见文件末尾）。
  */
 
 const DB_NAME = "bms-table-editor";
@@ -107,4 +108,48 @@ export async function deleteDraft(key: string): Promise<void> {
       resolve();
     }
   });
+}
+
+/** “另存为共享表”的草稿认领记录（sessionStorage，同标签页跨页传递）。 */
+export interface DraftClaim {
+  /** 源表的草稿键（IndexedDB 中的 table-editor:<kind>:<id>）。 */
+  sourceDraftKey: string;
+  /** 写入时间（ISO）；过期认领会被忽略并清除。 */
+  at: string;
+}
+
+const CLAIM_STORAGE_KEY = "table-editor:claim-draft";
+/** 认领有效期：超过该时长视为用户已放弃新建流程。 */
+const CLAIM_TTL_MS = 30 * 60 * 1000;
+
+/** 写入认领记录；sessionStorage 不可用时静默忽略（调用方降级为手动导入）。 */
+export function writeDraftClaim(claim: DraftClaim): void {
+  try {
+    sessionStorage.setItem(CLAIM_STORAGE_KEY, JSON.stringify(claim));
+  } catch {
+    // 隐私模式或存储禁用：认领失败不阻断（静态宿主桥接与手动导入仍可用）
+  }
+}
+
+/** 读取并清除认领记录；过期或损坏返回 null。 */
+export function takeDraftClaim(now = Date.now()): DraftClaim | null {
+  let raw: string | null;
+  try {
+    raw = sessionStorage.getItem(CLAIM_STORAGE_KEY);
+    sessionStorage.removeItem(CLAIM_STORAGE_KEY);
+  } catch {
+    return null;
+  }
+  if (raw === null) return null;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (typeof parsed !== "object" || parsed === null) return null;
+    const record = parsed as Record<string, unknown>;
+    if (typeof record.sourceDraftKey !== "string" || typeof record.at !== "string") return null;
+    const at = Date.parse(record.at);
+    if (Number.isNaN(at) || now - at > CLAIM_TTL_MS) return null;
+    return { sourceDraftKey: record.sourceDraftKey, at: record.at };
+  } catch {
+    return null;
+  }
 }

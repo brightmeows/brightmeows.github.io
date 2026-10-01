@@ -328,6 +328,20 @@ export function parseCombinedPackage(raw: unknown): { header: unknown; data: unk
 /** 草稿来源类型：镜像表、自托管表、共享表。 */
 export type DraftSourceKind = "mirror" | "self" | "shared";
 
+/** 编辑器导入面板的解析结果：header 与 data 可分别缺省（null 表示不改动）。 */
+export interface TableImportResult {
+  header: Record<string, unknown> | null;
+  data: Record<string, unknown>[] | null;
+  dataMode: "append" | "replace";
+  source: "paste" | "file" | "fork";
+}
+
+/** 编辑器载荷（保存与另存共享用）。 */
+export interface TableEditPayload {
+  header: Record<string, unknown>;
+  data: Record<string, unknown>[];
+}
+
 /** 草稿键：按来源与标识隔离（同源的镜像目录名与共享 id 不会互串）。 */
 export function draftStorageKey(kind: DraftSourceKind, id: string): string {
   return `table-editor:${kind}:${id}`;

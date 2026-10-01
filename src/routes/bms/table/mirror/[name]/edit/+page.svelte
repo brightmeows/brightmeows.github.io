@@ -1,15 +1,23 @@
 <script lang="ts">
   import { mirrorTablePath } from "@brightmeows/mirror/urls";
+  import { onMount } from "svelte";
 
   import { page } from "$app/state";
   import TableEditorPage from "$lib/components/pages/TableEditorPage.svelte";
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
   import { r2TableDataUrl, r2TableHeaderUrl } from "$lib/constants/r2";
+  import { SITE_ORIGIN, apiBase } from "$lib/constants/site";
   import { m } from "$lib/paraglide/messages.js";
   import { draftStorageKey } from "$lib/utils/table-editor";
 
   // 表 ID 直接来自路径参数；编辑页与查看页同形，仅尾部多一段 /edit/。
   const tableId = $derived(page.params.name ?? "");
+
+  // 静态宿主上 API 在主站：另存共享走“导出并跳主站”的桥接路径
+  let bridge = $state(false);
+  onMount(() => {
+    bridge = apiBase() !== "";
+  });
 </script>
 
 {#if tableId === ""}
@@ -25,5 +33,7 @@
     dataUrlFallback={r2TableDataUrl(tableId)}
     draftKey={draftStorageKey("mirror", tableId)}
     viewerHref={mirrorTablePath(tableId)}
+    saveAsShared={bridge ? "bridge" : "same-origin"}
+    siteOrigin={SITE_ORIGIN}
   />
 {/if}

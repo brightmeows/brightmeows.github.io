@@ -8,7 +8,7 @@
   import BmsTablePage from "$lib/components/pages/BmsTablePage.svelte";
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
   import { r2SharedDataUrl, r2SharedHeaderUrl } from "$lib/constants/r2";
-  import { SITE_ORIGIN, apiBase } from "$lib/constants/site";
+  import { apiBase } from "$lib/constants/site";
   import { auth } from "$lib/data/auth-store.svelte";
   import { loadSharedTables, submitSharedDelete } from "$lib/data/shared-api";
   import { m } from "$lib/paraglide/messages.js";
@@ -19,23 +19,19 @@
 
   /**
    * 查看页是薄壳：渲染共享的 BmsTablePage，操作条按权限显隐——
-   * 下载对所有访客开放（数据本就公开），编辑仅作者，删除为作者或 admin
-   * （服务端权限不变，前端仅按角色显隐，与镜像口径一致）。
+   * 下载与编辑入口对所有访客开放（编辑页支持非作者本地编辑，写操作仍限定作者），
+   * 删除为作者或 admin（服务端权限不变，前端仅按角色显隐，与镜像口径一致）。
    */
   let item = $state<SharedTableItem | null>(null);
-  let listLoaded = $state(false);
   let busy = $state(false);
   let notice = $state<{ kind: "ok" | "error"; text: string } | null>(null);
   let loginHref = $state("/api/auth/login");
 
-  const unavailable = $derived(auth.status === "unavailable");
   const login = $derived(auth.user?.login ?? null);
   const isAdmin = $derived(auth.status === "ready" && auth.user?.role === "admin");
   const canEdit = $derived(item !== null && login !== null && login === item.author);
   const canDelete = $derived(canEdit || (item !== null && isAdmin));
-  const editorHref = $derived(
-    (unavailable ? SITE_ORIGIN : "") + `${sharedTablePath(tableId)}edit/`
-  );
+  const editorHref = $derived(`${sharedTablePath(tableId)}edit/`);
 
   async function download(kind: "header" | "data"): Promise<void> {
     notice = null;
@@ -94,9 +90,6 @@
       })
       .catch(() => {
         // 清单读取失败只影响操作条（作者/管理员判定），查看本身不受影响
-      })
-      .finally(() => {
-        listLoaded = true;
       });
   });
 </script>
@@ -125,9 +118,9 @@
       {#if auth.status === "ready" && login === null}
         <a class={barButton} href={loginHref}>{m["topbar.login"]()}</a>
       {/if}
-      {#if canEdit}
-        <a class={barButton} href={editorHref}>{m["shared.actions_edit"]()}</a>
-      {/if}
+      <a class={barButton} href={editorHref}>
+        {canEdit ? m["shared.actions_edit"]() : m["editor.local_edit"]()}
+      </a>
       {#if canDelete}
         <button class={barButton} type="button" disabled={busy} onclick={() => void handleDelete()}>
           {m["shared.actions_delete"]()}
@@ -137,9 +130,6 @@
         <span class="text-[0.9rem] {notice.kind === 'ok' ? 'text-[#4caf50]' : 'text-red-300'}">
           {notice.text}
         </span>
-      {/if}
-      {#if unavailable && listLoaded && item !== null}
-        <span class="text-[0.85rem] text-white/50">{m["shared.edit_on_main_site"]()}</span>
       {/if}
     {/snippet}
   </BmsTablePage>
