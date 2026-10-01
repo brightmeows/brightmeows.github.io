@@ -7,17 +7,7 @@
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
   import GradientButton from "$lib/components/ui/GradientButton.svelte";
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
-  import {
-    classifyLoadError,
-    createEpochGuard,
-    doneState,
-    errorState,
-    loadingDataState,
-    loadingHeaderState,
-    parsingState,
-    progressPercent,
-    tableDisplayName,
-  } from "$lib/controllers/table-load";
+  import { createEpochGuard, runTableLoad } from "$lib/controllers/table-load";
   import type { CandidateEntry, QueryType, TableLoadState } from "$lib/data/bms-search";
   import {
     detectQueryType,
@@ -99,40 +89,22 @@
   // ---- 单表全量加载（Phase 2）----
 
   async function loadSingleTableFull(tableId: string, epoch: number): Promise<void> {
-    tableStates.set(tableId, loadingHeaderState(tableId, tableId));
-    try {
-      const header = await loadTableHeader(tableId, abortController?.signal);
-      if (!isEpochValid(epoch)) return;
-
-      const name = header?.name ?? tableId;
-      const symbol = header?.symbol;
-      tableStates.set(tableId, loadingDataState(tableId, name, 0, 0, 0));
-
-      const charts = await loadFullTableData(tableId, abortController?.signal, (loaded, total) => {
-        if (!isEpochValid(epoch)) return;
-        tableStates.set(
-          tableId,
-          loadingDataState(tableId, name, progressPercent(loaded, total), loaded, total)
-        );
-      });
-
-      if (!isEpochValid(epoch)) return;
-
-      tableStates.set(tableId, parsingState(tableId, name));
-      tableData.set(tableId, { name, symbol, charts });
-      tableStates.set(tableId, doneState(tableId, name));
-    } catch (err) {
-      const classified = classifyLoadError(err);
-      if (classified.kind === "aborted") return;
-      if (!isEpochValid(epoch)) return;
-
-      const current = tableStates.get(tableId);
-      const name = tableDisplayName(current, tableId);
-      tableStates.set(
-        tableId,
-        errorState(tableId, name, err instanceof Error ? err.message : m["common.unknown_error"]())
-      );
-    }
+    await runTableLoad(
+      tableId,
+      {
+        isEpochValid: () => isEpochValid(epoch),
+        getState: (id) => tableStates.get(id),
+        setState: (id, state) => tableStates.set(id, state),
+        signal: abortController?.signal,
+      },
+      {
+        loadHeader: (signal) => loadTableHeader(tableId, signal),
+        loadCharts: (signal, onProgress) => loadFullTableData(tableId, signal, onProgress),
+        onParsed: (_tableId, name, symbol, charts) => {
+          tableData.set(tableId, { name, symbol, charts });
+        },
+      }
+    );
   }
 
   // ---- 主流程 ----

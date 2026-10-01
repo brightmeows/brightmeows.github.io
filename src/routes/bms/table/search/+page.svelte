@@ -5,18 +5,7 @@
   import BmsSearchResult from "$lib/components/bms/BmsSearchResult.svelte";
   import PageShell from "$lib/components/layout/PageShell.svelte";
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
-  import {
-    classifyLoadError,
-    createEpochGuard,
-    doneState,
-    errorState,
-    loadingDataState,
-    loadingHeaderState,
-    parsingState,
-    progressPercent,
-    tableDisplayName,
-    waitingState,
-  } from "$lib/controllers/table-load";
+  import { createEpochGuard, runTableLoad, waitingState } from "$lib/controllers/table-load";
   import type { CandidateEntry, TableLoadState } from "$lib/data/bms-search";
   import {
     detectQueryType,
@@ -127,57 +116,30 @@
     if (!entry) return;
     const keySet = new Set(entry.matchedKeys.map((mk) => mk.key));
 
-    tableStates.set(tableId, loadingHeaderState(tableId, tableId));
-
-    try {
-      const header = await loadTableHeader(tableId, abortController?.signal);
-      if (!isEpochValid(epoch)) return;
-
-      const name = header?.name ?? tableId;
-      const symbol = header?.symbol;
-
-      tableStates.set(tableId, loadingDataState(tableId, name, 0, 0, 0));
-
-      const charts = await loadTableDataWithProgress(
-        tableId,
-        keySet,
-        currentSearchType,
-        abortController?.signal,
-        (loaded: number, total: number) => {
-          if (!isEpochValid(epoch)) return;
-          const current = tableStates.get(tableId);
-          const currentName = tableDisplayName(current, name);
-          tableStates.set(
-            tableId,
-            loadingDataState(tableId, currentName, progressPercent(loaded, total), loaded, total)
-          );
-        }
-      );
-
-      if (!isEpochValid(epoch)) return;
-
-      tableStates.set(tableId, parsingState(tableId, name));
-
-      // 聚合结果
-      if (aggregator) {
-        searchResults = aggregator.addTable(tableId, name, charts, symbol);
+    await runTableLoad(
+      tableId,
+      {
+        isEpochValid: () => isEpochValid(epoch),
+        getState: (id) => tableStates.get(id),
+        setState: (id, state) => tableStates.set(id, state),
+        signal: abortController?.signal,
+      },
+      {
+        loadHeader: (signal) => loadTableHeader(tableId, signal),
+        loadCharts: (signal, onProgress) =>
+          loadTableDataWithProgress(tableId, keySet, currentSearchType, signal, onProgress),
+        onParsed: (_tableId, name, symbol, charts) => {
+          // 聚合结果
+          if (aggregator) {
+            searchResults = aggregator.addTable(tableId, name, charts, symbol);
+          }
+        },
+        onFailed: (id) => {
+          // 清理 aggregator 中该表的占位 appearance，避免残缺数据残留
+          aggregator?.removeTable(id);
+        },
       }
-
-      tableStates.set(tableId, doneState(tableId, name));
-    } catch (err) {
-      const classified = classifyLoadError(err);
-      if (classified.kind === "aborted") return;
-      if (!isEpochValid(epoch)) return;
-
-      // 清理 aggregator 中该表的占位 appearance，避免残缺数据残留
-      aggregator?.removeTable(tableId);
-
-      const current = tableStates.get(tableId);
-      const name = tableDisplayName(current, tableId);
-      if (classified.kind === "failed") {
-        tableStates.set(tableId, errorState(tableId, name, classified.message));
-      }
-    }
+    );
   }
 
   function cancelSearch(): void {
