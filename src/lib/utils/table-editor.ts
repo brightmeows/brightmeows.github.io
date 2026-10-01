@@ -33,7 +33,7 @@ export function valueToText(value: unknown): string {
 }
 
 /** 头部核心字段的未知值转文本：字符串原样，空缺转空串，其余 String 化。 */
-export function headerFieldText(value: unknown): string {
+function headerFieldText(value: unknown): string {
   if (typeof value === "string") return value;
   if (value === undefined || value === null) return "";
   // 头部核心字段实测均为字符串；对象值保持原组件内 str 的默认串化行为（行为冻结迁移）
