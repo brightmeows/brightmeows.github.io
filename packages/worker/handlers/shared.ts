@@ -73,6 +73,23 @@ async function authorizeWrite(request: Request, env: Env, now: Date): Promise<Se
   return session;
 }
 
+/**
+ * 写处理器的公共前奏：Origin、会话、请求体与主 id 校验，五端点共用。
+ * 失败返回错误响应，成功返回会话、请求体与校验过的 id。
+ */
+async function readSharedWrite(
+  request: Request,
+  env: Env,
+  now: Date
+): Promise<{ session: Session; body: Record<string, unknown>; id: string } | Response> {
+  const auth = await authorizeWrite(request, env, now);
+  if (auth instanceof Response) return auth;
+  const body = await readJsonBody(request);
+  const idResult = validateSharedId(typeof body?.id === "string" ? body.id : "");
+  if (!idResult.ok) return idFailure(idResult.error);
+  return { session: auth, body: body ?? {}, id: idResult.id };
+}
+
 function idFailure(error: SharedIdError): Response {
   switch (error) {
     case "empty":
@@ -160,14 +177,9 @@ function preparePayload(
  * 不留“占着 id 的孤儿对象”。占位与撤销旧别名同批——冲突时别名不被误删。
  */
 export async function handleSharedCreate(request: Request, env: Env, now: Date): Promise<Response> {
-  const auth = await authorizeWrite(request, env, now);
+  const auth = await readSharedWrite(request, env, now);
   if (auth instanceof Response) return auth;
-  const session = auth;
-
-  const body = await readJsonBody(request);
-  const idResult = validateSharedId(typeof body?.id === "string" ? body.id : "");
-  if (!idResult.ok) return idFailure(idResult.error);
-  const id = idResult.id;
+  const { session, body, id } = auth;
 
   const payload = preparePayload(body?.header, body?.data);
   if (payload instanceof Response) return payload;
@@ -231,14 +243,9 @@ export async function handleSharedCreate(request: Request, env: Env, now: Date):
 
 /** 保存：整包覆盖写 R2 + 更新 D1 元数据；仅作者（admin 也不能编辑他人内容）。 */
 export async function handleSharedSave(request: Request, env: Env, now: Date): Promise<Response> {
-  const auth = await authorizeWrite(request, env, now);
+  const auth = await readSharedWrite(request, env, now);
   if (auth instanceof Response) return auth;
-  const session = auth;
-
-  const body = await readJsonBody(request);
-  const idResult = validateSharedId(typeof body?.id === "string" ? body.id : "");
-  if (!idResult.ok) return idFailure(idResult.error);
-  const id = idResult.id;
+  const { session, body, id } = auth;
 
   const row = await getSharedRow(env, id);
   if (row === null) {
@@ -289,16 +296,11 @@ export async function handleSharedSave(request: Request, env: Env, now: Date): P
  * 旧 id 的别名 301 到新地址，直到被他人认领（认领时别名撤销）。
  */
 export async function handleSharedRename(request: Request, env: Env, now: Date): Promise<Response> {
-  const auth = await authorizeWrite(request, env, now);
+  const auth = await readSharedWrite(request, env, now);
   if (auth instanceof Response) return auth;
-  const session = auth;
-
-  const body = await readJsonBody(request);
-  const idResult = validateSharedId(typeof body?.id === "string" ? body.id : "");
-  if (!idResult.ok) return idFailure(idResult.error);
+  const { session, body, id: oldId } = auth;
   const newResult = validateSharedId(typeof body?.new_id === "string" ? body.new_id : "");
   if (!newResult.ok) return idFailure(newResult.error);
-  const oldId = idResult.id;
   const newId = newResult.id;
 
   const row = await getSharedRow(env, oldId);
@@ -350,14 +352,9 @@ export async function handleSharedRename(request: Request, env: Env, now: Date):
 
 /** 删除：行先入回收站（可见性优先），再移 R2 对象；作者或 admin 可删。 */
 export async function handleSharedDelete(request: Request, env: Env, now: Date): Promise<Response> {
-  const auth = await authorizeWrite(request, env, now);
+  const auth = await readSharedWrite(request, env, now);
   if (auth instanceof Response) return auth;
-  const session = auth;
-
-  const body = await readJsonBody(request);
-  const idResult = validateSharedId(typeof body?.id === "string" ? body.id : "");
-  if (!idResult.ok) return idFailure(idResult.error);
-  const id = idResult.id;
+  const { session, id } = auth;
 
   const row = await getSharedRow(env, id);
   if (row === null) {
@@ -405,14 +402,9 @@ export async function handleSharedRestore(
   env: Env,
   now: Date
 ): Promise<Response> {
-  const auth = await authorizeWrite(request, env, now);
+  const auth = await readSharedWrite(request, env, now);
   if (auth instanceof Response) return auth;
-  const session = auth;
-
-  const body = await readJsonBody(request);
-  const idResult = validateSharedId(typeof body?.id === "string" ? body.id : "");
-  if (!idResult.ok) return idFailure(idResult.error);
-  const id = idResult.id;
+  const { session, id } = auth;
 
   const trash = await getSharedTrash(env, id);
   if (trash === null) {
