@@ -3,7 +3,10 @@
  * api.ts 与 admin.ts 共用。
  */
 
-export function json(body: unknown, status = 200): Response {
+import type { ApiErrorCode } from "@brightmeows/mirror/api";
+
+/** 构造响应时以契约类型标注（json<AddResponse>({...})），形状见 @brightmeows/mirror/api。 */
+export function json<T>(body: T, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
@@ -12,7 +15,7 @@ export function json(body: unknown, status = 200): Response {
 
 export interface FailureOptions {
   /** 前端翻译用的稳定错误码（`api.*` 命名空间，条目在 messages 里）。 */
-  code?: string;
+  code?: ApiErrorCode;
   /** 文案参数，与消息占位符对应。 */
   params?: Record<string, string | number>;
 }

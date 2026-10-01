@@ -4,6 +4,7 @@
  * 路由在 worker/api.ts；这里只放处理逻辑。
  */
 
+import type { MeResponse } from "@brightmeows/mirror/api";
 import { DAILY_OPERATION_LIMIT } from "@brightmeows/mirror/user-layer";
 
 import { getSession } from "../auth.ts";
@@ -14,10 +15,10 @@ import { readOperationCount } from "../store.ts";
 export async function handleMe(request: Request, env: Env, now: Date): Promise<Response> {
   const session = await getSession(env, request, now);
   if (session === null) {
-    return json({ login: null, limit: DAILY_OPERATION_LIMIT });
+    return json<MeResponse>({ login: null, limit: DAILY_OPERATION_LIMIT });
   }
   const used = await readOperationCount(env, session.login, now);
-  return json({
+  return json<MeResponse>({
     login: session.login,
     role: session.role,
     used,

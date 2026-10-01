@@ -17,6 +17,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
+import type { InternalFetchResultResponse } from "@brightmeows/mirror/api";
 import { serializeUserRecord } from "@brightmeows/mirror/user-layer";
 
 import { callInternal } from "./internal-api.ts";
@@ -59,7 +60,7 @@ async function reportResult(
     message?: string | undefined;
   }
 ): Promise<void> {
-  await callInternal("/api/internal/fetch-result", {
+  await callInternal<InternalFetchResultResponse>("/api/internal/fetch-result", {
     method: "POST",
     body: {
       requestId: options.requestId,

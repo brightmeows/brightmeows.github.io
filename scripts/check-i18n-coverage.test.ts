@@ -13,6 +13,7 @@ import {
   placeholders,
   refIssues,
   stripLineComment,
+  workerCodeLiteralIssues,
   workerCodeIssues,
 } from "./check-i18n-coverage.ts";
 
@@ -66,8 +67,16 @@ describe("引用与死 key", () => {
 });
 
 describe("Worker 错误码", () => {
-  it("收集 code 字面量", () => {
+  it("收集 code 字面量（迁移后应为空，非空即漂移）", () => {
     expect(collectWorkerCodes('failure(404, "e", { code: "api.x" });')).toEqual(["api.x"]);
+    expect(collectWorkerCodes('failure(404, "e", { code: API_ERROR_CODES.x });')).toEqual([]);
+  });
+
+  it("字面量漂移报告到文件与码", () => {
+    expect(workerCodeLiteralIssues([["a.ts", 'failure(1, "e", { code: "api.x" });']])).toEqual([
+      "a.ts：错误码字面量 api.x 应改用 API_ERROR_CODES 常量",
+    ]);
+    expect(workerCodeLiteralIssues([["a.ts", "const x = 1;"]])).toEqual([]);
   });
 
   it("非 api. 命名空间或缺消息条目报错", () => {

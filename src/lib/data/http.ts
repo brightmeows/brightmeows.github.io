@@ -1,0 +1,52 @@
+import { apiBase } from "$lib/constants/site";
+import { m } from "$lib/paraglide/messages.js";
+import { messageInputs, translateMessage } from "$lib/utils/i18n";
+
+/**
+ * 站点侧 API 传输层的单份实现：跨源基址、凭据携带与错误封套翻译。
+ *
+ * 端点函数在 mirror-user-api / mirror-admin-api / shared-api 三个模块；
+ * 端点的形状与窄化在 `@brightmeows/mirror/api`（契约单一来源）。
+ *
+ * 接口只存在于主站 Worker（Cloudflare）；静态宿主（GitHub / Codeberg Pages）
+ * 上所有 `/api/*` 请求返回 404，调用方据此把界面切换为只读并引导到主站。
+ */
+
+/** 接口不可用（静态宿主或服务异常）。 */
+export class ApiUnavailableError extends Error {}
+
+/** 请求并解析 JSON 响应；非 2xx 时翻译错误封套（`{error, code, params?}`）后抛错。 */
+export async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+  if (!headers.has("content-type")) {
+    headers.set("content-type", "application/json");
+  }
+  // 静态宿主子域上 API 在主站：带基址跨源调用，include 携带同站会话 cookie
+  const response = await fetch(`${apiBase()}${path}`, {
+    ...init,
+    headers,
+    credentials: "include",
+  });
+  if (!response.ok) {
+    let message: string = m["common.request_failed"]({ status: response.status });
+    try {
+      const body = (await response.json()) as { error?: unknown; code?: unknown; params?: unknown };
+      const translated =
+        typeof body.code === "string"
+          ? translateMessage(body.code, messageInputs(body.params))
+          : null;
+      if (translated !== null) {
+        message = translated;
+      } else if (typeof body.error === "string" && body.error !== "") {
+        message = body.error;
+      }
+    } catch {
+      // 非 JSON 响应（静态宿主的 404 页等）：沿用状态码文案
+    }
+    if (response.status === 404) {
+      throw new ApiUnavailableError(message);
+    }
+    throw new Error(message);
+  }
+  return (await response.json()) as T;
+}

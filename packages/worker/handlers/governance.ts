@@ -5,6 +5,8 @@
  * 写操作都写审计、失效清单缓存并触发部署（10 分钟节流）。
  */
 
+import { API_ERROR_CODES } from "@brightmeows/mirror/api";
+import type { AdminMutationResponse, AdminOverviewResponse } from "@brightmeows/mirror/api";
 import type { MetaOverride } from "@brightmeows/mirror/user-layer";
 
 import type { Session } from "../auth.ts";
@@ -111,7 +113,7 @@ export async function handleOverview(env: Env): Promise<Response> {
     listAudit(env, 50),
     listTrash(env),
   ]);
-  return json({
+  return json<AdminOverviewResponse>({
     counts: {
       authorized: authorized.length,
       disabled: disabled.length,
@@ -141,7 +143,7 @@ export async function handleAuthorize(
   const body = await readJsonBody(request);
   const url = normalizeBodyUrl(body);
   if (url === null) {
-    return failure(400, "A valid url is required", { code: "api.need_valid_url" });
+    return failure(400, "A valid url is required", { code: API_ERROR_CODES.needValidUrl });
   }
   const dirName = bodyString(body, "dir_name");
   const action = body?.action === "remove" ? "remove" : "add";
@@ -165,7 +167,7 @@ export async function handleAuthorize(
     ...(dirName === undefined ? {} : { dir_name: dirName }),
   });
   invalidateMergedManifest();
-  return json({ ok: true, deployTriggered: await safeDeploy(env, now) });
+  return json<AdminMutationResponse>({ ok: true, deployTriggered: await safeDeploy(env, now) });
 }
 
 export async function handleDisable(
@@ -177,7 +179,7 @@ export async function handleDisable(
   const body = await readJsonBody(request);
   const url = normalizeBodyUrl(body);
   if (url === null) {
-    return failure(400, "A valid url is required", { code: "api.need_valid_url" });
+    return failure(400, "A valid url is required", { code: API_ERROR_CODES.needValidUrl });
   }
   const dirName = bodyString(body, "dir_name");
   const note = bodyString(body, "note");
@@ -203,7 +205,7 @@ export async function handleDisable(
     ...(dirName === undefined ? {} : { dir_name: dirName }),
   });
   invalidateMergedManifest();
-  return json({ ok: true, deployTriggered: await safeDeploy(env, now) });
+  return json<AdminMutationResponse>({ ok: true, deployTriggered: await safeDeploy(env, now) });
 }
 
 export async function handleReplace(
@@ -216,7 +218,7 @@ export async function handleReplace(
   const fromRaw = bodyString(body, "from");
   const toRaw = bodyString(body, "to");
   if (fromRaw === undefined) {
-    return failure(400, "from is required", { code: "api.need_from" });
+    return failure(400, "from is required", { code: API_ERROR_CODES.needFrom });
   }
   const from = (() => {
     try {
@@ -226,20 +228,20 @@ export async function handleReplace(
     }
   })();
   if (from === null) {
-    return failure(400, "from is not a valid URL", { code: "api.from_invalid" });
+    return failure(400, "from is not a valid URL", { code: API_ERROR_CODES.fromInvalid });
   }
   const action = body?.action === "remove" ? "remove" : "add";
   const at = now.toISOString();
 
   if (action === "add") {
     if (toRaw === undefined) {
-      return failure(400, "to is required", { code: "api.need_to" });
+      return failure(400, "to is required", { code: API_ERROR_CODES.needTo });
     }
     let to: string;
     try {
       to = new URL(toRaw).href;
     } catch {
-      return failure(400, "to is not a valid URL", { code: "api.to_invalid" });
+      return failure(400, "to is not a valid URL", { code: API_ERROR_CODES.toInvalid });
     }
     await upsertReplaceRule(env, { from, to, author: session.login, updated_at: at });
   } else {
@@ -254,7 +256,7 @@ export async function handleReplace(
     detail: action === "add" ? `指向 ${toRaw ?? ""}` : "移除规则",
   });
   invalidateMergedManifest();
-  return json({ ok: true, deployTriggered: await safeDeploy(env, now) });
+  return json<AdminMutationResponse>({ ok: true, deployTriggered: await safeDeploy(env, now) });
 }
 
 export async function handleMeta(
@@ -266,7 +268,7 @@ export async function handleMeta(
   const body = await readJsonBody(request);
   const url = normalizeBodyUrl(body);
   if (url === null) {
-    return failure(400, "A valid url is required", { code: "api.need_valid_url" });
+    return failure(400, "A valid url is required", { code: API_ERROR_CODES.needValidUrl });
   }
   const at = now.toISOString();
   const name = bodyString(body, "name");
@@ -302,7 +304,7 @@ export async function handleMeta(
     detail: clear ? "清除覆盖" : "更新覆盖",
   });
   invalidateMergedManifest();
-  return json({ ok: true, deployTriggered: await safeDeploy(env, now) });
+  return json<AdminMutationResponse>({ ok: true, deployTriggered: await safeDeploy(env, now) });
 }
 
 /** 站长恢复：不受作者与恢复窗口限制（人工判断）。 */
@@ -315,12 +317,12 @@ export async function handleAdminRestore(
   const body = await readJsonBody(request);
   const dirName = bodyString(body, "dir_name");
   if (dirName === undefined) {
-    return failure(400, "dir_name is required", { code: "api.need_dir_name" });
+    return failure(400, "dir_name is required", { code: API_ERROR_CODES.needDirName });
   }
   const removed = await listRemoved(env);
   const record = removed.find((item) => item.dir_name === dirName);
   if (record === undefined) {
-    return failure(404, "Table not found in the trash", { code: "api.not_in_trash" });
+    return failure(404, "Table not found in the trash", { code: API_ERROR_CODES.notInTrash });
   }
   const restoredObjects = await restoreTableFromTrash(env, record.trash_prefix, record.dir_name);
   await deleteRemovedByDirName(env, dirName);
@@ -334,5 +336,9 @@ export async function handleAdminRestore(
     ...(restoredObjects === 0 ? { detail: "回收站无对象，仅解除黑名单" } : {}),
   });
   invalidateMergedManifest();
-  return json({ ok: true, restoredObjects, deployTriggered: await safeDeploy(env, now) });
+  return json<AdminMutationResponse>({
+    ok: true,
+    restoredObjects,
+    deployTriggered: await safeDeploy(env, now),
+  });
 }

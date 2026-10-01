@@ -4,8 +4,10 @@
  * 六条断言，前五条的核心均为纯函数（输入为文本），便于单测：
  * 1. `messages/en.json` 与 `messages/zh-cn.json` 的 key 集合对称
  * 2. 同一 key 的占位符集合（`{name}`）两语一致
- * 3. 源码引用的消息 key（src 下 `m["key"]`，Worker 下 `code: "key"`）
- *    必须存在于两份 messages；Worker 的 code 必须落在 `api.` 命名空间
+ * 3. 源码引用的消息 key（src 下 `m["key"]`，Worker 侧 `API_ERROR_CODES`
+ *    常量表的全部值）必须存在于两份 messages；Worker 错误码只许经
+ *    `@brightmeows/mirror/api` 的常量表引用，源码里的 `code: "..."` 字面量
+ *    视为漂移（新增错误码必须先进常量表）
  * 4. 声明了却无人引用的 key 视为死 key（改名后旧条目不清理会漏出来）
  * 5. src 下用户可见文本不得残留中日韩字符——注释、测试、console 输出、
  *    豁免清单（见 `EXEMPT_FILES` 与行级规则）除外
@@ -23,6 +25,8 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 
+import { API_ERROR_CODES } from "../packages/mirror/src/api.ts";
+
 /** 中日韩字符（表意文字 + 假名 + 谚文 + CJK 符号区）。
  *  必须带 `u` 标志：无 `u` 时按 UTF-16 码元匹配，范围端点比较会误伤 emoji。 */
 const CJK_PATTERN = /[぀-ヿ㐀-䶿一-鿿豈-﫿]/u;
@@ -30,7 +34,7 @@ const CJK_PATTERN = /[぀-ヿ㐀-䶿一-鿿豈-﫿]/u;
 const MESSAGE_REF_PATTERN = /m\[\s*(?:mapped as\s*)?"([a-z][a-z0-9_.]*)"\s*\]/g;
 /** 占位符：`{name}`。 */
 const PLACEHOLDER_PATTERN = /\{([a-z][a-z0-9_]*)\}/g;
-/** Worker 错误码：`code: "api.xxx"`。 */
+/** Worker 错误码字面量：`code: "api.xxx"`（只许经 API_ERROR_CODES 引用，命中即漂移）。 */
 const WORKER_CODE_PATTERN = /code:\s*"([a-z][a-z0-9_.]*)"/g;
 
 /** 按路径（正则）整体豁免 CJK 扫描的文件。 */
@@ -98,9 +102,20 @@ export function collectMessageRefs(text: string): string[] {
   return [...text.matchAll(MESSAGE_REF_PATTERN)].map((match) => match[1] ?? "");
 }
 
-/** 从 Worker 源码收集 `code: "key"`。 */
+/** 从 Worker 源码收集 `code: "key"` 字面量（应为空，非空的即漂移）。 */
 export function collectWorkerCodes(text: string): string[] {
   return [...text.matchAll(WORKER_CODE_PATTERN)].map((match) => match[1] ?? "");
+}
+
+/** 断言 3b：Worker 源码里的错误码字面量都是漂移（应经 API_ERROR_CODES 引用）。 */
+export function workerCodeLiteralIssues(files: readonly (readonly [string, string])[]): string[] {
+  const issues: string[] = [];
+  for (const [rel, text] of files) {
+    for (const code of collectWorkerCodes(text)) {
+      issues.push(`${rel}：错误码字面量 ${code} 应改用 API_ERROR_CODES 常量`);
+    }
+  }
+  return issues;
 }
 
 /** 断言 3：引用的 key 存在；Worker code 落在 api. 命名空间。 */
@@ -201,12 +216,13 @@ function main(): void {
     (rel) => [rel, readFileSync(path.join(root, rel), "utf8")] as const
   );
 
-  // 消息引用只从代码文件收集：文档里的示例 `m["key"]()` 不是真实引用
+  // 消息引用只从代码文件收集：文档里的示例 `m["key"]()` 不是真实引用；
+  // Worker 错误码以常量表为准（API_ERROR_CODES），源码字面量视为漂移
   const CODE_EXTENSIONS = new Set([".ts", ".svelte", ".js"]);
   const refs = srcTexts
     .filter(([rel]) => CODE_EXTENSIONS.has(path.extname(rel)))
     .flatMap(([, text]) => collectMessageRefs(text));
-  const workerCodes = workerTexts.flatMap(([, text]) => collectWorkerCodes(text));
+  const workerCodes = Object.values(API_ERROR_CODES);
 
   const issues = [
     ...keyParityIssues(en, zh),
@@ -214,6 +230,7 @@ function main(): void {
     ...refIssues(refs, en),
     ...refIssues([...refs, ...workerCodes], zh),
     ...workerCodeIssues(workerCodes, en),
+    ...workerCodeLiteralIssues(workerTexts),
     ...deadKeyIssues(en, [...refs, ...workerCodes]),
     ...srcTexts.flatMap(([rel, text]) => cjkLineIssues(rel, text)),
     ...enValueIssues(en),

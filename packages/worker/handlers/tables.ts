@@ -5,6 +5,13 @@
  * 移数据（可见性优先），自助恢复窗口与回收站清理窗口同源。
  */
 
+import { API_ERROR_CODES } from "@brightmeows/mirror/api";
+import type {
+  AddResponse,
+  DeleteResponse,
+  RemovedResponse,
+  RestoreResponse,
+} from "@brightmeows/mirror/api";
 import {
   DAILY_OPERATION_LIMIT,
   normalizeTableUrl,
@@ -50,11 +57,11 @@ async function consume(env: Env, session: Session, now: Date): Promise<number | 
 
 export async function handleAdd(request: Request, env: Env, now: Date): Promise<Response> {
   if (!checkAllowedOrigin(request, allowedOrigins(env))) {
-    return failure(403, "Origin check failed", { code: "api.origin_check_failed" });
+    return failure(403, "Origin check failed", { code: API_ERROR_CODES.originCheckFailed });
   }
   const session = await getSession(env, request, now);
   if (session === null) {
-    return failure(401, "Log in with GitHub first", { code: "api.login_required" });
+    return failure(401, "Log in with GitHub first", { code: API_ERROR_CODES.loginRequired });
   }
   const body = await readJsonBody(request);
   const rawUrl = typeof body?.url === "string" ? body.url.trim() : "";
@@ -62,13 +69,13 @@ export async function handleAdd(request: Request, env: Env, now: Date): Promise<
   try {
     targetUrl = new URL(rawUrl).href;
   } catch {
-    return failure(400, "Invalid URL", { code: "api.url_invalid" });
+    return failure(400, "Invalid URL", { code: API_ERROR_CODES.urlInvalid });
   }
 
   const [user, manifest] = await Promise.all([loadUserLayer(env), loadMergedManifest(env)]);
   if (manifest === null) {
     return failure(503, "Manifest temporarily unavailable, please retry later", {
-      code: "api.manifest_unavailable",
+      code: API_ERROR_CODES.manifestUnavailable,
     });
   }
 
@@ -78,20 +85,24 @@ export async function handleAdd(request: Request, env: Env, now: Date): Promise<
       normalizeTableUrl(item.url) === key || normalizeTableUrl(item.url_from ?? item.url) === key
   );
   if (alreadyListed) {
-    return failure(409, "Table is already in the mirror list", { code: "api.already_in_mirror" });
+    return failure(409, "Table is already in the mirror list", {
+      code: API_ERROR_CODES.alreadyInMirror,
+    });
   }
   if (user.added.some((entry) => normalizeTableUrl(entry.url) === key)) {
-    return failure(409, "Table already has a pending add request", { code: "api.already_pending" });
+    return failure(409, "Table already has a pending add request", {
+      code: API_ERROR_CODES.alreadyPending,
+    });
   }
   if (user.removed.some((entry) => normalizeTableUrl(entry.url) === key)) {
     return failure(
       409,
       "Table was deleted before: self-restore within 30 days, contact the owner afterwards",
-      { code: "api.was_deleted" }
+      { code: API_ERROR_CODES.wasDeleted }
     );
   }
   if (user.disabled.some((entry) => normalizeTableUrl(entry.url) === key)) {
-    return failure(409, "Table disabled by the owner", { code: "api.disabled_by_owner" });
+    return failure(409, "Table disabled by the owner", { code: API_ERROR_CODES.disabledByOwner });
   }
 
   const replaceHit = user.replace.find((rule) => normalizeTableUrl(rule.from) === key);
@@ -100,7 +111,7 @@ export async function handleAdd(request: Request, env: Env, now: Date): Promise<
   const consumed = await consume(env, session, now);
   if (consumed === null) {
     return failure(429, `Daily operation limit reached (${DAILY_OPERATION_LIMIT} per day)`, {
-      code: "api.daily_limit",
+      code: API_ERROR_CODES.dailyLimit,
       params: { limit: DAILY_OPERATION_LIMIT },
     });
   }
@@ -141,18 +152,18 @@ export async function handleAdd(request: Request, env: Env, now: Date): Promise<
       ...pending,
       state: "failed",
       // 存的是错误码而非自由文本：前端按 messages 翻译（见 mirror-user-api）
-      message: "api.fetch_dispatch_failed",
+      message: API_ERROR_CODES.fetchDispatchFailed,
       updated_at: new Date().toISOString(),
     });
     return failure(
       502,
       "Add recorded, but triggering the fetch workflow failed; contact the owner",
       {
-        code: "api.fetch_dispatch_failed",
+        code: API_ERROR_CODES.fetchDispatchFailed,
       }
     );
   }
-  return json({
+  return json<AddResponse>({
     requestId,
     url: effectiveUrl,
     remaining: Math.max(0, DAILY_OPERATION_LIMIT - consumed),
@@ -161,23 +172,23 @@ export async function handleAdd(request: Request, env: Env, now: Date): Promise<
 
 export async function handleDelete(request: Request, env: Env, now: Date): Promise<Response> {
   if (!checkAllowedOrigin(request, allowedOrigins(env))) {
-    return failure(403, "Origin check failed", { code: "api.origin_check_failed" });
+    return failure(403, "Origin check failed", { code: API_ERROR_CODES.originCheckFailed });
   }
   const session = await getSession(env, request, now);
   if (session === null) {
-    return failure(401, "Log in with GitHub first", { code: "api.login_required" });
+    return failure(401, "Log in with GitHub first", { code: API_ERROR_CODES.loginRequired });
   }
   const body = await readJsonBody(request);
   const dirName = typeof body?.dir_name === "string" ? body.dir_name.trim() : "";
   const urlKey = typeof body?.url === "string" ? normalizeTableUrl(body.url.trim()) : "";
   if (dirName === "" && urlKey === "") {
-    return failure(400, "dir_name or url is required", { code: "api.need_dir_or_url" });
+    return failure(400, "dir_name or url is required", { code: API_ERROR_CODES.needDirOrUrl });
   }
 
   const manifest = await loadMergedManifest(env);
   if (manifest === null) {
     return failure(503, "Manifest temporarily unavailable, please retry later", {
-      code: "api.manifest_unavailable",
+      code: API_ERROR_CODES.manifestUnavailable,
     });
   }
   const entry = manifest.find(
@@ -186,22 +197,24 @@ export async function handleDelete(request: Request, env: Env, now: Date): Promi
       (urlKey !== "" && normalizeTableUrl(item.url) === urlKey)
   );
   if (entry === undefined) {
-    return failure(404, "Table not found in the manifest", { code: "api.not_in_manifest" });
+    return failure(404, "Table not found in the manifest", { code: API_ERROR_CODES.notInManifest });
   }
   const targetDir = entry.dir_name;
   if (targetDir === undefined || targetDir === "") {
-    return failure(500, "Manifest entry is missing dir_name", { code: "api.missing_dir_name" });
+    return failure(500, "Manifest entry is missing dir_name", {
+      code: API_ERROR_CODES.missingDirName,
+    });
   }
   if (entry.protected === true) {
     return failure(403, "Table is owner-protected and cannot be deleted", {
-      code: "api.protected_no_delete",
+      code: API_ERROR_CODES.protectedNoDelete,
     });
   }
 
   const consumed = await consume(env, session, now);
   if (consumed === null) {
     return failure(429, `Daily operation limit reached (${DAILY_OPERATION_LIMIT} per day)`, {
-      code: "api.daily_limit",
+      code: API_ERROR_CODES.dailyLimit,
       params: { limit: DAILY_OPERATION_LIMIT },
     });
   }
@@ -235,7 +248,7 @@ export async function handleDelete(request: Request, env: Env, now: Date): Promi
   } catch (error) {
     console.warn("删除后触发部署失败", error);
   }
-  return json({
+  return json<DeleteResponse>({
     dirName: targetDir,
     trashPrefix,
     remaining: Math.max(0, DAILY_OPERATION_LIMIT - consumed),
@@ -245,32 +258,32 @@ export async function handleDelete(request: Request, env: Env, now: Date): Promi
 
 export async function handleRestore(request: Request, env: Env, now: Date): Promise<Response> {
   if (!checkAllowedOrigin(request, allowedOrigins(env))) {
-    return failure(403, "Origin check failed", { code: "api.origin_check_failed" });
+    return failure(403, "Origin check failed", { code: API_ERROR_CODES.originCheckFailed });
   }
   const session = await getSession(env, request, now);
   if (session === null) {
-    return failure(401, "Log in with GitHub first", { code: "api.login_required" });
+    return failure(401, "Log in with GitHub first", { code: API_ERROR_CODES.loginRequired });
   }
   const body = await readJsonBody(request);
   const dirName = typeof body?.dir_name === "string" ? body.dir_name.trim() : "";
   if (dirName === "") {
-    return failure(400, "dir_name is required", { code: "api.need_dir_name" });
+    return failure(400, "dir_name is required", { code: API_ERROR_CODES.needDirName });
   }
 
   const removed = await listRemoved(env);
   const record = removed.find((item) => item.dir_name === dirName);
   if (record === undefined) {
-    return failure(404, "Table not found in the trash", { code: "api.not_in_trash" });
+    return failure(404, "Table not found in the trash", { code: API_ERROR_CODES.notInTrash });
   }
   if (record.author !== session.login && session.role !== "admin") {
     return failure(403, "You can only restore tables you deleted", {
-      code: "api.only_own_deletes",
+      code: API_ERROR_CODES.onlyOwnDeletes,
     });
   }
   const ageMs = now.getTime() - Date.parse(record.removed_at);
   if (!Number.isFinite(ageMs) || ageMs > RESTORE_WINDOW_MS) {
     return failure(410, `Restore window expired (${TRASH_RETENTION_DAYS} days)`, {
-      code: "api.trash_expired",
+      code: API_ERROR_CODES.trashExpired,
       params: { days: TRASH_RETENTION_DAYS },
     });
   }
@@ -278,7 +291,7 @@ export async function handleRestore(request: Request, env: Env, now: Date): Prom
   const consumed = await consume(env, session, now);
   if (consumed === null) {
     return failure(429, `Daily operation limit reached (${DAILY_OPERATION_LIMIT} per day)`, {
-      code: "api.daily_limit",
+      code: API_ERROR_CODES.dailyLimit,
       params: { limit: DAILY_OPERATION_LIMIT },
     });
   }
@@ -302,7 +315,7 @@ export async function handleRestore(request: Request, env: Env, now: Date): Prom
   } catch (error) {
     console.warn("恢复后触发部署失败", error);
   }
-  return json({
+  return json<RestoreResponse>({
     dirName: record.dir_name,
     restoredObjects,
     remaining: Math.max(0, DAILY_OPERATION_LIMIT - consumed),
@@ -313,9 +326,9 @@ export async function handleRestore(request: Request, env: Env, now: Date): Prom
 export async function handleStatus(env: Env, requestId: string): Promise<Response> {
   const status = await readFetchStatus(env, requestId);
   if (status === null) {
-    return failure(404, "Request record not found", { code: "api.no_request_record" });
+    return failure(404, "Request record not found", { code: API_ERROR_CODES.noRequestRecord });
   }
-  return json(status);
+  return json<StatusEntry>(status);
 }
 
 /**
@@ -325,7 +338,7 @@ export async function handleStatus(env: Env, requestId: string): Promise<Respons
 export async function handleRemoved(request: Request, env: Env, now: Date): Promise<Response> {
   const session = await getSession(env, request, now);
   if (session === null) {
-    return failure(401, "Log in with GitHub first", { code: "api.login_required" });
+    return failure(401, "Log in with GitHub first", { code: API_ERROR_CODES.loginRequired });
   }
   const removed = await listRemoved(env);
   const cutoff = now.getTime() - RESTORE_WINDOW_MS;
@@ -341,5 +354,5 @@ export async function handleRemoved(request: Request, env: Env, now: Date): Prom
       removed_at: item.removed_at,
       author: item.author,
     }));
-  return json({ entries });
+  return json<RemovedResponse>({ entries });
 }
