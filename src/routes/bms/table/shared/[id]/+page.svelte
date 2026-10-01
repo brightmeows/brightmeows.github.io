@@ -12,7 +12,7 @@
   import { auth } from "$lib/data/auth-store.svelte";
   import { loadSharedTables, submitSharedDelete } from "$lib/data/shared-api";
   import { m } from "$lib/paraglide/messages.js";
-  import { downloadJsonFile } from "$lib/utils/shared-table";
+  import { downloadJsonFile } from "$lib/utils/download";
 
   // 表 id 直接来自路径参数：本页 URL 即共享表的导入地址（Worker 注入 meta）。
   const tableId = $derived(page.params.id ?? "");

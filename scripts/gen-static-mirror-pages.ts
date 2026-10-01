@@ -156,7 +156,8 @@ export function generateStaticSharedPages(
 
 /**
  * 按清单生成镜像页与站点清单。
- * 写入位置：`<buildDir>/bms/table/mirror/<dir_name>/index.html` 与 `.../tables.json`。
+ * 写入位置：`<buildDir>/bms/table/mirror/<dir_name>/index.html`、
+ * `<dir_name>/edit/index.html`（编辑页同一外壳、不注入 meta）与 `.../tables.json`。
  */
 export function generateStaticMirrorPages(
   list: readonly MirrorTableItem[],
@@ -179,6 +180,11 @@ export function generateStaticMirrorPages(
     const target = path.join(mirrorDir, dirName, "index.html");
     mkdirSync(path.dirname(target), { recursive: true });
     writeFileSync(target, page);
+
+    // 编辑页：客户端路由渲染编辑器，不注入 bmstable meta（编辑地址不是导入地址）
+    const editTarget = path.join(mirrorDir, dirName, "edit", "index.html");
+    mkdirSync(path.dirname(editTarget), { recursive: true });
+    writeFileSync(editTarget, shell);
   }
 
   mkdirSync(mirrorDir, { recursive: true });
@@ -188,7 +194,7 @@ export function generateStaticMirrorPages(
     serializeSiteTableList(transformTableList(remapped, options.siteBase))
   );
 
-  return { pages: list.length, listPath: listPath.split(path.sep).join("/") };
+  return { pages: list.length * 2, listPath: listPath.split(path.sep).join("/") };
 }
 
 function parseArgs(argv: string[]): {
@@ -268,7 +274,7 @@ async function main(argv: string[]): Promise<void> {
   if (args.target !== undefined && DOMAIN_FILE_BY_TARGET[args.target] !== undefined) {
     console.log(`域配置提交物：${DOMAIN_FILE_BY_TARGET[args.target]}`);
   }
-  console.log(`镜像页：${result.pages} 个`);
+  console.log(`镜像页（含编辑页）：${result.pages} 个`);
   console.log(`站点清单：${result.listPath}`);
   console.log(`共享表页：${sharedResult.pages} 个`);
   console.log(`共享表清单：${sharedResult.listPath}`);

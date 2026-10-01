@@ -43,6 +43,7 @@ import {
 } from "./i18n.ts";
 import { handleInternal } from "./internal.ts";
 import { MANIFEST_MAX_AGE, loadMergedManifest } from "./manifest.ts";
+import { parseMirrorTablePath } from "./mirror-path.ts";
 import { ensureSchemaOnce } from "./schema.ts";
 import { getSharedAlias, getSharedRow, listSharedRows, sharedRowToItem } from "./store-shared.ts";
 
@@ -65,13 +66,17 @@ function decodePath(pathname: string): string | null {
   }
 }
 
-/** 单表页：校验表存在后，把该表的 bmstable meta 注入站点 SPA 外壳。 */
+/**
+ * 单表页：校验表存在后，把该表的 bmstable meta 注入站点 SPA 外壳。
+ * `edit` 为 true 时（`/edit/` 路径）只发外壳：编辑地址不是导入地址，不注入 meta。
+ */
 async function handleTablePage(
   request: Request,
   env: Env,
   url: URL,
   tableId: string,
-  locale: Locale
+  locale: Locale,
+  edit = false
 ): Promise<Response> {
   const manifest = await loadMergedManifest(env);
   if (manifest === null) {
@@ -89,9 +94,8 @@ async function handleTablePage(
 
   const shellRes = await env.ASSETS.fetch(new URL(shellPath(locale), url.origin));
   const shell = await shellRes.text();
-  const headerUrl = r2TableHeaderUrl(env.R2_BASE, tableId);
-  // 与构建期脚本共用同一段注入逻辑，保证两种输出逐字节等价
-  const page = injectBmstableMeta(shell, headerUrl);
+  // 与构建期脚本共用同一段注入逻辑，保证两种输出逐字节等价；编辑路径只发外壳
+  const page = edit ? shell : injectBmstableMeta(shell, r2TableHeaderUrl(env.R2_BASE, tableId));
 
   return new Response(page, {
     status: 200,
@@ -286,10 +290,16 @@ export default {
 
     const withSlash = /^\/bms\/table\/mirror\/(.+)\/$/.exec(path);
     if (withSlash?.[1]) {
-      return handleTablePage(request, env, url, withSlash[1], locale);
+      const parsed = parseMirrorTablePath(withSlash[1]);
+      return handleTablePage(request, env, url, parsed.tableId, locale, parsed.edit);
     }
 
     // 与站点全局 trailingSlash="always" 对齐：无尾斜杠补成带尾斜杠
+    const editWithoutSlash = /^\/bms\/table\/mirror\/([^/]+)\/edit$/.exec(path);
+    if (editWithoutSlash?.[1]) {
+      const target = `${MIRROR_ROOT}${encodeURIComponent(editWithoutSlash[1])}/edit/`;
+      return Response.redirect(new URL(target, url.origin).toString(), 301);
+    }
     const withoutSlash = /^\/bms\/table\/mirror\/([^/]+)$/.exec(path);
     if (withoutSlash?.[1]) {
       const target = `${MIRROR_ROOT}${encodeURIComponent(withoutSlash[1])}/`;

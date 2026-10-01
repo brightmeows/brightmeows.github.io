@@ -23,9 +23,11 @@
      * 镜像表页与自托管表页因此零改动。
      */
     actions?: Snippet | undefined;
+    /** 编辑页地址；提供时标题区展示“编辑”链接（镜像与自托管表）。 */
+    editHref?: string | undefined;
   }
 
-  let { headerUrl, actions }: Props = $props();
+  let { headerUrl, actions, editHref }: Props = $props();
 
   // ---- Header 加载状态 ----
   let headerLoadState = $state<"loading" | "loaded" | "error">("loading");
@@ -251,6 +253,11 @@
     {#if actions}
       <div class="mt-3 flex flex-wrap items-center justify-center gap-2">
         {@render actions()}
+      </div>
+    {/if}
+    {#if editHref}
+      <div class="mt-3">
+        <a class="link-accent" href={editHref}>{m["editor.enter"]()}</a>
       </div>
     {/if}
     {#if dataLoaded && tableStats}
