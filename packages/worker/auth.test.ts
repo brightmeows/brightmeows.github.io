@@ -7,7 +7,7 @@
 
 import { describe, expect, it } from "vitest";
 
-import { safeReturnTo } from "./auth.ts";
+import { safeReturnTo } from "./handlers/account.ts";
 import { allowedOrigins, checkAllowedOrigin } from "./http.ts";
 
 /** 测试用 Origin 白名单：站点三域的替身。 */

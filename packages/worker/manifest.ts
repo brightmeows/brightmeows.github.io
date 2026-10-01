@@ -11,7 +11,7 @@ import type { MirrorTableItem } from "@brightmeows/mirror/types";
 import { mergeTableList } from "@brightmeows/mirror/user-layer";
 
 import type { Env } from "./env.ts";
-import { loadUserLayer } from "./store.ts";
+import { loadUserLayer } from "./store/user-layer.ts";
 
 /** 清单响应的边缘缓存秒数：新增或删除的表最迟这个时间后可见。 */
 export const MANIFEST_MAX_AGE = 60;

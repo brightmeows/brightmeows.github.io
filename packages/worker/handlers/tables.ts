@@ -24,21 +24,18 @@ import { dispatchWorkflow } from "../dispatch.ts";
 import type { Env } from "../env.ts";
 import { allowedOrigins, checkAllowedOrigin, failure, json, readJsonBody } from "../http.ts";
 import { invalidateMergedManifest, loadMergedManifest } from "../manifest.ts";
+import { writeAudit } from "../store/audit.ts";
+import { triggerDeploy } from "../store/deploy.ts";
+import { readFetchStatus, writeFetchStatus } from "../store/fetch-status.ts";
+import { RateLimitError, consumeOperation } from "../store/quota.ts";
+import { moveTableToTrash, restoreTableFromTrash } from "../store/trash.ts";
 import {
-  RateLimitError,
-  consumeOperation,
   deleteRemovedByDirName,
   insertAdded,
   listRemoved,
   loadUserLayer,
-  moveTableToTrash,
-  readFetchStatus,
-  restoreTableFromTrash,
-  triggerDeploy,
   upsertRemoved,
-  writeAudit,
-  writeFetchStatus,
-} from "../store.ts";
+} from "../store/user-layer.ts";
 
 /** 自助恢复窗口（毫秒）：与回收站清理窗口同源。 */
 const RESTORE_WINDOW_MS = TRASH_RETENTION_DAYS * 24 * 60 * 60 * 1000;

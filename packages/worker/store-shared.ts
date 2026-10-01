@@ -14,7 +14,8 @@ import { sharedObjectPrefix, type SharedTableItem } from "@brightmeows/mirror/sh
 import type { UserRole } from "@brightmeows/mirror/user-layer";
 
 import type { Env } from "./env.ts";
-import { movePrefixToTrash, restorePrefixFromTrash, text, toRole } from "./store.ts";
+import { text, toRole } from "./store/rows.ts";
+import { movePrefixToTrash, restorePrefixFromTrash } from "./store/trash.ts";
 
 /** 共享表的 D1 元数据行。 */
 export interface SharedRow {

@@ -8,9 +8,8 @@
 import { API_ERROR_CODES } from "@brightmeows/mirror/api";
 
 import { handleAdmin } from "./admin.ts";
-import { handleCallback, handleLogin, handleLogout } from "./auth.ts";
 import { OAUTH_CALLBACK_PATH, type Env } from "./env.ts";
-import { handleMe } from "./handlers/account.ts";
+import { handleCallback, handleLogin, handleLogout, handleMe } from "./handlers/account.ts";
 import { handlePreview } from "./handlers/preview.ts";
 import {
   handleSharedCheckId,

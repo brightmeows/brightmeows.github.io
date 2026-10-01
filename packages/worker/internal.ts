@@ -23,7 +23,8 @@ import { backupUserLayer } from "./backup.ts";
 import type { Env } from "./env.ts";
 import { failure, json, readJsonBody } from "./http.ts";
 import { invalidateMergedManifest } from "./manifest.ts";
-import { loadUserLayer, upsertFetched, writeFetchStatus } from "./store.ts";
+import { writeFetchStatus } from "./store/fetch-status.ts";
+import { loadUserLayer, upsertFetched } from "./store/user-layer.ts";
 
 /** 恒定时间比较：长度不同直接失败（token 等长，长度本身不泄露有效信息）。 */
 function constantTimeEquals(left: string, right: string): boolean {

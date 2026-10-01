@@ -13,6 +13,9 @@ import type { Session } from "../auth.ts";
 import type { Env } from "../env.ts";
 import { failure, json, readJsonBody } from "../http.ts";
 import { invalidateMergedManifest } from "../manifest.ts";
+import { listAudit, writeAudit } from "../store/audit.ts";
+import { triggerDeploy } from "../store/deploy.ts";
+import { restoreTableFromTrash } from "../store/trash.ts";
 import {
   deleteAuthorized,
   deleteDisabled,
@@ -20,20 +23,16 @@ import {
   deleteRemovedByDirName,
   deleteReplaceRule,
   listAdded,
-  listAudit,
   listAuthorized,
   listDisabled,
   listMetaOverrides,
   listRemoved,
   listReplaceRules,
-  restoreTableFromTrash,
-  triggerDeploy,
   upsertAuthorized,
   upsertDisabled,
   upsertMetaOverride,
   upsertReplaceRule,
-  writeAudit,
-} from "../store.ts";
+} from "../store/user-layer.ts";
 
 /** 回收站前缀（键为 `trash/<时间戳>/<dir_name>/<文件>`）。 */
 const TRASH_PREFIX = "trash/";

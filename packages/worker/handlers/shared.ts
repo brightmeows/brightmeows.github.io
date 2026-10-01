@@ -53,7 +53,8 @@ import {
   updateSharedMeta,
   type SharedRow,
 } from "../store-shared.ts";
-import { writeAudit, writeFoldedAudit, triggerDeploy } from "../store.ts";
+import { writeAudit, writeFoldedAudit } from "../store/audit.ts";
+import { triggerDeploy } from "../store/deploy.ts";
 
 /** 自助恢复窗口的截止时间（ISO）：与回收站清理窗口同源。 */
 function trashCutoffIso(now: Date): string {
