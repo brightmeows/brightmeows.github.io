@@ -3,6 +3,7 @@
   import type { MetaOverride } from "@brightmeows/mirror/user-layer";
   import { untrack } from "svelte";
 
+  import { btnDanger, btnGhostXs, inputInline } from "$lib/constants/ui-classes";
   import { m } from "$lib/paraglide/messages.js";
   import type { MirrorMetaFields } from "$lib/types/bms-view";
   import { shouldSuggestTagOrder } from "$lib/utils/mirror-tables";
@@ -56,12 +57,6 @@
   let tag2 = $state(untrack(() => override?.tag2 ?? ""));
   let tagOrder = $state(untrack(() => override?.tag_order ?? ""));
 
-  const fieldInput =
-    "rounded-lg border border-white/20 bg-black/20 px-2 py-1.5 text-[0.9rem] text-white outline-none placeholder:text-white/40 focus:border-[#64b5f6]/60";
-  const smallButton =
-    "cursor-pointer rounded-md border border-white/20 bg-white/10 px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-white/80 transition-all duration-200 ease-in-out hover:bg-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
-  const dangerButton =
-    "cursor-pointer rounded-md border border-red-300/30 bg-red-400/10 px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-red-200 transition-colors duration-200 hover:bg-red-400/20 disabled:cursor-not-allowed disabled:opacity-50";
   const helpText = "text-[0.8rem] text-white/45";
 
   const tagOrderPlaceholder = $derived.by(() => {
@@ -99,7 +94,7 @@
   <td colspan={colCount} class="table-td-glass">
     <div class="flex flex-col gap-4 rounded-lg border border-white/10 bg-black/20 p-4">
       <div class="flex justify-end">
-        <button class={smallButton} type="button" onclick={oncollapse}>
+        <button class={btnGhostXs} type="button" onclick={oncollapse}>
           {m["mirror.collapse_edit"]()}
         </button>
       </div>
@@ -114,7 +109,7 @@
               : m["mirror.unprotected_title"]()}
           </span>
           <button
-            class={smallButton}
+            class={btnGhostXs}
             type="button"
             disabled={busy}
             onclick={() => onauthorize(item)}
@@ -136,19 +131,19 @@
             </label>
             <input
               id="mirror-edit-disable-note"
-              class={fieldInput}
+              class={inputInline}
               type="text"
               bind:value={note}
               placeholder={m["common.optional"]()}
               disabled={busy}
             />
           </div>
-          <button class={dangerButton} type="button" disabled={busy} onclick={submitDisable}>
+          <button class={btnDanger} type="button" disabled={busy} onclick={submitDisable}>
             {m["admin.disable"]()}
           </button>
           {#if canDelete && ondelete}
             <button
-              class={dangerButton}
+              class={btnDanger}
               type="button"
               disabled={deleteDisabled}
               title={deleteTitle}
@@ -175,7 +170,7 @@
             </label>
             <input
               id="mirror-edit-name"
-              class={fieldInput}
+              class={inputInline}
               type="text"
               bind:value={name}
               placeholder={item.name}
@@ -188,7 +183,7 @@
             </label>
             <input
               id="mirror-edit-symbol"
-              class={fieldInput}
+              class={inputInline}
               type="text"
               bind:value={symbol}
               placeholder={item.symbol ?? ""}
@@ -204,7 +199,7 @@
                 </label>
                 <input
                   id="mirror-edit-tag-order"
-                  class={fieldInput}
+                  class={inputInline}
                   type="text"
                   inputmode="numeric"
                   bind:value={tagOrder}
@@ -219,7 +214,7 @@
                 </label>
                 <input
                   id="mirror-edit-tag1"
-                  class={fieldInput}
+                  class={inputInline}
                   type="text"
                   bind:value={tag1}
                   list="mirror-tag1-options"
@@ -236,7 +231,7 @@
             </label>
             <input
               id="mirror-edit-tag2"
-              class={fieldInput}
+              class={inputInline}
               type="text"
               bind:value={tag2}
               list="mirror-tag2-options"
@@ -247,11 +242,11 @@
           </div>
         </div>
         <div class="flex flex-wrap justify-end gap-2">
-          <button class={smallButton} type="button" disabled={busy} onclick={submitMeta}>
+          <button class={btnGhostXs} type="button" disabled={busy} onclick={submitMeta}>
             {m["admin.meta_save"]()}
           </button>
           <button
-            class={smallButton}
+            class={btnGhostXs}
             type="button"
             disabled={busy || override === null}
             onclick={onmetaclear}

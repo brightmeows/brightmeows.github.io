@@ -1,5 +1,6 @@
 <script lang="ts">
   import { r2TableDataUrl, r2TableHeaderUrl } from "$lib/constants/r2";
+  import { btnGhost, inputEditorMono } from "$lib/constants/ui-classes";
   import { m } from "$lib/paraglide/messages.js";
   import { mirrorDirNameFromUrl } from "$lib/utils/shared-table";
   import { parseCombinedPackage, type TableImportResult } from "$lib/utils/table-editor";
@@ -171,10 +172,6 @@
         ? "border-[#64b5f6]/60 bg-[#64b5f6]/20 text-[#64b5f6]"
         : "border-white/20 text-white/50 hover:border-white/40 hover:text-white/70"
     }`;
-  const inputClass =
-    "w-full rounded-lg border border-white/20 bg-black/20 px-3 py-2 font-mono text-[0.85rem] text-white outline-none placeholder:text-white/40 focus:border-[#64b5f6]/60 focus:ring-1 focus:ring-[#64b5f6]/30 disabled:opacity-60";
-  const smallButton =
-    "cursor-pointer rounded-md border border-white/20 bg-white/10 px-3 py-1.5 text-[0.85rem] whitespace-nowrap text-white/80 transition-all duration-200 ease-in-out hover:bg-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
 </script>
 
 <details class="rounded-lg border border-white/15 bg-black/20 p-3">
@@ -213,12 +210,12 @@
     {#if tab === "json"}
       <p class="mb-2 text-[0.85rem] text-white/60">{m["editor.import_json_hint"]()}</p>
       <textarea
-        class="{inputClass} min-h-32"
+        class="{inputEditorMono} min-h-32"
         bind:value={jsonText}
         placeholder={m["editor.import_json_placeholder"]()}
         {disabled}></textarea>
       <div class="mt-2">
-        <button class={smallButton} type="button" {disabled} onclick={applyJson}>
+        <button class={btnGhost} type="button" {disabled} onclick={applyJson}>
           {m["editor.import_apply"]()}
         </button>
       </div>
@@ -241,14 +238,14 @@
       <p class="mb-2 text-[0.85rem] text-white/60">{m["editor.import_fork_hint"]()}</p>
       <div class="flex flex-wrap gap-2">
         <input
-          class="{inputClass} min-w-60 flex-1"
+          class="{inputEditorMono} min-w-60 flex-1"
           type="text"
           bind:value={forkUrl}
           placeholder={m["editor.import_fork_placeholder"]()}
           {disabled}
         />
         <button
-          class={smallButton}
+          class={btnGhost}
           type="button"
           disabled={disabled || busy}
           onclick={() => void applyFork()}

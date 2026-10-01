@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { btnGhostSm, btnIcon, inputEditorBase } from "$lib/constants/ui-classes";
   import { m } from "$lib/paraglide/messages.js";
   import { levelOrderToText, textToLevelOrder } from "$lib/utils/shared-table";
   import { addLevel, moveItem, removeLevelAt } from "$lib/utils/table-editor";
@@ -53,13 +54,6 @@
     dragIndex = null;
     dropIndex = null;
   }
-
-  const smallButton =
-    "cursor-pointer rounded-md border border-white/20 bg-white/10 px-2.5 py-1 text-[0.85rem] whitespace-nowrap text-white/80 transition-all duration-200 ease-in-out hover:bg-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
-  const iconButtonClass =
-    "flex size-7 cursor-pointer items-center justify-center rounded-md text-white/60 transition-colors duration-200 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
-  const inputClass =
-    "w-full rounded-lg border border-white/20 bg-black/20 px-3 py-2 text-[0.9rem] text-white outline-none placeholder:text-white/40 focus:border-[#64b5f6]/60 focus:ring-1 focus:ring-[#64b5f6]/30 disabled:opacity-60";
 </script>
 
 <section>
@@ -68,14 +62,14 @@
     <span class="text-[0.85rem] text-white/50">{m["editor.level_order_hint"]()}</span>
     <div class="ml-auto flex gap-2">
       {#if textMode}
-        <button class={smallButton} type="button" {disabled} onclick={applyTextMode}>
+        <button class={btnGhostSm} type="button" {disabled} onclick={applyTextMode}>
           {m["editor.level_order_apply_text"]()}
         </button>
-        <button class={smallButton} type="button" onclick={() => (textMode = false)}>
+        <button class={btnGhostSm} type="button" onclick={() => (textMode = false)}>
           {m["common.cancel"]()}
         </button>
       {:else}
-        <button class={smallButton} type="button" {disabled} onclick={startTextMode}>
+        <button class={btnGhostSm} type="button" {disabled} onclick={startTextMode}>
           {m["editor.level_order_text_mode"]()}
         </button>
       {/if}
@@ -84,7 +78,7 @@
 
   {#if textMode}
     <textarea
-      class="{inputClass} min-h-40 font-mono text-[0.85rem]"
+      class="{inputEditorBase} min-h-40 font-mono text-[0.85rem]"
       bind:value={textValue}
       placeholder={m["editor.level_order_placeholder"]()}
       {disabled}></textarea>
@@ -128,7 +122,7 @@
           <span class="min-w-0 flex-1 truncate font-mono text-[0.95rem] text-white/90">{level}</span
           >
           <button
-            class={iconButtonClass}
+            class={btnIcon}
             type="button"
             {disabled}
             title={m["editor.level_order_move_up"]()}
@@ -149,7 +143,7 @@
             </svg>
           </button>
           <button
-            class={iconButtonClass}
+            class={btnIcon}
             type="button"
             {disabled}
             title={m["editor.level_order_move_down"]()}
@@ -170,7 +164,7 @@
             </svg>
           </button>
           <button
-            class="{iconButtonClass} text-red-200/80 hover:bg-red-400/20 hover:text-red-200"
+            class="{btnIcon} text-red-200/80 hover:bg-red-400/20 hover:text-red-200"
             type="button"
             {disabled}
             title={m["editor.level_order_remove"]()}
@@ -203,7 +197,7 @@
     </ul>
     <div class="mt-2 flex flex-wrap gap-2">
       <input
-        class="{inputClass} min-w-40 flex-1"
+        class="{inputEditorBase} min-w-40 flex-1"
         type="text"
         bind:value={newLevel}
         placeholder={m["editor.level_order_add_placeholder"]()}
@@ -215,7 +209,7 @@
           }
         }}
       />
-      <button class={smallButton} type="button" {disabled} onclick={handleAdd}>
+      <button class={btnGhostSm} type="button" {disabled} onclick={handleAdd}>
         {m["editor.level_order_add"]()}
       </button>
     </div>

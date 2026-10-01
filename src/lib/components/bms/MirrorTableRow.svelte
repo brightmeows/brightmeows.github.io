@@ -7,6 +7,7 @@
   import Checkbox from "$lib/components/ui/Checkbox.svelte";
   import GradientButton from "$lib/components/ui/GradientButton.svelte";
   import { jsonPreview } from "$lib/components/ui/JsonPreview.svelte";
+  import { btnIconDanger, btnIconPlain } from "$lib/constants/ui-classes";
   import { m } from "$lib/paraglide/messages.js";
   import type { MirrorAdminUi } from "$lib/types/bms-view";
   import type { JsonPreviewHandle } from "$lib/types/ui";
@@ -51,10 +52,6 @@
   const deleteLabel = $derived(
     deleting ? m["mirror.deleting"]() : m["mirror.delete_aria"]({ name: tableLabelOf(item) })
   );
-  const iconButtonClass =
-    "flex size-7 cursor-pointer items-center justify-center rounded-md transition-colors duration-200 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50";
-  const trashButtonClass =
-    "flex size-7 cursor-pointer items-center justify-center rounded-md text-red-200/80 transition-colors duration-200 hover:bg-red-400/20 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-50";
 </script>
 
 <tr class="hover:bg-white/5 last:[&>td]:border-b-0">
@@ -82,7 +79,7 @@
   <td class="table-td-glass px-2">
     {#if adminUi.isAdmin}
       <button
-        class={iconButtonClass}
+        class={btnIconPlain}
         type="button"
         title={authActionTitle}
         aria-label={authActionTitle}
@@ -220,7 +217,7 @@
       <div class="flex items-center gap-1">
         {#if adminUi.isAdmin}
           <button
-            class={iconButtonClass}
+            class={btnIconPlain}
             type="button"
             title={m["mirror.edit_table_title"]()}
             aria-label={m["mirror.edit_table_title"]()}
@@ -243,7 +240,7 @@
           </button>
         {:else if canDelete && item.protected !== true && ondelete}
           <button
-            class={trashButtonClass}
+            class={btnIconDanger}
             type="button"
             title={deleteLabel}
             aria-label={deleteLabel}

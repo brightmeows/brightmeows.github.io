@@ -1,5 +1,6 @@
 <script lang="ts">
   import LevelOrderEditor from "$lib/components/bms/LevelOrderEditor.svelte";
+  import { inputEditorLg } from "$lib/constants/ui-classes";
   import { m } from "$lib/paraglide/messages.js";
 
   /**
@@ -28,9 +29,6 @@
     disabled = false,
     onchange,
   }: Props = $props();
-
-  const inputClass =
-    "w-full rounded-lg border border-white/20 bg-black/20 px-3 py-2 text-[0.95rem] text-white outline-none placeholder:text-white/40 focus:border-[#64b5f6]/60 focus:ring-1 focus:ring-[#64b5f6]/30 disabled:opacity-60";
 </script>
 
 <section>
@@ -44,22 +42,22 @@
         {m["editor.field_name"]()}
         <span class="text-amber-300">*</span>
       </span>
-      <input class={inputClass} type="text" bind:value={name} oninput={onchange} {disabled} />
+      <input class={inputEditorLg} type="text" bind:value={name} oninput={onchange} {disabled} />
     </label>
     <label class="block">
       <span class="mb-1.5 block text-[0.9rem] text-white/70">
         {m["editor.field_symbol"]()}
         <span class="text-amber-300">*</span>
       </span>
-      <input class={inputClass} type="text" bind:value={symbol} oninput={onchange} {disabled} />
+      <input class={inputEditorLg} type="text" bind:value={symbol} oninput={onchange} {disabled} />
     </label>
     <label class="block">
       <span class="mb-1.5 block text-[0.9rem] text-white/70">{m["editor.field_tag"]()}</span>
-      <input class={inputClass} type="text" bind:value={tag} oninput={onchange} {disabled} />
+      <input class={inputEditorLg} type="text" bind:value={tag} oninput={onchange} {disabled} />
     </label>
     <label class="block">
       <span class="mb-1.5 block text-[0.9rem] text-white/70">{m["editor.field_mode"]()}</span>
-      <input class={inputClass} type="text" bind:value={mode} oninput={onchange} {disabled} />
+      <input class={inputEditorLg} type="text" bind:value={mode} oninput={onchange} {disabled} />
     </label>
   </div>
 

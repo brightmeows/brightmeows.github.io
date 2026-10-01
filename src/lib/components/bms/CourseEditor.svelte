@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { btnGhost, btnIcon, btnIconDanger, inputEditorMono } from "$lib/constants/ui-classes";
   import { m } from "$lib/paraglide/messages.js";
   import {
     COURSE_CONSTRAINTS,
@@ -115,15 +116,6 @@
   function addEmptyChart(course: EditableCourse): void {
     addChartRow(course, "", "", "");
   }
-
-  const inputClass =
-    "w-full rounded-lg border border-white/20 bg-black/20 px-3 py-2 font-mono text-[0.85rem] text-white outline-none placeholder:text-white/40 focus:border-[#64b5f6]/60 focus:ring-1 focus:ring-[#64b5f6]/30 disabled:opacity-60";
-  const smallButton =
-    "cursor-pointer rounded-md border border-white/20 bg-white/10 px-3 py-1.5 text-[0.85rem] whitespace-nowrap text-white/80 transition-all duration-200 ease-in-out hover:bg-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
-  const iconButtonClass =
-    "flex size-7 cursor-pointer items-center justify-center rounded-md text-white/60 transition-colors duration-200 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
-  const trashButtonClass =
-    "flex size-7 cursor-pointer items-center justify-center rounded-md text-red-200/80 transition-colors duration-200 hover:bg-red-400/20 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-50";
 </script>
 
 <section>
@@ -133,7 +125,7 @@
     <div class="ml-auto flex flex-wrap gap-2">
       {#if model.shape === "nested"}
         <button
-          class={smallButton}
+          class={btnGhost}
           type="button"
           {disabled}
           onclick={() => {
@@ -145,7 +137,7 @@
         </button>
       {/if}
       <button
-        class={smallButton}
+        class={btnGhost}
         type="button"
         {disabled}
         onclick={() => {
@@ -166,7 +158,7 @@
         </span>
         <div class="ml-auto flex items-center gap-1">
           <button
-            class={iconButtonClass}
+            class={btnIcon}
             type="button"
             {disabled}
             title={m["editor.level_order_move_up"]()}
@@ -188,7 +180,7 @@
             >
           </button>
           <button
-            class={iconButtonClass}
+            class={btnIcon}
             type="button"
             {disabled}
             title={m["editor.level_order_move_down"]()}
@@ -210,7 +202,7 @@
             >
           </button>
           <button
-            class={trashButtonClass}
+            class={btnIconDanger}
             type="button"
             {disabled}
             title={m["editor.course_remove"]()}
@@ -241,7 +233,7 @@
       <label class="mt-2 block">
         <span class="mb-1 block text-[0.8rem] text-white/60">{m["editor.course_name"]()}</span>
         <input
-          class="{inputClass} max-w-120"
+          class="{inputEditorMono} max-w-120"
           type="text"
           value={course.name}
           placeholder={m["editor.course_name_placeholder"]()}
@@ -274,7 +266,7 @@
         <div class="mb-1 flex items-center gap-2">
           <span class="text-[0.8rem] text-white/60">{m["editor.course_trophy"]()}</span>
           <button
-            class="{smallButton} ml-auto"
+            class="{btnGhost} ml-auto"
             type="button"
             {disabled}
             onclick={() => addTrophy(course)}
@@ -287,7 +279,7 @@
             {#each course.trophies as trophy, ti (ti)}
               <div class="flex items-center gap-2">
                 <input
-                  class="{inputClass} max-w-44 flex-1"
+                  class="{inputEditorMono} max-w-44 flex-1"
                   type="text"
                   list="editor-trophy-names"
                   value={trophy.name}
@@ -299,7 +291,7 @@
                   {disabled}
                 />
                 <input
-                  class="{inputClass} max-w-28"
+                  class="{inputEditorMono} max-w-28"
                   type="text"
                   inputmode="decimal"
                   value={trophy.missrateText}
@@ -311,7 +303,7 @@
                   {disabled}
                 />
                 <input
-                  class="{inputClass} max-w-28"
+                  class="{inputEditorMono} max-w-28"
                   type="text"
                   inputmode="decimal"
                   value={trophy.scorerateText}
@@ -323,7 +315,7 @@
                   {disabled}
                 />
                 <button
-                  class={trashButtonClass}
+                  class={btnIconDanger}
                   type="button"
                   {disabled}
                   title={m["editor.course_trophy_remove"]()}
@@ -358,19 +350,14 @@
           <span class="text-[0.78rem] text-white/40">{m["editor.course_charts_hint"]()}</span>
           <div class="ml-auto flex gap-2">
             <button
-              class={smallButton}
+              class={btnGhost}
               type="button"
               {disabled}
               onclick={() => openPicker(groupIndex, courseIndex)}
             >
               {m["editor.course_chart_pick"]()}
             </button>
-            <button
-              class={smallButton}
-              type="button"
-              {disabled}
-              onclick={() => addEmptyChart(course)}
-            >
+            <button class={btnGhost} type="button" {disabled} onclick={() => addEmptyChart(course)}>
               {m["editor.course_chart_add"]()}
             </button>
           </div>
@@ -380,13 +367,13 @@
           <div class="mb-2 rounded-lg border border-[#64b5f6]/40 bg-[#64b5f6]/10 p-2">
             <div class="mb-2 flex items-center gap-2">
               <input
-                class="{inputClass} flex-1"
+                class="{inputEditorMono} flex-1"
                 type="text"
                 bind:value={pickerQuery}
                 placeholder={m["editor.course_picker_search"]()}
                 {disabled}
               />
-              <button class={smallButton} type="button" onclick={() => (pickerFor = null)}>
+              <button class={btnGhost} type="button" onclick={() => (pickerFor = null)}>
                 {m["common.cancel"]()}
               </button>
             </div>
@@ -405,7 +392,7 @@
                       {info.hash.slice(0, 12)}…
                     </span>
                     <button
-                      class={smallButton}
+                      class={btnGhost}
                       type="button"
                       {disabled}
                       onclick={() => {
@@ -430,7 +417,7 @@
               <div class="rounded-lg border border-white/10 bg-black/10 p-2">
                 <div class="flex flex-wrap items-center gap-2">
                   <input
-                    class="{inputClass} min-w-52 flex-1 {issue === 'md5'
+                    class="{inputEditorMono} min-w-52 flex-1 {issue === 'md5'
                       ? 'border-red-400/60'
                       : ''}"
                     type="text"
@@ -443,7 +430,7 @@
                     {disabled}
                   />
                   <input
-                    class="{inputClass} min-w-52 flex-[1.4] {issue === 'sha256'
+                    class="{inputEditorMono} min-w-52 flex-[1.4] {issue === 'sha256'
                       ? 'border-red-400/60'
                       : ''}"
                     type="text"
@@ -456,7 +443,7 @@
                     {disabled}
                   />
                   <input
-                    class="{inputClass} max-w-24"
+                    class="{inputEditorMono} max-w-24"
                     type="text"
                     value={chart.levelText}
                     placeholder={m["editor.course_chart_level"]()}
@@ -484,7 +471,7 @@
                   {/if}
                   <div class="ml-auto flex items-center gap-1">
                     <button
-                      class={iconButtonClass}
+                      class={btnIcon}
                       type="button"
                       {disabled}
                       title={m["editor.level_order_move_up"]()}
@@ -503,7 +490,7 @@
                       >
                     </button>
                     <button
-                      class={iconButtonClass}
+                      class={btnIcon}
                       type="button"
                       {disabled}
                       title={m["editor.level_order_move_down"]()}
@@ -522,7 +509,7 @@
                       >
                     </button>
                     <button
-                      class={trashButtonClass}
+                      class={btnIconDanger}
                       type="button"
                       {disabled}
                       title={m["editor.course_chart_remove"]()}
@@ -584,7 +571,7 @@
               {m["editor.course_group"]({ index: groupIndex + 1 })}
             </span>
             <button
-              class="{trashButtonClass} ml-auto"
+              class="{btnIconDanger} ml-auto"
               type="button"
               {disabled}
               title={m["editor.course_group_remove"]()}
@@ -620,7 +607,7 @@
           </div>
           <div class="mt-2">
             <button
-              class={smallButton}
+              class={btnGhost}
               type="button"
               {disabled}
               onclick={() => {

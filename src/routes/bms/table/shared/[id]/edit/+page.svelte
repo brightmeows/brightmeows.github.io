@@ -11,6 +11,7 @@
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
   import { r2SharedDataUrl, r2SharedHeaderUrl } from "$lib/constants/r2";
   import { SITE_ORIGIN, apiBase, isStaticHost } from "$lib/constants/site";
+  import { btnGhostMd, btnPrimary } from "$lib/constants/ui-classes";
   import {
     deleteSharedTable,
     initialSharedEditState,
@@ -148,11 +149,6 @@
     busy = false;
   }
 
-  const smallButton =
-    "cursor-pointer rounded-md border border-white/20 bg-white/10 px-3 py-1.5 text-[0.9rem] whitespace-nowrap text-white/80 transition-all duration-200 ease-in-out hover:bg-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
-  const primaryButton =
-    "cursor-pointer rounded-[25px] border-none bg-accent px-6 py-2.5 text-[1rem] font-semibold text-white transition-colors duration-300 ease-out hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50";
-
   onMount(() => {
     bridge = isStaticHost();
     const returnTo = `${window.location.pathname}`;
@@ -241,7 +237,7 @@
                   disabled={busy}
                 />
                 <button
-                  class={smallButton}
+                  class={btnGhostMd}
                   type="button"
                   disabled={busy}
                   onclick={() => void doRename()}
@@ -255,7 +251,7 @@
           {#if canDelete}
             <div class="text-center">
               <button
-                class="{smallButton} text-red-200/80 hover:bg-red-400/20 hover:text-red-200"
+                class="{btnGhostMd} text-red-200/80 hover:bg-red-400/20 hover:text-red-200"
                 type="button"
                 disabled={busy}
                 onclick={() => void doDelete()}
@@ -285,7 +281,7 @@
     <div class="py-6 text-center">
       {#if s.phase === "login"}
         <p class="text-[1rem] text-white/75">{m["shared.login_required"]()}</p>
-        <a class="{primaryButton} mt-4 inline-block" href={loginHref}>{m["topbar.login"]()}</a>
+        <a class="{btnPrimary} mt-4 inline-block" href={loginHref}>{m["topbar.login"]()}</a>
       {:else if s.phase === "notfound"}
         <p class="text-[1.05rem] text-red-300">{m["shared.not_found"]()}</p>
         <p class="mt-2 text-[0.9rem] text-white/60">{m["shared.not_found_hint"]()}</p>
@@ -298,7 +294,7 @@
             error: s.loadError ?? m["common.unknown_error"](),
           })}
         </p>
-        <button class="{smallButton} mt-3" type="button" onclick={() => void load()}>
+        <button class="{btnGhostMd} mt-3" type="button" onclick={() => void load()}>
           {m["common.reload"]()}
         </button>
       {:else}

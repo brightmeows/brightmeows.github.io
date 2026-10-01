@@ -3,6 +3,7 @@
 
   import GlassPanel from "$lib/components/ui/GlassPanel.svelte";
   import { SITE_ORIGIN } from "$lib/constants/site";
+  import { btnGhostXs } from "$lib/constants/ui-classes";
   import { auth } from "$lib/data/auth-store.svelte";
   import {
     fetchFetchStatus,
@@ -156,9 +157,6 @@
     if (!Number.isFinite(at)) return value;
     return new Date(at).toLocaleString();
   }
-
-  const smallButton =
-    "cursor-pointer rounded-md border border-white/20 bg-white/10 px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-white/80 transition-all duration-200 ease-in-out hover:bg-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
 </script>
 
 {#if unavailable}
@@ -185,7 +183,7 @@
     {:else}
       <div class="flex flex-col gap-3">
         <div class="flex justify-end">
-          <button class={smallButton} type="button" onclick={() => (showRemoved = !showRemoved)}>
+          <button class={btnGhostXs} type="button" onclick={() => (showRemoved = !showRemoved)}>
             {m["mirror.removed_count"]({ count: removed.length })}
           </button>
         </div>
@@ -205,14 +203,14 @@
             aria-label={m["mirror.add_url_aria"]()}
           />
           <button
-            class={smallButton}
+            class={btnGhostXs}
             type="button"
             disabled={previewing || url.trim() === ""}
             onclick={() => void doPreview()}
           >
             {previewing ? m["mirror.previewing"]() : m["mirror.preview"]()}
           </button>
-          <button class={smallButton} type="submit" disabled={submitting || preview === null}>
+          <button class={btnGhostXs} type="submit" disabled={submitting || preview === null}>
             {submitting ? m["mirror.submitting"]() : m["mirror.submit"]()}
           </button>
         </form>
@@ -253,7 +251,7 @@
                       <span class="ml-2 text-white/45">{formatRemovedAt(record.removed_at)}</span>
                     </span>
                     <button
-                      class={smallButton}
+                      class={btnGhostXs}
                       type="button"
                       disabled={restoring === record.dir_name}
                       onclick={() => void doRestore(record.dir_name)}

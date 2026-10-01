@@ -2,6 +2,7 @@
   import type { DisabledEntry } from "@brightmeows/mirror/user-layer";
 
   import GlassPanel from "$lib/components/ui/GlassPanel.svelte";
+  import { btnGhostXs, inputInline } from "$lib/constants/ui-classes";
   import type { AdminOverview, TrashEntry } from "$lib/data/mirror-admin-api";
   import { m } from "$lib/paraglide/messages.js";
   import type { MirrorOverviewState } from "$lib/types/bms-view";
@@ -33,10 +34,6 @@
   let replaceFrom = $state("");
   let replaceTo = $state("");
 
-  const fieldInput =
-    "rounded-lg border border-white/20 bg-black/20 px-2 py-1.5 text-[0.9rem] text-white outline-none placeholder:text-white/40 focus:border-[#64b5f6]/60";
-  const smallButton =
-    "cursor-pointer rounded-md border border-white/20 bg-white/10 px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-white/80 transition-all duration-200 ease-in-out hover:bg-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
   const sectionTitle = "mb-2 text-[1rem] font-semibold text-white";
 
   async function submitReplace(): Promise<void> {
@@ -60,7 +57,7 @@
   {:else if overview === null}
     <div class="flex flex-wrap items-center gap-3 text-[0.95rem] text-red-300">
       <span>{error ?? m["common.load_failed"]()}</span>
-      <button class={smallButton} type="button" onclick={onretry}>{m["common.retry"]()}</button>
+      <button class={btnGhostXs} type="button" onclick={onretry}>{m["common.retry"]()}</button>
     </div>
   {:else}
     <div class="flex flex-col gap-5">
@@ -68,7 +65,7 @@
         <h3 class={sectionTitle}>{m["admin.replace_heading"]()}</h3>
         <div class="flex flex-wrap items-center gap-2">
           <input
-            class={fieldInput}
+            class={inputInline}
             type="text"
             bind:value={replaceFrom}
             placeholder={m["admin.replace_from"]()}
@@ -76,7 +73,7 @@
             disabled={busy}
           />
           <input
-            class={fieldInput}
+            class={inputInline}
             type="text"
             bind:value={replaceTo}
             placeholder={m["admin.replace_to"]()}
@@ -84,7 +81,7 @@
             disabled={busy}
           />
           <button
-            class={smallButton}
+            class={btnGhostXs}
             type="button"
             disabled={busy || replaceFrom.trim() === "" || replaceTo.trim() === ""}
             onclick={() => void submitReplace()}
@@ -98,7 +95,7 @@
               <li class="flex flex-wrap items-center gap-2">
                 <span>{m["admin.replace_item"]({ from: rule.from, to: rule.to })}</span>
                 <button
-                  class={smallButton}
+                  class={btnGhostXs}
                   type="button"
                   disabled={busy}
                   onclick={() => void onreplaceremove(rule.from)}
@@ -124,7 +121,7 @@
                     >{/if}
                 </span>
                 <button
-                  class={smallButton}
+                  class={btnGhostXs}
                   type="button"
                   disabled={busy}
                   onclick={() => void onenable(item)}>{m["admin.enable"]()}</button
@@ -148,7 +145,7 @@
                   ></span
                 >
                 <button
-                  class={smallButton}
+                  class={btnGhostXs}
                   type="button"
                   disabled={busy}
                   onclick={() => void onrestore(item)}>{m["admin.restore"]()}</button
