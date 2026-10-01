@@ -11,7 +11,18 @@
   import Checkbox from "$lib/components/ui/Checkbox.svelte";
   import JsonPreview from "$lib/components/ui/JsonPreview.svelte";
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
+  import {
+    collapseAdminEdit,
+    initialMirrorAdminState,
+    loadOverviewIfNeeded,
+    openAdminEdit,
+    runAdminAction,
+    toggleAdminEdit,
+    type MirrorAdminDeps,
+    type MirrorAdminState,
+  } from "$lib/controllers/mirror-admin";
   import { auth } from "$lib/data/auth-store.svelte";
+  import { toFailure } from "$lib/data/http";
   import {
     adminAuthorize,
     adminDisable,
@@ -19,14 +30,14 @@
     adminReplace,
     adminRestore,
     fetchAdminOverview,
-    type AdminOverview,
     type TrashEntry,
   } from "$lib/data/mirror-admin-api";
   import { loadMirrorTables } from "$lib/data/mirror-table-loader";
   import { submitDelete } from "$lib/data/mirror-user-api";
   import { searchConverters } from "$lib/data/search-converters.svelte";
   import { m } from "$lib/paraglide/messages.js";
-  import type { MirrorAdminUi, MirrorMetaFields, MirrorOverviewState } from "$lib/types/bms";
+  import type { MirrorAdminUi, MirrorMetaFields } from "$lib/types/bms";
+  import type { AsyncState } from "$lib/types/common";
   import type { JsonPreviewHandle, TocItem } from "$lib/types/ui";
   import { clipboardFeedback } from "$lib/utils/clipboard.svelte";
   import {
@@ -43,35 +54,34 @@
   } from "$lib/utils/mirror-tables";
   import { buildGroupTocItems } from "$lib/utils/toc";
 
+  /**
+   * 镜像列表页：清单加载与筛选分组、用户操作区与管理区。清单状态走
+   * AsyncState；管理区状态转移（总览缓存、写操作串行、编辑卡展开）在
+   * controllers/mirror-admin（可单测），本页只持状态、弹确认与拼 i18n 文案。
+   */
   const tablesJsonPath = "/bms/table/mirror/tables.json";
   const pageTitle = m["mirror.page_title"]();
   const baseRoute = "bms/table/mirror";
 
-  let loading = $state(true);
-  let error = $state<string | null>(null);
-
-  let cb = clipboardFeedback();
-
+  // 清单三态与数据（数据另行持有：治理动作会做本地即时变更再重拉）
+  let listState = $state<AsyncState<MirrorTableItem[]>>({ phase: "loading" });
   let tables = $state<MirrorTableItem[]>([]);
   let selectedMap = $state<Record<string, boolean>>({});
   let searchQuery = $state("");
   let showProtectedOnly = $state(false);
   let tocItems = $state<TocItem[]>([]);
 
+  let cb = clipboardFeedback();
+
   // 登录态在共享 store（与顶栏同源）：非空时列表行显示删除按钮
   /** MirrorUserActions 实例：删除后刷新其配额与回收站列表。 */
   let userActions = $state<{ refresh: () => Promise<void> } | undefined>(undefined);
   let deletingDir = $state<string | null>(null);
-  let actionNotice = $state<{ kind: "ok" | "error"; text: string } | null>(null);
 
   let mirrorPreview = $state<JsonPreviewHandle | undefined>(undefined);
 
   // ---- 管理交互（仅 ADMIN_LOGIN 角色可见，服务端权限不变） ----
-  let expandedUrl = $state<string | null>(null);
-  let overview = $state<AdminOverview | null>(null);
-  let overviewState = $state<MirrorOverviewState>("idle");
-  let overviewError = $state<string | null>(null);
-  let adminBusy = $state(false);
+  let admin = $state<MirrorAdminState>(initialMirrorAdminState());
   let adminPanelOpen = $state(false);
   let currentHash = $state("");
 
@@ -124,7 +134,7 @@
     if (!isAdmin || currentHash !== "#mirror-admin") return;
     if (!adminPanelOpen) {
       adminPanelOpen = true;
-      void loadOverview();
+      void loadOverview(false);
     }
     void tick().then(() => {
       document.getElementById("mirror-admin")?.scrollIntoView({
@@ -134,20 +144,33 @@
     });
   });
 
+  function deps(): MirrorAdminDeps {
+    return { fetchOverview: fetchAdminOverview };
+  }
+
   async function loadTables(cacheBust = false): Promise<void> {
     try {
       tables = await loadMirrorTables(tablesJsonPath, baseRoute, { cacheBust });
-      error = null;
+      listState = { phase: "ready", data: tables };
     } catch (e) {
-      error = e instanceof Error ? e.message : m["common.unknown_error"]();
-    } finally {
-      loading = false;
+      listState = toFailure(e);
     }
   }
 
   /** 用户操作（添加/删除/恢复）后刷新清单与登录态。 */
   function handleUserChanged(): void {
     void loadTables(true);
+  }
+
+  async function loadOverview(force: boolean): Promise<void> {
+    admin = await loadOverviewIfNeeded(admin, deps(), force);
+  }
+
+  /** 串行执行管理写操作：成功后提示，失败展示错误；忙时忽略新点击。 */
+  async function runAdmin(action: () => Promise<void>, okText: string): Promise<boolean> {
+    const result = await runAdminAction(admin, action, okText);
+    admin = result.state;
+    return result.ok;
   }
 
   async function handleDelete(item: MirrorTableItem): Promise<void> {
@@ -158,16 +181,19 @@
       return;
     }
     deletingDir = dirName;
-    actionNotice = null;
+    admin = { ...admin, notice: null };
     try {
       await submitDelete(dirName);
-      actionNotice = { kind: "ok", text: m["mirror.deleted"]({ name: label }) };
+      admin = { ...admin, notice: { kind: "ok", text: m["mirror.deleted"]({ name: label }) } };
       await loadTables(true);
       await userActions?.refresh();
     } catch (e) {
-      actionNotice = {
-        kind: "error",
-        text: e instanceof Error ? e.message : m["mirror.delete_failed"](),
+      admin = {
+        ...admin,
+        notice: {
+          kind: "error",
+          text: e instanceof Error ? e.message : m["mirror.delete_failed"](),
+        },
       };
     } finally {
       deletingDir = null;
@@ -176,57 +202,20 @@
 
   // ---- 管理区与行内治理 ----
 
-  async function loadOverview(force = false): Promise<void> {
-    if (!isAdmin) return;
-    if (!force && overview !== null) return;
-    if (overviewState === "loading") return;
-    overviewState = "loading";
-    try {
-      overview = await fetchAdminOverview();
-      overviewState = "ready";
-      overviewError = null;
-    } catch (e) {
-      overviewError = e instanceof Error ? e.message : m["common.unknown_error"]();
-      overviewState = overview === null ? "error" : "ready";
-    }
-  }
-
-  /** 串行执行管理写操作：成功后提示，失败展示错误；忙时忽略新点击。 */
-  async function runAdmin(action: () => Promise<void>, okText: string): Promise<boolean> {
-    if (adminBusy) return false;
-    adminBusy = true;
-    actionNotice = null;
-    try {
-      await action();
-      actionNotice = { kind: "ok", text: okText };
-      return true;
-    } catch (e) {
-      actionNotice = {
-        kind: "error",
-        text: e instanceof Error ? e.message : m["admin.action_failed"](),
-      };
-      return false;
-    } finally {
-      adminBusy = false;
-    }
-  }
-
   function toggleEdit(item: MirrorTableItem): void {
     if (!isAdmin) return;
-    expandedUrl = expandedUrl === item.url ? null : item.url;
-    if (expandedUrl !== null) void loadOverview();
+    void toggleAdminEdit(admin, deps(), item.url).then((next) => (admin = next));
   }
 
   /** 打开编辑面板（幂等）：授权图标点击用，已展开时保持展开。 */
   function openEdit(item: MirrorTableItem): void {
     if (!isAdmin) return;
-    expandedUrl = item.url;
-    void loadOverview();
+    void openAdminEdit(admin, deps(), item.url).then((next) => (admin = next));
   }
 
   function toggleAdminPanel(): void {
     adminPanelOpen = !adminPanelOpen;
-    if (adminPanelOpen) void loadOverview();
+    if (adminPanelOpen) void loadOverview(false);
   }
 
   function handleAuthorize(item: MirrorTableItem): void {
@@ -256,7 +245,7 @@
       async () => {
         await adminDisable(sourceUrlOf(item), item.dir_name, "add", note === "" ? undefined : note);
         tables = removeTableByUrl(tables, item.url);
-        if (expandedUrl === item.url) expandedUrl = null;
+        admin = collapseAdminEdit(admin, item.url);
         await loadTables(true);
         await loadOverview(true);
       },
@@ -270,7 +259,7 @@
     void runAdmin(
       async () => {
         await adminMeta(sourceUrlOf(item), "set", fields);
-        expandedUrl = null;
+        admin = { ...admin, expandedUrl: null };
         await loadTables(true);
         await loadOverview(true);
       },
@@ -284,7 +273,7 @@
     void runAdmin(
       async () => {
         await adminMeta(sourceUrlOf(item), "clear", {});
-        expandedUrl = null;
+        admin = { ...admin, expandedUrl: null };
         await loadTables(true);
         await loadOverview(true);
       },
@@ -332,10 +321,10 @@
 
   const adminUi = $derived<MirrorAdminUi>({
     isAdmin,
-    overviewState,
-    expandedUrl,
-    busy: adminBusy,
-    overrideOf: (item: MirrorTableItem) => findMetaOverride(overview?.meta ?? null, item),
+    overviewState: admin.overviewState,
+    expandedUrl: admin.expandedUrl,
+    busy: admin.busy,
+    overrideOf: (item: MirrorTableItem) => findMetaOverride(admin.overview?.meta ?? null, item),
     toggleEdit: (item: MirrorTableItem) => toggleEdit(item),
     openEdit: (item: MirrorTableItem) => openEdit(item),
     authorize: (item: MirrorTableItem) => handleAuthorize(item),
@@ -387,13 +376,13 @@
   <div class="flex flex-col gap-3">
     <MirrorUserActions bind:this={userActions} onchanged={handleUserChanged} />
 
-    {#if actionNotice}
+    {#if admin.notice}
       <div
-        class="text-center text-[0.9rem] {actionNotice.kind === 'ok'
+        class="text-center text-[0.9rem] {admin.notice.kind === 'ok'
           ? 'text-[#4caf50]'
           : 'text-red-300'}"
       >
-        {actionNotice.text}
+        {admin.notice.text}
       </div>
     {/if}
 
@@ -457,10 +446,10 @@
       <div id="mirror-admin" class="scroll-mt-5">
         {#if adminPanelOpen}
           <MirrorAdminPanel
-            {overviewState}
-            error={overviewError}
-            {overview}
-            busy={adminBusy}
+            overviewState={admin.overviewState}
+            error={admin.overviewError}
+            overview={admin.overview}
+            busy={admin.busy}
             onretry={() => void loadOverview(true)}
             onreplaceadd={handleReplaceAdd}
             onreplaceremove={handleReplaceRemove}
@@ -472,12 +461,18 @@
     {/if}
   </div>
 
-  {#if loading}
+  {#if listState.phase === "loading"}
     <div class="mt-6">
       <LoadingProgress variant="indeterminate" message={m["mirror.loading"]()} title={pageTitle} />
     </div>
-  {:else if error}
-    <div class="mt-6 text-red-300">{m["common.load_failed_with_error"]({ error })}</div>
+  {:else if listState.phase === "error"}
+    <div class="mt-6 text-red-300">
+      {m["common.load_failed_with_error"]({ error: listState.message })}
+    </div>
+  {:else if listState.phase === "unavailable"}
+    <div class="mt-6 text-red-300">
+      {m["common.load_failed_with_error"]({ error: m["common.unknown_error"]() })}
+    </div>
   {:else if groupedByTags.length === 0}
     <div class="mt-6 text-white/70">
       {showProtectedOnly ? m["mirror.no_match_protected"]() : m["mirror.no_match"]()}
