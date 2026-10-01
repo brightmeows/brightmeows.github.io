@@ -42,7 +42,7 @@
 </script>
 
 <script lang="ts">
-  import { checkSharedPayload, withLocalDataUrl } from "@brightmeows/mirror/shared";
+  import { withLocalDataUrl } from "@brightmeows/mirror/shared";
   import { onMount, untrack, type Snippet } from "svelte";
 
   import { goto } from "$app/navigation";
@@ -54,7 +54,13 @@
   import TableImportPanel from "$lib/components/bms/TableImportPanel.svelte";
   import PageShell from "$lib/components/layout/PageShell.svelte";
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
-  import { decideLocalSaveGate, decideNewTableDraft } from "$lib/controllers/editor";
+  import {
+    buildSharedExportPackage,
+    commitEditorSave,
+    loadEditorTables,
+    planEditorSave,
+    planSaveAsShared,
+  } from "$lib/controllers/editor";
   import { fetchBmsHeader, fetchBmsTableData } from "$lib/data/bms-data";
   import { sharedNewSeed } from "$lib/data/shared-new.svelte";
   import {
@@ -67,7 +73,6 @@
   } from "$lib/data/table-drafts";
   import { m } from "$lib/paraglide/messages.js";
   import { downloadJsonFile } from "$lib/utils/download";
-  import { sharedPayloadErrorMessage } from "$lib/utils/shared-table";
   import {
     emptyCourseModel,
     parseCourse,
@@ -76,9 +81,10 @@
   } from "$lib/utils/table-course";
   import {
     buildCombinedPackage,
+    buildEditorHeader,
     countUnassigned,
     levelOrderOf,
-    shouldWarnOverwrite,
+    splitEditorHeader,
     type BmsDropResult,
     type DraftPayload,
     type EntryImportResult,
@@ -187,34 +193,8 @@
     return Number.isNaN(date.getTime()) ? iso : date.toLocaleTimeString();
   }
 
-  function str(value: unknown): string {
-    return typeof value === "string"
-      ? value
-      : value === undefined || value === null
-        ? ""
-        : String(value);
-  }
-
-  /** 头部可编辑子集之外的字段原样保留（data_url、level_ref 等；course 单独编辑）。 */
-  function splitHeader(header: Record<string, unknown>): {
-    core: { name: string; symbol: string; tag: string; mode: string };
-    extra: Record<string, unknown>;
-  } {
-    const extra = { ...header };
-    for (const key of ["name", "symbol", "tag", "mode", "level_order", "course"]) delete extra[key];
-    return {
-      core: {
-        name: str(header.name),
-        symbol: str(header.symbol),
-        tag: str(header.tag),
-        mode: str(header.mode),
-      },
-      extra,
-    };
-  }
-
   function applyHeaderState(header: Record<string, unknown>): void {
-    const split = splitHeader(header);
+    const split = splitEditorHeader(header);
     name = split.core.name;
     symbol = split.core.symbol;
     tag = split.core.tag;
@@ -225,21 +205,12 @@
   }
 
   function buildHeader(): Record<string, unknown> {
-    const header = { ...extraHeader };
-    header.name = name.trim();
-    header.symbol = symbol.trim();
-    const trimmedTag = tag.trim();
-    if (trimmedTag !== "") header.tag = trimmedTag;
-    else delete header.tag;
-    const trimmedMode = headerMode.trim();
-    if (trimmedMode !== "") header.mode = trimmedMode;
-    else delete header.mode;
-    if (levels.length > 0) header.level_order = [...levels];
-    else delete header.level_order;
-    const course = serializeCourse(courseModel);
-    if (course !== undefined) header.course = course;
-    else delete header.course;
-    return header;
+    return buildEditorHeader(
+      { name, symbol, tag, mode: headerMode },
+      levels,
+      serializeCourse(courseModel),
+      extraHeader
+    );
   }
 
   function buildDraftPayload(): DraftPayload {
@@ -273,53 +244,48 @@
     loadPercent = 0;
     loadMessage = m["editor.loading"]();
     loadDetail = "";
-    try {
-      if (headerUrl === null) {
-        if (seed !== undefined) {
-          name = seed.name;
-          symbol = seed.symbol;
-        }
-        const own = await loadDraft(draftKey);
-        const claim = takeDraftClaim();
-        const claimed = claim !== null ? await loadDraft(claim.sourceDraftKey) : null;
-        const decision = decideNewTableDraft(own, claim, claimed);
-        if (decision.action === "claim") {
-          applyDraftPayload(decision.draft);
-        } else if (decision.action === "pending") {
-          pendingDraft = decision.draft;
-        }
-        loadState = "ready";
-        return;
-      }
-
-      const header = await fetchBmsHeader(headerUrl, (event) => {
-        loadPercent = event.percent;
-        loadMessage = event.message;
-        loadDetail = event.detail ?? "";
-      });
-      const dataUrl =
-        typeof header.data_url === "string" && header.data_url !== ""
-          ? header.data_url
-          : (dataUrlFallback ?? headerUrl);
-      const result = await fetchBmsTableData(dataUrl, resolveUrl(headerUrl), (event) => {
-        loadPercent = event.percent;
-        loadMessage = event.message;
-        loadDetail = event.detail ?? "";
-      });
-
-      applyHeaderState(header as Record<string, unknown>);
-      entries = result.data.map((item) => ({ ...item }));
-      dirty = false;
-      pendingDraft = null;
-      draftStatus = "idle";
-      loadState = "ready";
-
-      const draft = await loadDraft(draftKey);
-      if (draft !== null) pendingDraft = draft;
-    } catch (error) {
-      loadError = error instanceof Error ? error.message : m["common.unknown_error"]();
-      loadState = "error";
+    if (headerUrl === null && seed !== undefined) {
+      name = seed.name;
+      symbol = seed.symbol;
     }
+    const result = await loadEditorTables(
+      {
+        headerUrl,
+        dataUrlFallback,
+        draftKey,
+        fetchHeader: (url, onProgress) => fetchBmsHeader(url, onProgress),
+        fetchData: (dataUrl, onProgress) =>
+          fetchBmsTableData(dataUrl, resolveUrl(headerUrl ?? ""), onProgress),
+        loadDraft,
+        takeDraftClaim,
+      },
+      (event) => {
+        loadPercent = event.percent;
+        loadMessage = event.message;
+        loadDetail = event.detail ?? "";
+      }
+    );
+    if (result.kind === "error") {
+      loadError = result.message;
+      loadState = "error";
+      return;
+    }
+    if (result.kind === "new") {
+      if (result.decision.action === "claim") {
+        applyDraftPayload(result.decision.draft);
+      } else if (result.decision.action === "pending") {
+        pendingDraft = result.decision.draft;
+      }
+      loadState = "ready";
+      return;
+    }
+    applyHeaderState(result.header);
+    entries = result.data;
+    dirty = false;
+    pendingDraft = null;
+    draftStatus = "idle";
+    loadState = "ready";
+    if (result.draft !== null) pendingDraft = result.draft;
   }
 
   function restorePendingDraft(): void {
@@ -414,74 +380,54 @@
 
   async function save(): Promise<void> {
     if (busy || onSave === undefined || !canWrite) return;
-    const gate = decideLocalSaveGate(buildHeader(), entries);
-    if (gate.gate === "invalid_payload") {
-      notice = { kind: "error", text: sharedPayloadErrorMessage(gate.error) };
+    const plan = await planEditorSave({
+      header: buildHeader(),
+      entries,
+      baselineUpdatedAt,
+      conflictCheck,
+      confirm: (message) => window.confirm(message),
+    });
+    if (plan.kind === "rejected") {
+      notice = plan.notice;
       return;
-    }
-    if (gate.gate === "unassigned") {
-      notice = {
-        kind: "warn",
-        text: m["editor.publish_unassigned_blocked"]({ count: gate.count }),
-      };
-      return;
-    }
-    if (conflictCheck !== undefined) {
-      const online = await conflictCheck();
-      if (
-        shouldWarnOverwrite(baselineUpdatedAt, online) &&
-        !window.confirm(m["editor.save_conflict_confirm"]())
-      ) {
-        notice = { kind: "warn", text: m["editor.save_conflict_canceled"]() };
-        return;
-      }
     }
     busy = true;
     notice = null;
-    try {
-      const nextBaseline = await onSave({ header: gate.header, data: gate.data });
-      if (nextBaseline !== undefined) baselineUpdatedAt = nextBaseline;
+    const outcome = await commitEditorSave({ plan, onSave, deleteDraft, draftKey });
+    if (outcome.kind === "saved") {
+      if (outcome.nextBaseline !== undefined) baselineUpdatedAt = outcome.nextBaseline;
       dirty = false;
-      await deleteDraft(draftKey);
       draftStatus = "idle";
       lastSavedAt = null;
-      notice = { kind: "ok", text: m["editor.saved"]({ count: gate.data.length }) };
-    } catch (error) {
-      notice = {
-        kind: "error",
-        text: error instanceof Error ? error.message : m["editor.save_failed"](),
-      };
-    } finally {
-      busy = false;
+      notice = { kind: "ok", text: m["editor.saved"]({ count: outcome.count }) };
+    } else {
+      notice = { kind: "error", text: outcome.text };
     }
+    busy = false;
+  }
+
+  /** 桥接导出：下载合并包加开主站新建页（bridge 模式与草稿失败回退共用）。 */
+  function exportAndOpen(kind: "ok" | "warn"): void {
+    downloadJsonFile("table-package.json", buildSharedExportPackage(buildHeader(), entries));
+    window.open(`${siteOrigin ?? ""}/bms/table/shared/new/`, "_blank", "noopener");
+    notice = { kind, text: m["editor.bridge_opened"]() };
   }
 
   async function saveAsSharedNow(): Promise<void> {
     if (saveAsShared === "none") return;
-    const header = buildHeader();
-    const check = checkSharedPayload(header, entries);
-    if (!check.ok) {
-      notice = { kind: "error", text: sharedPayloadErrorMessage(check.error) };
+    const plan = planSaveAsShared(buildHeader(), entries, saveAsShared);
+    if (plan.kind === "invalid") {
+      notice = plan.notice;
       return;
     }
-    if (saveAsShared === "bridge") {
-      downloadJsonFile(
-        "table-package.json",
-        buildCombinedPackage(withLocalDataUrl(header), entries)
-      );
-      window.open(`${siteOrigin ?? ""}/bms/table/shared/new/`, "_blank", "noopener");
-      notice = { kind: "ok", text: m["editor.bridge_opened"]() };
+    if (plan.kind === "export") {
+      exportAndOpen("ok");
       return;
     }
     const draftResult = await persistDraft(buildDraftPayload());
     if (draftResult !== "ok") {
       // 草稿无法随行：退回导出加跳主站的手动路径
-      downloadJsonFile(
-        "table-package.json",
-        buildCombinedPackage(withLocalDataUrl(header), entries)
-      );
-      window.open(`${siteOrigin ?? ""}/bms/table/shared/new/`, "_blank", "noopener");
-      notice = { kind: "warn", text: m["editor.bridge_opened"]() };
+      exportAndOpen("warn");
       return;
     }
     writeDraftClaim({ sourceDraftKey: draftKey, at: new Date().toISOString() });

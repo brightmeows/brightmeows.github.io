@@ -2,8 +2,10 @@ import type { SharedTableItem } from "@brightmeows/mirror/shared";
 import { describe, expect, it } from "vitest";
 
 import {
+  deleteSharedTable,
   initialSharedEditState,
   loadSharedEdit,
+  renameSharedTable,
   saveSharedEdit,
   sharedEditCanWrite,
   sharedEditConflictBaseline,
@@ -12,6 +14,7 @@ import {
 } from "./shared-edit";
 
 import { ApiUnavailableError } from "$lib/data/http";
+import { m } from "$lib/paraglide/messages.js";
 
 /**
  * 加载回退链与保存流的行为锁定测试：每条路径对应页面内实现的一条分支。
@@ -255,5 +258,122 @@ describe("辅助决策", () => {
     expect(sharedEditCanWrite(existing, "alice")).toBe(false);
     expect(sharedEditCanWrite(existing, "bob")).toBe(true);
     expect(sharedEditCanWrite({ ...initialSharedEditState() }, "alice")).toBe(false);
+  });
+});
+
+// ---- 改名与删除的提交流 ----
+
+/** 运行时契约违反的模拟：防御分支（非 Error 拒绝）的正当测试入口。 */
+const nonErrorReason = "weird" as unknown as Error;
+
+describe("renameSharedTable", () => {
+  const base = {
+    tableId: "old-id",
+    newId: "new-id",
+    confirm: () => true,
+    rename: () => Promise.resolve(),
+  };
+
+  it("确认弹窗携带 from 与 to；确认后以新旧 id 调接口", async () => {
+    let message = "";
+    let called: [string, string] | null = null;
+    const outcome = await renameSharedTable({
+      ...base,
+      confirm: (mText) => {
+        message = mText;
+        return true;
+      },
+      rename: (from, to) => {
+        called = [from, to];
+        return Promise.resolve();
+      },
+    });
+    expect(message).toBe(m["shared.rename_confirm"]({ from: "old-id", to: "new-id" }));
+    expect(called).toEqual(["old-id", "new-id"]);
+    expect(outcome).toEqual({ ok: true, id: "new-id" });
+  });
+
+  it("取消确认静默返回，不调接口", async () => {
+    let called = 0;
+    const outcome = await renameSharedTable({
+      ...base,
+      confirm: () => false,
+      rename: () => {
+        called += 1;
+        return Promise.resolve();
+      },
+    });
+    expect(outcome).toEqual({ ok: false, canceled: true });
+    expect(called).toBe(0);
+  });
+
+  it("接口失败翻译：Error 取 message，非 Error 落改名失败文案", async () => {
+    const failed = await renameSharedTable({
+      ...base,
+      rename: () => Promise.reject(new Error("conflict")),
+    });
+    expect(failed).toEqual({ ok: false, text: "conflict" });
+
+    const opaque = await renameSharedTable({
+      ...base,
+      rename: () => Promise.reject(nonErrorReason),
+    });
+    expect(opaque).toEqual({ ok: false, text: m["shared.rename_failed"]() });
+  });
+});
+
+describe("deleteSharedTable", () => {
+  const base = {
+    tableId: "t",
+    label: "我的表",
+    confirm: () => true,
+    remove: () => Promise.resolve(),
+  };
+
+  it("确认弹窗携带表名标签；确认后按 id 删除", async () => {
+    let message = "";
+    let called: string | null = null;
+    const outcome = await deleteSharedTable({
+      ...base,
+      confirm: (mText) => {
+        message = mText;
+        return true;
+      },
+      remove: (id) => {
+        called = id;
+        return Promise.resolve();
+      },
+    });
+    expect(message).toBe(m["shared.delete_confirm"]({ name: "我的表" }));
+    expect(called).toBe("t");
+    expect(outcome).toEqual({ ok: true });
+  });
+
+  it("取消确认静默返回，不调接口", async () => {
+    let called = 0;
+    const outcome = await deleteSharedTable({
+      ...base,
+      confirm: () => false,
+      remove: () => {
+        called += 1;
+        return Promise.resolve();
+      },
+    });
+    expect(outcome).toEqual({ ok: false, canceled: true });
+    expect(called).toBe(0);
+  });
+
+  it("接口失败翻译：Error 取 message，非 Error 落删除失败文案", async () => {
+    const failed = await deleteSharedTable({
+      ...base,
+      remove: () => Promise.reject(new Error("denied")),
+    });
+    expect(failed).toEqual({ ok: false, text: "denied" });
+
+    const opaque = await deleteSharedTable({
+      ...base,
+      remove: () => Promise.reject(nonErrorReason),
+    });
+    expect(opaque).toEqual({ ok: false, text: m["shared.delete_failed"]() });
   });
 });

@@ -198,3 +198,55 @@ export function sharedEditCanWrite(state: SharedEditState, login: string | null)
   if (state.isNew) return login !== null;
   return state.item !== null && login !== null && login === state.item.author;
 }
+
+// ---- 改名与删除的提交流（确认弹窗注入，导航留在页面） ----
+
+export type SharedMutateOutcome =
+  | { ok: true; id: string }
+  | { ok: true }
+  | { ok: false; canceled: true }
+  | { ok: false; text: string };
+
+/** 改名提交：确认弹窗（from 到 to）后调接口；取消静默，失败翻译消息。 */
+export async function renameSharedTable(deps: {
+  tableId: string;
+  newId: string;
+  confirm: (message: string) => boolean;
+  rename: (from: string, to: string) => Promise<unknown>;
+}): Promise<
+  { ok: true; id: string } | { ok: false; canceled: true } | { ok: false; text: string }
+> {
+  const confirmed = deps.confirm(
+    m["shared.rename_confirm"]({ from: deps.tableId, to: deps.newId })
+  );
+  if (!confirmed) return { ok: false, canceled: true };
+  try {
+    await deps.rename(deps.tableId, deps.newId);
+    return { ok: true, id: deps.newId };
+  } catch (error) {
+    return {
+      ok: false,
+      text: error instanceof Error ? error.message : m["shared.rename_failed"](),
+    };
+  }
+}
+
+/** 删除提交：确认弹窗（带表名标签）后调接口；取消静默，失败翻译消息。 */
+export async function deleteSharedTable(deps: {
+  tableId: string;
+  label: string;
+  confirm: (message: string) => boolean;
+  remove: (id: string) => Promise<unknown>;
+}): Promise<{ ok: true } | { ok: false; canceled: true } | { ok: false; text: string }> {
+  const confirmed = deps.confirm(m["shared.delete_confirm"]({ name: deps.label }));
+  if (!confirmed) return { ok: false, canceled: true };
+  try {
+    await deps.remove(deps.tableId);
+    return { ok: true };
+  } catch (error) {
+    return {
+      ok: false,
+      text: error instanceof Error ? error.message : m["shared.delete_failed"](),
+    };
+  }
+}
