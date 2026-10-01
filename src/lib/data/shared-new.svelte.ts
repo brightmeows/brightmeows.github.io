@@ -12,6 +12,11 @@ class SharedNewSeed {
     this.symbol = symbol;
   }
 
+  /** 读取当前种子（不消费）；供新建页预填输入框。 */
+  peek(): { name: string; symbol: string } {
+    return { name: this.name, symbol: this.symbol };
+  }
+
   take(): { name: string; symbol: string } {
     const seed = { name: this.name, symbol: this.symbol };
     this.name = "";

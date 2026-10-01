@@ -120,8 +120,9 @@ export async function fetchSharedTableList(
 
 /**
  * 按清单生成共享表页与站点清单（与 Worker 的注入逐字节同源）：
- * `<buildDir>/bms/table/shared/<id>/index.html` 与 `.../tables.json`。
- * 编辑页是纯客户端路由且属写功能，静态宿主不生成（写降级引导到主站）。
+ * `<buildDir>/bms/table/shared/<id>/index.html`、`<id>/edit/index.html`（编辑页同外壳、
+ * 不注入 meta）与 `.../tables.json`。编辑页在静态宿主上做本地编辑与导出，
+ * 保存与另存共享走“导出并跳主站”的桥接路径。
  */
 export function generateStaticSharedPages(
   list: readonly SharedTableItem[],
@@ -143,6 +144,11 @@ export function generateStaticSharedPages(
     const target = path.join(sharedDir, id, "index.html");
     mkdirSync(path.dirname(target), { recursive: true });
     writeFileSync(target, page);
+
+    // 编辑页：客户端路由渲染统一编辑器（不注入 meta）
+    const editTarget = path.join(sharedDir, id, "edit", "index.html");
+    mkdirSync(path.dirname(editTarget), { recursive: true });
+    writeFileSync(editTarget, shell);
   }
 
   mkdirSync(sharedDir, { recursive: true });
@@ -151,7 +157,7 @@ export function generateStaticSharedPages(
     path.join(options.buildDir, listPath),
     serializeSharedTableList(transformSharedTableList([...list], options.siteBase))
   );
-  return { pages: list.length, listPath: listPath.split(path.sep).join("/") };
+  return { pages: list.length * 2, listPath: listPath.split(path.sep).join("/") };
 }
 
 /**
@@ -276,7 +282,7 @@ async function main(argv: string[]): Promise<void> {
   }
   console.log(`镜像页（含编辑页）：${result.pages} 个`);
   console.log(`站点清单：${result.listPath}`);
-  console.log(`共享表页：${sharedResult.pages} 个`);
+  console.log(`共享表页（含编辑页）：${sharedResult.pages} 个`);
   console.log(`共享表清单：${sharedResult.listPath}`);
 }
 

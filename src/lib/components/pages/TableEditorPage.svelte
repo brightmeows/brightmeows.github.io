@@ -1,41 +1,102 @@
 <script lang="ts">
-  import { withLocalDataUrl } from "@brightmeows/mirror/shared";
-  import { onMount } from "svelte";
+  import { checkSharedPayload, withLocalDataUrl } from "@brightmeows/mirror/shared";
+  import { onMount, untrack, type Snippet } from "svelte";
 
+  import { goto } from "$app/navigation";
+  import CourseEditor from "$lib/components/bms/CourseEditor.svelte";
   import TableEntryEditor from "$lib/components/bms/TableEntryEditor.svelte";
   import TableHeaderForm from "$lib/components/bms/TableHeaderForm.svelte";
+  import TableImportPanel from "$lib/components/bms/TableImportPanel.svelte";
   import PageShell from "$lib/components/layout/PageShell.svelte";
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
   import { fetchBmsHeader, fetchBmsTableData } from "$lib/data/bms-data";
-  import { deleteDraft, loadDraft, saveDraft } from "$lib/data/table-drafts";
+  import { sharedNewSeed } from "$lib/data/shared-new.svelte";
+  import {
+    deleteDraft,
+    loadDraft,
+    saveDraft,
+    takeDraftClaim,
+    writeDraftClaim,
+    type DraftWriteResult,
+  } from "$lib/data/table-drafts";
   import { m } from "$lib/paraglide/messages.js";
   import { downloadJsonFile } from "$lib/utils/download";
+  import { sharedPayloadErrorMessage } from "$lib/utils/shared-table";
+  import {
+    emptyCourseModel,
+    parseCourse,
+    serializeCourse,
+    type CourseModel,
+  } from "$lib/utils/table-course";
   import {
     buildCombinedPackage,
     countUnassigned,
     levelOrderOf,
+    shouldWarnOverwrite,
     type DraftPayload,
+    type TableEditPayload,
+    type TableImportResult,
   } from "$lib/utils/table-editor";
   import { formatTitle } from "$lib/utils/title";
   import { resolveUrl } from "$lib/utils/url";
 
   /**
-   * 表编辑器页面：加载 header 与 data 后进入本地编辑（草稿、导出）。
-   * 阶段一只做本地闭环：草稿按表键存 IndexedDB，导出标准两份与合并包；
-   * 另存共享表与共享保存（阶段二）会在此基础上接入。
+   * 表编辑器页面：加载（或从空内容开始）后进入编辑。
+   * local 模式只做本地闭环（草稿、导出、另存共享）；shared 模式接入共享表保存
+   * （整包覆盖、发布前必须全部指派、保存前并发提示），写权限由 canWrite 控制。
    */
   interface Props {
-    /** header.json 地址（镜像 R2 或站内自托管）。 */
-    headerUrl: string;
+    /** header.json 地址；null 表示新表（无来源，从空内容开始）。 */
+    headerUrl: string | null;
     /** header.data_url 缺失时的回退数据地址。 */
-    dataUrlFallback: string;
+    dataUrlFallback: string | null;
     /** 草稿键（按来源生成，见 draftStorageKey）。 */
     draftKey: string;
-    /** 查看页地址（返回与查看入口）。 */
-    viewerHref: string;
+    /** 查看页地址；null 不显示返回链接。 */
+    viewerHref: string | null;
+    mode?: "local" | "shared";
+    /** shared 模式下是否可写（作者或新表）；local 忽略。 */
+    canWrite?: boolean;
+    /** 新表（首次保存才创建）时为 true，影响保存按钮文案。 */
+    createMode?: boolean;
+    /** 进入时的线上 updated_at（共享表并发提示基线）。 */
+    initialBaselineUpdatedAt?: string | undefined;
+    /** 新表初始种子（无草稿认领时使用）。 */
+    seed?: { name: string; symbol: string } | undefined;
+    /** 保存回调；返回新的线上基线 updated_at。 */
+    onSave?: ((payload: TableEditPayload) => Promise<string | undefined>) | undefined;
+    /** 另存为共享表：同源走草稿认领，bridge 走导出加跳主站。 */
+    saveAsShared?: "same-origin" | "bridge" | "none";
+    /** 主站地址（bridge 跳转用）。 */
+    siteOrigin?: string | undefined;
+    /** 保存前取当前线上 updated_at（共享表并发检查）。 */
+    conflictCheck?: (() => Promise<string | undefined>) | undefined;
+    /** 标题区操作槽（作者信息、改 id、删除等）。 */
+    actions?: Snippet | undefined;
+    /** 内容区顶部提示槽（非作者提示、静态宿主桥接提示）。 */
+    banner?: Snippet | undefined;
+    /** 内容区底部扩展槽（改 id、删除表单）。 */
+    footer?: Snippet | undefined;
   }
 
-  let { headerUrl, dataUrlFallback, draftKey, viewerHref }: Props = $props();
+  let {
+    headerUrl,
+    dataUrlFallback,
+    draftKey,
+    viewerHref,
+    mode = "local",
+    canWrite = false,
+    createMode = false,
+    initialBaselineUpdatedAt,
+    seed,
+    onSave,
+    saveAsShared = "none",
+    siteOrigin,
+    conflictCheck,
+    actions,
+    banner,
+    footer,
+  }: Props = $props();
 
   type LoadState = "loading" | "ready" | "error";
   type DraftStatus = "idle" | "saving" | "saved" | "unavailable" | "quota" | "error";
@@ -49,16 +110,19 @@
   let name = $state("");
   let symbol = $state("");
   let tag = $state("");
-  let mode = $state("");
+  let headerMode = $state("");
   let levels = $state<string[]>([]);
   let extraHeader = $state<Record<string, unknown>>({});
+  let courseModel = $state<CourseModel>(emptyCourseModel());
   let entries = $state<Record<string, unknown>[]>([]);
 
   let dirty = $state(false);
+  let busy = $state(false);
   let pendingDraft = $state<DraftPayload | null>(null);
   let draftStatus = $state<DraftStatus>("idle");
   let lastSavedAt = $state<string | null>(null);
-  let exportNotice = $state<{ kind: "warn" | "error"; text: string } | null>(null);
+  let baselineUpdatedAt = $state<string | undefined>(untrack(() => initialBaselineUpdatedAt));
+  let notice = $state<{ kind: "ok" | "warn" | "error"; text: string } | null>(null);
 
   const unassignedCount = $derived(countUnassigned(entries));
   const pageTitle = $derived(name.trim() === "" ? m["editor.page_title"]() : name.trim());
@@ -101,13 +165,13 @@
         : String(value);
   }
 
-  /** 头部可编辑子集之外的字段原样保留（course、level_ref、data_url 等）。 */
+  /** 头部可编辑子集之外的字段原样保留（data_url、level_ref 等；course 单独编辑）。 */
   function splitHeader(header: Record<string, unknown>): {
     core: { name: string; symbol: string; tag: string; mode: string };
     extra: Record<string, unknown>;
   } {
     const extra = { ...header };
-    for (const key of ["name", "symbol", "tag", "mode", "level_order"]) delete extra[key];
+    for (const key of ["name", "symbol", "tag", "mode", "level_order", "course"]) delete extra[key];
     return {
       core: {
         name: str(header.name),
@@ -119,6 +183,17 @@
     };
   }
 
+  function applyHeaderState(header: Record<string, unknown>): void {
+    const split = splitHeader(header);
+    name = split.core.name;
+    symbol = split.core.symbol;
+    tag = split.core.tag;
+    headerMode = split.core.mode;
+    levels = levelOrderOf(header);
+    courseModel = parseCourse(header.course);
+    extraHeader = split.extra;
+  }
+
   function buildHeader(): Record<string, unknown> {
     const header = { ...extraHeader };
     header.name = name.trim();
@@ -126,17 +201,40 @@
     const trimmedTag = tag.trim();
     if (trimmedTag !== "") header.tag = trimmedTag;
     else delete header.tag;
-    const trimmedMode = mode.trim();
+    const trimmedMode = headerMode.trim();
     if (trimmedMode !== "") header.mode = trimmedMode;
     else delete header.mode;
     if (levels.length > 0) header.level_order = [...levels];
     else delete header.level_order;
+    const course = serializeCourse(courseModel);
+    if (course !== undefined) header.course = course;
+    else delete header.course;
     return header;
+  }
+
+  function buildDraftPayload(): DraftPayload {
+    return {
+      header: buildHeader(),
+      data: entries,
+      savedAt: new Date().toISOString(),
+      baselineUpdatedAt,
+    };
   }
 
   function markDirty(): void {
     dirty = true;
-    exportNotice = null;
+    notice = null;
+  }
+
+  function applyDraftPayload(draft: DraftPayload): void {
+    applyHeaderState(draft.header);
+    entries = draft.data.map((item) => ({ ...item }));
+    baselineUpdatedAt = draft.baselineUpdatedAt;
+    pendingDraft = null;
+    dirty = true;
+    draftStatus = "saved";
+    lastSavedAt = draft.savedAt;
+    notice = null;
   }
 
   async function load(): Promise<void> {
@@ -146,6 +244,25 @@
     loadMessage = m["editor.loading"]();
     loadDetail = "";
     try {
+      if (headerUrl === null) {
+        if (seed !== undefined) {
+          name = seed.name;
+          symbol = seed.symbol;
+        }
+        const own = await loadDraft(draftKey);
+        if (own !== null) {
+          pendingDraft = own;
+        } else {
+          const claim = takeDraftClaim();
+          if (claim !== null) {
+            const claimed = await loadDraft(claim.sourceDraftKey);
+            if (claimed !== null) applyDraftPayload(claimed);
+          }
+        }
+        loadState = "ready";
+        return;
+      }
+
       const header = await fetchBmsHeader(headerUrl, (event) => {
         loadPercent = event.percent;
         loadMessage = event.message;
@@ -154,20 +271,14 @@
       const dataUrl =
         typeof header.data_url === "string" && header.data_url !== ""
           ? header.data_url
-          : dataUrlFallback;
+          : (dataUrlFallback ?? headerUrl);
       const result = await fetchBmsTableData(dataUrl, resolveUrl(headerUrl), (event) => {
         loadPercent = event.percent;
         loadMessage = event.message;
         loadDetail = event.detail ?? "";
       });
 
-      const split = splitHeader(header as Record<string, unknown>);
-      name = split.core.name;
-      symbol = split.core.symbol;
-      tag = split.core.tag;
-      mode = split.core.mode;
-      levels = levelOrderOf(header as Record<string, unknown>);
-      extraHeader = split.extra;
+      applyHeaderState(header as Record<string, unknown>);
       entries = result.data.map((item) => ({ ...item }));
       dirty = false;
       pendingDraft = null;
@@ -185,19 +296,7 @@
   function restorePendingDraft(): void {
     const draft = pendingDraft;
     if (draft === null) return;
-    const split = splitHeader(draft.header);
-    name = split.core.name;
-    symbol = split.core.symbol;
-    tag = split.core.tag;
-    mode = split.core.mode;
-    levels = levelOrderOf(draft.header);
-    extraHeader = split.extra;
-    entries = draft.data.map((item) => ({ ...item }));
-    pendingDraft = null;
-    dirty = true;
-    draftStatus = "saved";
-    lastSavedAt = draft.savedAt;
-    exportNotice = null;
+    applyDraftPayload(draft);
   }
 
   async function discardPendingDraft(): Promise<void> {
@@ -208,19 +307,14 @@
   // 草稿自动落盘：防抖 1.2 秒；结构克隆直存 IndexedDB，不额外做文本序列化。
   $effect(() => {
     if (!dirty || loadState !== "ready" || pendingDraft !== null) return;
-    const payload: DraftPayload = {
-      header: buildHeader(),
-      data: entries,
-      savedAt: new Date().toISOString(),
-      baselineUpdatedAt: undefined,
-    };
+    const payload = buildDraftPayload();
     const timer = setTimeout(() => {
       void persistDraft(payload);
     }, 1200);
     return () => clearTimeout(timer);
   });
 
-  async function persistDraft(payload: DraftPayload): Promise<void> {
+  async function persistDraft(payload: DraftPayload): Promise<DraftWriteResult> {
     draftStatus = "saving";
     // Svelte 5 的 $state 是深层代理，IndexedDB 结构克隆不接受代理对象，先取静态快照
     const result = await saveDraft(draftKey, $state.snapshot(payload));
@@ -230,6 +324,7 @@
     } else {
       draftStatus = result;
     }
+    return result;
   }
 
   // 草稿不可用时退回离页警告（草稿可用时无警告，防误关由草稿承担）。
@@ -243,22 +338,117 @@
     return () => window.removeEventListener("beforeunload", handler);
   });
 
+  function handleImport(result: TableImportResult): void {
+    if (result.header !== null) applyHeaderState(result.header);
+    if (result.data !== null) {
+      const imported = result.data.map((item) => ({ ...item }));
+      entries = result.dataMode === "append" ? [...entries, ...imported] : imported;
+    }
+    const source =
+      result.source === "paste"
+        ? m["editor.import_source_paste"]()
+        : result.source === "file"
+          ? m["editor.import_source_file"]()
+          : m["editor.import_source_fork"]();
+    notice = { kind: "ok", text: m["editor.import_done"]({ source }) };
+    markDirty();
+  }
+
+  async function save(): Promise<void> {
+    if (busy || onSave === undefined || !canWrite) return;
+    const header = buildHeader();
+    const check = checkSharedPayload(header, entries);
+    if (!check.ok) {
+      notice = { kind: "error", text: sharedPayloadErrorMessage(check.error) };
+      return;
+    }
+    if (unassignedCount > 0) {
+      notice = {
+        kind: "warn",
+        text: m["editor.publish_unassigned_blocked"]({ count: unassignedCount }),
+      };
+      return;
+    }
+    if (conflictCheck !== undefined) {
+      const online = await conflictCheck();
+      if (
+        shouldWarnOverwrite(baselineUpdatedAt, online) &&
+        !window.confirm(m["editor.save_conflict_confirm"]())
+      ) {
+        notice = { kind: "warn", text: m["editor.save_conflict_canceled"]() };
+        return;
+      }
+    }
+    busy = true;
+    notice = null;
+    try {
+      const nextBaseline = await onSave({ header: check.header, data: check.data });
+      if (nextBaseline !== undefined) baselineUpdatedAt = nextBaseline;
+      dirty = false;
+      await deleteDraft(draftKey);
+      draftStatus = "idle";
+      lastSavedAt = null;
+      notice = { kind: "ok", text: m["editor.saved"]({ count: check.data.length }) };
+    } catch (error) {
+      notice = {
+        kind: "error",
+        text: error instanceof Error ? error.message : m["editor.save_failed"](),
+      };
+    } finally {
+      busy = false;
+    }
+  }
+
+  async function saveAsSharedNow(): Promise<void> {
+    if (saveAsShared === "none") return;
+    const header = buildHeader();
+    const check = checkSharedPayload(header, entries);
+    if (!check.ok) {
+      notice = { kind: "error", text: sharedPayloadErrorMessage(check.error) };
+      return;
+    }
+    if (saveAsShared === "bridge") {
+      downloadJsonFile(
+        "table-package.json",
+        buildCombinedPackage(withLocalDataUrl(header), entries)
+      );
+      window.open(`${siteOrigin ?? ""}/bms/table/shared/new/`, "_blank", "noopener");
+      notice = { kind: "ok", text: m["editor.bridge_opened"]() };
+      return;
+    }
+    const draftResult = await persistDraft(buildDraftPayload());
+    if (draftResult !== "ok") {
+      // 草稿无法随行：退回导出加跳主站的手动路径
+      downloadJsonFile(
+        "table-package.json",
+        buildCombinedPackage(withLocalDataUrl(header), entries)
+      );
+      window.open(`${siteOrigin ?? ""}/bms/table/shared/new/`, "_blank", "noopener");
+      notice = { kind: "warn", text: m["editor.bridge_opened"]() };
+      return;
+    }
+    writeDraftClaim({ sourceDraftKey: draftKey, at: new Date().toISOString() });
+    sharedNewSeed.set(name.trim(), symbol.trim());
+    await goto("/bms/table/shared/new/");
+  }
+
   function ensureValid(): boolean {
     if (name.trim() === "" || symbol.trim() === "") {
-      exportNotice = { kind: "error", text: m["editor.export_missing_identity"]() };
+      notice = { kind: "error", text: m["editor.export_missing_identity"]() };
       return false;
     }
     return true;
   }
 
   function noteUnassigned(): void {
-    exportNotice =
-      unassignedCount > 0
-        ? {
-            kind: "warn",
-            text: m["editor.export_unassigned_warning"]({ count: unassignedCount }),
-          }
-        : null;
+    if (unassignedCount > 0) {
+      notice = {
+        kind: "warn",
+        text: m["editor.export_unassigned_warning"]({ count: unassignedCount }),
+      };
+    } else if (notice?.kind === "warn") {
+      notice = null;
+    }
   }
 
   function exportHeader(): void {
@@ -304,15 +494,24 @@
 {#snippet titlePane()}
   <div class="text-center">
     <h1 class="page-title mb-2">{pageTitle}</h1>
-    <div class="text-[1.05rem] text-white/70 italic">{m["editor.mode_badge"]()}</div>
+    <div class="text-[1.05rem] text-white/70 italic">
+      {mode === "shared" ? m["editor.mode_shared"]() : m["editor.mode_badge"]()}
+    </div>
     <div class="mt-2 text-[0.95rem] text-white/60">
-      <a class="link-accent" href={viewerHref}>{m["editor.back_to_view"]()}</a>
+      {#if viewerHref !== null}
+        <a class="link-accent" href={viewerHref}>{m["editor.back_to_view"]()}</a>
+      {/if}
       {#if dirty}
         <span class="ml-3 text-amber-300">{m["editor.unsaved_badge"]()}</span>
       {/if}
     </div>
     {#if loadState === "ready" && draftStatusText !== ""}
       <div class="mt-2 text-[0.85rem] text-white/45">{draftStatusText}</div>
+    {/if}
+    {#if actions}
+      <div class="mt-3 flex flex-wrap items-center justify-center gap-2">
+        {@render actions()}
+      </div>
     {/if}
   </div>
 {/snippet}
@@ -357,30 +556,69 @@
       </div>
     </div>
   {:else}
-    <div class="flex flex-col gap-8">
-      {#if exportNotice !== null}
+    <div class="flex flex-col gap-6">
+      {#if banner}
+        {@render banner()}
+      {/if}
+
+      {#if notice !== null}
         <div
-          class="rounded-lg border px-3 py-2 text-[0.9rem] {exportNotice.kind === 'warn'
-            ? 'border-amber-300/40 bg-amber-300/10 text-amber-200'
-            : 'border-red-400/40 bg-red-400/10 text-red-200'}"
+          class="rounded-lg border px-3 py-2 text-[0.9rem] {notice.kind === 'ok'
+            ? 'border-[#4caf50]/40 bg-[#4caf50]/10 text-[#a5d6a7]'
+            : notice.kind === 'warn'
+              ? 'border-amber-300/40 bg-amber-300/10 text-amber-200'
+              : 'border-red-400/40 bg-red-400/10 text-red-200'}"
         >
-          {exportNotice.text}
+          {notice.text}
         </div>
       {/if}
+
+      {#if (mode === "shared" && canWrite && onSave !== undefined) || saveAsShared !== "none"}
+        <div class="flex flex-wrap items-center gap-3">
+          {#if mode === "shared" && canWrite && onSave !== undefined}
+            <button class={primaryButton} type="button" disabled={busy} onclick={() => void save()}>
+              {busy
+                ? m["editor.saving"]()
+                : createMode
+                  ? m["editor.create_shared"]()
+                  : m["editor.save"]()}
+            </button>
+          {/if}
+          {#if saveAsShared !== "none"}
+            <button
+              class={smallButton}
+              type="button"
+              disabled={busy}
+              onclick={() => void saveAsSharedNow()}
+            >
+              {saveAsShared === "bridge"
+                ? m["editor.bridge_button"]()
+                : m["editor.save_as_shared"]()}
+            </button>
+          {/if}
+        </div>
+      {/if}
+
+      <TableImportPanel disabled={busy} onapply={handleImport} />
 
       <TableHeaderForm
         bind:name
         bind:symbol
         bind:tag
-        bind:mode
+        bind:mode={headerMode}
         bind:levels
         {extraJson}
+        disabled={busy}
         onchange={markDirty}
       />
 
       <hr class="border-white/10" />
 
-      <TableEntryEditor bind:entries {levels} onchange={markDirty} />
+      <CourseEditor bind:model={courseModel} {entries} disabled={busy} onchange={markDirty} />
+
+      <hr class="border-white/10" />
+
+      <TableEntryEditor bind:entries {levels} disabled={busy} onchange={markDirty} />
 
       <hr class="border-white/10" />
 
@@ -401,6 +639,10 @@
           </button>
         </div>
       </section>
+
+      {#if footer}
+        {@render footer()}
+      {/if}
     </div>
   {/if}
 {/snippet}
