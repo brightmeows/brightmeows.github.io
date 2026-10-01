@@ -252,7 +252,27 @@
       }
     },
     { "files": ["**/*.d.ts"], "rules": { "unicorn/require-module-specifiers": "off" } },
-    { "files": ["**/*.server.ts"], "rules": { "no-restricted-imports": "off" } }
+    { "files": ["**/*.server.ts"], "rules": { "no-restricted-imports": "off" } },
+    {
+      "files": ["src/lib/controllers/**/*.ts"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["$lib/loaders", "$lib/loaders/*"],
+                "message": "loaders 是构建期 Node 层；controllers 是客户端编排层，不允许触碰构建期数据入口。"
+              },
+              {
+                "group": ["$lib/components/*", "**/*.svelte", "svelte", "svelte/*"],
+                "message": "controllers 是纯编排层（纯决策函数 + 无 UI 依赖的异步编排），禁止导入组件与 Svelte 运行时；状态绑定留在路由组件。"
+              }
+            ]
+          }
+        ]
+      }
+    }
   ],
   "settings": { "tailwindcss": { "entryPoint": "src/routes/layout.css" } }
 }

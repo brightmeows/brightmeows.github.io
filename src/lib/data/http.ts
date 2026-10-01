@@ -1,5 +1,6 @@
 import { apiBase } from "$lib/constants/site";
 import { m } from "$lib/paraglide/messages.js";
+import type { AsyncState } from "$lib/types/common";
 import { messageInputs, translateMessage } from "$lib/utils/i18n";
 
 /**
@@ -14,6 +15,20 @@ import { messageInputs, translateMessage } from "$lib/utils/i18n";
 
 /** 接口不可用（静态宿主或服务异常）。 */
 export class ApiUnavailableError extends Error {}
+
+/** AsyncState 的失败两态：错误已翻译，不可用对应静态宿主降级。 */
+export type AsyncFailure = Extract<AsyncState<unknown>, { phase: "error" | "unavailable" }>;
+
+/** 把接口调用的异常集中分流为 AsyncState 失败态，代替各页手写 instanceof 分支。 */
+export function toFailure(error: unknown): AsyncFailure {
+  if (error instanceof ApiUnavailableError) {
+    return { phase: "unavailable" };
+  }
+  return {
+    phase: "error",
+    message: error instanceof Error ? error.message : m["common.unknown_error"](),
+  };
+}
 
 /** 请求并解析 JSON 响应；非 2xx 时翻译错误封套（`{error, code, params?}`）后抛错。 */
 export async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
