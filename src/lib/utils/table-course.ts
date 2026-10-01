@@ -21,6 +21,18 @@ export const COURSE_CONSTRAINTS: readonly string[] = [
 ];
 
 /** 奖牌名的固定取值（未知值同样保留）。 */
+export type CourseHashIssue = "ok" | "missing" | "md5" | "sha256";
+
+/** 段位谱面哈希格式校验：md5 与 sha256 至少填一，已填的须为对应定长十六进制。 */
+export function courseHashIssue(item: CourseChartItem): CourseHashIssue {
+  const md5 = item.md5.trim();
+  const sha256 = item.sha256.trim();
+  if (md5 === "" && sha256 === "") return "missing";
+  if (md5 !== "" && !/^[0-9a-f]{32}$/iu.test(md5)) return "md5";
+  if (sha256 !== "" && !/^[0-9a-f]{64}$/iu.test(sha256)) return "sha256";
+  return "ok";
+}
+
 export const TROPHY_NAMES: readonly string[] = ["goldmedal", "silvermedal", "bronzemedal"];
 
 export interface CourseChartItem {

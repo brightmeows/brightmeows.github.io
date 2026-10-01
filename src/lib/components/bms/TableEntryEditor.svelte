@@ -4,6 +4,8 @@
   import { m } from "$lib/paraglide/messages.js";
   import { pageCount, paginate } from "$lib/utils/shared-table";
   import {
+    LEVEL_FILTER_ALL_OPTION,
+    LEVEL_FILTER_UNASSIGNED_OPTION,
     assignHintLevels,
     assignLevel,
     countUnassigned,
@@ -13,10 +15,11 @@
     entryLabel,
     filterEntryIndices,
     isUnassigned,
-    LEVEL_FILTER_ALL_OPTION,
-    LEVEL_FILTER_UNASSIGNED_OPTION,
     parseLevelFilterOption,
     removeIndices,
+    setIndices,
+    shortenHash,
+    toggleSelection,
   } from "$lib/utils/table-editor";
 
   /**
@@ -102,7 +105,7 @@
         : typeof entry.sha256 === "string"
           ? entry.sha256
           : "";
-    return hash.length > 16 ? `${hash.slice(0, 16)}…` : hash;
+    return shortenHash(hash);
   }
 
   function resetPage(): void {
@@ -110,26 +113,15 @@
   }
 
   function toggleSelected(index: number): void {
-    const next = new Set(selected);
-    if (next.has(index)) next.delete(index);
-    else next.add(index);
-    selected = next;
+    selected = toggleSelection(selected, index);
   }
 
   function togglePageSelection(): void {
-    const next = new Set(selected);
-    if (pageAllSelected) {
-      for (const index of pageIndices) next.delete(index);
-    } else {
-      for (const index of pageIndices) next.add(index);
-    }
-    selected = next;
+    selected = setIndices(selected, pageIndices, !pageAllSelected);
   }
 
   function selectAllFiltered(): void {
-    const next = new Set(selected);
-    for (const index of filteredIndices) next.add(index);
-    selected = next;
+    selected = setIndices(selected, filteredIndices, true);
   }
 
   function clearSelection(): void {

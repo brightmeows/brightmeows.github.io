@@ -15,6 +15,9 @@
     entryHashes,
     entryLabel,
     filterEntryIndices,
+    setIndices,
+    shortenHash,
+    toggleSelection,
     type EntryImportResult,
   } from "$lib/utils/table-editor";
 
@@ -155,26 +158,15 @@
   }
 
   function toggleSelected(index: number): void {
-    const next = new Set(selected);
-    if (next.has(index)) next.delete(index);
-    else next.add(index);
-    selected = next;
+    selected = toggleSelection(selected, index);
   }
 
   function togglePageSelection(): void {
-    const next = new Set(selected);
-    if (pageAllSelected) {
-      for (const index of pageIndices) next.delete(index);
-    } else {
-      for (const index of pageIndices) next.add(index);
-    }
-    selected = next;
+    selected = setIndices(selected, pageIndices, !pageAllSelected);
   }
 
   function selectAllFiltered(): void {
-    const next = new Set(selected);
-    for (const index of filteredIndices) next.add(index);
-    selected = next;
+    selected = setIndices(selected, filteredIndices, true);
   }
 
   function clearSelection(): void {
@@ -208,8 +200,7 @@
   }
 
   function shortHash(entry: Record<string, unknown>): string {
-    const hash = entryHashes(entry)[0] ?? "";
-    return hash.length > 16 ? `${hash.slice(0, 16)}…` : hash;
+    return shortenHash(entryHashes(entry)[0] ?? "");
   }
 
   const inputClass =

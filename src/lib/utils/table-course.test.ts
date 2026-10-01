@@ -5,6 +5,7 @@ import {
   addGroupToModel,
   buildEntryHashSet,
   courseChartResolvedIn,
+  courseHashIssue,
   emptyCourseModel,
   moveChartRow,
   moveCourseInModel,
@@ -163,5 +164,42 @@ describe("resolve helpers", () => {
     expect(
       courseChartResolvedIn(hashSet, { md5: "zz", sha256: "", levelText: "", extra: {} })
     ).toBe(false);
+  });
+});
+
+describe("courseHashIssue", () => {
+  it("flags missing when both hashes are blank", () => {
+    expect(courseHashIssue({ md5: "", sha256: "", levelText: "", extra: {} })).toBe("missing");
+    expect(courseHashIssue({ md5: "  ", sha256: "", levelText: "", extra: {} })).toBe("missing");
+  });
+
+  it("flags malformed md5 before sha256", () => {
+    expect(courseHashIssue({ md5: "xyz", sha256: "", levelText: "", extra: {} })).toBe("md5");
+    expect(courseHashIssue({ md5: "xyz", sha256: "a".repeat(64), levelText: "", extra: {} })).toBe(
+      "md5"
+    );
+  });
+
+  it("flags malformed sha256", () => {
+    expect(
+      courseHashIssue({ md5: "a".repeat(32), sha256: "short", levelText: "", extra: {} })
+    ).toBe("sha256");
+  });
+
+  it("accepts valid md5, valid sha256, or both", () => {
+    expect(courseHashIssue({ md5: "a".repeat(32), sha256: "", levelText: "", extra: {} })).toBe(
+      "ok"
+    );
+    expect(courseHashIssue({ md5: "", sha256: "b".repeat(64), levelText: "", extra: {} })).toBe(
+      "ok"
+    );
+    expect(
+      courseHashIssue({
+        md5: "A".repeat(32).toLowerCase(),
+        sha256: "c".repeat(64),
+        levelText: "",
+        extra: {},
+      })
+    ).toBe("ok");
   });
 });
