@@ -12,7 +12,8 @@
 import { serializeUserRecord } from "@brightmeows/mirror/user-layer";
 
 import type { Env } from "./env.ts";
-import { listAudit, loadUserLayer } from "./store.ts";
+import { listAudit } from "./store/audit.ts";
+import { loadUserLayer } from "./store/user-layer.ts";
 
 /** 备份对象前缀（R2）。 */
 export const BACKUP_PREFIX = "backup/";
