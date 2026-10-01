@@ -10,6 +10,7 @@
 
 import type { TableLoadState } from "$lib/data/bms-search";
 import { m } from "$lib/paraglide/messages.js";
+import type { ChartData } from "$lib/types/bms-format";
 
 // ---- 状态构造器 ----
 
@@ -93,4 +94,87 @@ export function createEpochGuard(): EpochGuard {
     current: () => current,
     isCurrent: (epoch: number) => epoch === current,
   };
+}
+
+// ---- 单表加载骨架 ----
+
+/** 单表加载的页面交接面：代际、状态读写与取消信号（控制器不触 Svelte 运行时，读写经注入）。 */
+export interface TableLoadIo {
+  /** 本代是否仍有效（页面闭包各自捕获代际号）。 */
+  isEpochValid: () => boolean;
+  /** 读当前状态（错误路径回退表名用）。 */
+  getState: (tableId: string) => TableLoadState | undefined;
+  /** 写状态（页面 SvelteMap 的 set）。 */
+  setState: (tableId: string, state: TableLoadState) => void;
+  /** 取消信号（页面的 AbortController）。 */
+  signal: AbortSignal | undefined;
+}
+
+/** 单表加载的页面差异点：两段取数与成功、失败副作用。 */
+export interface TableLoadTasks {
+  /** header 拉取（loadTableHeader 的表绑定；永不 reject，缺失返回 null）。 */
+  loadHeader: (
+    signal: AbortSignal | undefined
+  ) => Promise<{ name: string; symbol: string | undefined } | null>;
+  /** 数据段取数：单搜按 keySet 过滤，批量取全量。onProgress 已代际守卫并回写进度。 */
+  loadCharts: (
+    signal: AbortSignal | undefined,
+    onProgress: (loaded: number, total: number) => void
+  ) => Promise<ChartData[]>;
+  /** 解析完成的页面副作用：单搜聚合回写，批量表数据缓存。 */
+  onParsed: (
+    tableId: string,
+    name: string,
+    symbol: string | undefined,
+    charts: ChartData[]
+  ) => void;
+  /** 失败清理：单搜移除聚合器占位；批量页无此需要。 */
+  onFailed?: (tableId: string) => void;
+}
+
+/**
+ * 单表加载骨架：header、data、parsing、done 四相推进加错误分流，两搜索页
+ * 共用（原为逐字平行的两份）。两处等价归并（行为不变）：进度回调的表名
+ * 防御性重读在同代内恒等于捕获名；错误分支的 failed 判定在 aborted 提前
+ * 返回后恒真（LoadErrorKind 只有两种）。调度语义不内置：串行 await 与
+ * Promise.allSettled 并行由调用方控制。
+ */
+export async function runTableLoad(
+  tableId: string,
+  io: TableLoadIo,
+  tasks: TableLoadTasks
+): Promise<void> {
+  io.setState(tableId, loadingHeaderState(tableId, tableId));
+  try {
+    const header = await tasks.loadHeader(io.signal);
+    if (!io.isEpochValid()) return;
+
+    const name = header?.name ?? tableId;
+    const symbol = header?.symbol;
+
+    io.setState(tableId, loadingDataState(tableId, name, 0, 0, 0));
+
+    const charts = await tasks.loadCharts(io.signal, (loaded, total) => {
+      if (!io.isEpochValid()) return;
+      io.setState(
+        tableId,
+        loadingDataState(tableId, name, progressPercent(loaded, total), loaded, total)
+      );
+    });
+
+    if (!io.isEpochValid()) return;
+
+    io.setState(tableId, parsingState(tableId, name));
+    tasks.onParsed(tableId, name, symbol, charts);
+    io.setState(tableId, doneState(tableId, name));
+  } catch (error) {
+    const classified = classifyLoadError(error);
+    if (classified.kind === "aborted") return;
+    if (!io.isEpochValid()) return;
+
+    tasks.onFailed?.(tableId);
+
+    const name = tableDisplayName(io.getState(tableId), tableId);
+    io.setState(tableId, errorState(tableId, name, classified.message));
+  }
 }
