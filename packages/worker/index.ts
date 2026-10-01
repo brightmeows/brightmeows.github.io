@@ -32,6 +32,7 @@ import { r2SharedHeaderUrl, r2TableHeaderUrl, sharedTablePath } from "@brightmeo
 
 import { handleApi } from "./api.ts";
 import { backupUserLayer } from "./backup.ts";
+import { canonicalSlashRedirect } from "./canonical-slash.ts";
 import type { Env } from "./env.ts";
 import {
   detectLocale,
@@ -295,16 +296,9 @@ export default {
     }
 
     // 与站点全局 trailingSlash="always" 对齐：无尾斜杠补成带尾斜杠
-    const editWithoutSlash = /^\/bms\/table\/mirror\/([^/]+)\/edit$/.exec(path);
-    if (editWithoutSlash?.[1]) {
-      const target = `${MIRROR_ROOT}${encodeURIComponent(editWithoutSlash[1])}/edit/`;
-      return Response.redirect(new URL(target, url.origin).toString(), 301);
-    }
-    const withoutSlash = /^\/bms\/table\/mirror\/([^/]+)$/.exec(path);
-    if (withoutSlash?.[1]) {
-      const target = `${MIRROR_ROOT}${encodeURIComponent(withoutSlash[1])}/`;
-      return Response.redirect(new URL(target, url.origin).toString(), 301);
-    }
+    // （表名补 /、表名/edit 补 /edit/；必须在带斜杠分支之后调用，见 canonical-slash.ts）
+    const mirrorSlash = canonicalSlashRedirect(MIRROR_ROOT, path, url.origin);
+    if (mirrorSlash !== null) return mirrorSlash;
 
     // 共享表：清单、编辑页外壳、查看页（含别名 301）与尾斜杠重定向；
     // `new/` 是构建期预渲染页，直接交静态资源（不走外壳注入）
@@ -320,14 +314,8 @@ export default {
       // `new/` 是预渲染页，不在此分支：让它落入下方的静态树分发（带语言映射）
       return handleSharedPage(request, env, url, sharedView[1], locale, true);
     }
-    const sharedWithoutSlash =
-      /^\/bms\/table\/shared\/([^/]+)\/edit$/.exec(path) ??
-      /^\/bms\/table\/shared\/([^/]+)$/.exec(path);
-    if (sharedWithoutSlash?.[1] !== undefined) {
-      const id = encodeURIComponent(sharedWithoutSlash[1]);
-      const target = path.endsWith("/edit") ? `${SHARED_ROOT}${id}/edit/` : `${SHARED_ROOT}${id}/`;
-      return Response.redirect(new URL(target, url.origin).toString(), 301);
-    }
+    const sharedSlash = canonicalSlashRedirect(SHARED_ROOT, path, url.origin);
+    if (sharedSlash !== null) return sharedSlash;
 
     // 静态树分发：共享资源（/_app、/assets，构建期已合并双语产物）按原样取，
     // 其余路径按语言映射到对应树；重定向 Location 若携带内部前缀则改写回干净路径

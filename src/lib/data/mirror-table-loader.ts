@@ -1,5 +1,7 @@
 import type { MirrorTableItem } from "@brightmeows/mirror/types";
 
+import { fetchSiteTableList } from "./table-list";
+
 import { m } from "$lib/paraglide/messages.js";
 
 /** 清单加载选项。 */
@@ -16,21 +18,16 @@ export async function loadMirrorTables(
   baseRoute: string,
   options: LoadMirrorTablesOptions = {}
 ): Promise<MirrorTableItem[]> {
-  const url = new URL(tablesJsonPath, window.location.origin);
-  if (options.cacheBust === true) {
-    url.searchParams.set("t", String(Date.now()));
-  }
-  const res = await fetch(url.toString(), { redirect: "follow" });
-  if (!res.ok) {
-    throw new Error(m["mirror.tables_load_failed"]({ status: res.status }));
-  }
+  const data = await fetchSiteTableList<MirrorTableItem>(
+    tablesJsonPath,
+    {
+      loadFailed: (status) => m["mirror.tables_load_failed"]({ status }),
+      invalid: () => m["mirror.tables_invalid"](),
+    },
+    options
+  );
 
-  const data = (await res.json()) as unknown;
-  if (!Array.isArray(data)) {
-    throw new Error(m["mirror.tables_invalid"]());
-  }
-
-  return (data as MirrorTableItem[]).map((item) => {
+  return data.map((item) => {
     const dir = String(item.dir_name ?? "").replace(/^\/+|\/+$/g, "");
     if (!dir) return item;
     return { ...item, url: `/${baseRoute}/${dir}/` };

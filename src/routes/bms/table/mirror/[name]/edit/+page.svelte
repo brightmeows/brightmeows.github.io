@@ -6,7 +6,7 @@
   import TableEditorPage from "$lib/components/pages/TableEditorPage.svelte";
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
   import { r2TableDataUrl, r2TableHeaderUrl } from "$lib/constants/r2";
-  import { SITE_ORIGIN, apiBase } from "$lib/constants/site";
+  import { SITE_ORIGIN, isStaticHost } from "$lib/constants/site";
   import { m } from "$lib/paraglide/messages.js";
   import { draftStorageKey } from "$lib/utils/table-editor";
 
@@ -16,7 +16,7 @@
   // 静态宿主上 API 在主站：另存共享走“导出并跳主站”的桥接路径
   let bridge = $state(false);
   onMount(() => {
-    bridge = apiBase() !== "";
+    bridge = isStaticHost();
   });
 </script>
 

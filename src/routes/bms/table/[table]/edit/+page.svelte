@@ -3,7 +3,7 @@
 
   import { page } from "$app/state";
   import TableEditorPage from "$lib/components/pages/TableEditorPage.svelte";
-  import { SITE_ORIGIN, apiBase } from "$lib/constants/site";
+  import { SITE_ORIGIN, isStaticHost } from "$lib/constants/site";
   import { draftStorageKey } from "$lib/utils/table-editor";
 
   // 自托管表数据在站内静态目录：header 与 data 与查看页同一来源。
@@ -12,7 +12,7 @@
   // 静态宿主上 API 在主站：另存共享走“导出并跳主站”的桥接路径
   let bridge = $state(false);
   onMount(() => {
-    bridge = apiBase() !== "";
+    bridge = isStaticHost();
   });
 </script>
 
