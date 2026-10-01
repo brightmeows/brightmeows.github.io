@@ -7,6 +7,7 @@
   import PageShell from "$lib/components/layout/PageShell.svelte";
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
+  import { btnPrimaryLarge } from "$lib/constants/ui-classes";
   import { fetchBmsHeader, fetchBmsTableData } from "$lib/data/bms-data";
   import { m } from "$lib/paraglide/messages.js";
   import type { ChartData, HeaderData } from "$lib/types/bms-format";
@@ -292,11 +293,7 @@
       {message}
     </p>
     <p class="mb-6 text-white/70">{tip}</p>
-    <button
-      class="cursor-pointer rounded-[25px] border-none bg-accent px-8 py-3 text-[1rem] font-semibold text-white transition-colors duration-300 ease-out hover:bg-accent-hover"
-      type="button"
-      onclick={() => void onRetry()}
-    >
+    <button class={btnPrimaryLarge} type="button" onclick={() => void onRetry()}>
       {buttonLabel}
     </button>
   </div>

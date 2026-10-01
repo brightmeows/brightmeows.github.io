@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { btnGhost } from "$lib/constants/ui-classes";
   import { m } from "$lib/paraglide/messages.js";
   import {
     bmsTextToFields,
@@ -141,9 +142,6 @@
     if (dataTransfer === null || disabled || busy) return;
     await processFiles(await collectFiles(dataTransfer));
   }
-
-  const smallButton =
-    "cursor-pointer rounded-md border border-white/20 bg-white/10 px-3 py-1.5 text-[0.85rem] whitespace-nowrap text-white/80 transition-all duration-200 ease-in-out hover:bg-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
 </script>
 
 <div
@@ -171,7 +169,7 @@
       <div class="text-[0.9rem] text-white/75">{m["editor.bms_drop_title"]()}</div>
       <div class="text-[0.82rem] text-white/50">{m["editor.bms_drop_hint"]()}</div>
     </div>
-    <button class={smallButton} type="button" {disabled} onclick={() => fileInput?.click()}>
+    <button class={btnGhost} type="button" {disabled} onclick={() => fileInput?.click()}>
       {m["editor.bms_drop_button"]()}
     </button>
     <input

@@ -3,6 +3,7 @@
 
   import GlassPanel from "$lib/components/ui/GlassPanel.svelte";
   import { SITE_ORIGIN } from "$lib/constants/site";
+  import { btnGhostXs } from "$lib/constants/ui-classes";
   import { auth } from "$lib/data/auth-store.svelte";
   import {
     fetchSharedRemoved,
@@ -78,9 +79,6 @@
   onMount(() => {
     void auth.ensureLoaded();
   });
-
-  const smallButton =
-    "cursor-pointer rounded-md border border-white/20 bg-white/10 px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-white/80 transition-all duration-200 ease-in-out hover:bg-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
 </script>
 
 {#if unavailable}
@@ -97,7 +95,7 @@
   <GlassPanel class="mt-4">
     <div class="flex flex-col gap-3">
       <div class="flex justify-end">
-        <button class={smallButton} type="button" onclick={() => (open = !open)}>
+        <button class={btnGhostXs} type="button" onclick={() => (open = !open)}>
           {m["shared.trash_count"]({ count: entries.length })}
         </button>
       </div>
@@ -122,7 +120,7 @@
                     <span class="ml-2 text-white/45">{formatRemovedAt(record.removed_at)}</span>
                   </span>
                   <button
-                    class={smallButton}
+                    class={btnGhostXs}
                     type="button"
                     disabled={restoring === record.id}
                     onclick={() => void doRestore(record.id)}

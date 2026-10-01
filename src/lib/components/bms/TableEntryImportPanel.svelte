@@ -8,6 +8,7 @@
     r2TableDataUrl,
     r2TableHeaderUrl,
   } from "$lib/constants/r2";
+  import { btnGhost, inputEditorMono } from "$lib/constants/ui-classes";
   import { loadSharedTables } from "$lib/data/shared-api";
   import { m } from "$lib/paraglide/messages.js";
   import { pageCount, paginate } from "$lib/utils/shared-table";
@@ -202,11 +203,6 @@
   function shortHash(entry: Record<string, unknown>): string {
     return shortenHash(entryHashes(entry)[0] ?? "");
   }
-
-  const inputClass =
-    "w-full rounded-lg border border-white/20 bg-black/20 px-3 py-2 font-mono text-[0.85rem] text-white outline-none placeholder:text-white/40 focus:border-[#64b5f6]/60 focus:ring-1 focus:ring-[#64b5f6]/30 disabled:opacity-60";
-  const smallButton =
-    "cursor-pointer rounded-md border border-white/20 bg-white/10 px-3 py-1.5 text-[0.85rem] whitespace-nowrap text-white/80 transition-all duration-200 ease-in-out hover:bg-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
 </script>
 
 <details class="rounded-lg border border-white/15 bg-black/20 p-3">
@@ -218,7 +214,7 @@
     {#if selectedSource === null}
       <p class="mb-2 text-[0.85rem] text-white/60">{m["editor.entry_import_source_hint"]()}</p>
       <input
-        class="{inputClass} max-w-96"
+        class="{inputEditorMono} max-w-96"
         type="text"
         bind:value={sourceQuery}
         placeholder={m["editor.entry_import_source_search"]()}
@@ -253,7 +249,7 @@
         <span class="text-[0.85rem] text-white/50">
           {m["editor.entry_import_source_count"]({ count: sourceEntries.length })}
         </span>
-        <button class="{smallButton} ml-auto" type="button" {disabled} onclick={closeSource}>
+        <button class="{btnGhost} ml-auto" type="button" {disabled} onclick={closeSource}>
           {m["common.cancel"]()}
         </button>
       </div>
@@ -267,7 +263,7 @@
       {:else}
         <div class="mb-2 flex flex-wrap items-center gap-2">
           <input
-            class="{inputClass} max-w-72 flex-1"
+            class="{inputEditorMono} max-w-72 flex-1"
             type="text"
             bind:value={chartQuery}
             oninput={() => (currentPage = 1)}
@@ -277,10 +273,10 @@
           <span class="text-[0.85rem] text-white/60">
             {m["editor.entries_selected"]({ count: selectedCount })}
           </span>
-          <button class={smallButton} type="button" {disabled} onclick={selectAllFiltered}>
+          <button class={btnGhost} type="button" {disabled} onclick={selectAllFiltered}>
             {m["editor.entries_select_filtered"]()}
           </button>
-          <button class={smallButton} type="button" {disabled} onclick={clearSelection}>
+          <button class={btnGhost} type="button" {disabled} onclick={clearSelection}>
             {m["editor.entries_clear_selection"]()}
           </button>
           <label class="flex items-center gap-1.5 text-[0.85rem] text-white/70">
@@ -288,7 +284,7 @@
             {m["editor.entry_import_keep_level"]()}
           </label>
           <button
-            class={smallButton}
+            class={btnGhost}
             type="button"
             disabled={disabled || selectedCount === 0}
             onclick={applySelection}
@@ -365,7 +361,7 @@
         {#if pages > 1}
           <div class="mt-3 flex items-center justify-center gap-3 text-[0.9rem]">
             <button
-              class={smallButton}
+              class={btnGhost}
               type="button"
               disabled={safePage <= 1}
               onclick={() => (currentPage = safePage - 1)}
@@ -376,7 +372,7 @@
               {m["shared.page_indicator"]({ page: safePage, pages })}
             </span>
             <button
-              class={smallButton}
+              class={btnGhost}
               type="button"
               disabled={safePage >= pages}
               onclick={() => (currentPage = safePage + 1)}

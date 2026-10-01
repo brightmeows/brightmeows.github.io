@@ -1,6 +1,7 @@
 <script lang="ts">
   import { untrack } from "svelte";
 
+  import { btnGhost, btnIconDanger, inputEditorMono } from "$lib/constants/ui-classes";
   import { m } from "$lib/paraglide/messages.js";
   import {
     CORE_ENTRY_FIELDS,
@@ -88,13 +89,6 @@
     error = null;
     oncommit(result.entry);
   }
-
-  const inputClass =
-    "w-full rounded-lg border border-white/20 bg-black/20 px-3 py-2 font-mono text-[0.85rem] text-white outline-none placeholder:text-white/40 focus:border-[#64b5f6]/60 focus:ring-1 focus:ring-[#64b5f6]/30 disabled:opacity-60";
-  const smallButton =
-    "cursor-pointer rounded-md border border-white/20 bg-white/10 px-3 py-1.5 text-[0.85rem] whitespace-nowrap text-white/80 transition-all duration-200 ease-in-out hover:bg-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
-  const iconButtonClass =
-    "flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-red-200/80 transition-colors duration-200 hover:bg-red-400/20 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-50";
 </script>
 
 <section class="rounded-lg border border-[#64b5f6]/40 bg-[#64b5f6]/10 p-3">
@@ -108,7 +102,7 @@
         <span class="mb-1 block text-[0.8rem] text-white/60">{FIELD_LABELS[field]}</span>
         {#if field === "level"}
           <input
-            class={inputClass}
+            class={inputEditorMono}
             type="text"
             list={LEVEL_OPTIONS_ID}
             value={core.level}
@@ -117,7 +111,7 @@
           />
         {:else}
           <input
-            class={inputClass}
+            class={inputEditorMono}
             type="text"
             value={core[field]}
             oninput={(event) => (core[field] = event.currentTarget.value)}
@@ -138,7 +132,7 @@
       <span class="text-[0.85rem] text-white/70">{m["editor.entry_custom_title"]()}</span>
       <span class="text-[0.8rem] text-white/45">{m["editor.entry_custom_hint"]()}</span>
       <button
-        class="{smallButton} ml-auto"
+        class="{btnGhost} ml-auto"
         type="button"
         {disabled}
         onclick={() => custom.push({ key: "", valueText: "" })}
@@ -153,7 +147,7 @@
         {#each custom as row, index (index)}
           <div class="flex items-center gap-2">
             <input
-              class="{inputClass} max-w-48 flex-1"
+              class="{inputEditorMono} max-w-48 flex-1"
               type="text"
               value={row.key}
               placeholder={m["editor.entry_custom_key"]()}
@@ -161,7 +155,7 @@
               {disabled}
             />
             <input
-              class="{inputClass} min-w-40 flex-[2]"
+              class="{inputEditorMono} min-w-40 flex-[2]"
               type="text"
               value={row.valueText}
               placeholder={m["editor.entry_custom_value_placeholder"]()}
@@ -170,7 +164,7 @@
               {disabled}
             />
             <button
-              class={iconButtonClass}
+              class={btnIconDanger}
               type="button"
               {disabled}
               title={m["editor.entry_custom_remove"]()}
@@ -202,10 +196,10 @@
   {/if}
 
   <div class="mt-3 flex gap-2">
-    <button class={smallButton} type="button" {disabled} onclick={handleSave}>
+    <button class={btnGhost} type="button" {disabled} onclick={handleSave}>
       {m["editor.entry_save"]()}
     </button>
-    <button class={smallButton} type="button" {disabled} onclick={oncancel}>
+    <button class={btnGhost} type="button" {disabled} onclick={oncancel}>
       {m["common.cancel"]()}
     </button>
   </div>

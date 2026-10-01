@@ -9,6 +9,7 @@
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
   import { r2SharedDataUrl, r2SharedHeaderUrl } from "$lib/constants/r2";
   import { apiBase } from "$lib/constants/site";
+  import { btnBar } from "$lib/constants/ui-classes";
   import { auth } from "$lib/data/auth-store.svelte";
   import { loadSharedTables, submitSharedDelete } from "$lib/data/shared-api";
   import { m } from "$lib/paraglide/messages.js";
@@ -77,9 +78,6 @@
     }
   }
 
-  const barButton =
-    "cursor-pointer rounded-md border border-white/20 bg-white/10 px-3 py-1.5 text-[0.9rem] whitespace-nowrap text-white/85 transition-all duration-200 ease-in-out hover:bg-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
-
   onMount(() => {
     void auth.ensureLoaded();
     const returnTo = `${window.location.pathname}`;
@@ -109,20 +107,20 @@
           {m["shared.author_label"]({ name: item.author })}
         </span>
       {/if}
-      <button class={barButton} type="button" onclick={() => void download("header")}>
+      <button class={btnBar} type="button" onclick={() => void download("header")}>
         {m["shared.download_header"]()}
       </button>
-      <button class={barButton} type="button" onclick={() => void download("data")}>
+      <button class={btnBar} type="button" onclick={() => void download("data")}>
         {m["shared.download_data"]()}
       </button>
       {#if auth.status === "ready" && login === null}
-        <a class={barButton} href={loginHref}>{m["topbar.login"]()}</a>
+        <a class={btnBar} href={loginHref}>{m["topbar.login"]()}</a>
       {/if}
-      <a class={barButton} href={editorHref}>
+      <a class={btnBar} href={editorHref}>
         {canEdit ? m["shared.actions_edit"]() : m["editor.local_edit"]()}
       </a>
       {#if canDelete}
-        <button class={barButton} type="button" disabled={busy} onclick={() => void handleDelete()}>
+        <button class={btnBar} type="button" disabled={busy} onclick={() => void handleDelete()}>
           {m["shared.actions_delete"]()}
         </button>
       {/if}

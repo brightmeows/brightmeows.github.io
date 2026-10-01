@@ -7,6 +7,7 @@
   import GlassPanel from "$lib/components/ui/GlassPanel.svelte";
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
   import { apiBase, SITE_ORIGIN } from "$lib/constants/site";
+  import { btnPrimary, inputPanel } from "$lib/constants/ui-classes";
   import { auth } from "$lib/data/auth-store.svelte";
   import { fetchSharedCheckId } from "$lib/data/shared-api";
   import { sharedNewSeed } from "$lib/data/shared-new.svelte";
@@ -104,11 +105,6 @@
       busy = false;
     }
   }
-
-  const smallInput =
-    "w-full rounded-xl border border-white/20 bg-black/20 px-4 py-2.5 text-white outline-none placeholder:text-white/50 focus:border-[#64b5f6]/60 focus:ring-2 focus:ring-[#64b5f6]/30";
-  const smallButton =
-    "cursor-pointer rounded-[25px] border-none bg-accent px-6 py-2.5 text-[1rem] font-semibold text-white transition-colors duration-300 ease-out hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50";
 </script>
 
 <PageShell panes={[titlePane, contentPane]} />
@@ -139,7 +135,7 @@
     {:else if !loggedIn}
       <div class="flex flex-col items-center gap-4 py-4 text-center">
         <p class="text-[1rem] text-white/75">{m["shared.login_required"]()}</p>
-        <a class={smallButton} href={loginHref}>{m["topbar.login"]()}</a>
+        <a class={btnPrimary} href={loginHref}>{m["topbar.login"]()}</a>
       </div>
     {:else}
       <form
@@ -154,7 +150,7 @@
             {m["shared.id_label"]()}
           </label>
           <input
-            class={smallInput}
+            class={inputPanel}
             id="shared-id"
             type="text"
             bind:value={id}
@@ -193,7 +189,7 @@
               {m["shared.field_name"]()}
             </label>
             <input
-              class={smallInput}
+              class={inputPanel}
               id="shared-name"
               type="text"
               bind:value={name}
@@ -205,7 +201,7 @@
               {m["shared.field_symbol"]()}
             </label>
             <input
-              class={smallInput}
+              class={inputPanel}
               id="shared-symbol"
               type="text"
               bind:value={symbol}
@@ -216,7 +212,7 @@
         <p class="-mt-2 text-[0.85rem] text-white/50">{m["shared.seed_hint"]()}</p>
 
         <div class="text-center">
-          <button class={smallButton} type="submit" disabled={idResult?.ok !== true || busy}>
+          <button class={btnPrimary} type="submit" disabled={idResult?.ok !== true || busy}>
             {m["shared.new_next"]()}
           </button>
         </div>

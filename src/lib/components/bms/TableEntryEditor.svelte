@@ -1,6 +1,12 @@
 <script lang="ts">
   import EntryDetailForm from "$lib/components/bms/EntryDetailForm.svelte";
   import Checkbox from "$lib/components/ui/Checkbox.svelte";
+  import {
+    btnGhost,
+    btnIconDanger,
+    btnIconPlain,
+    inputEditorMono,
+  } from "$lib/constants/ui-classes";
   import { m } from "$lib/paraglide/messages.js";
   import { pageCount, paginate } from "$lib/utils/shared-table";
   import {
@@ -234,15 +240,6 @@
     notice = null;
     onchange?.();
   }
-
-  const inputClass =
-    "w-full rounded-lg border border-white/20 bg-black/20 px-3 py-2 font-mono text-[0.85rem] text-white outline-none placeholder:text-white/40 focus:border-[#64b5f6]/60 focus:ring-1 focus:ring-[#64b5f6]/30 disabled:opacity-60";
-  const smallButton =
-    "cursor-pointer rounded-md border border-white/20 bg-white/10 px-3 py-1.5 text-[0.85rem] whitespace-nowrap text-white/80 transition-all duration-200 ease-in-out hover:bg-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
-  const iconButtonClass =
-    "flex size-7 cursor-pointer items-center justify-center rounded-md transition-colors duration-200 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50";
-  const trashButtonClass =
-    "flex size-7 cursor-pointer items-center justify-center rounded-md text-red-200/80 transition-colors duration-200 hover:bg-red-400/20 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-50";
 </script>
 
 <section>
@@ -257,10 +254,10 @@
       </span>
     {/if}
     <div class="ml-auto flex flex-wrap gap-2">
-      <button class={smallButton} type="button" {disabled} onclick={startAdd}>
+      <button class={btnGhost} type="button" {disabled} onclick={startAdd}>
         {m["editor.entries_add"]()}
       </button>
-      <button class={smallButton} type="button" {disabled} onclick={() => (bulkOpen = !bulkOpen)}>
+      <button class={btnGhost} type="button" {disabled} onclick={() => (bulkOpen = !bulkOpen)}>
         {m["editor.bulk_paste"]()}
       </button>
     </div>
@@ -285,7 +282,7 @@
       </select>
     </label>
     <input
-      class="{inputClass} max-w-64 flex-1"
+      class="{inputEditorMono} max-w-64 flex-1"
       type="text"
       bind:value={query}
       oninput={resetPage}
@@ -296,10 +293,10 @@
       <span class="text-[0.85rem] text-white/60">
         {m["editor.entries_selected"]({ count: selectedCount })}
       </span>
-      <button class={smallButton} type="button" {disabled} onclick={selectAllFiltered}>
+      <button class={btnGhost} type="button" {disabled} onclick={selectAllFiltered}>
         {m["editor.entries_select_filtered"]()}
       </button>
-      <button class={smallButton} type="button" {disabled} onclick={clearSelection}>
+      <button class={btnGhost} type="button" {disabled} onclick={clearSelection}>
         {m["editor.entries_clear_selection"]()}
       </button>
       <select
@@ -314,7 +311,7 @@
         <option value="">{m["editor.entries_batch_clear"]()}</option>
       </select>
       <button
-        class={smallButton}
+        class={btnGhost}
         type="button"
         disabled={disabled || selectedCount === 0 || batchChoice === BATCH_NONE}
         onclick={assignSelected}
@@ -322,7 +319,7 @@
         {m["editor.entries_batch_apply"]()}
       </button>
       <button
-        class="{smallButton} text-red-200/80 hover:bg-red-400/20 hover:text-red-200"
+        class="{btnGhost} text-red-200/80 hover:bg-red-400/20 hover:text-red-200"
         type="button"
         disabled={disabled || selectedCount === 0}
         onclick={deleteSelected}
@@ -330,7 +327,7 @@
         {m["editor.entries_batch_delete"]()}
       </button>
       {#if hintApplicableCount > 0}
-        <button class={smallButton} type="button" {disabled} onclick={assignFromHints}>
+        <button class={btnGhost} type="button" {disabled} onclick={assignFromHints}>
           {m["editor.entries_assign_hint"]({ count: hintApplicableCount })}
         </button>
       {/if}
@@ -348,7 +345,8 @@
   {#if bulkOpen}
     <div class="mb-4 rounded-lg border border-white/15 bg-black/20 p-3">
       <p class="mb-2 text-[0.85rem] text-white/60">{m["editor.bulk_paste_hint"]()}</p>
-      <textarea class="{inputClass} min-h-32" bind:value={bulkText} placeholder="[…]"></textarea>
+      <textarea class="{inputEditorMono} min-h-32" bind:value={bulkText} placeholder="[…]"
+      ></textarea>
       <div class="mt-2 flex flex-wrap items-center gap-3">
         <label class="flex items-center gap-1.5 text-[0.85rem] text-white/70">
           <input type="radio" bind:group={bulkMode} value="append" />
@@ -358,10 +356,10 @@
           <input type="radio" bind:group={bulkMode} value="replace" />
           {m["editor.bulk_mode_replace"]()}
         </label>
-        <button class={smallButton} type="button" onclick={applyBulk}>
+        <button class={btnGhost} type="button" onclick={applyBulk}>
           {m["editor.bulk_apply"]()}
         </button>
-        <button class={smallButton} type="button" onclick={() => (bulkOpen = false)}>
+        <button class={btnGhost} type="button" onclick={() => (bulkOpen = false)}>
           {m["common.cancel"]()}
         </button>
       </div>
@@ -451,7 +449,7 @@
             <td class="table-td-glass px-2">
               <div class="flex items-center justify-center gap-1">
                 <button
-                  class={iconButtonClass}
+                  class={btnIconPlain}
                   type="button"
                   {disabled}
                   title={m["editor.entry_edit"]()}
@@ -472,7 +470,7 @@
                   </svg>
                 </button>
                 <button
-                  class={trashButtonClass}
+                  class={btnIconDanger}
                   type="button"
                   {disabled}
                   title={m["editor.entry_delete"]()}
@@ -516,7 +514,7 @@
   {#if pages > 1}
     <div class="mt-3 flex items-center justify-center gap-3 text-[0.9rem]">
       <button
-        class={smallButton}
+        class={btnGhost}
         type="button"
         disabled={safePage <= 1}
         onclick={() => (currentPage = safePage - 1)}
@@ -527,7 +525,7 @@
         {m["shared.page_indicator"]({ page: safePage, pages })}
       </span>
       <button
-        class={smallButton}
+        class={btnGhost}
         type="button"
         disabled={safePage >= pages}
         onclick={() => (currentPage = safePage + 1)}

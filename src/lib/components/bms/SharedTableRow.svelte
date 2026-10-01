@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { SharedTableItem } from "@brightmeows/mirror/shared";
 
+  import { btnIconDanger, btnIconPlain } from "$lib/constants/ui-classes";
   import { m } from "$lib/paraglide/messages.js";
 
   interface Props {
@@ -21,11 +22,6 @@
     deleting ? m["shared.deleting"]() : m["shared.delete_aria"]({ name: label })
   );
   const editLabel = $derived(m["shared.edit_aria"]({ name: label }));
-
-  const iconButtonClass =
-    "flex size-7 cursor-pointer items-center justify-center rounded-md transition-colors duration-200 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50";
-  const trashButtonClass =
-    "flex size-7 cursor-pointer items-center justify-center rounded-md text-red-200/80 transition-colors duration-200 hover:bg-red-400/20 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-50";
 
   function formatUpdatedAt(value: string): string {
     const at = Date.parse(value);
@@ -53,7 +49,7 @@
       <div class="flex items-center justify-center gap-1">
         {#if canEdit}
           <a
-            class={iconButtonClass}
+            class={btnIconPlain}
             href={`${item.url}edit/`}
             title={editLabel}
             aria-label={editLabel}
@@ -74,7 +70,7 @@
         {/if}
         {#if canDelete}
           <button
-            class={trashButtonClass}
+            class={btnIconDanger}
             type="button"
             title={deleteLabel}
             aria-label={deleteLabel}

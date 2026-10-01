@@ -10,6 +10,7 @@
   import GlassPanel from "$lib/components/ui/GlassPanel.svelte";
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
   import { SITE_ORIGIN } from "$lib/constants/site";
+  import { btnPrimaryLink } from "$lib/constants/ui-classes";
   import { auth } from "$lib/data/auth-store.svelte";
   import { searchConverters } from "$lib/data/search-converters.svelte";
   import { loadSharedTables, submitSharedDelete } from "$lib/data/shared-api";
@@ -86,10 +87,7 @@
   <h1 class="page-title text-center">{pageTitle}</h1>
   <p class="mt-2 text-center text-[1.1rem] text-white/70">{m["shared.subtitle"]()}</p>
   <div class="mt-4 text-center">
-    <a
-      class="cursor-pointer rounded-[25px] border-none bg-accent px-6 py-2.5 text-[1rem] font-semibold text-white no-underline transition-colors duration-300 ease-out hover:bg-accent-hover"
-      href={resolve("/bms/table/shared/new", {})}
-    >
+    <a class={btnPrimaryLink} href={resolve("/bms/table/shared/new", {})}>
       {m["shared.create_button"]()}
     </a>
   </div>

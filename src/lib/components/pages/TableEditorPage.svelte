@@ -1,4 +1,5 @@
 <script module lang="ts">
+  import { btnGhostMd, btnPrimary } from "$lib/constants/ui-classes";
   import type { TableEditPayload } from "$lib/utils/table-editor";
 
   /** 编辑器接口三槽（问题：16 个平铺 props 归组）：来源、发布、能力。 */
@@ -478,11 +479,6 @@
   onMount(() => {
     void load();
   });
-
-  const primaryButton =
-    "cursor-pointer rounded-[25px] border-none bg-accent px-6 py-2.5 text-[1rem] font-semibold text-white transition-colors duration-300 ease-out hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50";
-  const smallButton =
-    "cursor-pointer rounded-md border border-white/20 bg-white/10 px-3 py-1.5 text-[0.9rem] whitespace-nowrap text-white/80 transition-all duration-200 ease-in-out hover:bg-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
 </script>
 
 <svelte:head>
@@ -535,7 +531,7 @@
       <h3 class="mb-4 text-error">{m["common.load_failed"]()}</h3>
       <p class="message-error my-6">{loadError ?? m["common.unknown_error"]()}</p>
       <p class="mb-6 text-white/70">{m["common.check_network"]()}</p>
-      <button class={primaryButton} type="button" onclick={() => void load()}>
+      <button class={btnPrimary} type="button" onclick={() => void load()}>
         {m["common.reload"]()}
       </button>
     </div>
@@ -550,10 +546,10 @@
         {m["editor.draft_found_desc"]({ time: formatClock(pendingDraft.savedAt) })}
       </p>
       <div class="mt-5 flex flex-wrap justify-center gap-3">
-        <button class={primaryButton} type="button" onclick={restorePendingDraft}>
+        <button class={btnPrimary} type="button" onclick={restorePendingDraft}>
           {m["editor.draft_restore"]()}
         </button>
-        <button class={smallButton} type="button" onclick={() => void discardPendingDraft()}>
+        <button class={btnGhostMd} type="button" onclick={() => void discardPendingDraft()}>
           {m["editor.draft_discard"]()}
         </button>
       </div>
@@ -585,7 +581,7 @@
       {#if (mode === "shared" && canWrite && onSave !== undefined) || saveAsShared !== "none"}
         <div class="flex flex-wrap items-center gap-3">
           {#if mode === "shared" && canWrite && onSave !== undefined}
-            <button class={primaryButton} type="button" disabled={busy} onclick={() => void save()}>
+            <button class={btnPrimary} type="button" disabled={busy} onclick={() => void save()}>
               {busy
                 ? m["editor.saving"]()
                 : createMode
@@ -595,7 +591,7 @@
           {/if}
           {#if saveAsShared !== "none"}
             <button
-              class={smallButton}
+              class={btnGhostMd}
               type="button"
               disabled={busy}
               onclick={() => void saveAsSharedNow()}
@@ -641,13 +637,13 @@
           <span class="text-[0.85rem] text-white/50">{m["editor.export_hint"]()}</span>
         </div>
         <div class="flex flex-wrap gap-2">
-          <button class={smallButton} type="button" onclick={exportHeader}>
+          <button class={btnGhostMd} type="button" onclick={exportHeader}>
             {m["editor.export_header"]()}
           </button>
-          <button class={smallButton} type="button" onclick={exportData}>
+          <button class={btnGhostMd} type="button" onclick={exportData}>
             {m["editor.export_data"]()}
           </button>
-          <button class={smallButton} type="button" onclick={exportPackage}>
+          <button class={btnGhostMd} type="button" onclick={exportPackage}>
             {m["editor.export_package"]()}
           </button>
         </div>
