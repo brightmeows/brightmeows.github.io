@@ -16,6 +16,7 @@ import type { SharedTableItem } from "@brightmeows/mirror/shared";
 import { sharedTablePath } from "@brightmeows/mirror/urls";
 
 import { requestJson } from "./http";
+import { fetchSiteTableList } from "./table-list";
 
 import { m } from "$lib/paraglide/messages.js";
 
@@ -120,19 +121,13 @@ export async function loadSharedTables(
   tablesJsonPath = "/bms/table/shared/tables.json",
   options: { cacheBust?: boolean | undefined } = {}
 ): Promise<SharedTableItem[]> {
-  const url = new URL(tablesJsonPath, window.location.origin);
-  if (options.cacheBust === true) {
-    url.searchParams.set("t", String(Date.now()));
-  }
-  const res = await fetch(url.toString(), { redirect: "follow" });
-  if (!res.ok) {
-    throw new Error(m["shared.tables_load_failed"]({ status: res.status }));
-  }
-  const data: unknown = await res.json();
-  if (!Array.isArray(data)) {
-    throw new Error(m["shared.tables_invalid"]());
-  }
-  return (data as SharedTableItem[]).map((item) =>
-    item.id === "" ? item : { ...item, url: sharedTablePath(item.id) }
+  const data = await fetchSiteTableList<SharedTableItem>(
+    tablesJsonPath,
+    {
+      loadFailed: (status) => m["shared.tables_load_failed"]({ status }),
+      invalid: () => m["shared.tables_invalid"](),
+    },
+    options
   );
+  return data.map((item) => (item.id === "" ? item : { ...item, url: sharedTablePath(item.id) }));
 }

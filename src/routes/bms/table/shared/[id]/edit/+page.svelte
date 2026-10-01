@@ -10,7 +10,7 @@
   import GlassPanel from "$lib/components/ui/GlassPanel.svelte";
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
   import { r2SharedDataUrl, r2SharedHeaderUrl } from "$lib/constants/r2";
-  import { SITE_ORIGIN, apiBase } from "$lib/constants/site";
+  import { SITE_ORIGIN, apiBase, isStaticHost } from "$lib/constants/site";
   import {
     initialSharedEditState,
     loadSharedEdit,
@@ -146,7 +146,7 @@
     "cursor-pointer rounded-[25px] border-none bg-accent px-6 py-2.5 text-[1rem] font-semibold text-white transition-colors duration-300 ease-out hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50";
 
   onMount(() => {
-    bridge = apiBase() !== "";
+    bridge = isStaticHost();
     const returnTo = `${window.location.pathname}`;
     loginHref = `${apiBase()}/api/auth/login?return_to=${encodeURIComponent(returnTo)}`;
     void load();

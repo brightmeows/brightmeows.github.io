@@ -41,3 +41,11 @@ export function apiBase(): string {
   if (location.hostname === "localhost" || location.hostname === "127.0.0.1") return "";
   return SITE_ORIGIN;
 }
+
+/**
+ * 静态宿主判定：写操作桥接、查重降级等分支共用的唯一口径。
+ * 与 apiBase 同源派生（API 走主站即为静态宿主）；同样只能在 effect 中调用。
+ */
+export function isStaticHost(): boolean {
+  return apiBase() !== "";
+}
