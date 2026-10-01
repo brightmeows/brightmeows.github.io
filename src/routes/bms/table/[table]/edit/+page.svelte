@@ -18,11 +18,12 @@
 
 {#if table !== ""}
   <TableEditorPage
-    headerUrl={`/bms/table/${table}/header.json`}
-    dataUrlFallback={`/bms/table/${table}/data.json`}
-    draftKey={draftStorageKey("self", table)}
-    viewerHref={`/bms/table/${table}/`}
-    saveAsShared={bridge ? "bridge" : "same-origin"}
-    siteOrigin={SITE_ORIGIN}
+    source={{
+      headerUrl: `/bms/table/${table}/header.json`,
+      dataUrlFallback: `/bms/table/${table}/data.json`,
+      draftKey: draftStorageKey("self", table),
+      viewerHref: `/bms/table/${table}/`,
+    }}
+    publish={{ saveAsShared: bridge ? "bridge" : "same-origin", siteOrigin: SITE_ORIGIN }}
   />
 {/if}

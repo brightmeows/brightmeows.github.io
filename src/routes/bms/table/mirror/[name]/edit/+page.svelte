@@ -29,11 +29,12 @@
   </div>
 {:else}
   <TableEditorPage
-    headerUrl={r2TableHeaderUrl(tableId)}
-    dataUrlFallback={r2TableDataUrl(tableId)}
-    draftKey={draftStorageKey("mirror", tableId)}
-    viewerHref={mirrorTablePath(tableId)}
-    saveAsShared={bridge ? "bridge" : "same-origin"}
-    siteOrigin={SITE_ORIGIN}
+    source={{
+      headerUrl: r2TableHeaderUrl(tableId),
+      dataUrlFallback: r2TableDataUrl(tableId),
+      draftKey: draftStorageKey("mirror", tableId),
+      viewerHref: mirrorTablePath(tableId),
+    }}
+    publish={{ saveAsShared: bridge ? "bridge" : "same-origin", siteOrigin: SITE_ORIGIN }}
   />
 {/if}

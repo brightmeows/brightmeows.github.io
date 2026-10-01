@@ -169,19 +169,25 @@
   <PageShell panes={[messagePane]} />
 {:else}
   <TableEditorPage
-    headerUrl={s.isNew ? null : r2SharedHeaderUrl(tableId)}
-    dataUrlFallback={s.isNew ? null : r2SharedDataUrl(tableId)}
-    draftKey={draftStorageKey("shared", tableId)}
-    viewerHref={s.isNew ? null : viewerHref}
-    mode="shared"
-    {canWrite}
-    createMode={s.isNew}
-    initialBaselineUpdatedAt={s.baseline}
-    seed={s.seed}
-    onSave={bridge ? undefined : handleSave}
-    saveAsShared={s.isNew ? "none" : bridge ? "bridge" : "same-origin"}
-    siteOrigin={SITE_ORIGIN}
-    conflictCheck={bridge ? undefined : conflictCheck}
+    source={{
+      headerUrl: s.isNew ? null : r2SharedHeaderUrl(tableId),
+      dataUrlFallback: s.isNew ? null : r2SharedDataUrl(tableId),
+      draftKey: draftStorageKey("shared", tableId),
+      viewerHref: s.isNew ? null : viewerHref,
+    }}
+    capabilities={{
+      mode: "shared",
+      canWrite,
+      createMode: s.isNew,
+      initialBaselineUpdatedAt: s.baseline,
+      seed: s.seed,
+    }}
+    publish={{
+      onSave: bridge ? undefined : handleSave,
+      saveAsShared: s.isNew ? "none" : bridge ? "bridge" : "same-origin",
+      siteOrigin: SITE_ORIGIN,
+      conflictCheck: bridge ? undefined : conflictCheck,
+    }}
   >
     {#snippet actions()}
       {#if s.item !== null}

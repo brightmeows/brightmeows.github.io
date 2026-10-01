@@ -1,3 +1,46 @@
+<script module lang="ts">
+  import type { TableEditPayload } from "$lib/utils/table-editor";
+
+  /** 编辑器接口三槽（问题：16 个平铺 props 归组）：来源、发布、能力。 */
+
+  /** 来源描述：从哪加载、草稿存哪、返回哪。 */
+  export interface TableEditorSource {
+    /** header.json 地址；null 表示新表（无来源，从空内容或种子开始）。 */
+    headerUrl: string | null;
+    /** header.data_url 缺失时的回退数据地址。 */
+    dataUrlFallback: string | null;
+    /** 草稿键（按来源生成，见 draftStorageKey）。 */
+    draftKey: string;
+    /** 查看页地址；null 不显示返回链接。 */
+    viewerHref: string | null;
+  }
+
+  /** 发布行为：保存回调、并发检查与另存共享策略。 */
+  export interface TableEditorPublish {
+    /** shared 模式的保存回调；返回新的线上基线 updated_at。 */
+    onSave?: ((payload: TableEditPayload) => Promise<string | undefined>) | undefined;
+    /** 保存前取当前线上 updated_at（共享表并发检查）。 */
+    conflictCheck?: (() => Promise<string | undefined>) | undefined;
+    /** 另存为共享表：同源走草稿认领，bridge 走导出加跳主站，none 隐藏入口。 */
+    saveAsShared?: "same-origin" | "bridge" | "none" | undefined;
+    /** 主站地址（bridge 跳转用）。 */
+    siteOrigin?: string | undefined;
+  }
+
+  /** 能力与初始态：模式、写权限、并发基线与新表种子。 */
+  export interface TableEditorCapabilities {
+    mode?: "local" | "shared" | undefined;
+    /** shared 模式下是否可写（作者或新表）；local 忽略。 */
+    canWrite?: boolean | undefined;
+    /** 新表（首次保存才创建）时为 true，影响保存按钮文案。 */
+    createMode?: boolean | undefined;
+    /** 进入时的线上 updated_at（共享表并发提示基线）。 */
+    initialBaselineUpdatedAt?: string | undefined;
+    /** 新表初始种子（无草稿认领时使用）。 */
+    seed?: { name: string; symbol: string } | undefined;
+  }
+</script>
+
 <script lang="ts">
   import { checkSharedPayload, withLocalDataUrl } from "@brightmeows/mirror/shared";
   import { onMount, untrack, type Snippet } from "svelte";
@@ -11,6 +54,7 @@
   import TableImportPanel from "$lib/components/bms/TableImportPanel.svelte";
   import PageShell from "$lib/components/layout/PageShell.svelte";
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
+  import { decideLocalSaveGate, decideNewTableDraft } from "$lib/controllers/editor";
   import { fetchBmsHeader, fetchBmsTableData } from "$lib/data/bms-data";
   import { sharedNewSeed } from "$lib/data/shared-new.svelte";
   import {
@@ -38,7 +82,6 @@
     type BmsDropResult,
     type DraftPayload,
     type EntryImportResult,
-    type TableEditPayload,
     type TableImportResult,
   } from "$lib/utils/table-editor";
   import { formatTitle } from "$lib/utils/title";
@@ -48,33 +91,15 @@
    * 表编辑器页面：加载（或从空内容开始）后进入编辑。
    * local 模式只做本地闭环（草稿、导出、另存共享）；shared 模式接入共享表保存
    * （整包覆盖、发布前必须全部指派、保存前并发提示），写权限由 canWrite 控制。
+   * 保存闸门与新表草稿认领的决策在 controllers/editor（可单测）。
    */
   interface Props {
-    /** header.json 地址；null 表示新表（无来源，从空内容开始）。 */
-    headerUrl: string | null;
-    /** header.data_url 缺失时的回退数据地址。 */
-    dataUrlFallback: string | null;
-    /** 草稿键（按来源生成，见 draftStorageKey）。 */
-    draftKey: string;
-    /** 查看页地址；null 不显示返回链接。 */
-    viewerHref: string | null;
-    mode?: "local" | "shared";
-    /** shared 模式下是否可写（作者或新表）；local 忽略。 */
-    canWrite?: boolean;
-    /** 新表（首次保存才创建）时为 true，影响保存按钮文案。 */
-    createMode?: boolean;
-    /** 进入时的线上 updated_at（共享表并发提示基线）。 */
-    initialBaselineUpdatedAt?: string | undefined;
-    /** 新表初始种子（无草稿认领时使用）。 */
-    seed?: { name: string; symbol: string } | undefined;
-    /** 保存回调；返回新的线上基线 updated_at。 */
-    onSave?: ((payload: TableEditPayload) => Promise<string | undefined>) | undefined;
-    /** 另存为共享表：同源走草稿认领，bridge 走导出加跳主站。 */
-    saveAsShared?: "same-origin" | "bridge" | "none";
-    /** 主站地址（bridge 跳转用）。 */
-    siteOrigin?: string | undefined;
-    /** 保存前取当前线上 updated_at（共享表并发检查）。 */
-    conflictCheck?: (() => Promise<string | undefined>) | undefined;
+    /** 来源三槽：见模块脚本导出的 TableEditorSource。 */
+    source: TableEditorSource;
+    /** 发布三槽：保存回调、并发检查与另存共享策略。 */
+    publish?: TableEditorPublish | undefined;
+    /** 能力三槽：模式、写权限与初始态。 */
+    capabilities?: TableEditorCapabilities | undefined;
     /** 标题区操作槽（作者信息、改 id、删除等）。 */
     actions?: Snippet | undefined;
     /** 内容区顶部提示槽（非作者提示、静态宿主桥接提示）。 */
@@ -83,24 +108,21 @@
     footer?: Snippet | undefined;
   }
 
-  let {
-    headerUrl,
-    dataUrlFallback,
-    draftKey,
-    viewerHref,
-    mode = "local",
-    canWrite = false,
-    createMode = false,
-    initialBaselineUpdatedAt,
-    seed,
-    onSave,
-    saveAsShared = "none",
-    siteOrigin,
-    conflictCheck,
-    actions,
-    banner,
-    footer,
-  }: Props = $props();
+  let { source, publish = {}, capabilities = {}, actions, banner, footer }: Props = $props();
+
+  // 三槽内的字段经 derived 取值（保持响应式，路由传内联对象时也能更新）
+  const headerUrl = $derived(source.headerUrl);
+  const dataUrlFallback = $derived(source.dataUrlFallback);
+  const draftKey = $derived(source.draftKey);
+  const viewerHref = $derived(source.viewerHref);
+  const onSave = $derived(publish.onSave);
+  const conflictCheck = $derived(publish.conflictCheck);
+  const saveAsShared = $derived(publish.saveAsShared ?? "none");
+  const siteOrigin = $derived(publish.siteOrigin);
+  const mode = $derived(capabilities.mode ?? "local");
+  const canWrite = $derived(capabilities.canWrite ?? false);
+  const createMode = $derived(capabilities.createMode ?? false);
+  const seed = $derived(capabilities.seed);
 
   type LoadState = "loading" | "ready" | "error";
   type DraftStatus = "idle" | "saving" | "saved" | "unavailable" | "quota" | "error";
@@ -125,7 +147,9 @@
   let pendingDraft = $state<DraftPayload | null>(null);
   let draftStatus = $state<DraftStatus>("idle");
   let lastSavedAt = $state<string | null>(null);
-  let baselineUpdatedAt = $state<string | undefined>(untrack(() => initialBaselineUpdatedAt));
+  let baselineUpdatedAt = $state<string | undefined>(
+    untrack(() => capabilities.initialBaselineUpdatedAt)
+  );
   let notice = $state<{ kind: "ok" | "warn" | "error"; text: string } | null>(null);
   /** 拖拽导入的等级建议（哈希 → 文件等级），仅本次会话有效。 */
   let levelHints = $state<Record<string, string>>({});
@@ -256,14 +280,13 @@
           symbol = seed.symbol;
         }
         const own = await loadDraft(draftKey);
-        if (own !== null) {
-          pendingDraft = own;
-        } else {
-          const claim = takeDraftClaim();
-          if (claim !== null) {
-            const claimed = await loadDraft(claim.sourceDraftKey);
-            if (claimed !== null) applyDraftPayload(claimed);
-          }
+        const claim = takeDraftClaim();
+        const claimed = claim !== null ? await loadDraft(claim.sourceDraftKey) : null;
+        const decision = decideNewTableDraft(own, claim, claimed);
+        if (decision.action === "claim") {
+          applyDraftPayload(decision.draft);
+        } else if (decision.action === "pending") {
+          pendingDraft = decision.draft;
         }
         loadState = "ready";
         return;
@@ -350,14 +373,14 @@
       const imported = result.data.map((item) => ({ ...item }));
       entries = result.dataMode === "append" ? [...entries, ...imported] : imported;
     }
-    const source =
+    const sourceLabel =
       result.source === "paste"
         ? m["editor.import_source_paste"]()
         : result.source === "file"
           ? m["editor.import_source_file"]()
           : m["editor.import_source_fork"]();
     markDirty();
-    notice = { kind: "ok", text: m["editor.import_done"]({ source }) };
+    notice = { kind: "ok", text: m["editor.import_done"]({ source: sourceLabel }) };
   }
 
   function handleDropAdd(result: BmsDropResult): void {
@@ -391,16 +414,15 @@
 
   async function save(): Promise<void> {
     if (busy || onSave === undefined || !canWrite) return;
-    const header = buildHeader();
-    const check = checkSharedPayload(header, entries);
-    if (!check.ok) {
-      notice = { kind: "error", text: sharedPayloadErrorMessage(check.error) };
+    const gate = decideLocalSaveGate(buildHeader(), entries);
+    if (gate.gate === "invalid_payload") {
+      notice = { kind: "error", text: sharedPayloadErrorMessage(gate.error) };
       return;
     }
-    if (unassignedCount > 0) {
+    if (gate.gate === "unassigned") {
       notice = {
         kind: "warn",
-        text: m["editor.publish_unassigned_blocked"]({ count: unassignedCount }),
+        text: m["editor.publish_unassigned_blocked"]({ count: gate.count }),
       };
       return;
     }
@@ -417,13 +439,13 @@
     busy = true;
     notice = null;
     try {
-      const nextBaseline = await onSave({ header: check.header, data: check.data });
+      const nextBaseline = await onSave({ header: gate.header, data: gate.data });
       if (nextBaseline !== undefined) baselineUpdatedAt = nextBaseline;
       dirty = false;
       await deleteDraft(draftKey);
       draftStatus = "idle";
       lastSavedAt = null;
-      notice = { kind: "ok", text: m["editor.saved"]({ count: check.data.length }) };
+      notice = { kind: "ok", text: m["editor.saved"]({ count: gate.data.length }) };
     } catch (error) {
       notice = {
         kind: "error",
