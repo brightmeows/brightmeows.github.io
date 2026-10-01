@@ -3,8 +3,10 @@
   import { onMount, untrack, type Snippet } from "svelte";
 
   import { goto } from "$app/navigation";
+  import BmsDropZone from "$lib/components/bms/BmsDropZone.svelte";
   import CourseEditor from "$lib/components/bms/CourseEditor.svelte";
   import TableEntryEditor from "$lib/components/bms/TableEntryEditor.svelte";
+  import TableEntryImportPanel from "$lib/components/bms/TableEntryImportPanel.svelte";
   import TableHeaderForm from "$lib/components/bms/TableHeaderForm.svelte";
   import TableImportPanel from "$lib/components/bms/TableImportPanel.svelte";
   import PageShell from "$lib/components/layout/PageShell.svelte";
@@ -33,7 +35,9 @@
     countUnassigned,
     levelOrderOf,
     shouldWarnOverwrite,
+    type BmsDropResult,
     type DraftPayload,
+    type EntryImportResult,
     type TableEditPayload,
     type TableImportResult,
   } from "$lib/utils/table-editor";
@@ -123,6 +127,8 @@
   let lastSavedAt = $state<string | null>(null);
   let baselineUpdatedAt = $state<string | undefined>(untrack(() => initialBaselineUpdatedAt));
   let notice = $state<{ kind: "ok" | "warn" | "error"; text: string } | null>(null);
+  /** 拖拽导入的等级建议（哈希 → 文件等级），仅本次会话有效。 */
+  let levelHints = $state<Record<string, string>>({});
 
   const unassignedCount = $derived(countUnassigned(entries));
   const pageTitle = $derived(name.trim() === "" ? m["editor.page_title"]() : name.trim());
@@ -350,8 +356,37 @@
         : result.source === "file"
           ? m["editor.import_source_file"]()
           : m["editor.import_source_fork"]();
-    notice = { kind: "ok", text: m["editor.import_done"]({ source }) };
     markDirty();
+    notice = { kind: "ok", text: m["editor.import_done"]({ source }) };
+  }
+
+  function handleDropAdd(result: BmsDropResult): void {
+    if (result.added.length > 0) {
+      entries = [...entries, ...result.added];
+      levelHints = { ...levelHints, ...result.hints };
+    }
+    markDirty();
+    notice = {
+      kind: result.added.length > 0 ? "ok" : "warn",
+      text: m["editor.bms_drop_done"]({
+        added: result.added.length,
+        skipped: result.skipped,
+        failed: result.failed,
+      }),
+    };
+  }
+
+  function handleEntryImport(result: EntryImportResult): void {
+    if (result.added.length > 0) entries = [...entries, ...result.added];
+    markDirty();
+    notice = {
+      kind: result.added.length > 0 ? "ok" : "warn",
+      text: m["editor.entry_import_done"]({
+        source: result.sourceLabel,
+        added: result.added.length,
+        skipped: result.skipped,
+      }),
+    };
   }
 
   async function save(): Promise<void> {
@@ -618,7 +653,11 @@
 
       <hr class="border-white/10" />
 
-      <TableEntryEditor bind:entries {levels} disabled={busy} onchange={markDirty} />
+      <BmsDropZone {entries} disabled={busy} onadd={handleDropAdd} />
+
+      <TableEntryImportPanel {entries} disabled={busy} onapply={handleEntryImport} />
+
+      <TableEntryEditor bind:entries {levels} {levelHints} disabled={busy} onchange={markDirty} />
 
       <hr class="border-white/10" />
 

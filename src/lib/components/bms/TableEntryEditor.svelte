@@ -4,12 +4,15 @@
   import { m } from "$lib/paraglide/messages.js";
   import { pageCount, paginate } from "$lib/utils/shared-table";
   import {
+    assignHintLevels,
     assignLevel,
     countUnassigned,
     duplicateEntryLabel,
     encodeLevelFilterOption,
+    entryHashes,
     entryLabel,
     filterEntryIndices,
+    isUnassigned,
     LEVEL_FILTER_ALL_OPTION,
     LEVEL_FILTER_UNASSIGNED_OPTION,
     parseLevelFilterOption,
@@ -24,11 +27,19 @@
     entries: Record<string, unknown>[];
     /** 头部 level_order，用于指派下拉与等级筛选。 */
     levels: string[];
+    /** 哈希（小写）→ 文件内等级建议（拖拽导入时提供）。 */
+    levelHints?: Record<string, string> | undefined;
     disabled?: boolean;
     onchange?: (() => void) | undefined;
   }
 
-  let { entries = $bindable([]), levels, disabled = false, onchange }: Props = $props();
+  let {
+    entries = $bindable([]),
+    levels,
+    levelHints = {},
+    disabled = false,
+    onchange,
+  }: Props = $props();
 
   const PAGE_SIZE = 50;
   const BATCH_NONE = "__none__";
@@ -60,6 +71,29 @@
   const pageSomeSelected = $derived(
     !pageAllSelected && pageIndices.some((index) => selected.has(index))
   );
+  const hintApplicableCount = $derived(
+    entries.reduce((total, entry) => {
+      if (!isUnassigned(entry)) return total;
+      const hash = entryHashes(entry)[0];
+      const hint = hash === undefined ? undefined : levelHints[hash];
+      return hint !== undefined && hint.trim() !== "" ? total + 1 : total;
+    }, 0)
+  );
+
+  function hintFor(entry: Record<string, unknown>): string | null {
+    const hash = entryHashes(entry)[0];
+    if (hash === undefined) return null;
+    const hint = levelHints[hash];
+    return hint === undefined || hint.trim() === "" ? null : hint.trim();
+  }
+
+  function assignFromHints(): void {
+    const result = assignHintLevels(entries, levelHints);
+    if (result.assigned === 0) return;
+    entries = result.entries;
+    notice = m["editor.entries_assign_hint_done"]({ count: result.assigned });
+    onchange?.();
+  }
 
   function shortHash(entry: Record<string, unknown>): string {
     const hash =
@@ -303,6 +337,11 @@
       >
         {m["editor.entries_batch_delete"]()}
       </button>
+      {#if hintApplicableCount > 0}
+        <button class={smallButton} type="button" {disabled} onclick={assignFromHints}>
+          {m["editor.entries_assign_hint"]({ count: hintApplicableCount })}
+        </button>
+      {/if}
     </div>
   </div>
 
@@ -400,6 +439,11 @@
             </td>
             <td class="table-td-glass wrap-break-word text-white/80">
               {typeof entry.level === "string" ? entry.level : ""}
+              {#if isUnassigned(entry) && hintFor(entry) !== null}
+                <div class="text-[0.75rem] text-white/40">
+                  {m["editor.entry_level_hint"]({ level: hintFor(entry) ?? "" })}
+                </div>
+              {/if}
             </td>
             <td class="table-td-glass min-w-50 wrap-break-word">
               <div class="text-white/90">

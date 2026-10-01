@@ -264,6 +264,27 @@ export function assignLevel(
   });
 }
 
+/**
+ * 按文件等级建议指派：未指派且能在 hints 中命中哈希（首个哈希）的条目写入建议等级。
+ * 返回新数组与指派条数。
+ */
+export function assignHintLevels(
+  entries: readonly Record<string, unknown>[],
+  hints: Readonly<Record<string, string>>
+): { entries: Record<string, unknown>[]; assigned: number } {
+  let assigned = 0;
+  const next = entries.map((entry) => {
+    if (!isUnassigned(entry)) return entry;
+    const hash = entryHashes(entry)[0];
+    if (hash === undefined) return entry;
+    const hint = hints[hash];
+    if (hint === undefined || hint.trim() === "") return entry;
+    assigned += 1;
+    return { ...entry, level: hint.trim() };
+  });
+  return { entries: next, assigned };
+}
+
 /** 按下标删除条目；返回新数组，不改动入参。 */
 export function removeIndices(
   entries: readonly Record<string, unknown>[],
@@ -340,6 +361,23 @@ export interface TableImportResult {
 export interface TableEditPayload {
   header: Record<string, unknown>;
   data: Record<string, unknown>[];
+}
+
+/** 本地 BMS/BMSON 拖拽导入的结果（按当前表与批内哈希去重后）。 */
+export interface BmsDropResult {
+  added: Record<string, unknown>[];
+  /** 哈希（小写）→ 文件内等级建议。 */
+  hints: Record<string, string>;
+  skipped: number;
+  failed: number;
+  total: number;
+}
+
+/** 跨表选择导入的结果（按当前表哈希去重后）。 */
+export interface EntryImportResult {
+  added: Record<string, unknown>[];
+  skipped: number;
+  sourceLabel: string;
 }
 
 /** 草稿键：按来源与标识隔离（同源的镜像目录名与共享 id 不会互串）。 */
