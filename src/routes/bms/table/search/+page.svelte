@@ -5,6 +5,18 @@
   import BmsSearchResult from "$lib/components/bms/BmsSearchResult.svelte";
   import PageShell from "$lib/components/layout/PageShell.svelte";
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
+  import {
+    classifyLoadError,
+    createEpochGuard,
+    doneState,
+    errorState,
+    loadingDataState,
+    loadingHeaderState,
+    parsingState,
+    progressPercent,
+    tableDisplayName,
+    waitingState,
+  } from "$lib/controllers/table-load";
   import type { CandidateEntry, TableLoadState } from "$lib/data/bms-search";
   import {
     detectQueryType,
@@ -40,7 +52,7 @@
   let tableStates = $state(new SvelteMap<string, TableLoadState>());
   // 普通 Map（非 SvelteMap）：仅在 loadSingleTable 异步回调中读取，不参与模板响应式追踪
   let candidateMap = new Map<string, CandidateEntry>();
-  let currentSearchId = 0;
+  const epochs = createEpochGuard();
   let currentSearchType: ReturnType<typeof detectQueryType> = "text";
   let abortController: AbortController | null = null;
   let aggregator: IncrementalAggregator | null = null;
@@ -74,7 +86,7 @@
       return;
     }
 
-    const epoch = currentSearchId;
+    const epoch = epochs.current();
     const cmap = new Map(candidates.map((c) => [c.tableId, c]));
     candidateMap = cmap;
     const agg = new IncrementalAggregator();
@@ -105,49 +117,17 @@
 
   /** 检查当前操作是否仍属于当前搜索，未被取消或新搜索取代 */
   function isEpochValid(epoch: number): boolean {
-    return epoch === currentSearchId && aggregator !== null;
+    return epochs.isCurrent(epoch);
   }
 
   // ---- tableStates 更新辅助函数 ----
-
-  function setWaiting(tid: string): void {
-    tableStates.set(tid, { status: "waiting", tableId: tid });
-  }
-  function setLoadingHeader(tid: string, name: string): void {
-    tableStates.set(tid, { status: "loading-header", tableId: tid, name });
-  }
-  function setLoadingData(
-    tid: string,
-    name: string,
-    progress: number,
-    bytesLoaded: number,
-    bytesTotal: number
-  ): void {
-    tableStates.set(tid, {
-      status: "loading-data",
-      tableId: tid,
-      name,
-      progress,
-      bytesLoaded,
-      bytesTotal,
-    });
-  }
-  function setParsing(tid: string, name: string): void {
-    tableStates.set(tid, { status: "parsing", tableId: tid, name });
-  }
-  function setDone(tid: string, name: string): void {
-    tableStates.set(tid, { status: "done", tableId: tid, name });
-  }
-  function setError(tid: string, name: string, errorMessage: string): void {
-    tableStates.set(tid, { status: "error", tableId: tid, name, errorMessage });
-  }
 
   async function loadSingleTable(tableId: string, epoch: number): Promise<void> {
     const entry = candidateMap.get(tableId);
     if (!entry) return;
     const keySet = new Set(entry.matchedKeys.map((mk) => mk.key));
 
-    setLoadingHeader(tableId, tableId);
+    tableStates.set(tableId, loadingHeaderState(tableId, tableId));
 
     try {
       const header = await loadTableHeader(tableId, abortController?.signal);
@@ -156,7 +136,7 @@
       const name = header?.name ?? tableId;
       const symbol = header?.symbol;
 
-      setLoadingData(tableId, name, 0, 0, 0);
+      tableStates.set(tableId, loadingDataState(tableId, name, 0, 0, 0));
 
       const charts = await loadTableDataWithProgress(
         tableId,
@@ -166,33 +146,37 @@
         (loaded: number, total: number) => {
           if (!isEpochValid(epoch)) return;
           const current = tableStates.get(tableId);
-          const currentName = current && "name" in current ? current.name : name;
-          const progress = total > 0 ? Math.min(Math.round((loaded / total) * 100), 100) : 0;
-          setLoadingData(tableId, currentName, progress, loaded, total);
+          const currentName = tableDisplayName(current, name);
+          tableStates.set(
+            tableId,
+            loadingDataState(tableId, currentName, progressPercent(loaded, total), loaded, total)
+          );
         }
       );
 
       if (!isEpochValid(epoch)) return;
 
-      setParsing(tableId, name);
+      tableStates.set(tableId, parsingState(tableId, name));
 
       // 聚合结果
       if (aggregator) {
         searchResults = aggregator.addTable(tableId, name, charts, symbol);
       }
 
-      setDone(tableId, name);
+      tableStates.set(tableId, doneState(tableId, name));
     } catch (err) {
-      if (err instanceof DOMException && err.name === "AbortError") return;
+      const classified = classifyLoadError(err);
+      if (classified.kind === "aborted") return;
       if (!isEpochValid(epoch)) return;
 
       // 清理 aggregator 中该表的占位 appearance，避免残缺数据残留
       aggregator?.removeTable(tableId);
 
-      const errorMessage = err instanceof Error ? err.message : m["common.unknown_error"]();
       const current = tableStates.get(tableId);
-      const name = current && "name" in current ? current.name : tableId;
-      setError(tableId, name, errorMessage);
+      const name = tableDisplayName(current, tableId);
+      if (classified.kind === "failed") {
+        tableStates.set(tableId, errorState(tableId, name, classified.message));
+      }
     }
   }
 
@@ -207,8 +191,8 @@
   }
 
   function retryTable(tableId: string): void {
-    setWaiting(tableId);
-    void loadSingleTable(tableId, currentSearchId);
+    tableStates.set(tableId, waitingState(tableId));
+    void loadSingleTable(tableId, epochs.current());
   }
 
   // ---- 搜索入口 ----
@@ -221,7 +205,7 @@
     const ctrl = new AbortController();
     abortController = ctrl;
 
-    const epoch = ++currentSearchId;
+    const epoch = epochs.next();
     currentSearchType = detectQueryType(q);
 
     searchPhase = "searching";
@@ -234,7 +218,7 @@
       currentSearchType === "text" ? buildSearchNeedles(q, searchConverters.list) : undefined;
 
     const candidates = await indexClient.search(q, needles);
-    if (epoch !== currentSearchId) return; // 已被新搜索取代
+    if (!epochs.isCurrent(epoch)) return; // 已被新搜索取代
     await handleSearchResult(candidates, abortController?.signal);
   }
 
