@@ -7,6 +7,17 @@
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
   import GradientButton from "$lib/components/ui/GradientButton.svelte";
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
+  import {
+    classifyLoadError,
+    createEpochGuard,
+    doneState,
+    errorState,
+    loadingDataState,
+    loadingHeaderState,
+    parsingState,
+    progressPercent,
+    tableDisplayName,
+  } from "$lib/controllers/table-load";
   import type { CandidateEntry, QueryType, TableLoadState } from "$lib/data/bms-search";
   import {
     detectQueryType,
@@ -41,7 +52,7 @@
   let batchResults = $state<Record<string, SearchResult[]>>({});
 
   // 取消控制（未决索引搜索的取消走 indexClient.cancelPending）
-  let batchId = 0;
+  const epochs = createEpochGuard();
   let abortController: AbortController | null = null;
 
   // 已加载表数据（非响应式：仅异步回调中读写，不参与模板追踪）
@@ -81,69 +92,46 @@
 
   // ---- tableStates 更新辅助 ----
 
-  function setLoadingHeader(tid: string, name: string): void {
-    tableStates.set(tid, { status: "loading-header", tableId: tid, name });
-  }
-  function setLoadingData(
-    tid: string,
-    name: string,
-    progress: number,
-    bytesLoaded: number,
-    bytesTotal: number
-  ): void {
-    tableStates.set(tid, {
-      status: "loading-data",
-      tableId: tid,
-      name,
-      progress,
-      bytesLoaded,
-      bytesTotal,
-    });
-  }
-  function setParsing(tid: string, name: string): void {
-    tableStates.set(tid, { status: "parsing", tableId: tid, name });
-  }
-  function setDone(tid: string, name: string): void {
-    tableStates.set(tid, { status: "done", tableId: tid, name });
-  }
-  function setError(tid: string, name: string, errorMessage: string): void {
-    tableStates.set(tid, { status: "error", tableId: tid, name, errorMessage });
-  }
-
   function isEpochValid(epoch: number): boolean {
-    return epoch === batchId;
+    return epochs.isCurrent(epoch);
   }
 
   // ---- 单表全量加载（Phase 2）----
 
   async function loadSingleTableFull(tableId: string, epoch: number): Promise<void> {
-    setLoadingHeader(tableId, tableId);
+    tableStates.set(tableId, loadingHeaderState(tableId, tableId));
     try {
       const header = await loadTableHeader(tableId, abortController?.signal);
       if (!isEpochValid(epoch)) return;
 
       const name = header?.name ?? tableId;
       const symbol = header?.symbol;
-      setLoadingData(tableId, name, 0, 0, 0);
+      tableStates.set(tableId, loadingDataState(tableId, name, 0, 0, 0));
 
       const charts = await loadFullTableData(tableId, abortController?.signal, (loaded, total) => {
         if (!isEpochValid(epoch)) return;
-        const progress = total > 0 ? Math.min(Math.round((loaded / total) * 100), 100) : 0;
-        setLoadingData(tableId, name, progress, loaded, total);
+        tableStates.set(
+          tableId,
+          loadingDataState(tableId, name, progressPercent(loaded, total), loaded, total)
+        );
       });
 
       if (!isEpochValid(epoch)) return;
 
-      setParsing(tableId, name);
+      tableStates.set(tableId, parsingState(tableId, name));
       tableData.set(tableId, { name, symbol, charts });
-      setDone(tableId, name);
+      tableStates.set(tableId, doneState(tableId, name));
     } catch (err) {
-      if (err instanceof DOMException && err.name === "AbortError") return;
+      const classified = classifyLoadError(err);
+      if (classified.kind === "aborted") return;
       if (!isEpochValid(epoch)) return;
 
       const current = tableStates.get(tableId);
-      const name = current && "name" in current ? current.name : tableId;
-      setError(tableId, name, err instanceof Error ? err.message : m["common.unknown_error"]());
+      const name = tableDisplayName(current, tableId);
+      tableStates.set(
+        tableId,
+        errorState(tableId, name, err instanceof Error ? err.message : m["common.unknown_error"]())
+      );
     }
   }
 
@@ -168,7 +156,7 @@
 
     const ctrl = new AbortController();
     abortController = ctrl;
-    const epoch = ++batchId;
+    const epoch = epochs.next();
 
     batchResults = {};
     tableStates = new SvelteMap();
@@ -240,7 +228,7 @@
   }
 
   function cancelBatch(): void {
-    batchId++;
+    epochs.next();
     abortController?.abort();
     abortController = null;
     indexClient.cancelPending();
