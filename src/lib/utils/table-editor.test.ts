@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { CoreEntryField } from "./table-editor";
 import {
   addLevel,
+  assignHintLevels,
   assignLevel,
   buildCombinedPackage,
   commitEntryEdit,
@@ -213,6 +214,26 @@ describe("assignLevel / removeIndices", () => {
     const source = [entry({ md5: "a" }), entry({ md5: "b" }), entry({ md5: "c" })];
     expect(removeIndices(source, [0, 2]).map((item) => item.md5)).toEqual(["b"]);
     expect(source).toHaveLength(3);
+  });
+});
+
+describe("assignHintLevels", () => {
+  it("assigns hints to unassigned entries only", () => {
+    const source = [
+      entry({ md5: "A", level: "1" }),
+      entry({ md5: "b" }),
+      entry({ sha256: "C" }),
+      entry({ md5: "d" }),
+    ];
+    const result = assignHintLevels(source, { b: "12", c: "13", d: "  " });
+    expect(result.assigned).toBe(2);
+    expect(result.entries).toEqual([
+      { md5: "A", level: "1" },
+      { md5: "b", level: "12" },
+      { sha256: "C", level: "13" },
+      { md5: "d" },
+    ]);
+    expect(source[1]).toEqual({ md5: "b" });
   });
 });
 

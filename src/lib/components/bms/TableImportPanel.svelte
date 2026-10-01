@@ -133,7 +133,8 @@
     busy = true;
     error = null;
     try {
-      const headerRes = await fetch(r2TableHeaderUrl(dirName));
+      const headerUrl = r2TableHeaderUrl(dirName);
+      const headerRes = await fetch(headerUrl);
       if (!headerRes.ok) throw new Error(String(headerRes.status));
       const header = (await headerRes.json()) as unknown;
       if (!isPlainObject(header)) throw new Error(m["editor.import_invalid"]());
@@ -141,7 +142,8 @@
         typeof header.data_url === "string" && header.data_url !== ""
           ? header.data_url
           : r2TableDataUrl(dirName);
-      const dataRes = await fetch(dataUrl);
+      // data_url 可能是相对路径（如 ./data.json）：按 header 地址解析
+      const dataRes = await fetch(new URL(dataUrl, headerUrl).toString());
       if (!dataRes.ok) throw new Error(String(dataRes.status));
       const data = (await dataRes.json()) as unknown;
       if (!Array.isArray(data) || !validEntries(data))
