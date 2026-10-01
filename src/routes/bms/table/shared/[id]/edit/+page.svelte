@@ -30,11 +30,11 @@
   import { sharedNewSeed } from "$lib/data/shared-new.svelte";
   import { m } from "$lib/paraglide/messages.js";
   import { clipboardFeedback } from "$lib/utils/clipboard.svelte";
+  import { downloadJsonFile } from "$lib/utils/download";
   import {
     levelOrderToText,
     sharedPayloadErrorMessage,
     textToLevelOrder,
-    downloadJsonFile,
   } from "$lib/utils/shared-table";
   import { formatTitle } from "$lib/utils/title";
 

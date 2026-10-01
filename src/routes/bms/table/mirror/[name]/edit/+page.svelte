@@ -2,13 +2,13 @@
   import { mirrorTablePath } from "@brightmeows/mirror/urls";
 
   import { page } from "$app/state";
-  import BmsTablePage from "$lib/components/pages/BmsTablePage.svelte";
+  import TableEditorPage from "$lib/components/pages/TableEditorPage.svelte";
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
-  import { r2TableHeaderUrl } from "$lib/constants/r2";
+  import { r2TableDataUrl, r2TableHeaderUrl } from "$lib/constants/r2";
   import { m } from "$lib/paraglide/messages.js";
+  import { draftStorageKey } from "$lib/utils/table-editor";
 
-  // 表 ID 直接来自路径参数：本页 URL 与镜像站导入地址同形，页面对外展示当前地址
-  // 作为可导入链接（BmsTablePage 统一从地址栏取）。
+  // 表 ID 直接来自路径参数；编辑页与查看页同形，仅尾部多一段 /edit/。
   const tableId = $derived(page.params.name ?? "");
 </script>
 
@@ -20,8 +20,10 @@
     />
   </div>
 {:else}
-  <BmsTablePage
+  <TableEditorPage
     headerUrl={r2TableHeaderUrl(tableId)}
-    editHref={`${mirrorTablePath(tableId)}edit/`}
+    dataUrlFallback={r2TableDataUrl(tableId)}
+    draftKey={draftStorageKey("mirror", tableId)}
+    viewerHref={mirrorTablePath(tableId)}
   />
 {/if}

@@ -6,4 +6,4 @@
   let headerUrl = $derived(`/bms/table/${table}/header.json`);
 </script>
 
-<BmsTablePage {headerUrl} />
+<BmsTablePage {headerUrl} editHref={`/bms/table/${table}/edit/`} />

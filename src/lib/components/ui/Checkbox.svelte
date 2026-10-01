@@ -12,6 +12,8 @@
     disabled?: boolean;
     /** 值变化回调，参数为选中状态 */
     onchange?: (checked: boolean) => void;
+    /** 无障碍标签（没有可见文字标签时提供） */
+    ariaLabel?: string | undefined;
     /** 自定义类名 */
     class?: string;
   }
@@ -22,6 +24,7 @@
     size = "md" as Size,
     disabled = false,
     onchange,
+    ariaLabel,
     class: className = "",
   }: Props = $props();
 
@@ -178,4 +181,5 @@
   class="checkbox-custom {size === 'sm' ? 'checkbox-sm' : 'checkbox-md'} {className}"
   onchange={handleChange}
   aria-checked={indeterminate ? "mixed" : undefined}
+  aria-label={ariaLabel}
 />

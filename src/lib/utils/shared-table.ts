@@ -11,7 +11,7 @@ import { m } from "$lib/paraglide/messages.js";
 
 /**
  * 共享表的纯函数：搜索过滤、按作者分组、header 表单转换、分页与导出。
- * 无副作用（`downloadJsonFile` 除外，属轻量 DOM 工具，同 clipboard/url 口径）。
+ * 无副作用（纯函数）。
  */
 
 /** 作者分组（列表的分组键）：组头是 GitHub login，`isSelf` 用于置顶与筛选。 */
@@ -111,21 +111,6 @@ export function paginate<T>(items: T[], page: number, pageSize: number): T[] {
   const pages = pageCount(items.length, pageSize);
   const index = Math.min(Math.max(1, page), pages) - 1;
   return items.slice(index * pageSize, index * pageSize + pageSize);
-}
-
-/** 导出下载：把 JSON 值存成文件（Blob + 临时链接，同 clipboard 的轻量 DOM 口径）。 */
-export function downloadJsonFile(filename: string, value: unknown): void {
-  const blob = new Blob([JSON.stringify(value, null, 2)], {
-    type: "application/json;charset=utf-8",
-  });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = filename;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(url);
 }
 
 /**
