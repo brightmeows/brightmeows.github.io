@@ -4,7 +4,7 @@
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
   import JsonPreview from "$lib/components/ui/JsonPreview.svelte";
   import { m } from "$lib/paraglide/messages.js";
-  import type { ChartData, DifficultyGroup } from "$lib/types/bms";
+  import type { ChartData, DifficultyGroup } from "$lib/types/bms-format";
   import type { JsonPreviewHandle } from "$lib/types/ui";
   import { validateUrl } from "$lib/utils/url";
 

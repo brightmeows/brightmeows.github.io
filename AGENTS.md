@@ -37,7 +37,7 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`�
 
 以下行为在代码中看似错误/死代码/遗漏，但均为故意；本文件收录跨域基础设施条目，域内条目见子文档。
 
-- **测试只覆盖纯函数层** — vitest 覆盖 `src/lib/utils/`、`src/lib/data/` 的纯逻辑（`search-aggregator` 的身份解析与 `bms-search` 的查询/过滤）、生成器脚本、`packages/mirror` 与 `packages/worker` 里的纯函数（`include` 含 `packages/**/*.test.ts`；`packages/worker/tsconfig.json` 把 `*.test.ts` 排除在 Worker 类型上下文外，那里没有 vitest 与 Node 的类型；`packages/mirror/tsconfig.json` 则连同测试一起检查，vitest 经根 `node_modules` 解析），测试文件为相邻 `*.test.ts`；组件（需 browser mode）与数据层的 fetch 编排（需 fs/fetch fixture）刻意不覆盖，避免依赖与 CI 复杂度膨胀。`pnpm test` 与 format/lint/check 同为门槛，pre-commit 与 CI 都会跑，失败阻断提交与部署。给非纯函数层加测试依赖或测试文件前先确认范围。
+- **测试只覆盖纯函数层** — vitest 覆盖 `src/lib/utils/`、`src/lib/data/` 的纯逻辑（`search-aggregator` 的身份解析与 `bms-search` 的查询/过滤）、`src/lib/controllers/` 的页面编排决策（依赖注入收编取数，2026-10 起）、生成器脚本、`packages/mirror` 与 `packages/worker` 里的纯函数（`include` 含 `packages/**/*.test.ts`；`packages/worker/tsconfig.json` 把 `*.test.ts` 排除在 Worker 类型上下文外，那里没有 vitest 与 Node 的类型；`packages/mirror/tsconfig.json` 则连同测试一起检查，vitest 经根 `node_modules` 解析），测试文件为相邻 `*.test.ts`；组件（需 browser mode）与数据层的 fetch 编排（需 fs/fetch fixture）刻意不覆盖，避免依赖与 CI 复杂度膨胀。`pnpm test` 与 format/lint/check 同为门槛，pre-commit 与 CI 都会跑，失败阻断提交与部署。给非纯函数层加测试依赖或测试文件前先确认范围。
 - **auto-merge 合并的 PR 不触发 push 工作流** — GitHub 对 `GITHUB_TOKEN` 触发的事件有反递归机制：`dependabot-auto-merge.yml` 启用 auto-merge 后，服务端完成合并产生的 push 事件不会触发 CI/Deploy（只留下 dependabot 的 dynamic 事件）。后果是依赖更新合并后不会立即部署与同步：站点部署由 `deploy.yml` 每 6 小时的 schedule 兜底，仓库镜像由 `mirror.yml` 的每日 schedule 兜底，也可手动 dispatch。手动 `gh pr merge` 用个人 token，不受影响，正常触发。
 - **分支 ruleset 不放行任何直推** — ruleset `main-branch-protection` 禁止直接 push main 并要求 PR + 必过检查（见“分支与工作树”）。2026-09 之前 update-tables 需要直推清单快照，bypass actors 里因此有 DeployKey；列表变动改由 App token 触发下游后这条直推已删除，**bypass actors 应为空**。若发现其中仍有 DeployKey 条目，属于遗留配置，应移除。CI job 增删或改名时，ruleset 的 required_status_checks context 必须同步更新，否则 PR 合并被永久阻塞。
 - **ruleset 不得启用 Restrict updates 规则** — 实测 ruleset 的 `update` 类型规则会把 PR 合并一起拦死：它只允许 bypass actor 更新 matching refs，而 PR 合并也是 ref 更新，启用后 PR 的 mergeStateStatus 恒为 BLOCKED（GitHub 报 “base branch policy prohibits the merge”），checks 全绿也无法合并。禁止直接 push main 由 `pull_request` 规则独立承担（已实测其拦直推），不要重新加回 `update` 规则。诊断提示：BLOCKED 且 checks 全绿时，先检查 ruleset 是否含 `update` 规则。
@@ -58,12 +58,40 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`�
 - **oxlint 规则集按“零命中”原则扩展** — `correctness` 类别全开（试跑确认 39 条规则当前 0 命中，10 条死 disable 指令已清理），其余类别只显式挑选。以下规则经实测刻意不启用：`unicorn/no-array-sort`（要求 toSorted，超出 browserslist 兼容范围）、`unicorn/require-post-message-target-origin`（官方文档自述在 Worker 场景误报）、`eslint/no-underscore-dangle`（`_nextId` 等刻意私有命名）、`eslint/no-await-in-loop`（batch 搜索有意串行）、`typescript/no-unnecessary-type-conversion`（暴露的是实际数据与声明类型不符，待运行时校验补齐）。不要“顺手”开 suspicious 全类。
 - **`lint` 带 `--deny-warnings` 与 `--report-unused-disable-directives`** — warn 同样导致失败；失效的 disable 指令会被检出。
 - **`check` 带 `--fail-on-warnings`** — Svelte 编译器与 a11y 警告按错误处理。
-- **架构边界由 `no-restricted-imports` 强制** — `$lib/loaders`（构建期 Node 层）只能从 `*.server.ts` 导入，客户端代码引用会在 lint 阶段失败。新增构建时数据入口时走此边界。
+- **架构边界由 `no-restricted-imports` 强制** — `$lib/loaders`（构建期 Node 层）只能从 `*.server.ts` 导入，客户端代码引用会在 lint 阶段失败；`src/lib/controllers/**`（页面编排层）禁导入组件、`.svelte` 与 Svelte 运行时（overrides 按目录限定，探针实测生效）。新增构建时数据入口或编排模块时走这两条边界。
 - **blog frontmatter 在构建期校验** — `validateFrontmatter` 校验 title/date/order/slug/description/tags，非法值直接让 `pnpm build` 失败。不要降级为警告或静默回退，坏数据会在页面上悄悄变形。
 
 ## 架构边界
 
 - **纯 SSG（含一处边缘例外）** — `@sveltejs/adapter-static` + 全局 `prerender = true`，不加 server routes / API endpoints。例外是 Cloudflare Worker（`packages/worker/index.ts`）：`assets.run_worker_first` 为全量 `true`，每个请求先过 Worker——先做镜像表动态路由与写接口，再做边缘语言分发（按 cookie、无 cookie 时按 Accept-Language 把请求映射到 `build/` 里的 en 根树或 `_i18n/zh-cn` 内部树；内部前缀永不进入用户 URL，命中即 301 回干净路径），其余请求回落静态资源。双语产物由 `pnpm build`（`scripts/build-site.ts`）三遍 flavor 构建组装，静态宿主发单独的 `build-static/` 单语产物。
+
+### 数据流总图
+
+谁在什么时机从哪里取什么（只列来源与时机，域内细节见各域子文档；静态宿主与主站的分叉点全在本图）：
+
+```text
+构建期（pnpm build，三遍 flavor 组装双语产物）
+  git：content/blog/*.md ──loaders──> SSG 博客页
+  git：static/bms/table/<自托管>/   ──> 自托管表页与 header/data
+  主站已合成清单（网络拉取）──gen-static-mirror-pages──>
+      静态宿主的镜像/共享表页、各自 tables.json 与域配置提交物
+
+运行时（浏览器挂载后，src/lib/data）
+  R2（客户端直连，依赖桶 CORS）：表内容 header.json + data.json、搜索索引
+  同站路由：/bms/table/mirror/tables.json（主站由 Worker 把 R2 管线清单
+            叠加 D1 用户层合成；静态宿主是上述构建期产物）
+            /bms/table/shared/tables.json（主站纯 D1 合成）
+  主站 /api/*（apiBase() 跨源，仅静态宿主子域）：登录、增删、治理、共享写操作
+  远端原始源：data_url 指向的谱面文件（JSONP / 跨域 fetch）
+
+管线（Actions，每 6 小时；仓库不落任何派生数据）
+  R2 基线 × D1 用户层（经 /api/internal/*）──fetch-tables──> R2 tables/、indexes/
+  列表变动 ──detect-mirror-change──> App token 触发 deploy 与 mirror
+      重建两个静态宿主（主站运行时生成，不需要重建）
+```
+
+权威源：R2（表数据与清单）、D1（用户层与共享表元数据）、git（博客与自托管表）、
+`config/site.json`（部署配置）；仓库里没有派生数据。
 
 ## 技术栈
 

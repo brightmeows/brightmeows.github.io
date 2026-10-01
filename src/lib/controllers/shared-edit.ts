@@ -24,7 +24,7 @@ import { m } from "$lib/paraglide/messages.js";
 /** 页面阶段：域状态机（login/notfound 是域结果，不并入 AsyncState；
  *  接口不可用不单独设相——四条路径都回落到清单或错误，原实现的
  *  “unavailable” 枚举成员从未被赋值，已随本控制器移除）。 */
-export type SharedEditPhase = "loading" | "login" | "notfound" | "error" | "ready";
+type SharedEditPhase = "loading" | "login" | "notfound" | "error" | "ready";
 
 /** 编辑页状态：页面以整体替换的方式更新（控制器返回新对象）。 */
 export interface SharedEditState {

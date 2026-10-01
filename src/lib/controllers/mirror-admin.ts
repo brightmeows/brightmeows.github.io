@@ -10,7 +10,7 @@
 
 import type { AdminOverview } from "$lib/data/mirror-admin-api";
 import { m } from "$lib/paraglide/messages.js";
-import type { MirrorOverviewState } from "$lib/types/bms";
+import type { MirrorOverviewState } from "$lib/types/bms-view";
 
 /** 管理区状态：页面以整体替换的方式更新（控制器返回新对象）。 */
 export interface MirrorAdminState {

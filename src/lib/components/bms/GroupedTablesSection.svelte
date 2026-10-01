@@ -7,7 +7,7 @@
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
   import ScrollSyncGroup from "$lib/components/ui/ScrollSyncGroup.svelte";
   import { m } from "$lib/paraglide/messages.js";
-  import type { MirrorAdminUi, Tag1Group, Tag2Group } from "$lib/types/bms";
+  import type { MirrorAdminUi, Tag1Group, Tag2Group } from "$lib/types/bms-view";
   import type { JsonPreviewHandle } from "$lib/types/ui";
   import { slugifyTag } from "$lib/utils/mirror-tables";
 

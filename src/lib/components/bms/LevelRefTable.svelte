@@ -1,7 +1,7 @@
 <script lang="ts">
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
   import { m } from "$lib/paraglide/messages.js";
-  import type { LevelRefItem } from "$lib/types/bms";
+  import type { LevelRefItem } from "$lib/types/bms-format";
   import { resolveUrl } from "$lib/utils/url";
 
   interface Props {

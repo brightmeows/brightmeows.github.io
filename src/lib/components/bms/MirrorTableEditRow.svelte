@@ -4,7 +4,7 @@
   import { untrack } from "svelte";
 
   import { m } from "$lib/paraglide/messages.js";
-  import type { MirrorMetaFields } from "$lib/types/bms";
+  import type { MirrorMetaFields } from "$lib/types/bms-view";
   import { shouldSuggestTagOrder } from "$lib/utils/mirror-tables";
 
   interface Props {

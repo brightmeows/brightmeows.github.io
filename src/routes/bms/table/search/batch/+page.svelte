@@ -30,7 +30,7 @@
   import { searchConverters } from "$lib/data/search-converters.svelte";
   import { SearchIndexClient } from "$lib/data/search-index-client.svelte";
   import { m } from "$lib/paraglide/messages.js";
-  import type { ChartData } from "$lib/types/bms";
+  import type { ChartData } from "$lib/types/bms-format";
   import { buildSearchNeedles } from "$lib/utils/mirror-tables";
 
   // 搜索索引 Worker：创建、索引加载状态与消息协议封装在共享客户端里

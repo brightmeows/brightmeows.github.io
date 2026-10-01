@@ -1,5 +1,5 @@
 import { m } from "$lib/paraglide/messages.js";
-import type { Tag1Group } from "$lib/types/bms";
+import type { Tag1Group } from "$lib/types/bms-view";
 import type { TocItem } from "$lib/types/ui";
 import { slugifyTag } from "$lib/utils/mirror-tables";
 

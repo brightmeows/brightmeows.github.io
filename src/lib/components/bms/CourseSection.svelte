@@ -2,7 +2,7 @@
   import Checkbox from "$lib/components/ui/Checkbox.svelte";
   import { formatConstraint, trophyEmoji } from "$lib/constants/bms";
   import { m } from "$lib/paraglide/messages.js";
-  import type { ResolvedCourseGroup } from "$lib/types/bms";
+  import type { ResolvedCourseGroup } from "$lib/types/bms-format";
 
   interface Props {
     groups: ResolvedCourseGroup[];
