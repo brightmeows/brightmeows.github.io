@@ -32,6 +32,70 @@ export function valueToText(value: unknown): string {
   return JSON.stringify(value) ?? "";
 }
 
+/** 头部核心字段的未知值转文本：字符串原样，空缺转空串，其余 String 化。 */
+export function headerFieldText(value: unknown): string {
+  if (typeof value === "string") return value;
+  if (value === undefined || value === null) return "";
+  // 头部核心字段实测均为字符串；对象值保持原组件内 str 的默认串化行为（行为冻结迁移）
+  // eslint-disable-next-line typescript/no-base-to-string
+  return String(value);
+}
+
+/** 头部可编辑核心子集（name、symbol、tag、mode）。 */
+export interface EditorHeaderCore {
+  name: string;
+  symbol: string;
+  tag: string;
+  mode: string;
+}
+
+/**
+ * 拆分头部：可编辑核心子集之外的字段原样保留在 extra（data_url、level_ref
+ * 等；course 单独经 parseCourse 编辑，不属于 extra）。
+ */
+export function splitEditorHeader(header: Record<string, unknown>): {
+  core: EditorHeaderCore;
+  extra: Record<string, unknown>;
+} {
+  const extra = { ...header };
+  for (const key of ["name", "symbol", "tag", "mode", "level_order", "course"]) delete extra[key];
+  return {
+    core: {
+      name: headerFieldText(header.name),
+      symbol: headerFieldText(header.symbol),
+      tag: headerFieldText(header.tag),
+      mode: headerFieldText(header.mode),
+    },
+    extra,
+  };
+}
+
+/**
+ * 从编辑态合成完整头部：核心字段 trim 后写回（tag 与 mode 空串即删除），
+ * level_order 空列表删除，course 为 undefined 删除，extra 原样并入。
+ */
+export function buildEditorHeader(
+  core: EditorHeaderCore,
+  levels: readonly string[],
+  course: unknown,
+  extra: Record<string, unknown>
+): Record<string, unknown> {
+  const header = { ...extra };
+  header.name = core.name.trim();
+  header.symbol = core.symbol.trim();
+  const trimmedTag = core.tag.trim();
+  if (trimmedTag !== "") header.tag = trimmedTag;
+  else delete header.tag;
+  const trimmedMode = core.mode.trim();
+  if (trimmedMode !== "") header.mode = trimmedMode;
+  else delete header.mode;
+  if (levels.length > 0) header.level_order = [...levels];
+  else delete header.level_order;
+  if (course !== undefined) header.course = course;
+  else delete header.course;
+  return header;
+}
+
 /** 把未知值安全转为展示文本：字符串原样，其余经 JSON 文本（对象不退化为 [object Object]）。 */
 function textOf(value: unknown): string {
   return typeof value === "string" ? value : valueToText(value);

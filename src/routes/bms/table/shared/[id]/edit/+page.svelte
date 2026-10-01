@@ -12,8 +12,10 @@
   import { r2SharedDataUrl, r2SharedHeaderUrl } from "$lib/constants/r2";
   import { SITE_ORIGIN, apiBase, isStaticHost } from "$lib/constants/site";
   import {
+    deleteSharedTable,
     initialSharedEditState,
     loadSharedEdit,
+    renameSharedTable,
     saveSharedEdit,
     sharedEditCanWrite,
     sharedEditConflictBaseline,
@@ -107,37 +109,43 @@
       };
       return;
     }
-    if (!window.confirm(m["shared.rename_confirm"]({ from: tableId, to: result.id }))) return;
     busy = true;
     notice = null;
-    try {
-      await submitSharedRename(tableId, result.id);
-      window.location.assign(`${sharedTablePath(result.id)}edit/`);
-    } catch (error) {
-      notice = {
-        kind: "error",
-        text: error instanceof Error ? error.message : m["shared.rename_failed"](),
-      };
-      busy = false;
+    const outcome = await renameSharedTable({
+      tableId,
+      newId: result.id,
+      confirm: (message) => window.confirm(message),
+      rename: submitSharedRename,
+    });
+    if (outcome.ok) {
+      window.location.assign(`${sharedTablePath(outcome.id)}edit/`);
+      return;
     }
+    if (!("canceled" in outcome)) {
+      notice = { kind: "error", text: outcome.text };
+    }
+    busy = false;
   }
 
   async function doDelete(): Promise<void> {
     if (busy || s.isNew) return;
     const label = s.item?.name === undefined || s.item.name === "" ? tableId : s.item.name;
-    if (!window.confirm(m["shared.delete_confirm"]({ name: label }))) return;
     busy = true;
     notice = null;
-    try {
-      await submitSharedDelete(tableId);
+    const outcome = await deleteSharedTable({
+      tableId,
+      label,
+      confirm: (message) => window.confirm(message),
+      remove: submitSharedDelete,
+    });
+    if (outcome.ok) {
       await goto("/bms/table/shared/");
-    } catch (error) {
-      notice = {
-        kind: "error",
-        text: error instanceof Error ? error.message : m["shared.delete_failed"](),
-      };
-      busy = false;
+      return;
     }
+    if (!("canceled" in outcome)) {
+      notice = { kind: "error", text: outcome.text };
+    }
+    busy = false;
   }
 
   const smallButton =
