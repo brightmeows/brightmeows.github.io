@@ -1,7 +1,7 @@
 <script lang="ts">
   import { resolve } from "$app/paths";
   import { m } from "$lib/paraglide/messages.js";
-  import type { TableEntry } from "$lib/types/bms";
+  import type { TableEntry } from "$lib/types/bms-view";
 
   interface Props {
     tables: TableEntry[];

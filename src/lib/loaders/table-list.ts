@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
-import type { TableEntry } from "$lib/types/bms";
+import type { TableEntry } from "$lib/types/bms-view";
 
 function resolveBase(baseDir?: string): string {
   return baseDir ?? join("static", "bms", "table");

@@ -8,7 +8,7 @@
   import type { TableLoadState } from "$lib/data/bms-search";
   import type { SearchResult } from "$lib/data/search-aggregator";
   import { m } from "$lib/paraglide/messages.js";
-  import type { ChartData } from "$lib/types/bms";
+  import type { ChartData } from "$lib/types/bms-format";
   import { clipboardFieldFeedback } from "$lib/utils/clipboard.svelte";
   import { formatBytes } from "$lib/utils/format";
   import { validateUrl } from "$lib/utils/url";

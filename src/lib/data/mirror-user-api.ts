@@ -36,8 +36,6 @@ export type CurrentUser = MeAccount;
 export type PreviewResult = PreviewResponse;
 export type AddResult = AddResponse;
 export type FetchStatus = FetchStatusView;
-export type DeleteResult = DeleteResponse;
-export type RestoreResult = RestoreResponse;
 export type { RemovedRecord };
 
 /** 读取登录态；未登录返回 null（区别于接口不可用的抛错）。 */

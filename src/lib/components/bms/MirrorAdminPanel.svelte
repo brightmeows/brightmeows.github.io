@@ -4,7 +4,7 @@
   import GlassPanel from "$lib/components/ui/GlassPanel.svelte";
   import type { AdminOverview, TrashEntry } from "$lib/data/mirror-admin-api";
   import { m } from "$lib/paraglide/messages.js";
-  import type { MirrorOverviewState } from "$lib/types/bms";
+  import type { MirrorOverviewState } from "$lib/types/bms-view";
 
   interface Props {
     overviewState: MirrorOverviewState;

@@ -1,6 +1,6 @@
 import { r2TableHeaderUrl, r2TableDataUrl } from "$lib/constants/r2";
 import { m } from "$lib/paraglide/messages.js";
-import type { ChartData } from "$lib/types/bms";
+import type { ChartData } from "$lib/types/bms-format";
 import { fetchStream } from "$lib/utils/fetch-stream";
 
 /** 搜索索引类型 */

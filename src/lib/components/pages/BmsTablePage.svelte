@@ -9,7 +9,8 @@
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
   import { fetchBmsHeader, fetchBmsTableData } from "$lib/data/bms-data";
   import { m } from "$lib/paraglide/messages.js";
-  import type { ChartData, HeaderData, ProgressCallback } from "$lib/types/bms";
+  import type { ChartData, HeaderData } from "$lib/types/bms-format";
+  import type { ProgressCallback } from "$lib/types/bms-view";
   import { sortDifficultyGroups } from "$lib/utils/bms-table";
   import { groupChartsByLevel, computeTableStats, resolveCourses } from "$lib/utils/bms-transform";
   import { clipboardFeedback } from "$lib/utils/clipboard.svelte";

@@ -1,5 +1,6 @@
 import { m } from "$lib/paraglide/messages.js";
-import type { ChartData, HeaderData, ProgressCallback } from "$lib/types/bms";
+import type { ChartData, HeaderData } from "$lib/types/bms-format";
+import type { ProgressCallback } from "$lib/types/bms-view";
 import { fetchStream } from "$lib/utils/fetch-stream";
 import { formatBytes } from "$lib/utils/format";
 import { resolveUrl, resolveUrlAs } from "$lib/utils/url";

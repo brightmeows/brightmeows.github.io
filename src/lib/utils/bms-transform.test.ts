@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { computeTableStats, groupChartsByLevel, resolveCourses } from "./bms-transform";
 
-import type { ChartData } from "$lib/types/bms";
+import type { ChartData } from "$lib/types/bms-format";
 
 describe("groupChartsByLevel", () => {
   it("按首次出现顺序分组非数字等级", () => {

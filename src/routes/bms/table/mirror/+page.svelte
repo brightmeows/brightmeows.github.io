@@ -36,7 +36,7 @@
   import { submitDelete } from "$lib/data/mirror-user-api";
   import { searchConverters } from "$lib/data/search-converters.svelte";
   import { m } from "$lib/paraglide/messages.js";
-  import type { MirrorAdminUi, MirrorMetaFields } from "$lib/types/bms";
+  import type { MirrorAdminUi, MirrorMetaFields } from "$lib/types/bms-view";
   import type { AsyncState } from "$lib/types/common";
   import type { JsonPreviewHandle, TocItem } from "$lib/types/ui";
   import { clipboardFeedback } from "$lib/utils/clipboard.svelte";

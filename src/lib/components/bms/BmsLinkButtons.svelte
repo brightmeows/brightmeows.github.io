@@ -1,6 +1,6 @@
 <script lang="ts">
   import IconButton from "$lib/components/ui/IconButton.svelte";
-  import type { ChartData } from "$lib/types/bms";
+  import type { ChartData } from "$lib/types/bms-format";
   import { getBmsLinks } from "$lib/utils/bms-table";
 
   interface Props {

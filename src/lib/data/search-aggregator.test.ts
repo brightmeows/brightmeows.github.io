@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { IncrementalAggregator } from "./search-aggregator";
 
-import type { ChartData } from "$lib/types/bms";
+import type { ChartData } from "$lib/types/bms-format";
 
 const SHA_A = "a".repeat(64);
 const SHA_B = "b".repeat(64);

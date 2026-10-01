@@ -3,7 +3,7 @@ import type { MetaOverride } from "@brightmeows/mirror/user-layer";
 import { normalizeTableUrl } from "@brightmeows/mirror/user-layer";
 
 import { m } from "$lib/paraglide/messages.js";
-import type { Tag1Group, Tag2Group } from "$lib/types/bms";
+import type { Tag1Group, Tag2Group } from "$lib/types/bms-view";
 import type { StringConverter } from "$lib/types/common";
 
 /**

@@ -1,3 +1,9 @@
+/**
+ * 站点侧视图与页面交互类型：清单分组、加载进度协议、镜像管理交互面。
+ * 表内容格式模型在 `bms-format.ts`；两者按消费方拆分（2026-10，原
+ * `bms.ts` 混装）。
+ */
+
 import type { MirrorTableItem } from "@brightmeows/mirror/types";
 import type { MetaOverride } from "@brightmeows/mirror/user-layer";
 
@@ -21,69 +27,6 @@ export interface Tag1Group {
   subgroups: Tag2Group[];
 }
 
-/** 谱面数据 */
-export interface ChartData {
-  title?: string | undefined;
-  artist?: string | undefined;
-  level?: string | undefined;
-  sha256?: string | undefined;
-  md5?: string | undefined;
-  comment?: string | undefined;
-  url?: string | undefined;
-  url_diff?: string | undefined;
-  [key: string]: unknown;
-}
-
-/** 难度分组 */
-export interface DifficultyGroup {
-  level: string;
-  charts: ChartData[];
-}
-
-/** 段位奖牌条件 */
-export interface Trophy {
-  name: string; // 'goldmedal' | 'silvermedal' | 'bronzemedal'
-  missrate?: number;
-  scorerate?: number;
-}
-
-/** 段位内单谱面（已解析） */
-export interface CourseChartInfo {
-  md5?: string | undefined;
-  sha256?: string | undefined;
-  title?: string | undefined;
-  artist?: string | undefined;
-  level?: string | undefined;
-  resolved: boolean;
-}
-
-/** 段位（Course 对象） */
-export interface Course {
-  name: string;
-  constraint?: string[] | undefined;
-  trophy?: Trophy[] | undefined;
-  charts: CourseChartInfo[];
-}
-
-/** 段位列表分组（始终归一化为嵌套数组的外层元素） */
-export type ResolvedCourseGroup = Course[];
-
-/** 表头数据 */
-export interface HeaderData {
-  name?: string;
-  symbol?: string;
-  data_url?: string;
-  level_order?: string[];
-  course?: unknown; // 原始值，由 resolveCourses 处理
-  [key: string]: unknown;
-}
-
-/** 难度对照项 */
-export interface LevelRefItem {
-  level: string;
-  ref: string;
-}
-
 /** 加载进度事件 */
 export interface LoadProgressEvent {
   percent: number;
@@ -92,7 +35,6 @@ export interface LoadProgressEvent {
   detail?: string;
 }
 
-/** 加载进度回调 */
 export type ProgressCallback = (event: LoadProgressEvent) => void;
 
 /** 元数据覆盖的可编辑字段（留空表示不覆盖该项）。 */
@@ -103,9 +45,6 @@ export interface MirrorMetaFields {
   tag2?: string | undefined;
   tag_order?: string | undefined;
 }
-
-/** 管理区 overview 的加载状态。 */
-export type MirrorOverviewState = "idle" | "loading" | "ready" | "error";
 
 /** 列表页向行组件传递的管理交互面（非管理员时 isAdmin 为 false）。 */
 export interface MirrorAdminUi {
@@ -127,3 +66,5 @@ export interface MirrorAdminUi {
   /** 下一个可用的一级标签序号（现有最大值加一）。 */
   nextTagOrder: string;
 }
+
+export type MirrorOverviewState = "idle" | "loading" | "ready" | "error";

@@ -1,4 +1,4 @@
-import type { ChartData, DifficultyGroup } from "$lib/types/bms";
+import type { ChartData, DifficultyGroup } from "$lib/types/bms-format";
 
 /** 外部 BMS 网站链接集合 */
 export interface BmsLinks {
