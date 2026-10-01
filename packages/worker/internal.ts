@@ -13,7 +13,11 @@
  *   这里供手动触发与验证，见 worker/backup.ts）。
  */
 
-import type { FetchedEntry, StatusEntry } from "@brightmeows/mirror/user-layer";
+import type {
+  InternalBackupNowResponse,
+  InternalFetchResultResponse,
+} from "@brightmeows/mirror/api";
+import type { FetchedEntry, StatusEntry, UserLayer } from "@brightmeows/mirror/user-layer";
 
 import { backupUserLayer } from "./backup.ts";
 import type { Env } from "./env.ts";
@@ -94,13 +98,13 @@ async function handleFetchResult(request: Request, env: Env, now: Date): Promise
   };
   await writeFetchStatus(env, status);
   invalidateMergedManifest();
-  return json({ ok: true, state });
+  return json<InternalFetchResultResponse>({ ok: true, state });
 }
 
 /** 立即执行一次备份（返回写入的对象键与清理掉的旧快照）。 */
 async function handleBackupNow(env: Env): Promise<Response> {
   try {
-    return json(await backupUserLayer(env, new Date()));
+    return json<InternalBackupNowResponse>(await backupUserLayer(env, new Date()));
   } catch (error) {
     return failure(500, error instanceof Error ? error.message : String(error));
   }
@@ -114,7 +118,7 @@ export async function handleInternal(request: Request, env: Env, url: URL): Prom
   }
   const path = url.pathname;
   if (path === "/api/internal/user-layer" && request.method === "GET") {
-    return json(await loadUserLayer(env));
+    return json<UserLayer>(await loadUserLayer(env));
   }
   if (path === "/api/internal/fetch-result" && request.method === "POST") {
     return handleFetchResult(request, env, new Date());

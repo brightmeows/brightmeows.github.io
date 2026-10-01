@@ -5,6 +5,8 @@
  * 这里——worker/index.ts 在那之前就交给 worker/internal.ts 了。
  */
 
+import { API_ERROR_CODES } from "@brightmeows/mirror/api";
+
 import { handleAdmin } from "./admin.ts";
 import { handleCallback, handleLogin, handleLogout } from "./auth.ts";
 import { OAUTH_CALLBACK_PATH, type Env } from "./env.ts";
@@ -47,7 +49,9 @@ export async function handleApi(request: Request, env: Env, url: URL): Promise<R
   if (request.method === "OPTIONS") {
     const origin = request.headers.get("origin");
     if (origin === null || !allowedOrigins(env).includes(origin)) {
-      return failure(403, "Origin not in the allowlist", { code: "api.origin_not_allowed" });
+      return failure(403, "Origin not in the allowlist", {
+        code: API_ERROR_CODES.originNotAllowed,
+      });
     }
     return new Response(null, {
       status: 204,
@@ -82,7 +86,7 @@ async function routeApi(request: Request, env: Env, url: URL): Promise<Response>
   }
   if (path === "/api/auth/logout" && request.method === "POST") {
     if (!checkAllowedOrigin(request, allowedOrigins(env))) {
-      return failure(403, "Origin check failed", { code: "api.origin_check_failed" });
+      return failure(403, "Origin check failed", { code: API_ERROR_CODES.originCheckFailed });
     }
     return handleLogout(env, url);
   }
@@ -127,5 +131,5 @@ async function routeApi(request: Request, env: Env, url: URL): Promise<Response>
   if (path === "/api/shared/removed" && request.method === "GET") {
     return handleSharedRemoved(request, env, now);
   }
-  return failure(404, "Unknown endpoint", { code: "api.unknown_endpoint" });
+  return failure(404, "Unknown endpoint", { code: API_ERROR_CODES.unknownEndpoint });
 }

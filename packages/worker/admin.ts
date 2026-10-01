@@ -5,6 +5,8 @@
  * 治理动作本身在 handlers 里，且都写审计、失效清单缓存并触发部署。
  */
 
+import { API_ERROR_CODES } from "@brightmeows/mirror/api";
+
 import { getSession } from "./auth.ts";
 import { ADMIN_LOGIN, type Env } from "./env.ts";
 import {
@@ -23,20 +25,20 @@ export async function handleAdmin(request: Request, env: Env, url: URL): Promise
   const now = new Date();
   const session = await getSession(env, request, now);
   if (session === null) {
-    return failure(401, "Log in with GitHub first", { code: "api.login_required" });
+    return failure(401, "Log in with GitHub first", { code: API_ERROR_CODES.loginRequired });
   }
   if (session.login.toLowerCase() !== ADMIN_LOGIN.toLowerCase()) {
-    return failure(403, "Site owner only", { code: "api.owner_only" });
+    return failure(403, "Site owner only", { code: API_ERROR_CODES.ownerOnly });
   }
   const path = url.pathname;
   if (path === "/api/admin/overview" && request.method === "GET") {
     return handleOverview(env);
   }
   if (request.method !== "POST") {
-    return failure(405, "POST only", { code: "api.post_only" });
+    return failure(405, "POST only", { code: API_ERROR_CODES.postOnly });
   }
   if (!checkAllowedOrigin(request, allowedOrigins(env))) {
-    return failure(403, "Origin check failed", { code: "api.origin_check_failed" });
+    return failure(403, "Origin check failed", { code: API_ERROR_CODES.originCheckFailed });
   }
   if (path === "/api/admin/authorize") {
     return handleAuthorize(request, env, session, now);
@@ -53,5 +55,5 @@ export async function handleAdmin(request: Request, env: Env, url: URL): Promise
   if (path === "/api/admin/restore") {
     return handleAdminRestore(request, env, session, now);
   }
-  return failure(404, "Unknown admin endpoint", { code: "api.unknown_admin_endpoint" });
+  return failure(404, "Unknown admin endpoint", { code: API_ERROR_CODES.unknownAdminEndpoint });
 }

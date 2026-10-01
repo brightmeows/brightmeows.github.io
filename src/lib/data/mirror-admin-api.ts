@@ -1,95 +1,29 @@
 import type {
-  AddedEntry,
-  AuditEntry,
-  AuthorizedEntry,
-  DisabledEntry,
-  MetaOverride,
-  RemovedEntry,
-  ReplaceRuleEntry,
-} from "@brightmeows/mirror/user-layer";
+  AdminMutationResponse,
+  AdminOverviewResponse,
+  TrashEntry as ContractTrashEntry,
+} from "@brightmeows/mirror/api";
 
-import { ApiUnavailableError } from "./mirror-user-api";
+import { requestJson } from "./http";
 
-import { apiBase } from "$lib/constants/site";
-import { m } from "$lib/paraglide/messages.js";
 import type { MirrorMetaFields } from "$lib/types/bms";
-import { messageInputs, translateMessage } from "$lib/utils/i18n";
 
-/** 回收站条目（表级聚合）。 */
-export interface TrashEntry {
-  trash_prefix: string;
-  dir_name: string;
-  stamp: string;
-  uploaded: number;
-}
+/**
+ * 站长治理接口的客户端封装。
+ *
+ * 形状来自 `@brightmeows/mirror/api`（admin 端点无客户端运行时校验，
+ * 与历史行为一致：契约只提供类型）；传输层在 `./http`。
+ * 接口只存在于主站 Worker；静态宿主上 `/api/*` 返回 404，
+ * 调用方据 `ApiUnavailableError` 降级。
+ */
 
-/** 后台总览。 */
-export interface AdminOverview {
-  counts: {
-    authorized: number;
-    disabled: number;
-    replace: number;
-    meta: number;
-    added: number;
-    removed: number;
-    trash: number;
-  };
-  authorized: AuthorizedEntry[];
-  disabled: DisabledEntry[];
-  replace: ReplaceRuleEntry[];
-  meta: MetaOverride[];
-  added: AddedEntry[];
-  removed: RemovedEntry[];
-  audit: AuditEntry[];
-  trash: TrashEntry[];
-}
-
-export interface AdminMutationResult {
-  ok: boolean;
-  deployTriggered: boolean;
-  restoredObjects?: number;
-}
-
-async function requestAdmin<T>(path: string, body?: unknown): Promise<T> {
-  // 静态宿主子域上 API 在主站：带基址跨源调用，include 携带同站会话 cookie
-  const response = await fetch(`${apiBase()}${path}`, {
-    method: body === undefined ? "GET" : "POST",
-    credentials: "include",
-    ...(body === undefined
-      ? {}
-      : { headers: { "content-type": "application/json" }, body: JSON.stringify(body) }),
-  });
-  if (!response.ok) {
-    let message: string = m["common.request_failed"]({ status: response.status });
-    try {
-      const payload = (await response.json()) as {
-        error?: unknown;
-        code?: unknown;
-        params?: unknown;
-      };
-      const translated =
-        typeof payload.code === "string"
-          ? translateMessage(payload.code, messageInputs(payload.params))
-          : null;
-      if (translated !== null) {
-        message = translated;
-      } else if (typeof payload.error === "string" && payload.error !== "") {
-        message = payload.error;
-      }
-    } catch {
-      // 非 JSON 响应
-    }
-    if (response.status === 404) {
-      throw new ApiUnavailableError(message);
-    }
-    throw new Error(message);
-  }
-  return (await response.json()) as T;
-}
+export type TrashEntry = ContractTrashEntry;
+export type AdminOverview = AdminOverviewResponse;
+export type AdminMutationResult = AdminMutationResponse;
 
 /** 读取后台总览。 */
 export async function fetchAdminOverview(): Promise<AdminOverview> {
-  return requestAdmin<AdminOverview>("/api/admin/overview");
+  return requestJson<AdminOverview>("/api/admin/overview");
 }
 
 /** 加入或移出授权名单。 */
@@ -98,10 +32,13 @@ export async function adminAuthorize(
   dirName: string | undefined,
   action: "add" | "remove"
 ): Promise<AdminMutationResult> {
-  return requestAdmin("/api/admin/authorize", {
-    action,
-    url,
-    ...(dirName === undefined ? {} : { dir_name: dirName }),
+  return requestJson("/api/admin/authorize", {
+    method: "POST",
+    body: JSON.stringify({
+      action,
+      url,
+      ...(dirName === undefined ? {} : { dir_name: dirName }),
+    }),
   });
 }
 
@@ -112,11 +49,14 @@ export async function adminDisable(
   action: "add" | "remove",
   note?: string
 ): Promise<AdminMutationResult> {
-  return requestAdmin("/api/admin/disable", {
-    action,
-    url,
-    ...(dirName === undefined ? {} : { dir_name: dirName }),
-    ...(note === undefined || note === "" ? {} : { note }),
+  return requestJson("/api/admin/disable", {
+    method: "POST",
+    body: JSON.stringify({
+      action,
+      url,
+      ...(dirName === undefined ? {} : { dir_name: dirName }),
+      ...(note === undefined || note === "" ? {} : { note }),
+    }),
   });
 }
 
@@ -126,10 +66,13 @@ export async function adminReplace(
   to: string | undefined,
   action: "add" | "remove"
 ): Promise<AdminMutationResult> {
-  return requestAdmin("/api/admin/replace", {
-    action,
-    from,
-    ...(to === undefined ? {} : { to }),
+  return requestJson("/api/admin/replace", {
+    method: "POST",
+    body: JSON.stringify({
+      action,
+      from,
+      ...(to === undefined ? {} : { to }),
+    }),
   });
 }
 
@@ -139,10 +82,16 @@ export async function adminMeta(
   action: "set" | "clear",
   fields: MirrorMetaFields
 ): Promise<AdminMutationResult> {
-  return requestAdmin("/api/admin/meta", { action, url, ...fields });
+  return requestJson("/api/admin/meta", {
+    method: "POST",
+    body: JSON.stringify({ action, url, ...fields }),
+  });
 }
 
 /** 站长恢复（不受作者与窗口限制）。 */
 export async function adminRestore(dirName: string): Promise<AdminMutationResult> {
-  return requestAdmin("/api/admin/restore", { dir_name: dirName });
+  return requestJson("/api/admin/restore", {
+    method: "POST",
+    body: JSON.stringify({ dir_name: dirName }),
+  });
 }

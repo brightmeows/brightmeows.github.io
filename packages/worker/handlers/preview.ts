@@ -5,6 +5,9 @@
  * 大 HTML 有超限风险；预览失败不影响正式抓取，工作流会用完整逻辑重试。
  */
 
+import { API_ERROR_CODES } from "@brightmeows/mirror/api";
+import type { PreviewResponse } from "@brightmeows/mirror/api";
+
 import { getSession } from "../auth.ts";
 import { PREVIEW_MAX_BYTES, PREVIEW_TIMEOUT_MS, PREVIEW_USER_AGENT, type Env } from "../env.ts";
 import { allowedOrigins, checkAllowedOrigin, failure, json, readJsonBody } from "../http.ts";
@@ -76,11 +79,11 @@ export function extractHeaderUrl(text: string, pageUrl: string): string | null {
 
 export async function handlePreview(request: Request, env: Env, now: Date): Promise<Response> {
   if (!checkAllowedOrigin(request, allowedOrigins(env))) {
-    return failure(403, "Origin check failed", { code: "api.origin_check_failed" });
+    return failure(403, "Origin check failed", { code: API_ERROR_CODES.originCheckFailed });
   }
   const session = await getSession(env, request, now);
   if (session === null) {
-    return failure(401, "Log in with GitHub first", { code: "api.login_required" });
+    return failure(401, "Log in with GitHub first", { code: API_ERROR_CODES.loginRequired });
   }
   const body = await readJsonBody(request);
   const rawUrl = typeof body?.url === "string" ? body.url.trim() : "";
@@ -88,7 +91,7 @@ export async function handlePreview(request: Request, env: Env, now: Date): Prom
   try {
     pageUrl = new URL(rawUrl).href;
   } catch {
-    return failure(400, "Invalid URL", { code: "api.url_invalid" });
+    return failure(400, "Invalid URL", { code: API_ERROR_CODES.urlInvalid });
   }
   try {
     const page = await fetchTextLimited(pageUrl);
@@ -98,7 +101,7 @@ export async function handlePreview(request: Request, env: Env, now: Date): Prom
         422,
         "No bmstable or header JSON found on the page; you can still submit (the backend retries with full logic)",
         {
-          code: "api.no_bmstable_hint",
+          code: API_ERROR_CODES.noBmstableHint,
         }
       );
     }
@@ -107,13 +110,15 @@ export async function handlePreview(request: Request, env: Env, now: Date): Prom
     try {
       parsed = JSON.parse(headerText);
     } catch {
-      return failure(422, "header is not valid JSON", { code: "api.header_invalid_json" });
+      return failure(422, "header is not valid JSON", { code: API_ERROR_CODES.headerInvalidJson });
     }
     if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-      return failure(422, "header must be a JSON object", { code: "api.header_not_object" });
+      return failure(422, "header must be a JSON object", {
+        code: API_ERROR_CODES.headerNotObject,
+      });
     }
     const record = parsed as Record<string, unknown>;
-    return json({
+    return json<PreviewResponse>({
       url: pageUrl,
       headerUrl,
       name: typeof record.name === "string" ? record.name : "",
@@ -121,7 +126,7 @@ export async function handlePreview(request: Request, env: Env, now: Date): Prom
     });
   } catch (error) {
     return failure(422, error instanceof Error ? error.message : "Fetch failed", {
-      code: "api.preview_fetch_failed",
+      code: API_ERROR_CODES.previewFetchFailed,
     });
   }
 }

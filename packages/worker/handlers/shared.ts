@@ -7,6 +7,16 @@
  * 创建/保存/改 id/删除自己的表，admin 可删不可编辑他人内容。
  */
 
+import { API_ERROR_CODES } from "@brightmeows/mirror/api";
+import type {
+  SharedCheckIdResponse,
+  SharedCreateResponse,
+  SharedDeleteResponse,
+  SharedRemovedResponse,
+  SharedRenameResponse,
+  SharedRestoreResponse,
+  SharedSaveResponse,
+} from "@brightmeows/mirror/api";
 import {
   checkSharedPayload,
   SHARED_MAX_TABLES_PER_USER,
@@ -53,11 +63,11 @@ function trashCutoffIso(now: Date): string {
 /** 统一的“先 Origin 后会话”检查；失败返回错误响应，成功返回会话。 */
 async function authorizeWrite(request: Request, env: Env, now: Date): Promise<Session | Response> {
   if (!checkAllowedOrigin(request, allowedOrigins(env))) {
-    return failure(403, "Origin check failed", { code: "api.origin_check_failed" });
+    return failure(403, "Origin check failed", { code: API_ERROR_CODES.originCheckFailed });
   }
   const session = await getSession(env, request, now);
   if (session === null) {
-    return failure(401, "Log in with GitHub first", { code: "api.login_required" });
+    return failure(401, "Log in with GitHub first", { code: API_ERROR_CODES.loginRequired });
   }
   return session;
 }
@@ -65,48 +75,50 @@ async function authorizeWrite(request: Request, env: Env, now: Date): Promise<Se
 function idFailure(error: SharedIdError): Response {
   switch (error) {
     case "empty":
-      return failure(400, "Id is required", { code: "api.shared_id_empty" });
+      return failure(400, "Id is required", { code: API_ERROR_CODES.sharedIdEmpty });
     case "too_long":
-      return failure(400, "Id is too long", { code: "api.shared_id_too_long" });
+      return failure(400, "Id is too long", { code: API_ERROR_CODES.sharedIdTooLong });
     case "charset":
       return failure(400, "Id contains unsupported characters", {
-        code: "api.shared_id_charset",
+        code: API_ERROR_CODES.sharedIdCharset,
       });
     case "reserved":
-      return failure(400, "Id is reserved", { code: "api.shared_id_reserved" });
+      return failure(400, "Id is reserved", { code: API_ERROR_CODES.sharedIdReserved });
   }
 }
 
 function payloadFailure(error: SharedPayloadError, limit: number): Response {
   switch (error) {
     case "header_invalid":
-      return failure(400, "Header must be an object", { code: "api.shared_header_invalid" });
+      return failure(400, "Header must be an object", {
+        code: API_ERROR_CODES.sharedHeaderInvalid,
+      });
     case "header_too_large":
       return failure(413, "Header too large", {
-        code: "api.shared_header_too_large",
+        code: API_ERROR_CODES.sharedHeaderTooLarge,
         params: { limit },
       });
     case "missing_identity":
       return failure(400, "Header needs non-empty name and symbol", {
-        code: "api.shared_missing_identity",
+        code: API_ERROR_CODES.sharedMissingIdentity,
       });
     case "data_invalid":
       return failure(400, "Data must be an array of chart entries", {
-        code: "api.shared_data_invalid",
+        code: API_ERROR_CODES.sharedDataInvalid,
       });
     case "data_too_large":
       return failure(413, "Data too large", {
-        code: "api.shared_data_too_large",
+        code: API_ERROR_CODES.sharedDataTooLarge,
         params: { limit },
       });
     case "too_many_entries":
       return failure(413, "Too many entries", {
-        code: "api.shared_too_many_entries",
+        code: API_ERROR_CODES.sharedTooManyEntries,
         params: { limit },
       });
     case "entry_invalid":
       return failure(400, "Every entry needs md5 or sha256", {
-        code: "api.shared_entry_invalid",
+        code: API_ERROR_CODES.sharedEntryInvalid,
       });
   }
 }
@@ -162,12 +174,12 @@ export async function handleSharedCreate(request: Request, env: Env, now: Date):
   const count = await countSharedFor(env, session.login);
   if (count >= SHARED_MAX_TABLES_PER_USER) {
     return failure(409, `Table limit reached (${SHARED_MAX_TABLES_PER_USER})`, {
-      code: "api.shared_at_limit",
+      code: API_ERROR_CODES.sharedAtLimit,
       params: { limit: SHARED_MAX_TABLES_PER_USER },
     });
   }
   if (await sharedIdBlocked(env, id, trashCutoffIso(now))) {
-    return failure(409, "Id already taken", { code: "api.shared_id_taken" });
+    return failure(409, "Id already taken", { code: API_ERROR_CODES.sharedIdTaken });
   }
 
   const at = now.toISOString();
@@ -183,7 +195,7 @@ export async function handleSharedCreate(request: Request, env: Env, now: Date):
   };
   const inserted = await insertSharedTable(env, row);
   if (!inserted) {
-    return failure(409, "Id already taken", { code: "api.shared_id_taken" });
+    return failure(409, "Id already taken", { code: API_ERROR_CODES.sharedIdTaken });
   }
   try {
     await putSharedObjects(
@@ -196,7 +208,7 @@ export async function handleSharedCreate(request: Request, env: Env, now: Date):
     // R2 写入失败：回滚占位行，回到“未创建”状态
     console.error("共享表 R2 写入失败，回滚占位行", error);
     await deleteSharedRow(env, id);
-    return failure(500, "Storing table failed", { code: "api.shared_write_failed" });
+    return failure(500, "Storing table failed", { code: API_ERROR_CODES.sharedWriteFailed });
   }
 
   await writeAudit(env, {
@@ -213,7 +225,7 @@ export async function handleSharedCreate(request: Request, env: Env, now: Date):
   } catch {
     console.warn("共享表创建后触发部署失败");
   }
-  return json({ id, url: sharedTablePath(id), entries: row.entries });
+  return json<SharedCreateResponse>({ id, url: sharedTablePath(id), entries: row.entries });
 }
 
 /** 保存：整包覆盖写 R2 + 更新 D1 元数据；仅作者（admin 也不能编辑他人内容）。 */
@@ -229,11 +241,11 @@ export async function handleSharedSave(request: Request, env: Env, now: Date): P
 
   const row = await getSharedRow(env, id);
   if (row === null) {
-    return failure(404, "Shared table not found", { code: "api.shared_not_found" });
+    return failure(404, "Shared table not found", { code: API_ERROR_CODES.sharedNotFound });
   }
   if (row.author !== session.login) {
     return failure(403, "Only the author can edit this table", {
-      code: "api.shared_forbidden",
+      code: API_ERROR_CODES.sharedForbidden,
     });
   }
 
@@ -250,7 +262,7 @@ export async function handleSharedSave(request: Request, env: Env, now: Date): P
     );
   } catch (error) {
     console.error("共享表保存失败", error);
-    return failure(500, "Storing table failed", { code: "api.shared_write_failed" });
+    return failure(500, "Storing table failed", { code: API_ERROR_CODES.sharedWriteFailed });
   }
   await updateSharedMeta(env, id, {
     name: String(payload.header.name),
@@ -267,7 +279,7 @@ export async function handleSharedSave(request: Request, env: Env, now: Date): P
     dir_name: id,
   });
   invalidateSharedList();
-  return json({ id, entries: payload.data.length, updated_at: at });
+  return json<SharedSaveResponse>({ id, entries: payload.data.length, updated_at: at });
 }
 
 /**
@@ -290,27 +302,27 @@ export async function handleSharedRename(request: Request, env: Env, now: Date):
 
   const row = await getSharedRow(env, oldId);
   if (row === null) {
-    return failure(404, "Shared table not found", { code: "api.shared_not_found" });
+    return failure(404, "Shared table not found", { code: API_ERROR_CODES.sharedNotFound });
   }
   if (row.author !== session.login) {
     return failure(403, "Only the author can rename this table", {
-      code: "api.shared_forbidden",
+      code: API_ERROR_CODES.sharedForbidden,
     });
   }
   if (await sharedIdBlocked(env, newId, trashCutoffIso(now))) {
-    return failure(409, "Id already taken", { code: "api.shared_id_taken" });
+    return failure(409, "Id already taken", { code: API_ERROR_CODES.sharedIdTaken });
   }
 
   try {
     await copySharedObjects(env, oldId, newId);
   } catch (error) {
     console.error("共享表改 id：复制对象失败", error);
-    return failure(500, "Renaming table failed", { code: "api.shared_write_failed" });
+    return failure(500, "Renaming table failed", { code: API_ERROR_CODES.sharedWriteFailed });
   }
   const renamed = await renameSharedD1(env, { ...row, id: newId }, oldId);
   if (!renamed) {
     await deleteSharedObjects(env, newId).catch(() => undefined);
-    return failure(409, "Id already taken", { code: "api.shared_id_taken" });
+    return failure(409, "Id already taken", { code: API_ERROR_CODES.sharedIdTaken });
   }
   await deleteSharedObjects(env, oldId).catch((error: unknown) => {
     // 旧对象清理失败只记日志：现役数据已在新前缀，孤儿对象无害
@@ -332,7 +344,7 @@ export async function handleSharedRename(request: Request, env: Env, now: Date):
   } catch {
     console.warn("共享表改 id 后触发部署失败");
   }
-  return json({ id: newId, url: sharedTablePath(newId) });
+  return json<SharedRenameResponse>({ id: newId, url: sharedTablePath(newId) });
 }
 
 /** 删除：行先入回收站（可见性优先），再移 R2 对象；作者或 admin 可删。 */
@@ -348,11 +360,11 @@ export async function handleSharedDelete(request: Request, env: Env, now: Date):
 
   const row = await getSharedRow(env, id);
   if (row === null) {
-    return failure(404, "Shared table not found", { code: "api.shared_not_found" });
+    return failure(404, "Shared table not found", { code: API_ERROR_CODES.sharedNotFound });
   }
   if (row.author !== session.login && session.role !== "admin") {
     return failure(403, "Only the author or an admin can delete this table", {
-      code: "api.shared_forbidden",
+      code: API_ERROR_CODES.sharedForbidden,
     });
   }
 
@@ -383,7 +395,7 @@ export async function handleSharedDelete(request: Request, env: Env, now: Date):
   } catch {
     console.warn("共享表删除后触发部署失败");
   }
-  return json({ id, trashPrefix, objectsMoved, deployTriggered });
+  return json<SharedDeleteResponse>({ id, trashPrefix, objectsMoved, deployTriggered });
 }
 
 /** 恢复：保留期与持有数双重检查；超 3 张拒绝。 */
@@ -403,24 +415,26 @@ export async function handleSharedRestore(
 
   const trash = await getSharedTrash(env, id);
   if (trash === null) {
-    return failure(404, "Table not found in the trash", { code: "api.shared_trash_not_found" });
+    return failure(404, "Table not found in the trash", {
+      code: API_ERROR_CODES.sharedTrashNotFound,
+    });
   }
   if (trash.author !== session.login && session.role !== "admin") {
     return failure(403, "You can only restore tables you deleted", {
-      code: "api.shared_forbidden",
+      code: API_ERROR_CODES.sharedForbidden,
     });
   }
   const removedAt = Date.parse(trash.removed_at);
   if (!Number.isFinite(removedAt) || now.getTime() - removedAt > TRASH_RETENTION_DAYS * 86400_000) {
     return failure(410, "Restore window expired", {
-      code: "api.shared_trash_expired",
+      code: API_ERROR_CODES.sharedTrashExpired,
       params: { days: TRASH_RETENTION_DAYS },
     });
   }
   const count = await countSharedFor(env, trash.author);
   if (count >= SHARED_MAX_TABLES_PER_USER) {
     return failure(409, `Table limit reached (${SHARED_MAX_TABLES_PER_USER})`, {
-      code: "api.shared_restore_full",
+      code: API_ERROR_CODES.sharedRestoreFull,
       params: { limit: SHARED_MAX_TABLES_PER_USER },
     });
   }
@@ -442,7 +456,7 @@ export async function handleSharedRestore(
   } catch {
     console.warn("共享表恢复后触发部署失败");
   }
-  return json({ id, restoredObjects, deployTriggered });
+  return json<SharedRestoreResponse>({ id, restoredObjects, deployTriggered });
 }
 
 /** id 占用查询（新建前置屏用）：含保留期内回收站与曾用别名提示。 */
@@ -454,7 +468,7 @@ export async function handleSharedCheckId(
 ): Promise<Response> {
   const session = await getSession(env, request, now);
   if (session === null) {
-    return failure(401, "Log in with GitHub first", { code: "api.login_required" });
+    return failure(401, "Log in with GitHub first", { code: API_ERROR_CODES.loginRequired });
   }
   const raw = url.searchParams.get("id") ?? "";
   const idResult = validateSharedId(raw);
@@ -462,7 +476,7 @@ export async function handleSharedCheckId(
   const id = idResult.id;
   const blocked = await sharedIdBlocked(env, id, trashCutoffIso(now));
   const alias = blocked ? null : await getSharedAlias(env, id);
-  return json({ id, available: !blocked, wasAliased: alias !== null });
+  return json<SharedCheckIdResponse>({ id, available: !blocked, wasAliased: alias !== null });
 }
 
 /**
@@ -476,7 +490,7 @@ export async function handleSharedRemoved(
 ): Promise<Response> {
   const session = await getSession(env, request, now);
   if (session === null) {
-    return failure(401, "Log in with GitHub first", { code: "api.login_required" });
+    return failure(401, "Log in with GitHub first", { code: API_ERROR_CODES.loginRequired });
   }
   const cutoffIso = trashCutoffIso(now);
   await purgeExpiredSharedTrash(env, cutoffIso);
@@ -489,5 +503,5 @@ export async function handleSharedRemoved(
       removed_at: item.removed_at,
       author: item.author,
     }));
-  return json({ entries });
+  return json<SharedRemovedResponse>({ entries });
 }
