@@ -594,6 +594,12 @@
     <div class="flex flex-col gap-6">
       {#if banner}
         {@render banner()}
+      {:else if saveAsShared === "bridge"}
+        <div
+          class="rounded-lg border border-[#64b5f6]/40 bg-[#64b5f6]/10 px-3 py-2 text-[0.9rem] text-[#90caf9]"
+        >
+          {m["editor.bridge_hint"]()}
+        </div>
       {/if}
 
       {#if notice !== null}
