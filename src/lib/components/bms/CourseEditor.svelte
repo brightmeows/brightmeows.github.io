@@ -1,16 +1,16 @@
 <script lang="ts">
   import { m } from "$lib/paraglide/messages.js";
   import {
+    COURSE_CONSTRAINTS,
+    TROPHY_NAMES,
     addCourseToModel,
     addGroupToModel,
     buildEntryHashSet,
-    COURSE_CONSTRAINTS,
     courseChartResolvedIn,
+    courseHashIssue,
     moveCourseInModel,
     removeCourseFromModel,
     removeGroupFromModel,
-    TROPHY_NAMES,
-    type CourseChartItem,
     type CourseModel,
     type EditableCourse,
   } from "$lib/utils/table-course";
@@ -114,15 +114,6 @@
 
   function addEmptyChart(course: EditableCourse): void {
     addChartRow(course, "", "", "");
-  }
-
-  function hashIssue(item: CourseChartItem): "ok" | "missing" | "md5" | "sha256" {
-    const md5 = item.md5.trim();
-    const sha256 = item.sha256.trim();
-    if (md5 === "" && sha256 === "") return "missing";
-    if (md5 !== "" && !/^[0-9a-f]{32}$/iu.test(md5)) return "md5";
-    if (sha256 !== "" && !/^[0-9a-f]{64}$/iu.test(sha256)) return "sha256";
-    return "ok";
   }
 
   const inputClass =
@@ -434,7 +425,7 @@
         {#if course.charts.length > 0}
           <div class="flex flex-col gap-2">
             {#each course.charts as chart, chi (chi)}
-              {@const issue = hashIssue(chart)}
+              {@const issue = courseHashIssue(chart)}
               {@const resolved = courseChartResolvedIn(knownHashes, chart)}
               <div class="rounded-lg border border-white/10 bg-black/10 p-2">
                 <div class="flex flex-wrap items-center gap-2">

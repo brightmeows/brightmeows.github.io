@@ -140,6 +140,33 @@ export function entryHashes(entry: Record<string, unknown>): string[] {
   return result;
 }
 
+/** 哈希展示截断：超过 16 位截断加省略号（两条 shortHash 的哈希选择链刻意保留在组件侧）。 */
+export function shortenHash(hash: string): string {
+  return hash.length > 16 ? `${hash.slice(0, 16)}…` : hash;
+}
+
+/** 勾选转移：单条切换（Set 进 Set 出，组件持 $state，此处只做纯转移）。 */
+export function toggleSelection(selected: ReadonlySet<number>, index: number): Set<number> {
+  const next = new Set(selected);
+  if (next.has(index)) next.delete(index);
+  else next.add(index);
+  return next;
+}
+
+/** 勾选转移：按索引集整体加（add）或移除（页全选切换、全选已筛共用）。 */
+export function setIndices(
+  selected: ReadonlySet<number>,
+  indices: readonly number[],
+  add: boolean
+): Set<number> {
+  const next = new Set(selected);
+  for (const index of indices) {
+    if (add) next.add(index);
+    else next.delete(index);
+  }
+  return next;
+}
+
 /** 条目是否未指派等级。 */
 export function isUnassigned(entry: Record<string, unknown>): boolean {
   const level = entry.level;

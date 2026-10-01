@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import type { CoreEntryField } from "./table-editor";
 import {
+  LEVEL_FILTER_ALL_OPTION,
+  LEVEL_FILTER_UNASSIGNED_OPTION,
   addLevel,
   assignHintLevels,
   assignLevel,
@@ -16,15 +18,16 @@ import {
   entryHashes,
   filterEntryIndices,
   isUnassigned,
-  LEVEL_FILTER_ALL_OPTION,
-  LEVEL_FILTER_UNASSIGNED_OPTION,
   levelOrderOf,
   moveItem,
   parseCombinedPackage,
   parseLevelFilterOption,
   removeIndices,
   removeLevelAt,
+  setIndices,
+  shortenHash,
   shouldWarnOverwrite,
+  toggleSelection,
   valueToText,
 } from "./table-editor";
 
@@ -305,5 +308,32 @@ describe("draft helpers", () => {
     expect(shouldWarnOverwrite("2026-01-02T00:00:00Z", "2026-01-01T00:00:00Z")).toBe(false);
     expect(shouldWarnOverwrite(undefined, "2026-01-02T00:00:00Z")).toBe(false);
     expect(shouldWarnOverwrite("2026-01-02T00:00:00Z", undefined)).toBe(false);
+  });
+});
+
+describe("selection transitions", () => {
+  it("toggleSelection adds and removes a single index without mutating the input", () => {
+    const base = new Set([1, 2]);
+    const added = toggleSelection(base, 3);
+    expect(added.has(3)).toBe(true);
+    const removed = toggleSelection(base, 1);
+    expect(removed.has(1)).toBe(false);
+    // 输入集合不被原地修改（组件 $state 依赖整体替换）
+    expect(base.has(3)).toBe(false);
+    expect(base.has(1)).toBe(true);
+  });
+
+  it("setIndices adds or removes the given index set", () => {
+    const base = new Set([1]);
+    expect(setIndices(base, [1, 2, 3], true)).toEqual(new Set([1, 2, 3]));
+    expect(setIndices(new Set([1, 2, 3]), [2, 3], false)).toEqual(new Set([1]));
+    // 空索引集是空操作
+    expect(setIndices(base, [], true)).toEqual(new Set([1]));
+  });
+
+  it("shortenHash truncates beyond 16 chars and keeps short hashes intact", () => {
+    expect(shortenHash("0123456789abcdef0123")).toBe("0123456789abcdef…");
+    expect(shortenHash("0123456789abcdef")).toBe("0123456789abcdef");
+    expect(shortenHash("")).toBe("");
   });
 });
