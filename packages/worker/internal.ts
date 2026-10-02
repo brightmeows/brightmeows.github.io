@@ -24,7 +24,7 @@ import type { Env } from "./env.ts";
 import { failure, json, readJsonBody } from "./http.ts";
 import { invalidateMergedManifest } from "./manifest.ts";
 import { writeFetchStatus } from "./store/fetch-status.ts";
-import { loadUserLayer, upsertFetched } from "./store/user-layer.ts";
+import { deleteAddedById, loadUserLayer, upsertFetched } from "./store/user-layer.ts";
 
 /** 恒定时间比较：长度不同直接失败（token 等长，长度本身不泄露有效信息）。 */
 function constantTimeEquals(left: string, right: string): boolean {
@@ -87,6 +87,9 @@ async function handleFetchResult(request: Request, env: Env, now: Date): Promise
       fetched_at: at,
     };
     await upsertFetched(env, entry);
+  } else {
+    // 抓取失败：清掉 added 记录，同一 URL 可重新提交（失败状态留在 fetch_status）
+    await deleteAddedById(env, requestId);
   }
 
   const message = bodyString(body, "message");
