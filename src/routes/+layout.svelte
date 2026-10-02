@@ -33,7 +33,6 @@
   {/if}
   <title>{page.data.title ?? m["site.name"]()}</title>
   <link rel="canonical" href={`${SITE_ORIGIN}${page.url.pathname}`} />
-  <link rel="icon" href="https://codeberg.org/brightmeows.png" />
 </svelte:head>
 
 {@render children()}
