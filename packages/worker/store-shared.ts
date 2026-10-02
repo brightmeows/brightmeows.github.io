@@ -139,24 +139,38 @@ export async function getSharedAlias(env: Env, alias: string): Promise<string | 
  * 整批回滚，别名不被误删。返回是否插入成功。
  */
 export async function insertSharedTable(env: Env, row: SharedRow): Promise<boolean> {
-  const results = await env.MIRROR_DB.batch([
-    env.MIRROR_DB.prepare("DELETE FROM shared_alias WHERE alias = ?").bind(row.id),
-    env.MIRROR_DB.prepare(
-      "INSERT INTO shared_tables (id, author, role, name, symbol, created_at, updated_at, entries) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-    ).bind(
-      row.id,
-      row.author,
-      row.role,
-      row.name,
-      row.symbol,
-      row.created_at,
-      row.updated_at,
-      row.entries
-    ),
-  ]);
-  const insert = results[1];
-  if (insert === undefined) return false;
-  return insert.success && insert.meta.changes > 0;
+  try {
+    const results = await env.MIRROR_DB.batch([
+      env.MIRROR_DB.prepare("DELETE FROM shared_alias WHERE alias = ?").bind(row.id),
+      env.MIRROR_DB.prepare(
+        "INSERT INTO shared_tables (id, author, role, name, symbol, created_at, updated_at, entries) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+      ).bind(
+        row.id,
+        row.author,
+        row.role,
+        row.name,
+        row.symbol,
+        row.created_at,
+        row.updated_at,
+        row.entries
+      ),
+    ]);
+    const insert = results[1];
+    if (insert === undefined) return false;
+    return insert.success && insert.meta.changes > 0;
+  } catch (error) {
+    // D1 的 batch 在语句失败时抛异常并回滚整批：id 冲突（UNIQUE 约束）按
+    // 插入失败返回，别名删除随回滚保留；数据库故障等其余错误继续抛出，
+    // 由上层按 500 处理——不能把故障误报成“id 已被认领”。
+    if (isUniqueConstraintError(error)) return false;
+    throw error;
+  }
+}
+
+/** D1 的 UNIQUE 约束冲突判定（实测消息形如 `UNIQUE constraint failed: shared_tables.id: SQLITE_CONSTRAINT`）。 */
+function isUniqueConstraintError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("UNIQUE constraint failed");
 }
 
 /** 创建在 R2 写入失败时回滚占位行。 */
