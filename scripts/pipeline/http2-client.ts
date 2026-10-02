@@ -10,6 +10,8 @@
 import http2 from "node:http2";
 import { brotliDecompressSync, gunzipSync, inflateSync } from "node:zlib";
 
+import { MAX_REDIRECTS, assertSafeFetchTarget, type ResolveHostname } from "./net-guard.ts";
+
 export interface HttpResponse {
   status: number;
   headers: Record<string, string>;
@@ -23,6 +25,8 @@ export interface Http2Options {
   headers: Record<string, string>;
   timeoutMs: number;
   maxRedirects?: number;
+  /** DNS 解析（测试注入用）；缺省走系统解析。 */
+  resolveHostnameImpl?: ResolveHostname | undefined;
 }
 
 function decompress(buffer: Buffer, encoding: string | undefined): Buffer {
@@ -97,15 +101,21 @@ function requestOnce(url: string, options: Http2Options): Promise<RawResponse> {
   });
 }
 
-/** 用 HTTP/2 抓取 https 地址（跟随重定向并解压响应体）。 */
+/** 用 HTTP/2 抓取 https 地址（跟随重定向、每跳校验目标地址并解压响应体）。 */
 export async function requestHttp2(url: string, options: Http2Options): Promise<HttpResponse> {
-  const maxRedirects = options.maxRedirects ?? 20;
+  const maxRedirects = Math.min(options.maxRedirects ?? MAX_REDIRECTS, MAX_REDIRECTS);
+  const deadline = Date.now() + options.timeoutMs;
   let current = url;
   for (let hop = 0; hop <= maxRedirects; hop += 1) {
     if (!current.startsWith("https://")) {
       throw new Error(`HTTP/2 只处理 https：${current}`);
     }
-    const response = await requestOnce(current, options);
+    await assertSafeFetchTarget(current, options.resolveHostnameImpl);
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) {
+      throw new Error(`请求超时：${url}`);
+    }
+    const response = await requestOnce(current, { ...options, timeoutMs: remaining });
     const location = response.headers.location;
     if (
       response.status >= 300 &&

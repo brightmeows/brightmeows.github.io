@@ -11,6 +11,7 @@ import { describeError } from "./errors.ts";
 import { requestHttp2, type HttpResponse } from "./http2-client.ts";
 import { parseJsonWithFallback, stripControlChars } from "./json-utils.ts";
 import { extractBmstableUrlHint } from "./meta.ts";
+import { MAX_REDIRECTS, assertSafeFetchTarget, type ResolveHostname } from "./net-guard.ts";
 import type { TableInfo } from "./types.ts";
 
 export const USER_AGENT =
@@ -32,6 +33,8 @@ const REQUEST_HEADERS: Record<string, string> = {
 export interface FetchOptions {
   timeoutMs?: number | undefined;
   fetchImpl?: typeof fetch | undefined;
+  /** DNS 解析（测试注入用）；缺省走系统解析。 */
+  resolveHostnameImpl?: ResolveHostname | undefined;
 }
 
 export interface FetchTextResult {
@@ -63,7 +66,11 @@ export async function fetchText(url: string, options: FetchOptions = {}): Promis
   if (url.startsWith("https://")) {
     let h2Result: HttpResponse | undefined;
     try {
-      const response = await requestHttp2(url, { headers: REQUEST_HEADERS, timeoutMs });
+      const response = await requestHttp2(url, {
+        headers: REQUEST_HEADERS,
+        timeoutMs,
+        resolveHostnameImpl: options.resolveHostnameImpl,
+      });
       if (response.status >= 200 && response.status < 400) {
         const contentType = response.headers["content-type"] ?? "";
         return { text: decodeBody(response.buffer, contentType), contentType };
@@ -85,28 +92,48 @@ export async function fetchText(url: string, options: FetchOptions = {}): Promis
   return fetchTextHttp1(url, options);
 }
 
-/** HTTP/1.1 抓取（http 地址与 h2 回退路径）。 */
+/**
+ * HTTP/1.1 抓取（http 地址与 h2 回退路径）。
+ *
+ * 重定向手动跟随：每一跳先做地址校验（拒绝私网/保留段与非 http(s)），
+ * 上限 MAX_REDIRECTS 跳；超时按整体计算，与原 follow 模式的语义一致。
+ */
 async function fetchTextHttp1(url: string, options: FetchOptions): Promise<FetchTextResult> {
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const fetchImpl = options.fetchImpl ?? fetch;
-  let response: Response;
-  try {
-    response = await fetchImpl(url, {
-      redirect: "follow",
-      headers: REQUEST_HEADERS,
-      signal: AbortSignal.timeout(timeoutMs),
-    });
-  } catch (error) {
-    throw new Error(`请求失败：${url}（${describeError(error)}）`, { cause: error });
+  const deadline = Date.now() + timeoutMs;
+  let current = url;
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
+    await assertSafeFetchTarget(current, options.resolveHostnameImpl);
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) {
+      throw new Error(`请求超时：${url}`);
+    }
+    let response: Response;
+    try {
+      response = await fetchImpl(current, {
+        redirect: "manual",
+        headers: REQUEST_HEADERS,
+        signal: AbortSignal.timeout(remaining),
+      });
+    } catch (error) {
+      throw new Error(`请求失败：${current}（${describeError(error)}）`, { cause: error });
+    }
+    const location = response.headers.get("location");
+    if (response.status >= 300 && response.status < 400 && location !== null && location !== "") {
+      current = new URL(location, current).href;
+      continue;
+    }
+    let buffer: Buffer;
+    try {
+      buffer = Buffer.from(await response.arrayBuffer());
+    } catch (error) {
+      throw new Error(`读取响应失败：${current}（${describeError(error)}）`, { cause: error });
+    }
+    const contentType = response.headers.get("content-type") ?? "";
+    return { text: decodeBody(buffer, contentType), contentType };
   }
-  let buffer: Buffer;
-  try {
-    buffer = Buffer.from(await response.arrayBuffer());
-  } catch (error) {
-    throw new Error(`读取响应失败：${url}（${describeError(error)}）`, { cause: error });
-  }
-  const contentType = response.headers.get("content-type") ?? "";
-  return { text: decodeBody(buffer, contentType), contentType };
+  throw new Error(`重定向次数超过上限（${MAX_REDIRECTS}）：${url}`);
 }
 
 /** bmstable 查询结果：页面本身是 header JSON，或页面里指向 header JSON。 */
