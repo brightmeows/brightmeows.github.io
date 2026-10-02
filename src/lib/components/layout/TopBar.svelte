@@ -139,7 +139,7 @@
         >
           <img
             class="size-10 rounded-full border-2 border-white/30"
-            src="https://codeberg.org/brightmeows.png"
+            src="/assets/avatar.png"
             alt="Miyako Meow"
           />
         </button>
@@ -150,7 +150,7 @@
               <div class="text-center">
                 <img
                   class="mx-auto mb-3 h-24 w-24 rounded-full border-4 border-white/30 shadow-[0_0_20px_rgba(255,255,255,0.2)] transition-transform duration-300 ease-in-out hover:scale-105 hover:rotate-[5deg]"
-                  src="https://codeberg.org/brightmeows.png"
+                  src="/assets/avatar.png"
                   alt="Miyako Meow"
                 />
                 <h2
