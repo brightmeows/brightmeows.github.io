@@ -29,7 +29,6 @@ import {
 } from "./handlers/tables.ts";
 import { allowedOrigins, checkAllowedOrigin, failure } from "./http.ts";
 
-/** 分发 `/api/*` 请求；未匹配的路径返回 404。 */
 /** 给白名单内 Origin 的响应补 CORS 头；同源请求（无 Origin 头）原样返回。 */
 function withCors(request: Request, env: Env, response: Response): Response {
   const origin = request.headers.get("origin");

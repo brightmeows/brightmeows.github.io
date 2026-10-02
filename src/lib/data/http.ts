@@ -44,8 +44,10 @@ export async function requestJson<T>(path: string, init?: RequestInit): Promise<
   });
   if (!response.ok) {
     let message: string = m["common.request_failed"]({ status: response.status });
+    let envelope = false;
     try {
       const body = (await response.json()) as { error?: unknown; code?: unknown; params?: unknown };
+      envelope = typeof body.error === "string" || typeof body.code === "string";
       const translated =
         typeof body.code === "string"
           ? translateMessage(body.code, messageInputs(body.params))
@@ -56,9 +58,11 @@ export async function requestJson<T>(path: string, init?: RequestInit): Promise<
         message = body.error;
       }
     } catch {
-      // 非 JSON 响应（静态宿主的 404 页等）：沿用状态码文案
+      // 非 JSON 响应：沿用状态码文案
     }
-    if (response.status === 404) {
+    // 404 仅在“非 JSON 错误封套”时按接口不可用处理（静态宿主的 /api/* 全为
+    // HTML 404）；主站 API 的业务 404 带封套，属于普通错误
+    if (response.status === 404 && !envelope) {
       throw new ApiUnavailableError(message);
     }
     throw new Error(message);

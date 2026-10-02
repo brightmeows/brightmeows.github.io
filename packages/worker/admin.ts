@@ -20,7 +20,6 @@ import {
 import { allowedOrigins, checkAllowedOrigin, failure } from "./http.ts";
 
 /** 分发 `/api/admin/*`；未匹配的路径返回 404。 */
-/** 分发 `/api/admin/*`；未匹配的路径返回 404。 */
 export async function handleAdmin(request: Request, env: Env, url: URL): Promise<Response> {
   const now = new Date();
   const session = await getSession(env, request, now);
