@@ -74,12 +74,13 @@ function decodePath(pathname: string): string | null {
 async function handleTablePage(
   request: Request,
   env: Env,
+  ctx: ExecutionContext,
   url: URL,
   tableId: string,
   locale: Locale,
   edit = false
 ): Promise<Response> {
-  const manifest = await loadMergedManifest(env);
+  const manifest = await loadMergedManifest(env, ctx);
   if (manifest === null) {
     return textResponse(pageText(locale, "manifest_unavailable"), 503, {
       "cache-control": "no-store",
@@ -103,6 +104,8 @@ async function handleTablePage(
     headers: {
       "content-type": "text/html; charset=utf-8",
       "cache-control": `public, max-age=${MANIFEST_MAX_AGE}`,
+      // 页面语言随 cookie/Accept-Language 变化：标记共享缓存的维度
+      vary: "Cookie, Accept-Language",
     },
   });
 }
@@ -116,13 +119,19 @@ async function zhNotFound(env: Env, url: URL): Promise<Response> {
     headers: {
       "content-type": "text/html; charset=utf-8",
       "cache-control": "public, max-age=0, must-revalidate",
+      vary: "Cookie, Accept-Language",
     },
   });
 }
 
 /** 清单路由：从 R2 清单叠加用户层后生成站点清单。 */
-async function handleTablesJson(env: Env, url: URL, locale: Locale): Promise<Response> {
-  const manifest = await loadMergedManifest(env);
+async function handleTablesJson(
+  env: Env,
+  ctx: ExecutionContext,
+  url: URL,
+  locale: Locale
+): Promise<Response> {
+  const manifest = await loadMergedManifest(env, ctx);
   if (manifest === null) {
     return textResponse(pageText(locale, "manifest_unavailable"), 503, {
       "cache-control": "no-store",
@@ -214,6 +223,8 @@ async function handleSharedPage(
       headers: {
         "content-type": "text/html; charset=utf-8",
         "cache-control": `public, max-age=${MANIFEST_MAX_AGE}`,
+        // 页面语言随 cookie/Accept-Language 变化：标记共享缓存的维度
+        vary: "Cookie, Accept-Language",
       },
     });
   } catch (error) {
@@ -226,7 +237,7 @@ async function handleSharedPage(
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     // 语言判定一次贯穿：页面级文案、SPA 外壳与静态树映射共用（见 worker/i18n.ts）
     const locale = detectLocale(request);
@@ -286,13 +297,13 @@ export default {
     }
 
     if (path === `${MIRROR_ROOT}tables.json`) {
-      return handleTablesJson(env, url, locale);
+      return handleTablesJson(env, ctx, url, locale);
     }
 
     const withSlash = /^\/bms\/table\/mirror\/(.+)\/$/.exec(path);
     if (withSlash?.[1]) {
       const parsed = parseMirrorTablePath(withSlash[1]);
-      return handleTablePage(request, env, url, parsed.tableId, locale, parsed.edit);
+      return handleTablePage(request, env, ctx, url, parsed.tableId, locale, parsed.edit);
     }
 
     // 与站点全局 trailingSlash="always" 对齐：无尾斜杠补成带尾斜杠

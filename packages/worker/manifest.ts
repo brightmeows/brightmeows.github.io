@@ -82,7 +82,10 @@ async function loadSnapshot(key: Request): Promise<MirrorTableItem[] | null> {
  * 读取管线清单：优先走带边缘缓存的 fetch，失败时用独立命名空间里的最近快照
  * 兜底，两者都不可用返回 null（调用方据此回 503）。
  */
-export async function loadManifest(env: Env): Promise<MirrorTableItem[] | null> {
+export async function loadManifest(
+  env: Env,
+  ctx?: ExecutionContext
+): Promise<MirrorTableItem[] | null> {
   const url = manifestUrl(env);
   const key = new Request(url);
   try {
@@ -90,9 +93,15 @@ export async function loadManifest(env: Env): Promise<MirrorTableItem[] | null> 
     if (res.ok) {
       const parsed: unknown = await res.json();
       if (Array.isArray(parsed)) {
-        // 仅回源时刷新快照：命中边缘缓存时内容与快照一致，重复写只是浪费
+        // 仅回源时刷新快照：命中边缘缓存时内容与快照一致，重复写只是浪费；
+        // 有请求上下文时挂到 waitUntil，不占响应路径
         if (res.headers.get("cf-cache-status") !== "HIT") {
-          await saveSnapshot(key, parsed as MirrorTableItem[]);
+          const snapshot = saveSnapshot(key, parsed as MirrorTableItem[]);
+          if (ctx === undefined) {
+            await snapshot;
+          } else {
+            ctx.waitUntil(snapshot);
+          }
         }
         return parsed as MirrorTableItem[];
       }
@@ -115,12 +124,15 @@ export function invalidateMergedManifest(): void {
  * 读取合成清单：管线清单（含快照兜底）叠加用户层。
  * 用户层不可用时退化为纯管线清单——清单可用优先于用户增删可见。
  */
-export async function loadMergedManifest(env: Env): Promise<MirrorTableItem[] | null> {
+export async function loadMergedManifest(
+  env: Env,
+  ctx?: ExecutionContext
+): Promise<MirrorTableItem[] | null> {
   const now = Date.now();
   if (mergedCache !== null && now - mergedCache.at < MERGED_CACHE_MS) {
     return mergedCache.list;
   }
-  const base = await loadManifest(env);
+  const base = await loadManifest(env, ctx);
   if (base === null) {
     return null;
   }
