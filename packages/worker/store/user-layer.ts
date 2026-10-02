@@ -204,6 +204,11 @@ export async function insertAdded(env: Env, entry: AddedEntry): Promise<void> {
     .run();
 }
 
+/** 删除添加记录：抓取失败后释放该 URL 的重新提交名额（状态历史留在 fetch_status）。 */
+export async function deleteAddedById(env: Env, id: string): Promise<void> {
+  await env.MIRROR_DB.prepare("DELETE FROM added WHERE id = ?").bind(id).run();
+}
+
 /** 抓取结果：一次抓取一行，是添加的表进入清单的依据。 */
 export async function upsertFetched(env: Env, entry: FetchedEntry): Promise<void> {
   await env.MIRROR_DB.prepare(

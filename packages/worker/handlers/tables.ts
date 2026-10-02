@@ -16,6 +16,7 @@ import {
   DAILY_OPERATION_LIMIT,
   normalizeTableUrl,
   TRASH_RETENTION_DAYS,
+  type AddedEntry,
   type StatusEntry,
 } from "@brightmeows/mirror/user-layer";
 
@@ -30,6 +31,7 @@ import { readFetchStatus, writeFetchStatus } from "../store/fetch-status.ts";
 import { RateLimitError, consumeOperation } from "../store/quota.ts";
 import { moveTableToTrash, restoreTableFromTrash } from "../store/trash.ts";
 import {
+  deleteAddedById,
   deleteRemovedByDirName,
   insertAdded,
   listRemoved,
@@ -39,6 +41,9 @@ import {
 
 /** 自助恢复窗口（毫秒）：与回收站清理窗口同源。 */
 const RESTORE_WINDOW_MS = TRASH_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+
+/** 僵死添加记录的判定窗口（毫秒）：超过该时长未推进的 pending 记录允许重新提交。 */
+const ADD_RETRY_AFTER_MS = 24 * 60 * 60 * 1000;
 
 /** 统一处理限次错误。 */
 async function consume(env: Env, session: Session, now: Date): Promise<number | null> {
@@ -50,6 +55,19 @@ async function consume(env: Env, session: Session, now: Date): Promise<number | 
     }
     throw error;
   }
+}
+
+/**
+ * 判定一条添加记录是否可被重新提交：最新状态为 failed，或记录已超过僵死
+ * 窗口未推进（pending/fetching 卡死、状态缺失或时间戳损坏）。
+ */
+async function isRetryableAdd(env: Env, entry: AddedEntry, now: Date): Promise<boolean> {
+  const status = await readFetchStatus(env, entry.id);
+  if (status?.state === "failed") {
+    return true;
+  }
+  const addedAt = Date.parse(entry.added_at);
+  return !Number.isFinite(addedAt) || now.getTime() - addedAt > ADD_RETRY_AFTER_MS;
 }
 
 export async function handleAdd(request: Request, env: Env, now: Date): Promise<Response> {
@@ -86,10 +104,16 @@ export async function handleAdd(request: Request, env: Env, now: Date): Promise<
       code: API_ERROR_CODES.alreadyInMirror,
     });
   }
-  if (user.added.some((entry) => normalizeTableUrl(entry.url) === key)) {
-    return failure(409, "Table already has a pending add request", {
-      code: API_ERROR_CODES.alreadyPending,
-    });
+  // 同 URL 的旧记录：失败或僵死的清掉后放行重新提交（状态历史留在 fetch_status），
+  // 仍在推进中的照旧拦截
+  const sameUrl = user.added.filter((entry) => normalizeTableUrl(entry.url) === key);
+  for (const entry of sameUrl) {
+    if (!(await isRetryableAdd(env, entry, now))) {
+      return failure(409, "Table already has a pending add request", {
+        code: API_ERROR_CODES.alreadyPending,
+      });
+    }
+    await deleteAddedById(env, entry.id);
   }
   if (user.removed.some((entry) => normalizeTableUrl(entry.url) === key)) {
     return failure(
@@ -152,6 +176,8 @@ export async function handleAdd(request: Request, env: Env, now: Date): Promise<
       message: API_ERROR_CODES.fetchDispatchFailed,
       updated_at: new Date().toISOString(),
     });
+    // 释放该 URL：触发失败是服务端问题，用户重试时从全新记录开始
+    await deleteAddedById(env, requestId);
     return failure(
       502,
       "Add recorded, but triggering the fetch workflow failed; contact the owner",
