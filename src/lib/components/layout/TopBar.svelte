@@ -8,6 +8,7 @@
   import { moreNav, topLevelNav } from "$lib/constants/nav";
   import { apiBase, SITE_ORIGIN } from "$lib/constants/site";
   import { auth } from "$lib/data/auth-store.svelte";
+  import { theme } from "$lib/data/theme-store.svelte";
   import { m } from "$lib/paraglide/messages.js";
   import { getLocale, setLocale } from "$lib/paraglide/runtime";
   import { deriveBreadcrumbs } from "$lib/utils/breadcrumbs";
@@ -101,6 +102,10 @@
   // —— 数据 ——
 
   const breadcrumbs = $derived(deriveBreadcrumbs(page.url.pathname, currentLabel));
+  // 主题按钮的图标与文案都指向“点击后切到的主题”
+  const themeToggleLabel = $derived(
+    theme.current === "dark" ? m["topbar.switch_to_light"]() : m["topbar.switch_to_dark"]()
+  );
   // 登录发起地址：静态宿主子域上 API 在主站，return_to 用绝对 URL 回到发起页。
   // prerender 与水合首帧用相对路径兜底，水合后由 effect 按环境修正。
   let loginHref = $state("/api/auth/login");
@@ -263,7 +268,7 @@
         <div class="hidden flex-1 md:block"></div>
       {/if}
 
-      <!-- 右区（从右往左）：语言、主题占位，登录状态 -->
+      <!-- 右区（从右往左）：语言、主题切换，登录状态 -->
       <div class="ml-auto flex shrink-0 items-center gap-1.5">
         <div class="relative">
           {#if auth.status === "unavailable"}
@@ -316,20 +321,38 @@
 
         <button
           type="button"
-          disabled
-          class="flex size-9 cursor-not-allowed items-center justify-center rounded-full text-white/60 opacity-50"
-          title={m["topbar.soon"]()}
-          aria-label={m["topbar.theme_aria"]()}
+          class="flex size-9 cursor-pointer items-center justify-center rounded-full text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+          title={themeToggleLabel}
+          aria-label={themeToggleLabel}
+          onclick={() => theme.toggle()}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            class="size-5"
-            fill="currentColor"
-            aria-hidden="true"
-          >
-            <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
-          </svg>
+          {#if theme.current === "dark"}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              class="size-5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="4" />
+              <path
+                d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
+              />
+            </svg>
+          {:else}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              class="size-5"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          {/if}
         </button>
         {#if !__STATIC_TARGET__}
           {@const targetLocale = getLocale() === "en" ? "zh-cn" : "en"}
