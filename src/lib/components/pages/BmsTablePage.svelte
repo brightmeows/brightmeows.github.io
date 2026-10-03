@@ -44,9 +44,7 @@
   import type { Component } from "svelte";
   import { onMount } from "svelte";
 
-  import { browser } from "$app/environment";
   import { goto, pushState } from "$app/navigation";
-  import { page } from "$app/state";
   import ChartsTableSection from "$lib/components/bms/ChartsTableSection.svelte";
   import CourseSection from "$lib/components/bms/CourseSection.svelte";
   import LevelRefTable from "$lib/components/bms/LevelRefTable.svelte";
@@ -136,9 +134,14 @@
   const seed = $derived(capabilities.seed);
 
   // ---- 模式（?edit=1 浅层路由；深链与刷新保持编辑态） ----
-  // 预渲染页在构建期不允许访问 url.searchParams（查询串不是构建期事实），
-  // 用 browser 短路：SSR 一律渲染查看态，水合后按真实地址进入编辑态。
-  const isEdit = $derived(browser && page.url.searchParams.has("edit"));
+  // SvelteKit 的 pushState 只更新历史与 page.state、不更新 page.url，模式因此由
+  // 本地状态持有；地址栏是可分享与可刷新的真源，挂载与前进后退经 popstate 同步
+  // （预渲染页在构建期不能读查询串，SSR 先渲染查看态，挂载后再进入编辑态）。
+  let isEdit = $state(false);
+
+  function syncModeFromLocation(): void {
+    isEdit = new URLSearchParams(window.location.search).has("edit");
+  }
 
   // ---- 模型（两态共享） ----
   let name = $state("");
@@ -312,6 +315,7 @@
     if (next === "edit") url.searchParams.set("edit", "1");
     else url.searchParams.delete("edit");
     pushState(url, {});
+    isEdit = next === "edit";
   }
 
   function toggleLevel(level: string, checked: boolean): void {
@@ -652,8 +656,11 @@
   // 加载只发起一次：共享表在创建前（headerUrl 为 null）与创建后（拿到 R2 地址）
   // 会经历 prop 变化，但创建后的内存内容就是刚保存的内容，重载只会打断编辑。
   onMount(() => {
+    syncModeFromLocation();
+    window.addEventListener("popstate", syncModeFromLocation);
     importUrl = `${window.location.origin}${window.location.pathname}`;
     void loadHeader();
+    return () => window.removeEventListener("popstate", syncModeFromLocation);
   });
 </script>
 

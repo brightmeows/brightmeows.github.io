@@ -45,7 +45,12 @@
    * 首次保存才创建，管理块（改 id、删除）进编辑态的概览区。
    */
   const tableId = $derived(page.params.id ?? "");
-  const isEdit = $derived(page.url.searchParams.has("edit"));
+
+  // 共享表子树由 SPA 外壳客户端渲染（无 SSR 水合歧义）：初始模式直接读地址栏。
+  // SvelteKit 的 pushState 不更新 page.url，前进后退用 popstate 从地址栏同步。
+  let isEdit = $state(
+    typeof window !== "undefined" && new URLSearchParams(window.location.search).has("edit")
+  );
 
   let s = $state<SharedEditState | null>(null);
   let bridge = $state(false);
@@ -173,10 +178,15 @@
   }
 
   onMount(() => {
+    const syncMode = (): void => {
+      isEdit = new URLSearchParams(window.location.search).has("edit");
+    };
+    window.addEventListener("popstate", syncMode);
     bridge = isStaticHost();
     const returnTo = window.location.pathname;
     loginHref = `${apiBase()}/api/auth/login?return_to=${encodeURIComponent(returnTo)}`;
     void load();
+    return () => window.removeEventListener("popstate", syncMode);
   });
 </script>
 
