@@ -1,14 +1,18 @@
 <script lang="ts">
-  import type { Snippet } from "svelte";
+  import { onMount, type Snippet } from "svelte";
 
   import { page } from "$app/state";
   import { LEGACY_ORIGIN_REDIRECTS, SITE_ORIGIN } from "$lib/constants/site";
+  import { theme } from "$lib/data/theme-store.svelte";
   import { m } from "$lib/paraglide/messages.js";
   import { getLocale } from "$lib/paraglide/runtime";
 
   import "./layout.css";
 
   let { children }: { children: Snippet } = $props();
+
+  // 主题 store 在水合后接管首屏：同步 data-theme、订阅系统偏好并支持手动切换
+  onMount(() => theme.init());
 
   $effect(() => {
     if (typeof document !== "undefined") {

@@ -25,6 +25,14 @@
   /** 星星精灵的逻辑直径基准（最大 size 为 2，直径 4） */
   const STAR_SPRITE_SIZE = 4;
 
+  /** 深色端下星空前景（星与流星）的亮度系数：背景已压暗，前景同步变暗 */
+  const DARK_SKY_DIM = 0.6;
+
+  /** 按当前主题取星空前景亮度系数；每帧读取，切换主题即时生效 */
+  function skyDimFactor(): number {
+    return document.documentElement.dataset.theme === "dark" ? DARK_SKY_DIM : 1;
+  }
+
   interface MeteorSprite {
     state: MeteorState;
     sprite: HTMLCanvasElement;
@@ -156,10 +164,11 @@
     buildSprites();
 
     function drawStaticFrame(): void {
+      const dim = skyDimFactor();
       for (const star of stars) {
         const d = star.size * 2;
         if (d <= 0) continue;
-        ctx.globalAlpha = star.opacity;
+        ctx.globalAlpha = star.opacity * dim;
         ctx.drawImage(starSprite, star.x - d / 2, star.y - d / 2, d, d);
       }
       ctx.globalAlpha = 1;
@@ -173,16 +182,17 @@
       const dt = lastTime === null ? 1 / 60 : Math.min((now - lastTime) / 1000, MAX_DT);
       lastTime = now;
 
+      const dim = skyDimFactor();
       ctx.clearRect(0, 0, viewport.width, viewport.height);
 
       for (const star of stars) {
         updateStar(star, viewport, dt);
         const d = star.size * 2;
         if (d <= 0) continue;
-        ctx.globalAlpha = star.opacity;
+        ctx.globalAlpha = star.opacity * dim;
         ctx.drawImage(starSprite, star.x - d / 2, star.y - d / 2, d, d);
       }
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = dim;
 
       for (const m of meteors) {
         if (updateMeteor(m.state, viewport, dt)) {
@@ -196,6 +206,7 @@
           m.sprite.height / dpr
         );
       }
+      ctx.globalAlpha = 1;
 
       animationId = requestAnimationFrame(animate);
     }
@@ -226,7 +237,13 @@
     // 偏好减少动效：渲染一帧静态星空，不启动循环、不显示流星
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       drawStaticFrame();
-      return;
+      // 静态帧不会自行重绘，主题切换时补一帧（动画分支每帧读取主题，无需订阅）
+      const themeObserver = new MutationObserver(() => drawStaticFrame());
+      themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["data-theme"],
+      });
+      return () => themeObserver.disconnect();
     }
 
     window.addEventListener("resize", handleResize);
@@ -246,6 +263,6 @@
 
 <canvas
   bind:this={canvasRef}
-  class="pointer-events-none fixed top-0 left-0 z-0 h-full w-full bg-[linear-gradient(180deg,#0f0c29,#302b63_50%,var(--color-background))]"
+  class="sky-canvas pointer-events-none fixed top-0 left-0 z-0 h-full w-full"
 >
 </canvas>
