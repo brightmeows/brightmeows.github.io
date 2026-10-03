@@ -1,5 +1,7 @@
 import { applyEntryFields } from "@brightmeows/mirror/shared";
 
+import { sortLevelValues } from "$lib/utils/bms-table";
+
 /**
  * 难度表编辑器的纯函数层：条目筛选与批量操作、字段编辑提交、导出合并包、
  * 草稿键与冲突判定。组件状态与 IndexedDB 读写不在此处，保持可单测。
@@ -272,13 +274,24 @@ export function entryLabel(entry: Record<string, unknown>): string {
 }
 
 /**
- * 等级筛选：全部、未指派或某个具体等级。用判别联合而非字符串哨兵，
- * 避免与真实等级值（如名为 all 的等级）相撞。
+ * 等级筛选：全部、未指派、某个具体等级，或多选等级并集（目录复选框）。
+ * 用判别联合而非字符串哨兵，避免与真实等级值（如名为 all 的等级）相撞。
  */
 export type LevelFilter =
   | { kind: "all" }
   | { kind: "unassigned" }
-  | { kind: "level"; level: string };
+  | { kind: "level"; level: string }
+  | { kind: "levels"; levels: readonly string[]; unassigned: boolean };
+
+/** 多选筛选构造：一个都不勾（含未指派）时回到“全部”。 */
+export function levelFilterFromSelection(
+  levels: Iterable<string>,
+  unassigned: boolean
+): LevelFilter {
+  const selected = [...levels];
+  if (selected.length === 0 && !unassigned) return { kind: "all" };
+  return { kind: "levels", levels: selected, unassigned };
+}
 
 /** 筛选下拉的选项值编码：哨兵与等级值都经唯一前缀，杜绝相撞。 */
 export const LEVEL_FILTER_ALL_OPTION = "__all__";
@@ -315,8 +328,15 @@ export function filterEntryIndices(
   for (const [index, entry] of entries.entries()) {
     if (filter.level.kind === "unassigned") {
       if (!isUnassigned(entry)) continue;
-    } else if (filter.level.kind === "level" && textOf(entry.level) !== filter.level.level) {
-      continue;
+    } else if (filter.level.kind === "level") {
+      if (textOf(entry.level) !== filter.level.level) continue;
+    } else if (filter.level.kind === "levels") {
+      const unassigned = isUnassigned(entry);
+      if (unassigned) {
+        if (!filter.level.unassigned) continue;
+      } else if (!filter.level.levels.includes(textOf(entry.level))) {
+        continue;
+      }
     }
     if (needle !== "") {
       const haystack = [
@@ -334,6 +354,49 @@ export function filterEntryIndices(
     result.push(index);
   }
   return result;
+}
+
+/** 条目等级分组：组的等级值，或未指派组的标记与全部下标。 */
+export interface EntryLevelGroup {
+  /** 分组等级值；未指派组为空串。 */
+  level: string;
+  /** 是否为未指派组（恒排在最后）。 */
+  unassigned: boolean;
+  /** 组内条目下标（保持传入 indices 的顺序）。 */
+  indices: number[];
+}
+
+/**
+ * 把（已筛选的）条目下标按等级分组：组次序由 level_order 与数字/字母回退决定，
+ * 未指派组恒在最后；空组不输出。分组只影响呈现，不改变条目的源顺序。
+ */
+export function groupEntryIndices(
+  entries: readonly Record<string, unknown>[],
+  indices: readonly number[],
+  levelOrder: readonly string[]
+): EntryLevelGroup[] {
+  const byLevel = new Map<string, number[]>();
+  const unassignedIndices: number[] = [];
+  for (const index of indices) {
+    const entry = entries[index];
+    if (entry === undefined) continue;
+    if (isUnassigned(entry)) {
+      unassignedIndices.push(index);
+      continue;
+    }
+    const level = textOf(entry.level);
+    const list = byLevel.get(level);
+    if (list) list.push(index);
+    else byLevel.set(level, [index]);
+  }
+
+  const groups: EntryLevelGroup[] = sortLevelValues([...byLevel.keys()], levelOrder).map(
+    (level) => ({ level, unassigned: false, indices: byLevel.get(level) ?? [] })
+  );
+  if (unassignedIndices.length > 0) {
+    groups.push({ level: "", unassigned: true, indices: unassignedIndices });
+  }
+  return groups;
 }
 
 /** 批量指派等级（空串表示清除等级）；返回新数组，不改动入参。 */
