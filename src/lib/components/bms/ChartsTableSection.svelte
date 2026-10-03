@@ -6,6 +6,7 @@
   import { m } from "$lib/paraglide/messages.js";
   import type { ChartData, DifficultyGroup } from "$lib/types/bms-format";
   import type { JsonPreviewHandle } from "$lib/types/ui";
+  import { levelSegmentColor } from "$lib/utils/bms-table";
   import { validateUrl } from "$lib/utils/url";
 
   let chartPreview = $state<JsonPreviewHandle | undefined>();
@@ -19,15 +20,6 @@
     totalCharts: number;
     symbol?: string;
   } = $props();
-
-  function segmentColor(index: number, total: number): string {
-    const palette = ["#4caf50", "#2196f3", "#ff9800", "#f44336", "#ce50d8", "#9c27b0"] as const;
-    if (total <= 0) return palette[1];
-    const bins = palette.length;
-    const size = Math.ceil(total / bins);
-    const ci = Math.min(bins - 1, Math.max(0, Math.floor(index / size)));
-    return palette[ci] ?? palette[0];
-  }
 
   function resolvedBundleUrl(chart: ChartData): string | undefined {
     return validateUrl(chart.url);
@@ -60,10 +52,10 @@
             class="flex cursor-pointer items-center justify-center gap-2 rounded-[25px] border-2 border-transparent px-6 py-3 text-[1.1rem] font-bold text-white opacity-70 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:opacity-90 hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)] active:-translate-y-px active:opacity-90"
             type="button"
             onclick={() => scrollToDifficultyGroup(group.level)}
-            style={`background-color:${segmentColor(
+            style={`background-color:${levelSegmentColor(
               idx,
               groups.length
-            )};border-color:${segmentColor(idx, groups.length)};`}
+            )};border-color:${levelSegmentColor(idx, groups.length)};`}
           >
             {symbol}{group.level}
             <span class="rounded-[10px] bg-black/20 px-2 py-[0.1rem] text-[0.9rem] opacity-90">
@@ -96,7 +88,7 @@
         </tr>
       </thead>
       {#each groups as group, gIndex (group.level)}
-        {@const groupColor = segmentColor(gIndex, groups.length)}
+        {@const groupColor = levelSegmentColor(gIndex, groups.length)}
         <tbody id={`difficulty-group-${group.level}`} class="scroll-mt-5">
           <tr>
             <td colspan="6" class="border-b-2 border-white/10 px-4 py-3">

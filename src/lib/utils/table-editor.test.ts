@@ -17,7 +17,9 @@ import {
   encodeLevelFilterOption,
   entryHashes,
   filterEntryIndices,
+  groupEntryIndices,
   isUnassigned,
+  levelFilterFromSelection,
   levelOrderOf,
   moveItem,
   parseCombinedPackage,
@@ -182,6 +184,70 @@ describe("filterEntryIndices", () => {
     expect(filterEntryIndices(entries, { level: { kind: "all" }, query: "１３" })).toEqual([1]);
     expect(filterEntryIndices(entries, { level: { kind: "all" }, query: "abcd" })).toEqual([2]);
     expect(filterEntryIndices(entries, { level: { kind: "all" }, query: "obj" })).toEqual([1]);
+  });
+
+  it("unions multiple selected levels with optional unassigned", () => {
+    expect(
+      filterEntryIndices(entries, {
+        level: { kind: "levels", levels: ["12"], unassigned: true },
+        query: "",
+      })
+    ).toEqual([0, 2]);
+    expect(
+      filterEntryIndices(entries, {
+        level: { kind: "levels", levels: ["12", "１３"], unassigned: false },
+        query: "",
+      })
+    ).toEqual([0, 1]);
+    // 一个都不选的字面语义是空集；回到“全部”由 levelFilterFromSelection 承担
+    expect(
+      filterEntryIndices(entries, {
+        level: { kind: "levels", levels: [], unassigned: false },
+        query: "",
+      })
+    ).toEqual([]);
+  });
+});
+
+describe("levelFilterFromSelection", () => {
+  it("falls back to all when nothing is selected", () => {
+    expect(levelFilterFromSelection([], false)).toEqual({ kind: "all" });
+    expect(levelFilterFromSelection(["12"], false)).toEqual({
+      kind: "levels",
+      levels: ["12"],
+      unassigned: false,
+    });
+    expect(levelFilterFromSelection([], true)).toEqual({
+      kind: "levels",
+      levels: [],
+      unassigned: true,
+    });
+  });
+});
+
+describe("groupEntryIndices", () => {
+  const entries = [
+    entry({ level: "12", title: "a" }),
+    entry({ level: "2", title: "b" }),
+    entry({ title: "c" }),
+    entry({ level: "abc", title: "d" }),
+    entry({ level: "12", title: "e" }),
+  ];
+
+  it("orders groups by level_order then numeric fallback, unassigned last", () => {
+    const groups = groupEntryIndices(entries, [0, 1, 2, 3, 4], ["2", "12"]);
+    expect(groups.map((group) => [group.level, group.unassigned, group.indices])).toEqual([
+      ["2", false, [1]],
+      ["12", false, [0, 4]],
+      ["abc", false, [3]],
+      ["", true, [2]],
+    ]);
+  });
+
+  it("keeps the given index order and drops empty groups", () => {
+    const groups = groupEntryIndices(entries, [4, 3], ["12"]);
+    expect(groups.map((group) => group.indices)).toEqual([[4], [3]]);
+    expect(groupEntryIndices(entries, [], ["12"])).toEqual([]);
   });
 });
 

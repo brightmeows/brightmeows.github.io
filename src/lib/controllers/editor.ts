@@ -1,20 +1,16 @@
 /**
- * 统一表编辑器的决策点：保存闸门与新表草稿认领。
+ * 表编辑的决策点：保存闸门与新表草稿来源。
  *
- * 编辑器组件（TableEditorPage）的加载、草稿自动落盘与保存串接保留在
- * 组件里（状态是深层响应式的，DOM effect 与 confirm 也在此）；本模块
- * 只承载可独立断言的决策逻辑，语义由 editor.test.ts 锁定（与 2026-10
- * 之前的组件内实现逐分支一致）。
+ * 合并页（BmsTablePage）的加载、草稿自动落盘与保存串接保留在组件里
+ * （状态是深层响应式的，DOM effect 与 confirm 也在此）；本模块只承载
+ * 可独立断言的决策逻辑，语义由 editor.test.ts 锁定（与 2026-10 之前的
+ * 组件内实现逐分支一致）。
  */
 
 import type { SharedPayloadError } from "@brightmeows/mirror/shared";
 import { checkSharedPayload, withLocalDataUrl } from "@brightmeows/mirror/shared";
 
-import type { FetchTableDataResult } from "$lib/data/bms-data";
-import type { DraftClaim } from "$lib/data/table-drafts";
 import { m } from "$lib/paraglide/messages.js";
-import type { HeaderData } from "$lib/types/bms-format";
-import type { ProgressCallback } from "$lib/types/bms-view";
 import { sharedPayloadErrorMessage } from "$lib/utils/shared-table";
 import type { DraftPayload, TableEditPayload } from "$lib/utils/table-editor";
 import {
@@ -64,74 +60,6 @@ export function decideNewTableDraft(
     return { action: "claim", draft: claimed };
   }
   return { action: "fresh" };
-}
-
-// ---- 加载编排（统一编辑器页的四相回退：远端加载与新表草稿认领） ----
-
-/** 编辑器加载的页面交接面：来源参数与数据层取数绑定。 */
-export interface EditorLoadDeps {
-  /** header.json 地址；null 表示新表。 */
-  headerUrl: string | null;
-  /** header.data_url 缺失时的回退数据地址。 */
-  dataUrlFallback: string | null;
-  draftKey: string;
-  fetchHeader: (url: string, onProgress: ProgressCallback | undefined) => Promise<HeaderData>;
-  /** 拉取 data.json；基准 URL 解析留组件绑定（url.ts 依赖 window，控制器保持环境无关）。 */
-  fetchData: (
-    dataUrl: string,
-    onProgress: ProgressCallback | undefined
-  ) => Promise<FetchTableDataResult>;
-  loadDraft: (key: string) => Promise<DraftPayload | null>;
-  takeDraftClaim: () => DraftClaim | null;
-}
-
-export type EditorLoadResult =
-  | {
-      kind: "ready";
-      header: Record<string, unknown>;
-      data: Record<string, unknown>[];
-      /** 加载完成后发现的本地草稿（待用户确认恢复）。 */
-      draft: DraftPayload | null;
-    }
-  | { kind: "new"; decision: NewTableDraftDecision }
-  | { kind: "error"; message: string };
-
-/**
- * 加载编排：远端路径取 header 与 data 并探查本地草稿；新表路径做草稿认领
- * 三向决策（自有、认领、空白）。进度回调透传给页面写加载指示器。
- */
-export async function loadEditorTables(
-  deps: EditorLoadDeps,
-  onProgress: ProgressCallback
-): Promise<EditorLoadResult> {
-  try {
-    if (deps.headerUrl === null) {
-      const own = await deps.loadDraft(deps.draftKey);
-      const claim = deps.takeDraftClaim();
-      const claimed = claim !== null ? await deps.loadDraft(claim.sourceDraftKey) : null;
-      return { kind: "new", decision: decideNewTableDraft(own, claim, claimed) };
-    }
-
-    const header = await deps.fetchHeader(deps.headerUrl, onProgress);
-    const dataUrl =
-      typeof header.data_url === "string" && header.data_url !== ""
-        ? header.data_url
-        : (deps.dataUrlFallback ?? deps.headerUrl);
-    const result = await deps.fetchData(dataUrl, onProgress);
-
-    const draft = await deps.loadDraft(deps.draftKey);
-    return {
-      kind: "ready",
-      header,
-      data: result.data.map((item) => ({ ...item })),
-      draft,
-    };
-  } catch (error) {
-    return {
-      kind: "error",
-      message: error instanceof Error ? error.message : m["common.unknown_error"](),
-    };
-  }
 }
 
 // ---- 保存编排（闸门与并发检查先行，提交随后；busy 时序由两段拆分保持） ----

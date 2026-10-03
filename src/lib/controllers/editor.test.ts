@@ -3,17 +3,13 @@ import { describe, expect, it } from "vitest";
 import {
   buildSharedExportPackage,
   commitEditorSave,
-  loadEditorTables,
-  planEditorSave,
-  planSaveAsShared,
   decideLocalSaveGate,
   decideNewTableDraft,
-  type EditorLoadDeps,
+  planEditorSave,
+  planSaveAsShared,
 } from "./editor";
 
 import { m } from "$lib/paraglide/messages.js";
-import type { ProgressCallback } from "$lib/types/bms-view";
-import type { DraftPayload } from "$lib/utils/table-editor";
 
 /** 决策点的行为锁定测试：闸门顺序与草稿来源优先级对应组件内原实现。 */
 
@@ -79,135 +75,8 @@ describe("decideNewTableDraft 新表草稿来源", () => {
   });
 });
 
-// ---- 加载与保存编排（页面只持状态，决策与取数序列在此锁定） ----
-
-/** 编排测试的假依赖：内存草稿与可编程取数。 */
-function makeLoadDeps(overrides: Partial<EditorLoadDeps> = {}): EditorLoadDeps {
-  return {
-    headerUrl: "https://r2.example/t/header.json",
-    dataUrlFallback: null,
-    draftKey: "table-editor:mirror:t",
-    fetchHeader: () => Promise.resolve({ name: "表名", symbol: "SY", data_url: "" }),
-    fetchData: () => Promise.resolve({ data: [{ md5: "a" }], fetchUrl: "x" }),
-    loadDraft: () => Promise.resolve(null),
-    takeDraftClaim: () => null,
-    ...overrides,
-  };
-}
-
-const noopProgress: ProgressCallback = () => undefined;
-
 /** 运行时契约违反的模拟：防御分支（非 Error 拒绝）的正当测试入口。 */
 const nonErrorReason = "weird" as unknown as Error;
-
-describe("loadEditorTables", () => {
-  it("远端路径：data_url 非空优先，回退链 data_url 空则用 fallback，再退 headerUrl", async () => {
-    const calls: string[] = [];
-    const result = await loadEditorTables(
-      makeLoadDeps({
-        headerUrl: "https://r2.example/t/header.json",
-        dataUrlFallback: "https://r2.example/t/data.json",
-        fetchHeader: () =>
-          Promise.resolve({ name: "表名", symbol: "SY", data_url: "https://cdn.example/d.json" }),
-        fetchData: (dataUrl) => {
-          calls.push(dataUrl);
-          return Promise.resolve({ data: [{ md5: "a" }], fetchUrl: dataUrl });
-        },
-      }),
-      noopProgress
-    );
-    expect(result.kind).toBe("ready");
-    expect(calls).toEqual(["https://cdn.example/d.json"]);
-
-    const fallback = await loadEditorTables(
-      makeLoadDeps({
-        dataUrlFallback: "https://r2.example/t/data.json",
-        fetchHeader: () => Promise.resolve({ name: "表名", symbol: "SY", data_url: "" }),
-        fetchData: (dataUrl) => {
-          calls.push(dataUrl);
-          return Promise.resolve({ data: [], fetchUrl: dataUrl });
-        },
-      }),
-      noopProgress
-    );
-    expect(calls[1]).toBe("https://r2.example/t/data.json");
-    expect(fallback.kind).toBe("ready");
-
-    const headerOnly = await loadEditorTables(
-      makeLoadDeps({
-        dataUrlFallback: null,
-        fetchHeader: () => Promise.resolve({ name: "表名", symbol: "SY", data_url: "" }),
-        fetchData: (dataUrl) => {
-          calls.push(dataUrl);
-          return Promise.resolve({ data: [], fetchUrl: dataUrl });
-        },
-      }),
-      noopProgress
-    );
-    expect(calls[2]).toBe("https://r2.example/t/header.json");
-    expect(headerOnly.kind).toBe("ready");
-  });
-
-  it("ready 结果携带条目副本与本地草稿；进度回调透传", async () => {
-    let forwarded: ProgressCallback | undefined;
-    const foundDraft: DraftPayload = {
-      header: {},
-      data: [],
-      savedAt: "2026-10-02T00:00:00Z",
-      baselineUpdatedAt: undefined,
-    };
-    const sourceEntry = { md5: "a" };
-    const result = await loadEditorTables(
-      makeLoadDeps({
-        fetchHeader: (_url, onProgress) => {
-          forwarded = onProgress;
-          return Promise.resolve({ name: "表名", symbol: "SY", data_url: "" });
-        },
-        fetchData: () => Promise.resolve({ data: [sourceEntry], fetchUrl: "x" }),
-        loadDraft: () => Promise.resolve(foundDraft),
-      }),
-      noopProgress
-    );
-    expect(forwarded).toBe(noopProgress);
-    if (result.kind !== "ready") throw new Error(`want ready, got ${result.kind}`);
-    expect(result.data).toEqual([{ md5: "a" }]);
-    // 条目是副本：改动结果不影响取数层返回的对象
-    expect(result.data[0]).not.toBe(sourceEntry);
-    expect(result.draft).toEqual(foundDraft);
-  });
-
-  it("新表路径：认领草稿走三向决策", async () => {
-    const claimed: DraftPayload = {
-      header: { name: "认领" },
-      data: [],
-      savedAt: "2026-10-02T00:00:00Z",
-      baselineUpdatedAt: undefined,
-    };
-    const result = await loadEditorTables(
-      makeLoadDeps({
-        headerUrl: null,
-        loadDraft: (key) => Promise.resolve(key === "claim-key" ? claimed : null),
-        takeDraftClaim: () => ({ sourceDraftKey: "claim-key", at: new Date().toISOString() }),
-      }),
-      noopProgress
-    );
-    expect(result).toEqual({ kind: "new", decision: { action: "claim", draft: claimed } });
-  });
-
-  it("取数异常翻译为 error：Error 取 message，非 Error 落通用文案", async () => {
-    const boom = await loadEditorTables(
-      makeLoadDeps({ fetchHeader: () => Promise.reject(new Error("dns")) }),
-      noopProgress
-    );
-    expect(boom).toEqual({ kind: "error", message: "dns" });
-
-    const opaque = await loadEditorTables(
-      makeLoadDeps({ fetchHeader: () => Promise.reject(nonErrorReason) }),
-      noopProgress
-    );
-    expect(opaque).toEqual({ kind: "error", message: m["common.unknown_error"]() });
-  });
-});
 
 describe("planEditorSave 与 commitEditorSave", () => {
   const base = {
