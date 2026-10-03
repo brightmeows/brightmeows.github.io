@@ -100,6 +100,24 @@
   }
 }
 
+/* ===== 主题变量（浅色端与深色端）=====
+   两套主题只改页面背景与星空渐变：玻璃、文字、强调色与代码块配色两套共用。
+   这组规则刻意不放进 @layer：@theme 生成的变量在 theme 层，而层内规则
+   无论优先级都压不过未分层规则，放进 layer 会被主题默认值盖掉。 */
+:root {
+  --gradient-sky: linear-gradient(180deg, #0f0c29, #302b63 50%, var(--color-background));
+}
+
+:root[data-theme="dark"] {
+  --color-background: #0a0a14;
+  --gradient-sky: linear-gradient(180deg, #05050d, #0d0d1c 50%, #0a0a14);
+}
+
+/* 星空画布底色：星星与流星的亮度由组件按主题另行调暗 */
+.sky-canvas {
+  background-image: var(--gradient-sky);
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

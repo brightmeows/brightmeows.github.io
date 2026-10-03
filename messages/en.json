@@ -622,11 +622,11 @@
   "topbar.nickname": "BrightMeowS",
   "topbar.profile_card_aria": "Profile card",
   "topbar.remaining": "{count} left today",
-  "topbar.soon": "Coming soon",
   "topbar.static_hint_title": "Static mirror; use the main site for login and related features",
+  "topbar.switch_to_dark": "Switch to dark theme",
   "topbar.switch_to_en": "Switch to English",
+  "topbar.switch_to_light": "Switch to light theme",
   "topbar.switch_to_zh": "Switch to Chinese",
-  "topbar.theme_aria": "Theme switch (coming soon)",
   "userapi.no_request_id": "API did not return a request id",
   "userapi.unknown_state": "Unknown status value"
 }
