@@ -95,6 +95,7 @@ repos:
   # Markdown 扫直引号与直角/全角无向引号（跳过 frontmatter、代码块与
   # HTML 标签）；代码与配置只扫直角与全角无向引号（ASCII 直引号是语法）。
   # static/ 是数据资产（含日文原文）不扫；行内含 cn-quotes-ignore 可豁免。
+  # 日语内容（messages/ja.json 与 *.ja.md）按路径跳过，见脚本头注。
   - repo: local
     hooks:
       - id: cn-quotes

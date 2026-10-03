@@ -14,7 +14,7 @@
 
 ## 校验脚本
 
-- `scripts/check-cn-quotes.py` — 中文文本引号规范（GB/T 15834-2011）。两档策略：Markdown（`.md`/`.svx`）扫直引号、全角无向引号与直角引号，跳过 frontmatter、代码块、行内代码与 HTML 标签（这些位置的引号是语法）；代码与配置类型只扫直角引号与全角无向引号（ASCII 直引号在代码里是字符串与语法，无法与注释引号机械区分，不扫）。`static/` 为数据资产（含日文原文）不扫；行内含 `cn-quotes-ignore` 注释可豁免单行（字符映射表、测试断言等“引号即数据”场景，豁免与原因就近可见）。
+- `scripts/check-cn-quotes.py` — 中文文本引号规范（GB/T 15834-2011）。两档策略：Markdown（`.md`/`.svx`）扫直引号、全角无向引号与直角引号，跳过 frontmatter、代码块、行内代码与 HTML 标签（这些位置的引号是语法）；代码与配置类型只扫直角引号与全角无向引号（ASCII 直引号在代码里是字符串与语法，无法与注释引号机械区分，不扫）。`static/` 为数据资产（含日文原文）不扫；行内含 `cn-quotes-ignore` 注释可豁免单行（字符映射表、测试断言等“引号即数据”场景，豁免与原因就近可见）。日语内容豁免（`messages/ja.json` 与 `*.ja.md`）：日语正式引号为 U+300C/U+300D，与简中排版规则不同，不适用本检查；其余门槛（易混淆字符、i18n 覆盖）照常约束这些文件。
 - `scripts/check-commit-msg.py` — Conventional Commits 格式校验（见根 `AGENTS.md` 的“提交格式”节），pre-commit commit-msg stage 与 CI 的 PR job 共用。
 - `scripts/check-site-config.ts` — 离线一致性校验（八条断言：`--target` 合法、wrangler routes ⊆ 配置、工作流无硬编码域名、CORS 覆盖全部目标、基线文件名与 `r2.baselineObject` 一致、版本来源唯一（devEngines 范围加工作流不传 pnpm 版本）、wrangler vars 与配置一致（含 `SITE_ORIGINS` 白名单与 `COOKIE_DOMAIN`）、静态目标 siteBase 主机与 target 名对齐）。`pnpm check:config` 调用它，pre-commit 与 CI 都跑。
 - `scripts/check-i18n-coverage.ts` — i18n 覆盖校验（六条断言：两语 key 对称、占位符一致、源码引用与 Worker 错误码常量表（`@brightmeows/mirror/api` 的 `API_ERROR_CODES` 全部值）存在于 messages、Worker 源码里的 `code:` 字面量视为漂移、死 key、src 残留中日韩字符（注释/console/测试/AGENTS/领域术语按豁免清单）、en 值漏翻）。`pnpm check:i18n` 调用它，pre-commit 与 CI 都跑；豁免口径见脚本头注。
