@@ -4,7 +4,7 @@
 
 ## Commands
 
-- `pnpm build` — 双语构建入口（`scripts/build-site.ts`）：en 主站、zh-cn 主站、en 静态三遍 flavor（各自经 `BUILD_OUT` 落临时目录），组装出 `build/`（en 根 + `_i18n/zh-cn` 内部树，`_app` 双语 chunk 合并到共享根、`version.json` 统一取 en、中文树 `html lang` 改写）与 `build-static/`（静态宿主单语，隐藏语言切换器）；`pnpm build:flavor` 跑单遍
+- `pnpm build` — 多语构建入口（`scripts/build-site.ts`）：en、zh-cn、ja 三个主站 flavor 加 en 静态共四遍（各自经 `BUILD_OUT` 落临时目录），组装出 `build/`（en 根 + `_i18n/zh-cn`、`_i18n/ja` 内部树，`_app` 多语 chunk 合并到共享根、`version.json` 统一取 en、各语言树 `html lang` 改写）与 `build-static/`（静态宿主单语，隐藏语言切换器）；`pnpm build:flavor` 跑单遍
 - `node scripts/detect-mirror-change.ts [--out=<路径>]` — 比对 R2 清单与 R2 基线对象（`meta/last-notified.json`）的投影，stdout 只打印 `true`/`false`，变动时可写出新基线供工作流推回
 - `node scripts/gen-static-mirror-pages.ts --target=<目标名> [--site-base=<域名>]` — 生成静态宿主的镜像页与共享表页（每表只生成一个查看/编辑合并页、统一注入 meta；编辑态由客户端的 `?edit=1` 解释）、两份站点清单与域配置提交物（`CNAME`/`.domains`，域名从配置解析；需先 `pnpm build`；默认写入 `build-static/`，`--build-dir` 可覆盖；从主站拉取已合成的镜像与共享清单（两次拉取任一失败即整步失败），需网络；`--site-base` 仅本地演练覆盖，此时不生成域配置）
 - `node scripts/fetch-tables.ts` — 本地跑数据管线（基线经 rclone 同步自 R2，用户层经站点 Worker 的内部接口读取，需要 `INTERNAL_API_TOKEN`；写 `tables/`、`indexes/`、`warnings.log`；产物已 gitignore）
@@ -17,7 +17,7 @@
 - `scripts/check-cn-quotes.py` — 中文文本引号规范（GB/T 15834-2011）。两档策略：Markdown（`.md`/`.svx`）扫直引号、全角无向引号与直角引号，跳过 frontmatter、代码块、行内代码与 HTML 标签（这些位置的引号是语法）；代码与配置类型只扫直角引号与全角无向引号（ASCII 直引号在代码里是字符串与语法，无法与注释引号机械区分，不扫）。`static/` 为数据资产（含日文原文）不扫；行内含 `cn-quotes-ignore` 注释可豁免单行（字符映射表、测试断言等“引号即数据”场景，豁免与原因就近可见）。日语内容豁免（`messages/ja.json` 与 `*.ja.md`）：日语正式引号为 U+300C/U+300D，与简中排版规则不同，不适用本检查；其余门槛（易混淆字符、i18n 覆盖）照常约束这些文件。
 - `scripts/check-commit-msg.py` — Conventional Commits 格式校验（见根 `AGENTS.md` 的“提交格式”节），pre-commit commit-msg stage 与 CI 的 PR job 共用。
 - `scripts/check-site-config.ts` — 离线一致性校验（八条断言：`--target` 合法、wrangler routes ⊆ 配置、工作流无硬编码域名、CORS 覆盖全部目标、基线文件名与 `r2.baselineObject` 一致、版本来源唯一（devEngines 范围加工作流不传 pnpm 版本）、wrangler vars 与配置一致（含 `SITE_ORIGINS` 白名单与 `COOKIE_DOMAIN`）、静态目标 siteBase 主机与 target 名对齐）。`pnpm check:config` 调用它，pre-commit 与 CI 都跑。
-- `scripts/check-i18n-coverage.ts` — i18n 覆盖校验（六条断言：两语 key 对称、占位符一致、源码引用与 Worker 错误码常量表（`@brightmeows/mirror/api` 的 `API_ERROR_CODES` 全部值）存在于 messages、Worker 源码里的 `code:` 字面量视为漂移、死 key、src 残留中日韩字符（注释/console/测试/AGENTS/领域术语按豁免清单）、en 值漏翻）。`pnpm check:i18n` 调用它，pre-commit 与 CI 都跑；豁免口径见脚本头注。
+- `scripts/check-i18n-coverage.ts` — i18n 覆盖校验（六条断言：三语 key 对称、占位符一致、源码引用与 Worker 错误码常量表（`@brightmeows/mirror/api` 的 `API_ERROR_CODES` 全部值）存在于 messages、Worker 源码里的 `code:` 字面量视为漂移、死 key、src 残留中日韩字符（注释/console/测试/AGENTS/领域术语按豁免清单）、en 值漏翻（语言自称键豁免））。`pnpm check:i18n` 调用它，pre-commit 与 CI 都跑；豁免口径见脚本头注。
 - `scripts/check-r2-cors.ts` — 只读比对桶 CORS policy 与配置（需 `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID`/`R2_BUCKET`）；不在日常 CI 跑，由 `config-drift.yml` 在配置变更的 PR 与手动触发时调用。
 - `scripts/site-config.ts` / `scripts/site-target.ts` — 读取并校验 `config/site.json`、打印某静态目标的站点基址、平台原域与 git-pages 服务主机名（`--legacy-base` / `--server`；供工作流把域名从 YAML 里移出）。
 
