@@ -17,7 +17,7 @@
  * 豁免口径（与“注释/测试非内容、领域术语照搬、博客正文不翻”的决策一致）：
  * - `src/lib/constants/bms.ts`：LR2 领域约束标签（日文原词，数据级术语）
  * - `src/lib/loaders/blog-metadata.ts`：构建期 frontmatter 诊断（仅开发者可见）
- * - `src/routes/bms/index.zh.md`：按 locale 选用的中文版双份源
+ * - `src/routes/bms/index.zh.md` / `index.ja.md`：按 locale 选用的中文/日文内容源
  * - 行内含 `i18n-exempt` 标记：临时豁免逃生口
  *
  * 纯读、不联网、毫秒级，进 pre-commit 与 CI。用法：`node scripts/check-i18n-coverage.ts`
@@ -42,7 +42,7 @@ const WORKER_CODE_PATTERN = /code:\s*"([a-z][a-z0-9_.]*)"/g;
 const EXEMPT_FILES: RegExp[] = [
   /^src\/lib\/constants\/bms\.ts$/,
   /^src\/lib\/loaders\/blog-metadata\.ts$/,
-  /^src\/routes\/bms\/index\.zh\.md$/,
+  /^src\/routes\/bms\/index\.(?:zh|ja)\.md$/,
   // 仓库文档与测试本就是中文/数据现场，非访客可见内容
   /(^|\/)AGENTS\.md$/,
   /\.test\.(ts|js|svelte)$/,

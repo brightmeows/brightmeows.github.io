@@ -106,6 +106,7 @@ describe("CJK 扫描", () => {
     expect(cjkLineIssues("src/lib/utils/a.test.ts", 'it("中文", () => {})')).toEqual([]);
     expect(cjkLineIssues("src/AGENTS.md", "# 中文")).toEqual([]);
     expect(cjkLineIssues("src/lib/constants/bms.ts", 'const s = "譜面";')).toEqual([]);
+    expect(cjkLineIssues("src/routes/bms/index.ja.md", "# 日本語の内容")).toEqual([]);
   });
 
   it("emoji 不误报，中日韩字符命中", () => {
