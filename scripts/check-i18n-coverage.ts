@@ -11,7 +11,8 @@
  * 4. 声明了却无人引用的 key 视为死 key（改名后旧条目不清理会漏出来）
  * 5. src 下用户可见文本不得残留中日韩字符——注释、测试、console 输出、
  *    豁免清单（见 `EXEMPT_FILES` 与行级规则）除外
- * 6. `messages/en.json` 的值不得含中日韩字符（漏翻的中文值在这里落网）
+ * 6. `messages/en.json` 的值不得含中日韩字符（漏翻的中文值在这里落网；
+ *    语言自称键 `topbar.lang_ja`/`topbar.lang_zh` 白名单除外，它们各语固定）
  *
  * 豁免口径（与“注释/测试非内容、领域术语照搬、博客正文不翻”的决策一致）：
  * - `src/lib/constants/bms.ts`：LR2 领域约束标签（日文原词，数据级术语）
@@ -48,6 +49,8 @@ const EXEMPT_FILES: RegExp[] = [
 ];
 /** 参与 CJK 扫描的扩展名。 */
 const SCANNED_EXTENSIONS = new Set([".ts", ".svelte", ".js", ".md"]);
+/** en 值允许 CJK 的显式豁免：语言自称（日本語 / 简体中文）在所有语言目录中固定。 */
+const EN_CJK_ALLOWED_KEYS = new Set(["topbar.lang_ja", "topbar.lang_zh"]);
 
 export type Messages = Record<string, string>;
 
@@ -197,10 +200,10 @@ export function cjkLineIssues(relPath: string, text: string): string[] {
   return issues;
 }
 
-/** 断言 6：英文值不含中日韩字符（漏翻值落网）。 */
+/** 断言 6：英文值不含中日韩字符（漏翻值落网；语言自称键豁免）。 */
 export function enValueIssues(en: Messages): string[] {
   return Object.entries(en)
-    .filter(([, value]) => CJK_PATTERN.test(value))
+    .filter(([key, value]) => !EN_CJK_ALLOWED_KEYS.has(key) && CJK_PATTERN.test(value))
     .map(([key]) => `en.json 值残留中日韩字符（未翻译？）：${key}`);
 }
 

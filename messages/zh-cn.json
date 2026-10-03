@@ -614,6 +614,10 @@
   "topbar.bio": "追逐成就感中",
   "topbar.breadcrumb_aria": "面包屑",
   "topbar.go_main_site": "前往主站",
+  "topbar.lang_en": "English",
+  "topbar.lang_ja": "日本語",
+  "topbar.lang_zh": "简体中文",
+  "topbar.language": "语言",
   "topbar.login": "登录",
   "topbar.logout": "登出",
   "topbar.more": "更多",
@@ -624,9 +628,7 @@
   "topbar.remaining": "今日剩余 {count} 次",
   "topbar.static_hint_title": "当前为静态镜像，登录与相关功能请前往主站",
   "topbar.switch_to_dark": "切换到深色主题",
-  "topbar.switch_to_en": "切换到英语",
   "topbar.switch_to_light": "切换到浅色主题",
-  "topbar.switch_to_zh": "切换到中文",
   "userapi.no_request_id": "接口未返回请求 id",
   "userapi.unknown_state": "状态取值未知"
 }

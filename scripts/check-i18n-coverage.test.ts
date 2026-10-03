@@ -121,4 +121,8 @@ describe("enValueIssues", () => {
     expect(enValueIssues({ a: "中文" })).toHaveLength(1);
     expect(enValueIssues({ a: "English 📦" })).toEqual([]);
   });
+
+  it("语言自称键豁免（各语固定，非漏翻）", () => {
+    expect(enValueIssues({ "topbar.lang_ja": "日本語", "topbar.lang_zh": "简体中文" })).toEqual([]);
+  });
 });

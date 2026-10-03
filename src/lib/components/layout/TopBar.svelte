@@ -31,7 +31,7 @@
 
   // —— 弹层：头像卡 / 更多菜单 / 用户菜单，互斥展开 ——
 
-  type Panel = "profile" | "more" | "user";
+  type Panel = "profile" | "more" | "user" | "language";
 
   let openPanel = $state<Panel | null>(null);
   let root: HTMLDivElement | undefined;
@@ -124,6 +124,15 @@
     "rounded-lg px-3 py-1.5 text-sm no-underline transition-colors duration-150 cursor-pointer";
   const menuItemClass =
     "block rounded-xl px-3 py-2 text-left text-sm text-white/90 no-underline transition-colors duration-150 cursor-pointer hover:bg-white/10";
+
+  // 语言菜单：三语自称固定（不随界面语言变化），顺序 ja → zh-cn → en。
+  // 文案仍走 messages，保持用户可见文本单一来源；label 延迟求值，
+  // 模块顶层不触碰 m（与 nav.ts 同一约定）。
+  const languages: { code: "en" | "zh-cn" | "ja"; label: () => string }[] = [
+    { code: "ja", label: () => m["topbar.lang_ja"]() },
+    { code: "zh-cn", label: () => m["topbar.lang_zh"]() },
+    { code: "en", label: () => m["topbar.lang_en"]() },
+  ];
 </script>
 
 <div
@@ -355,31 +364,54 @@
           {/if}
         </button>
         {#if !__STATIC_TARGET__}
-          {@const targetLocale = getLocale() === "en" ? "zh-cn" : "en"}
-          <button
-            type="button"
-            class="flex size-9 cursor-pointer items-center justify-center rounded-full text-white/60 transition-colors hover:bg-white/10 hover:text-white"
-            title={targetLocale === "en" ? m["topbar.switch_to_en"]() : m["topbar.switch_to_zh"]()}
-            aria-label={targetLocale === "en"
-              ? m["topbar.switch_to_en"]()
-              : m["topbar.switch_to_zh"]()}
-            onclick={() => setLocale(targetLocale)}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              class="size-5"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              aria-hidden="true"
+          <div class="relative">
+            <button
+              type="button"
+              class="flex size-9 cursor-pointer items-center justify-center rounded-full text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+              title={m["topbar.language"]()}
+              aria-label={m["topbar.language"]()}
+              aria-expanded={openPanel === "language"}
+              onclick={() => togglePanel("language")}
             >
-              <circle cx="12" cy="12" r="9" />
-              <path
-                d="M3 12h18M12 3c2.5 2.6 3.9 5.7 3.9 9s-1.4 6.4-3.9 9c-2.5-2.6-3.9-5.7-3.9-9s1.4-6.4 3.9-9z"
-              />
-            </svg>
-          </button>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                class="size-5"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                aria-hidden="true"
+              >
+                <circle cx="12" cy="12" r="9" />
+                <path
+                  d="M3 12h18M12 3c2.5 2.6 3.9 5.7 3.9 9s-1.4 6.4-3.9 9c-2.5-2.6-3.9-5.7-3.9-9s1.4-6.4 3.9-9z"
+                />
+              </svg>
+            </button>
+
+            {#if openPanel === "language"}
+              <div class="absolute top-full right-0 mt-2 w-40">
+                <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
+                  {#each languages as language (language.code)}
+                    {@const active = getLocale() === language.code}
+                    <button
+                      type="button"
+                      class="{menuItemClass} flex w-full items-center justify-between {active
+                        ? 'font-semibold text-white'
+                        : ''}"
+                      lang={language.code}
+                      aria-current={active ? "true" : undefined}
+                      onclick={() => {
+                        if (!active) setLocale(language.code);
+                      }}
+                    >
+                      {language.label()}
+                    </button>
+                  {/each}
+                </GlassPanel>
+              </div>
+            {/if}
+          </div>
         {/if}
       </div>
     </div>

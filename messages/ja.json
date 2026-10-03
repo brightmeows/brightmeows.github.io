@@ -614,6 +614,10 @@
   "topbar.bio": "達成感を追いかけ中",
   "topbar.breadcrumb_aria": "パンくずリスト",
   "topbar.go_main_site": "メインサイトへ",
+  "topbar.lang_en": "English",
+  "topbar.lang_ja": "日本語",
+  "topbar.lang_zh": "简体中文",
+  "topbar.language": "言語",
   "topbar.login": "ログイン",
   "topbar.logout": "ログアウト",
   "topbar.more": "その他",
@@ -624,9 +628,7 @@
   "topbar.remaining": "本日あと {count} 回",
   "topbar.static_hint_title": "現在は静的ミラーです。ログインなどの機能はメインサイトをご利用ください",
   "topbar.switch_to_dark": "ダークテーマに切り替え",
-  "topbar.switch_to_en": "英語に切り替え",
   "topbar.switch_to_light": "ライトテーマに切り替え",
-  "topbar.switch_to_zh": "中国語に切り替え",
   "userapi.no_request_id": "API がリクエスト id を返しませんでした",
   "userapi.unknown_state": "状態の値が不明です"
 }
