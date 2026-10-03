@@ -35,11 +35,11 @@ import { backupUserLayer } from "./backup.ts";
 import { canonicalSlashRedirect } from "./canonical-slash.ts";
 import type { Env } from "./env.ts";
 import {
+  cleanInternalPath,
   detectLocale,
   localizedAssetPath,
   pageText,
   shellPath,
-  ZH_PREFIX,
   type Locale,
 } from "./i18n.ts";
 import { handleInternal } from "./internal.ts";
@@ -86,9 +86,9 @@ async function handleTablePage(
     });
   }
   if (!manifest.some((item) => item.dir_name === tableId)) {
-    // 中文树手动回中文 404 页（not_found_handling 会回落到根树的英文 404）；
+    // 非英语树手动回对应语言的 404 页（not_found_handling 会回落到根树的英文 404）；
     // 英文直接交静态资源处理，客户端路由渲染错误页
-    if (locale === "zh-cn") return zhNotFound(env, url);
+    if (locale !== "en") return localizedNotFound(env, url, locale);
     return env.ASSETS.fetch(request);
   }
 
@@ -108,9 +108,9 @@ async function handleTablePage(
   });
 }
 
-/** 中文树的 404 页（状态码 404，内容为中文外壳）。 */
-async function zhNotFound(env: Env, url: URL): Promise<Response> {
-  const res = await env.ASSETS.fetch(new URL(shellPath("zh-cn"), url.origin));
+/** 非英语树的 404 页（状态码 404，内容为该语言外壳）。 */
+async function localizedNotFound(env: Env, url: URL, locale: Locale): Promise<Response> {
+  const res = await env.ASSETS.fetch(new URL(shellPath(locale), url.origin));
   const body = await res.text();
   return new Response(body, {
     status: 404,
@@ -209,8 +209,8 @@ async function handleSharedPage(
           headers: { location: target.toString(), "cache-control": `max-age=${MANIFEST_MAX_AGE}` },
         });
       }
-      // 中文树手动回中文 404 页；英文交静态资源，由客户端路由渲染错误页
-      if (locale === "zh-cn") return zhNotFound(env, url);
+      // 非英语树手动回对应语言的 404 页；英文交静态资源，由客户端路由渲染错误页
+      if (locale !== "en") return localizedNotFound(env, url, locale);
       return env.ASSETS.fetch(request);
     }
     const shell = await loadShell(env, url, locale);
@@ -253,9 +253,9 @@ export default {
 
     // 直接访问内部前缀：301 回干净 URL（内部前缀永不进入用户可见地址；
     // 正常构建不产出带前缀的引用，命中即历史链接或误入）
-    if (path.startsWith(ZH_PREFIX)) {
-      const clean = path.slice(ZH_PREFIX.length) || "/";
-      return Response.redirect(new URL(`${clean}${url.search}`, url.origin).toString(), 301);
+    const cleanPath = cleanInternalPath(path);
+    if (cleanPath !== null) {
+      return Response.redirect(new URL(`${cleanPath}${url.search}`, url.origin).toString(), 301);
     }
 
     // 用户层在 D1（见 worker/store.ts）：首个请求初始化 schema（isolate 内只执行一次）。
@@ -329,17 +329,21 @@ export default {
     }
     const localized = await env.ASSETS.fetch(new URL(assetPath, url.origin));
     const location = localized.headers.get("location");
-    if (location?.includes(ZH_PREFIX)) {
+    if (location !== null) {
       // 静态资源层的尾斜杠等重定向会带上内部前缀，改写回干净路径
       const target = new URL(location, url.origin);
-      target.pathname = target.pathname.replace(ZH_PREFIX, "") || "/";
-      const headers = new Headers(localized.headers);
-      headers.set("location", target.toString());
-      return new Response(localized.body, { status: localized.status, headers });
+      const cleaned = cleanInternalPath(target.pathname);
+      if (cleaned !== null) {
+        target.pathname = cleaned;
+        const headers = new Headers(localized.headers);
+        headers.set("location", target.toString());
+        return new Response(localized.body, { status: localized.status, headers });
+      }
     }
     if (localized.status === 404) {
-      // 树内缺失：回中文 404 页而不是根树的英文 404
-      return zhNotFound(env, url);
+      // 树内缺失：回对应语言的 404 页而不是根树的英文 404
+      //（本分支只在 assetPath 加了内部前缀时到达，locale 必为 zh-cn / ja）
+      return localizedNotFound(env, url, locale);
     }
     return localized;
   },

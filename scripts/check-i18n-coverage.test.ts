@@ -26,13 +26,13 @@ describe("parseMessages", () => {
 });
 
 describe("keyParityIssues", () => {
-  it("双向报告缺失的 key", () => {
-    const issues = keyParityIssues({ a: "x" }, { b: "x" });
-    expect(issues).toEqual(["en.json 缺少 key：b", "zh-cn.json 缺少 key：a"]);
+  it("以 en 为基准逐语报告缺失与多余", () => {
+    const issues = keyParityIssues({ en: { a: "x" }, "zh-cn": { b: "x" } });
+    expect(issues).toEqual(["en.json 缺少 key：b（见于 zh-cn.json）", "zh-cn.json 缺少 key：a"]);
   });
 
-  it("对称时无问题", () => {
-    expect(keyParityIssues({ a: "x" }, { a: "y" })).toEqual([]);
+  it("三语对称时无问题", () => {
+    expect(keyParityIssues({ en: { a: "x" }, "zh-cn": { a: "y" }, ja: { a: "z" } })).toEqual([]);
   });
 });
 
@@ -41,10 +41,10 @@ describe("占位符", () => {
     expect([...placeholders("hi {name}, {count}")].sort()).toEqual(["count", "name"]);
   });
 
-  it("两语占位符不一致时报错", () => {
-    const issues = placeholderIssues({ a: "{x}" }, { a: "{y}" });
+  it("占位符与基准语不一致时报错", () => {
+    const issues = placeholderIssues({ en: { a: "{x}" }, "zh-cn": { a: "{y}" } });
     expect(issues).toHaveLength(1);
-    expect(placeholderIssues({ a: "{x}" }, { a: "{x}" })).toEqual([]);
+    expect(placeholderIssues({ en: { a: "{x}" }, ja: { a: "{x}" } })).toEqual([]);
   });
 });
 
@@ -106,6 +106,7 @@ describe("CJK 扫描", () => {
     expect(cjkLineIssues("src/lib/utils/a.test.ts", 'it("中文", () => {})')).toEqual([]);
     expect(cjkLineIssues("src/AGENTS.md", "# 中文")).toEqual([]);
     expect(cjkLineIssues("src/lib/constants/bms.ts", 'const s = "譜面";')).toEqual([]);
+    expect(cjkLineIssues("src/routes/bms/index.ja.md", "# 日本語の内容")).toEqual([]);
   });
 
   it("emoji 不误报，中日韩字符命中", () => {
@@ -120,5 +121,9 @@ describe("enValueIssues", () => {
   it("英文值含中日韩字符时报错", () => {
     expect(enValueIssues({ a: "中文" })).toHaveLength(1);
     expect(enValueIssues({ a: "English 📦" })).toEqual([]);
+  });
+
+  it("语言自称键豁免（各语固定，非漏翻）", () => {
+    expect(enValueIssues({ "topbar.lang_ja": "日本語", "topbar.lang_zh": "简体中文" })).toEqual([]);
   });
 });

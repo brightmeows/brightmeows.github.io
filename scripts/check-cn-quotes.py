@@ -9,6 +9,10 @@
   几乎不可能是语法；ASCII 直引号在代码里是字符串与语法引号，不扫。
   （注释里的 ASCII 直引号无法与语法机械区分，留给人工约定。）
 
+日语豁免：日语正式引号是 U+300C/U+300D，与简中横排的弯引号规范不同，
+故 `messages/ja.json` 与任意 `*.ja.md` 跳过本检查（它们仍受易混淆字符与
+i18n 覆盖门槛约束）。
+
 豁免：行内含 `cn-quotes-ignore` 的行跳过（用于字符映射表、测试断言等
 “引号即数据”的场景），豁免与原因就近可见。
 
@@ -29,7 +33,17 @@ _IGNORE_MARKER = "cn-quotes-ignore"
 _MARKDOWN_SUFFIXES = (".md", ".svx")
 
 
+def is_japanese_content(path: str) -> bool:
+    """日语内容豁免：U+300C/U+300D 是日语正式引号，不属于简中排版规则的管辖范围。"""
+    parts = path.replace("\\", "/").split("/")
+    if parts[-1].endswith(".ja.md"):
+        return True
+    return len(parts) >= 2 and parts[-1] == "ja.json" and parts[-2] == "messages"
+
+
 def check_file(path: str) -> int:
+    if is_japanese_content(path):
+        return 0
     markdown = path.endswith(_MARKDOWN_SUFFIXES)
     bad_quotes = _MD_BAD_QUOTES if markdown else _CODE_BAD_QUOTES
     in_code = False

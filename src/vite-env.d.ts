@@ -14,6 +14,6 @@ interface ImportMeta {
 }
 
 /** 构建期注入的站点语言（见 vite.config.ts define）。 */
-declare const __SITE_LOCALE__: "en" | "zh-cn";
+declare const __SITE_LOCALE__: "en" | "zh-cn" | "ja";
 /** 构建期注入：是否为静态目标产物（隐藏语言切换器）。 */
 declare const __STATIC_TARGET__: boolean;

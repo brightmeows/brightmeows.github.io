@@ -2,6 +2,7 @@
   import { onMount, tick } from "svelte";
 
   import BmsContentEn from "./index.en.md";
+  import BmsContentJa from "./index.ja.md";
   import BmsContentZh from "./index.zh.md";
 
   import MarkdownContent from "$lib/components/content/MarkdownContent.svelte";
@@ -9,8 +10,13 @@
   import PageShell from "$lib/components/layout/PageShell.svelte";
   import type { TocItem } from "$lib/types/ui";
 
-  // 双语双份源文件，按构建 locale 选用（问题25 的双份承载）
-  const BmsContent = __SITE_LOCALE__ === "zh-cn" ? BmsContentZh : BmsContentEn;
+  // 三语源文件，按构建 locale 选用
+  const BmsContent =
+    __SITE_LOCALE__ === "zh-cn"
+      ? BmsContentZh
+      : __SITE_LOCALE__ === "ja"
+        ? BmsContentJa
+        : BmsContentEn;
 
   let tocItems = $state<TocItem[]>([]);
 

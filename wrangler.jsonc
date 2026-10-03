@@ -5,7 +5,7 @@
   "main": "./packages/worker/index.ts",
   "compatibility_date": "2026-09-19",
   "assets": {
-    // 双语构建组装后的主站树：en 根 + `_i18n/zh-cn` 内部前缀（scripts/build-site.ts）；
+    // 多语构建组装后的主站树：en 根 + `_i18n/zh-cn`、`_i18n/ja` 内部前缀（scripts/build-site.ts）；
     // 静态宿主的 build-static/ 不经这里部署
     "directory": "./build",
     "binding": "ASSETS",

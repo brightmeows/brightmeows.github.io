@@ -614,6 +614,10 @@
   "topbar.bio": "Chasing a sense of achievement",
   "topbar.breadcrumb_aria": "Breadcrumb",
   "topbar.go_main_site": "Main site",
+  "topbar.lang_en": "English",
+  "topbar.lang_ja": "日本語",
+  "topbar.lang_zh": "简体中文",
+  "topbar.language": "Language",
   "topbar.login": "Log in",
   "topbar.logout": "Log out",
   "topbar.more": "More",
@@ -624,9 +628,7 @@
   "topbar.remaining": "{count} left today",
   "topbar.static_hint_title": "Static mirror; use the main site for login and related features",
   "topbar.switch_to_dark": "Switch to dark theme",
-  "topbar.switch_to_en": "Switch to English",
   "topbar.switch_to_light": "Switch to light theme",
-  "topbar.switch_to_zh": "Switch to Chinese",
   "userapi.no_request_id": "API did not return a request id",
   "userapi.unknown_state": "Unknown status value"
 }
