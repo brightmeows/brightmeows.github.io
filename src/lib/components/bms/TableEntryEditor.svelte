@@ -72,6 +72,8 @@
   let bulkMode = $state<"append" | "replace">("append");
   let bulkError = $state<string | null>(null);
   let notice = $state<string | null>(null);
+  /** 折叠的分组键（默认全部展开；键与 groupEntryIndices 的组标识一致）。 */
+  let collapsedGroups = $state<Set<string>>(new Set());
 
   const filteredIndices = $derived(filterEntryIndices(entries, { level: levelFilter, query }));
   const groups = $derived(groupEntryIndices(entries, filteredIndices, levels));
@@ -109,6 +111,18 @@
           ? entry.sha256
           : "";
     return shortenHash(hash);
+  }
+
+  function groupKey(level: string, unassigned: boolean): string {
+    return unassigned ? "__unassigned__" : level;
+  }
+
+  function toggleGroupCollapsed(level: string, unassigned: boolean): void {
+    const key = groupKey(level, unassigned);
+    const next = new Set(collapsedGroups);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    collapsedGroups = next;
   }
 
   function toggleSelected(index: number): void {
@@ -376,10 +390,16 @@
         {@const groupLabel = group.unassigned
           ? m["editor.entries_filter_unassigned"]()
           : `${symbol}${group.level}`}
+        {@const groupCollapsed = collapsedGroups.has(groupKey(group.level, group.unassigned))}
         <tbody id={entryGroupAnchorId(group.level, group.unassigned)} class="scroll-mt-5">
           <tr>
             <td colspan="5" class="border-b-2 border-white/10 px-4 py-3">
-              <div class="flex items-center gap-4">
+              <button
+                class="flex cursor-pointer items-center gap-4 border-none bg-transparent p-0 text-left"
+                type="button"
+                aria-expanded={!groupCollapsed}
+                onclick={() => toggleGroupCollapsed(group.level, group.unassigned)}
+              >
                 <span
                   class="shadow-[0_2px_8px rgba(0,0,0,0.2)] rounded-[20px] px-6 py-2 text-[1.2rem] font-bold text-white"
                   style={`background-color:${groupColor};`}
@@ -389,101 +409,110 @@
                 <span class="text-[1.1rem] text-white/80">
                   {m["table.chart_count"]({ count: group.indices.length })}
                 </span>
-              </div>
+                <span
+                  class="text-[0.8rem] text-white/50 transition-transform duration-200 {groupCollapsed
+                    ? ''
+                    : 'rotate-180'}"
+                >
+                  ▼
+                </span>
+              </button>
             </td>
           </tr>
-          {#each group.indices as index (index)}
-            {@const entry = entries[index] ?? {}}
-            <tr
-              class="hover:bg-white/5 last:[&>td]:border-b-0 {editingIndex === index
-                ? 'bg-[#64b5f6]/10'
-                : ''}"
-            >
-              <td class="table-td-glass px-2">
-                <Checkbox
-                  size="sm"
-                  checked={selected.has(index)}
-                  {disabled}
-                  ariaLabel={m["editor.entries_select_row"]()}
-                  onchange={() => toggleSelected(index)}
-                />
-              </td>
-              <td class="table-td-glass whitespace-nowrap">
-                <span
-                  class="inline-block min-w-7.5 rounded-xl px-2 py-1 text-center text-[0.85rem] font-semibold text-white"
-                  style={`background-color:${groupColor};`}
-                >
-                  {groupLabel}
-                </span>
-                {#if isUnassigned(entry) && hintFor(entry) !== null}
-                  <div class="mt-1 text-[0.75rem] text-white/40">
-                    {m["editor.entry_level_hint"]({ level: hintFor(entry) ?? "" })}
+          {#if !groupCollapsed}
+            {#each group.indices as index (index)}
+              {@const entry = entries[index] ?? {}}
+              <tr
+                class="hover:bg-white/5 last:[&>td]:border-b-0 {editingIndex === index
+                  ? 'bg-[#64b5f6]/10'
+                  : ''}"
+              >
+                <td class="table-td-glass px-2">
+                  <Checkbox
+                    size="sm"
+                    checked={selected.has(index)}
+                    {disabled}
+                    ariaLabel={m["editor.entries_select_row"]()}
+                    onchange={() => toggleSelected(index)}
+                  />
+                </td>
+                <td class="table-td-glass whitespace-nowrap">
+                  <span
+                    class="inline-block min-w-7.5 rounded-xl px-2 py-1 text-center text-[0.85rem] font-semibold text-white"
+                    style={`background-color:${groupColor};`}
+                  >
+                    {groupLabel}
+                  </span>
+                  {#if isUnassigned(entry) && hintFor(entry) !== null}
+                    <div class="mt-1 text-[0.75rem] text-white/40">
+                      {m["editor.entry_level_hint"]({ level: hintFor(entry) ?? "" })}
+                    </div>
+                  {/if}
+                </td>
+                <td class="table-td-glass min-w-50 wrap-break-word">
+                  <div class="text-white/90">
+                    {entryLabel(entry) || m["editor.entry_unnamed"]()}
                   </div>
-                {/if}
-              </td>
-              <td class="table-td-glass min-w-50 wrap-break-word">
-                <div class="text-white/90">
-                  {entryLabel(entry) || m["editor.entry_unnamed"]()}
-                </div>
-                {#if typeof entry.artist === "string" && entry.artist !== ""}
-                  <div class="text-[0.8rem] text-white/50">{entry.artist}</div>
-                {/if}
-              </td>
-              <td class="table-td-glass font-mono text-[0.8rem] wrap-break-word text-white/55">
-                {shortHash(entry)}
-              </td>
-              <td class="table-td-glass px-2">
-                <div class="flex items-center justify-center gap-1">
-                  <button
-                    class={btnIconPlain}
-                    type="button"
-                    {disabled}
-                    title={m["editor.entry_edit"]()}
-                    aria-label={m["editor.entry_edit"]()}
-                    onclick={() => startEdit(index)}
-                  >
-                    <svg
-                      class="size-4"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      aria-hidden="true"
+                  {#if typeof entry.artist === "string" && entry.artist !== ""}
+                    <div class="text-[0.8rem] text-white/50">{entry.artist}</div>
+                  {/if}
+                </td>
+                <td class="table-td-glass font-mono text-[0.8rem] wrap-break-word text-white/55">
+                  {shortHash(entry)}
+                </td>
+                <td class="table-td-glass px-2">
+                  <div class="flex items-center justify-center gap-1">
+                    <button
+                      class={btnIconPlain}
+                      type="button"
+                      {disabled}
+                      title={m["editor.entry_edit"]()}
+                      aria-label={m["editor.entry_edit"]()}
+                      onclick={() => startEdit(index)}
                     >
-                      <path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-                    </svg>
-                  </button>
-                  <button
-                    class={btnIconDanger}
-                    type="button"
-                    {disabled}
-                    title={m["editor.entry_delete"]()}
-                    aria-label={m["editor.entry_delete"]()}
-                    onclick={() => removeEntry(index)}
-                  >
-                    <svg
-                      class="size-4"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      aria-hidden="true"
+                      <svg
+                        class="size-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                      </svg>
+                    </button>
+                    <button
+                      class={btnIconDanger}
+                      type="button"
+                      {disabled}
+                      title={m["editor.entry_delete"]()}
+                      aria-label={m["editor.entry_delete"]()}
+                      onclick={() => removeEntry(index)}
                     >
-                      <path d="M3 6h18" />
-                      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                      <path d="M10 11v6" />
-                      <path d="M14 11v6" />
-                    </svg>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          {/each}
+                      <svg
+                        class="size-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        aria-hidden="true"
+                      >
+                        <path d="M3 6h18" />
+                        <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                        <path d="M10 11v6" />
+                        <path d="M14 11v6" />
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            {/each}
+          {/if}
         </tbody>
       {/each}
       {#if groups.length === 0}
