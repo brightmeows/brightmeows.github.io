@@ -356,6 +356,14 @@ export function filterEntryIndices(
   return result;
 }
 
+/**
+ * 条目分组的滚动锚点 id：目录子项与表格组头共用（等级值经百分号编码隔离特殊字符，
+ * 未指派组用固定 id）。
+ */
+export function entryGroupAnchorId(level: string, unassigned: boolean): string {
+  return unassigned ? "entry-group-unassigned" : `entry-group-${encodeURIComponent(level)}`;
+}
+
 /** 条目等级分组：组的等级值，或未指派组的标记与全部下标。 */
 export interface EntryLevelGroup {
   /** 分组等级值；未指派组为空串。 */

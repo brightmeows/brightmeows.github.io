@@ -1,5 +1,18 @@
 import type { ChartData, DifficultyGroup } from "$lib/types/bms-format";
 
+/**
+ * 难度分组的分段配色：查看器的等级跳转胶囊与编辑器的分组表头共用一套颜色，
+ * 同一分组的色值在两态保持一致。
+ */
+export function levelSegmentColor(index: number, total: number): string {
+  const palette = ["#4caf50", "#2196f3", "#ff9800", "#f44336", "#ce50d8", "#9c27b0"] as const;
+  if (total <= 0) return palette[1];
+  const bins = palette.length;
+  const size = Math.ceil(total / bins);
+  const ci = Math.min(bins - 1, Math.max(0, Math.floor(index / size)));
+  return palette[ci] ?? palette[0];
+}
+
 /** 外部 BMS 网站链接集合 */
 export interface BmsLinks {
   bmsScoreViewer: string;
