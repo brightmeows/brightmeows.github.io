@@ -44,7 +44,6 @@ import {
 } from "./i18n.ts";
 import { handleInternal } from "./internal.ts";
 import { MANIFEST_MAX_AGE, loadMergedManifest } from "./manifest.ts";
-import { parseMirrorTablePath } from "./mirror-path.ts";
 import { ensureSchemaOnce } from "./schema.ts";
 import { getSharedAlias, getSharedRow, listSharedRows, sharedRowToItem } from "./store-shared.ts";
 
@@ -69,7 +68,7 @@ function decodePath(pathname: string): string | null {
 
 /**
  * 单表页：校验表存在后，把该表的 bmstable meta 注入站点 SPA 外壳。
- * `edit` 为 true 时（`/edit/` 路径）只发外壳：编辑地址不是导入地址，不注入 meta。
+ * 查看与编辑是同一条 URL（编辑态是客户端的 ?edit=1），因此只有一种外壳。
  */
 async function handleTablePage(
   request: Request,
@@ -77,8 +76,7 @@ async function handleTablePage(
   ctx: ExecutionContext,
   url: URL,
   tableId: string,
-  locale: Locale,
-  edit = false
+  locale: Locale
 ): Promise<Response> {
   const manifest = await loadMergedManifest(env, ctx);
   if (manifest === null) {
@@ -96,8 +94,8 @@ async function handleTablePage(
 
   const shellRes = await env.ASSETS.fetch(new URL(shellPath(locale), url.origin));
   const shell = await shellRes.text();
-  // 与构建期脚本共用同一段注入逻辑，保证两种输出逐字节等价；编辑路径只发外壳
-  const page = edit ? shell : injectBmstableMeta(shell, r2TableHeaderUrl(env.R2_BASE, tableId));
+  // 与构建期脚本共用同一段注入逻辑，保证两种输出逐字节等价
+  const page = injectBmstableMeta(shell, r2TableHeaderUrl(env.R2_BASE, tableId));
 
   return new Response(page, {
     status: 200,
@@ -191,15 +189,14 @@ async function loadShell(env: Env, url: URL, locale: Locale): Promise<string> {
 /**
  * 共享表单表页：现役表注入 bmstable meta（指向 R2 的 header.json）；
  * 已改 id 的旧地址走别名 301（别名指向最新 id，单跳）；两者皆无回落 404。
- * `injectMeta` 为 false 时只发外壳（编辑页），供客户端路由渲染。
+ * 查看与编辑是同一条 URL（编辑态是客户端的 ?edit=1），因此只有一种外壳。
  */
 async function handleSharedPage(
   request: Request,
   env: Env,
   url: URL,
   id: string,
-  locale: Locale,
-  injectMeta: boolean
+  locale: Locale
 ): Promise<Response> {
   try {
     const row = await getSharedRow(env, id);
@@ -217,7 +214,7 @@ async function handleSharedPage(
       return env.ASSETS.fetch(request);
     }
     const shell = await loadShell(env, url, locale);
-    const page = injectMeta ? injectBmstableMeta(shell, r2SharedHeaderUrl(env.R2_BASE, id)) : shell;
+    const page = injectBmstableMeta(shell, r2SharedHeaderUrl(env.R2_BASE, id));
     return new Response(page, {
       status: 200,
       headers: {
@@ -302,28 +299,24 @@ export default {
 
     const withSlash = /^\/bms\/table\/mirror\/(.+)\/$/.exec(path);
     if (withSlash?.[1]) {
-      const parsed = parseMirrorTablePath(withSlash[1]);
-      return handleTablePage(request, env, ctx, url, parsed.tableId, locale, parsed.edit);
+      // 旧 /edit/ 地址会作为不存在的表名落到 404（清单里不存在该目录）
+      return handleTablePage(request, env, ctx, url, withSlash[1], locale);
     }
 
-    // 与站点全局 trailingSlash="always" 对齐：无尾斜杠补成带尾斜杠
-    // （表名补 /、表名/edit 补 /edit/；必须在带斜杠分支之后调用，见 canonical-slash.ts）
+    // 与站点全局 trailingSlash="always" 对齐：无尾斜杠的表名补成带尾斜杠
+    // （必须在带斜杠分支之后调用，见 canonical-slash.ts）
     const mirrorSlash = canonicalSlashRedirect(MIRROR_ROOT, path, url.origin);
     if (mirrorSlash !== null) return mirrorSlash;
 
-    // 共享表：清单、编辑页外壳、查看页（含别名 301）与尾斜杠重定向；
+    // 共享表：清单、查看页（含别名 301）与尾斜杠重定向；
     // `new/` 是构建期预渲染页，直接交静态资源（不走外壳注入）
     if (path === `${SHARED_ROOT}tables.json`) {
       return handleSharedTablesJson(env, url, locale);
     }
-    const sharedEdit = /^\/bms\/table\/shared\/([^/]+)\/edit\/$/.exec(path);
-    if (sharedEdit?.[1] !== undefined) {
-      return handleSharedPage(request, env, url, sharedEdit[1], locale, false);
-    }
     const sharedView = /^\/bms\/table\/shared\/([^/]+)\/$/.exec(path);
     if (sharedView?.[1] !== undefined && sharedView[1] !== "new") {
       // `new/` 是预渲染页，不在此分支：让它落入下方的静态树分发（带语言映射）
-      return handleSharedPage(request, env, url, sharedView[1], locale, true);
+      return handleSharedPage(request, env, url, sharedView[1], locale);
     }
     const sharedSlash = canonicalSlashRedirect(SHARED_ROOT, path, url.origin);
     if (sharedSlash !== null) return sharedSlash;

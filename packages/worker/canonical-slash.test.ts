@@ -10,7 +10,7 @@ function locationOf(path: string): string | null {
   return res === null ? null : res.headers.get("location");
 }
 
-/** 无斜杠 301 归一的行为锁定：每个用例对应改造前四条正则分支的一条形态。 */
+/** 无斜杠 301 归一的行为锁定：只处理单段表名，多段路径一律交静态树。 */
 
 describe("canonicalSlashRedirect", () => {
   it("单段表名补尾斜杠", () => {
@@ -19,23 +19,15 @@ describe("canonicalSlashRedirect", () => {
     );
   });
 
-  it("表名/edit 补 edit 尾斜杠", () => {
-    expect(locationOf("/bms/table/mirror/abc/edit")).toBe(`${ORIGIN}/bms/table/mirror/abc/edit/`);
-  });
-
   it("带斜杠形态与根路径返回 null（交静态树）", () => {
     expect(locationOf("/bms/table/mirror/abc/")).toBeNull();
-    expect(locationOf("/bms/table/mirror/abc/edit/")).toBeNull();
     expect(locationOf("/bms/table/mirror/")).toBeNull();
   });
 
-  it("多段非 edit 形态返回 null（与原单段正则一致，不误伤静态路径）", () => {
+  it("多段路径返回 null：静态资源与旧 /edit/ 地址都不归此管", () => {
     expect(locationOf("/bms/table/mirror/a/b")).toBeNull();
+    expect(locationOf("/bms/table/mirror/a/edit")).toBeNull();
     expect(locationOf("/bms/table/mirror/a/edit/b")).toBeNull();
-  });
-
-  it("多段 edit 形态取第一段为表名", () => {
-    // 原正则 ^([^/]+)/edit$ 的等价形态：只有“单段/edit”命中
     expect(locationOf("/bms/table/mirror/a/b/edit")).toBeNull();
   });
 
