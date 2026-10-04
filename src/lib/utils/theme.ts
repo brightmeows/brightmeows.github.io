@@ -7,8 +7,14 @@
  * `src/lib/data/theme-store.svelte.ts`。
  */
 
-/** 主题名。 */
+/** 生效主题名（`<html data-theme>` 取值）。 */
 export type ThemeName = "light" | "dark";
+
+/**
+ * 用户主题偏好。`system` 刻意不写入存储：选跟随系统即清除 `theme` 键，
+ * 无存储值等同跟随系统（存储值域仍是 light/dark，首屏脚本零改动）。
+ */
+export type ThemePreference = ThemeName | "system";
 
 /** localStorage 中保存主题偏好的键名（app.html 内联脚本按同一约定读取）。 */
 export const THEME_STORAGE_KEY = "theme";

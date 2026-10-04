@@ -627,8 +627,10 @@
   "topbar.profile_card_aria": "プロフィールカード",
   "topbar.remaining": "本日あと {count} 回",
   "topbar.static_hint_title": "現在は静的ミラーです。ログインなどの機能はメインサイトをご利用ください",
-  "topbar.switch_to_dark": "ダークテーマに切り替え",
-  "topbar.switch_to_light": "ライトテーマに切り替え",
+  "topbar.theme": "テーマ",
+  "topbar.theme_dark": "ダークテーマ",
+  "topbar.theme_light": "ライトテーマ",
+  "topbar.theme_system": "システムに従う",
   "userapi.no_request_id": "API がリクエスト id を返しませんでした",
   "userapi.unknown_state": "状態の値が不明です"
 }
