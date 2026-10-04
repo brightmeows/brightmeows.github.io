@@ -2,6 +2,7 @@
   import { onMount, type Snippet } from "svelte";
 
   import { page } from "$app/state";
+  import LiquidGlassDefs from "$lib/components/ui/LiquidGlassDefs.svelte";
   import { LEGACY_ORIGIN_REDIRECTS, SITE_ORIGIN } from "$lib/constants/site";
   import { theme } from "$lib/data/theme-store.svelte";
   import { m } from "$lib/paraglide/messages.js";
@@ -38,5 +39,7 @@
   <title>{page.data.title ?? m["site.name"]()}</title>
   <link rel="canonical" href={`${SITE_ORIGIN}${page.url.pathname}`} />
 </svelte:head>
+
+<LiquidGlassDefs />
 
 {@render children()}

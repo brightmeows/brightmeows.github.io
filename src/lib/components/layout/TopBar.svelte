@@ -143,8 +143,13 @@
   class="fixed inset-x-0 top-3 z-1000 px-3"
   style="transform: translateY({isVisible ? '0' : '-150%'}); transition: transform 150ms ease-out"
 >
-  <GlassPanel class="rounded-2xl px-4 py-2" padding="none" rounded="none" overflow={false}>
-    <div class="flex items-center gap-2">
+  <div class="relative rounded-2xl px-4 py-2">
+    <!-- 折射玻璃表面层：滤镜只作用于该层，下方内容层保持清晰，弹层不受扭曲 -->
+    <div
+      class="lg-refract-bar glass-base absolute inset-0 rounded-2xl bg-glass glass-shadow-sm"
+      aria-hidden="true"
+    ></div>
+    <div class="relative flex items-center gap-2">
       <!-- 左区：站长头像（点击展开个人信息卡） -->
       <div class="relative shrink-0">
         <button
@@ -456,5 +461,5 @@
         {/if}
       </div>
     </div>
-  </GlassPanel>
+  </div>
 </div>

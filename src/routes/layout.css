@@ -225,6 +225,23 @@
   --glass-shadow-drop: var(--glass-shadow-hover);
 }
 
+/* ===== 液态玻璃折射（hero 元素）=====
+   .lg-refract-* 只作用于独立折射表面层（绝对定位 div），滤镜只扭曲该层，
+   内容层保持清晰。位移图由 ImageMagick 生成（R 通道左白右黑、G 通道上白
+   下黑，边缘位移向中心收敛），重生成：
+     magick -size 64x256 gradient:white-black -rotate -90 +repage r.png
+     magick -size 256x64 gradient:white-black g.png
+     magick -size 256x64 xc:black b.png && magick -size 256x64 xc:white a.png
+     magick r.png g.png b.png a.png -combine map.png && base64 -w0 map.png
+   base64 在 $lib/constants/liquid-glass.ts。 */
+.lg-refract-bar {
+  filter: url(#lg-refract-bar);
+}
+
+.lg-refract-circle {
+  filter: url(#lg-refract-circle);
+}
+
 @layer components {
   /* ===== 加载状态容器 ===== */
   .glass-loading-container {
