@@ -627,8 +627,10 @@
   "topbar.profile_card_aria": "Profile card",
   "topbar.remaining": "{count} left today",
   "topbar.static_hint_title": "Static mirror; use the main site for login and related features",
-  "topbar.switch_to_dark": "Switch to dark theme",
-  "topbar.switch_to_light": "Switch to light theme",
+  "topbar.theme": "Theme",
+  "topbar.theme_dark": "Dark theme",
+  "topbar.theme_light": "Light theme",
+  "topbar.theme_system": "Follow system",
   "userapi.no_request_id": "API did not return a request id",
   "userapi.unknown_state": "Unknown status value"
 }

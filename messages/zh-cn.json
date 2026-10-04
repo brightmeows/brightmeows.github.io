@@ -627,8 +627,10 @@
   "topbar.profile_card_aria": "个人信息卡",
   "topbar.remaining": "今日剩余 {count} 次",
   "topbar.static_hint_title": "当前为静态镜像，登录与相关功能请前往主站",
-  "topbar.switch_to_dark": "切换到深色主题",
-  "topbar.switch_to_light": "切换到浅色主题",
+  "topbar.theme": "主题",
+  "topbar.theme_dark": "深色主题",
+  "topbar.theme_light": "浅色主题",
+  "topbar.theme_system": "跟随系统",
   "userapi.no_request_id": "接口未返回请求 id",
   "userapi.unknown_state": "状态取值未知"
 }
