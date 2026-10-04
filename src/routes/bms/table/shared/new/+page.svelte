@@ -163,7 +163,7 @@
           {/if}
         </div>
 
-        <div class="rounded-lg border border-white/15 bg-black/20 p-3">
+        <div class="rounded-lg glass-edge bg-glass-deep p-3">
           <div class="text-[0.85rem] text-white/50">{m["shared.id_preview_label"]()}</div>
           <div class="mt-1 flex flex-wrap items-center gap-2">
             <code class="font-mono text-[0.95rem] break-all text-[#64b5f6]">{preview}</code>

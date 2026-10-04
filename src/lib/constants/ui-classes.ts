@@ -20,19 +20,19 @@ export const btnPrimaryLink =
 
 /** 迷你幽灵按钮。 */
 export const btnGhostXs =
-  "cursor-pointer rounded-md border border-white/20 bg-white/10 px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-white/80 transition-all duration-200 ease-in-out hover:bg-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
+  "glass-edge cursor-pointer rounded-md bg-glass px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-white/80 transition-all duration-200 ease-in-out hover:bg-glass-hover hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
 /** 小幽灵按钮。 */
 export const btnGhostSm =
-  "cursor-pointer rounded-md border border-white/20 bg-white/10 px-2.5 py-1 text-[0.85rem] whitespace-nowrap text-white/80 transition-all duration-200 ease-in-out hover:bg-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
+  "glass-edge cursor-pointer rounded-md bg-glass px-2.5 py-1 text-[0.85rem] whitespace-nowrap text-white/80 transition-all duration-200 ease-in-out hover:bg-glass-hover hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
 /** 标准幽灵按钮。 */
 export const btnGhost =
-  "cursor-pointer rounded-md border border-white/20 bg-white/10 px-3 py-1.5 text-[0.85rem] whitespace-nowrap text-white/80 transition-all duration-200 ease-in-out hover:bg-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
+  "glass-edge cursor-pointer rounded-md bg-glass px-3 py-1.5 text-[0.85rem] whitespace-nowrap text-white/80 transition-all duration-200 ease-in-out hover:bg-glass-hover hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
 /** 标准幽灵按钮（大一号文字）。 */
 export const btnGhostMd =
-  "cursor-pointer rounded-md border border-white/20 bg-white/10 px-3 py-1.5 text-[0.9rem] whitespace-nowrap text-white/80 transition-all duration-200 ease-in-out hover:bg-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
+  "glass-edge cursor-pointer rounded-md bg-glass px-3 py-1.5 text-[0.9rem] whitespace-nowrap text-white/80 transition-all duration-200 ease-in-out hover:bg-glass-hover hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
 /** 顶栏幽灵按钮（文字略亮）。 */
 export const btnBar =
-  "cursor-pointer rounded-md border border-white/20 bg-white/10 px-3 py-1.5 text-[0.9rem] whitespace-nowrap text-white/85 transition-all duration-200 ease-in-out hover:bg-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
+  "glass-edge cursor-pointer rounded-md bg-glass px-3 py-1.5 text-[0.9rem] whitespace-nowrap text-white/85 transition-all duration-200 ease-in-out hover:bg-glass-hover hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
 /** 危险操作按钮（红调）。 */
 export const btnDanger =
   "cursor-pointer rounded-md border border-red-300/30 bg-red-400/10 px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-red-200 transition-colors duration-200 hover:bg-red-400/20 disabled:cursor-not-allowed disabled:opacity-50";
@@ -53,16 +53,16 @@ export const btnIconDanger =
 
 /** 编辑器等宽输入框。 */
 export const inputEditorMono =
-  "w-full rounded-lg border border-white/20 bg-black/20 px-3 py-2 font-mono text-[0.85rem] text-white outline-none placeholder:text-white/40 focus:border-[#64b5f6]/60 focus:ring-1 focus:ring-[#64b5f6]/30 disabled:opacity-60";
+  "glass-edge w-full rounded-lg bg-glass-deep px-3 py-2 font-mono text-[0.85rem] text-white outline-none placeholder:text-white/40 focus:border-[#64b5f6]/60 focus:ring-1 focus:ring-[#64b5f6]/30 disabled:opacity-60";
 /** 编辑器标准输入框。 */
 export const inputEditorBase =
-  "w-full rounded-lg border border-white/20 bg-black/20 px-3 py-2 text-[0.9rem] text-white outline-none placeholder:text-white/40 focus:border-[#64b5f6]/60 focus:ring-1 focus:ring-[#64b5f6]/30 disabled:opacity-60";
+  "glass-edge w-full rounded-lg bg-glass-deep px-3 py-2 text-[0.9rem] text-white outline-none placeholder:text-white/40 focus:border-[#64b5f6]/60 focus:ring-1 focus:ring-[#64b5f6]/30 disabled:opacity-60";
 /** 编辑器大号输入框。 */
 export const inputEditorLg =
-  "w-full rounded-lg border border-white/20 bg-black/20 px-3 py-2 text-[0.95rem] text-white outline-none placeholder:text-white/40 focus:border-[#64b5f6]/60 focus:ring-1 focus:ring-[#64b5f6]/30 disabled:opacity-60";
+  "glass-edge w-full rounded-lg bg-glass-deep px-3 py-2 text-[0.95rem] text-white outline-none placeholder:text-white/40 focus:border-[#64b5f6]/60 focus:ring-1 focus:ring-[#64b5f6]/30 disabled:opacity-60";
 /** 行内小输入框（无 ring）。 */
 export const inputInline =
-  "rounded-lg border border-white/20 bg-black/20 px-2 py-1.5 text-[0.9rem] text-white outline-none placeholder:text-white/40 focus:border-[#64b5f6]/60";
+  "glass-edge rounded-lg bg-glass-deep px-2 py-1.5 text-[0.9rem] text-white outline-none placeholder:text-white/40 focus:border-[#64b5f6]/60";
 /** 面板输入框（大圆角）。 */
 export const inputPanel =
-  "w-full rounded-xl border border-white/20 bg-black/20 px-4 py-2.5 text-white outline-none placeholder:text-white/50 focus:border-[#64b5f6]/60 focus:ring-2 focus:ring-[#64b5f6]/30";
+  "glass-edge w-full rounded-xl bg-glass-deep px-4 py-2.5 text-white outline-none placeholder:text-white/50 focus:border-[#64b5f6]/60 focus:ring-2 focus:ring-[#64b5f6]/30";

@@ -151,7 +151,7 @@
   </div>
 
   {#snippet courseCard(course: EditableCourse, groupIndex: number, courseIndex: number)}
-    <div class="rounded-lg border border-white/15 bg-black/20 p-3">
+    <div class="rounded-lg glass-edge bg-glass-deep p-3">
       <div class="flex flex-wrap items-center gap-2">
         <span class="text-[0.8rem] text-white/45">
           {m["editor.course_group_course"]({ group: groupIndex + 1, index: courseIndex + 1 })}

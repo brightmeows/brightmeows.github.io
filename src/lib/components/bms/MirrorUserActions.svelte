@@ -196,7 +196,7 @@
           }}
         >
           <input
-            class="min-w-60 flex-1 rounded-xl border border-white/20 bg-black/20 px-3 py-2 text-white outline-none placeholder:text-white/50 focus:border-[#64b5f6]/60 focus:ring-2 focus:ring-[#64b5f6]/30"
+            class="min-w-60 flex-1 rounded-xl glass-edge bg-glass-deep px-3 py-2 text-white outline-none placeholder:text-white/50 focus:border-[#64b5f6]/60 focus:ring-2 focus:ring-[#64b5f6]/30"
             type="url"
             bind:value={url}
             placeholder={m["mirror.add_url_placeholder"]()}
@@ -237,7 +237,7 @@
         {/if}
 
         {#if showRemoved}
-          <div class="rounded-lg border border-white/15 bg-black/20 p-3">
+          <div class="rounded-lg glass-edge bg-glass-deep p-3">
             {#if removed.length === 0}
               <div class="text-[0.9rem] text-white/60">{m["mirror.no_removed"]()}</div>
             {:else}

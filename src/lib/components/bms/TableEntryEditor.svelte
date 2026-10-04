@@ -327,7 +327,7 @@
   {/if}
 
   {#if bulkOpen}
-    <div class="mb-4 rounded-lg border border-white/15 bg-black/20 p-3">
+    <div class="mb-4 rounded-lg glass-edge bg-glass-deep p-3">
       <p class="mb-2 text-[0.85rem] text-white/60">{m["editor.bulk_paste_hint"]()}</p>
       <textarea class="{inputEditorMono} min-h-32" bind:value={bulkText} placeholder="[…]"
       ></textarea>

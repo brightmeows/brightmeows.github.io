@@ -209,7 +209,7 @@
 {#if open}
   <div
     bind:this={popoverEl}
-    class="popover-glass w-[min(44rem,calc(100vw-2rem))]"
+    class="glass-base fixed z-2000 w-[min(44rem,calc(100vw-2rem))] overflow-hidden rounded-xl bg-glass glass-shadow-md"
     style={popoverStyle}
     in:fly={{ y: 10, opacity: 0, duration: 160, easing: cubicOut }}
     out:fade={{ duration: 120 }}

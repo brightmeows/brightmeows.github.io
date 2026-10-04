@@ -49,9 +49,9 @@
 
 <div
   {id}
-  class="glass-base glass-shadow-sm border border-white/20 bg-glass {paddingConfig[
-    padding
-  ]} {roundedConfig[rounded]} {className}"
+  class="glass-base bg-glass glass-shadow-sm {paddingConfig[padding]} {roundedConfig[
+    rounded
+  ]} {className}"
   class:overflow-hidden={overflow}
   style={styleToString(style)}
 >

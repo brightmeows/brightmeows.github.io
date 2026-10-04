@@ -105,7 +105,7 @@
         </div>
       {/if}
       {#if open}
-        <div class="rounded-lg border border-white/15 bg-black/20 p-3">
+        <div class="rounded-lg glass-edge bg-glass-deep p-3">
           {#if entries.length === 0}
             <div class="text-[0.9rem] text-white/60">{m["shared.no_trash"]()}</div>
           {:else}

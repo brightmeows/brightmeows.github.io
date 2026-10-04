@@ -10,7 +10,7 @@
 </script>
 
 <a
-  class="block rounded-glass-md border border-white/10 bg-black/20 p-6 text-white no-underline transition-[transform,background] duration-300 ease-out hover:-translate-y-0.5 hover:bg-white/[0.06]"
+  class="block rounded-glass-md glass-edge bg-glass-deep p-6 text-white no-underline transition-[transform,background] duration-300 ease-out hover:-translate-y-0.5 hover:bg-glass-hover"
   href={resolve(post.url, {})}
 >
   <div class="mb-1 flex flex-wrap items-baseline justify-between gap-3">

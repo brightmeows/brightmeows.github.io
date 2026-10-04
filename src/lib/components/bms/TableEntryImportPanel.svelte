@@ -205,7 +205,7 @@
   }
 </script>
 
-<details class="rounded-lg border border-white/15 bg-black/20 p-3">
+<details class="rounded-lg glass-edge bg-glass-deep p-3">
   <summary class="cursor-pointer text-[0.9rem] text-white/70">
     {m["editor.entry_import_section"]()}
   </summary>

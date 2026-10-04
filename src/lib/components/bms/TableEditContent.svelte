@@ -148,9 +148,7 @@
       {m["editor.bridge_hint"]()}
     </div>
   {:else if localOnly}
-    <div
-      class="rounded-lg border border-white/15 bg-black/20 px-3 py-2 text-[0.9rem] text-white/65"
-    >
+    <div class="rounded-lg glass-edge bg-glass-deep px-3 py-2 text-[0.9rem] text-white/65">
       {m["editor.shared_local_hint"]()}
     </div>
   {/if}

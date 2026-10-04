@@ -250,7 +250,7 @@
       {#if canRename || canDelete}
         <div class="flex flex-col gap-4">
           {#if canRename}
-            <div class="rounded-lg border border-white/15 bg-black/20 p-3">
+            <div class="rounded-lg glass-edge bg-glass-deep p-3">
               <div class="mb-2 text-[0.9rem] text-white/70">{m["shared.rename_section"]()}</div>
               <div class="flex flex-wrap gap-2">
                 <input

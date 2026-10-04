@@ -49,17 +49,13 @@
   };
 
   const variantClass = $derived(
-    variant === "default"
-      ? "bg-glass border border-white/10"
-      : variant === "light"
-        ? "bg-glass-light border border-white/15"
-        : "bg-black/20 border border-white/5"
+    variant === "default" ? "bg-glass" : variant === "light" ? "bg-glass-light" : "bg-glass-deep"
   );
 </script>
 
 <div
   {id}
-  class="glass-base glass-shadow-md block {variantClass} {paddingConfig[padding]} {roundedConfig[
+  class="glass-base block glass-shadow-md {variantClass} {paddingConfig[padding]} {roundedConfig[
     rounded
   ]} {className}"
   class:animate-fadeIn={animate}

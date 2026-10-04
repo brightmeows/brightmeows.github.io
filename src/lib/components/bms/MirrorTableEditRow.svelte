@@ -92,7 +92,7 @@
 
 <tr class="bg-black/30 last:[&>td]:border-b-0">
   <td colspan={colCount} class="table-td-glass">
-    <div class="flex flex-col gap-4 rounded-lg border border-white/10 bg-black/20 p-4">
+    <div class="flex flex-col gap-4 rounded-lg glass-edge bg-glass-deep p-4">
       <div class="flex justify-end">
         <button class={btnGhostXs} type="button" onclick={oncollapse}>
           {m["mirror.collapse_edit"]()}

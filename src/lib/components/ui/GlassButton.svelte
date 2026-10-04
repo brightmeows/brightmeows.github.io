@@ -52,7 +52,7 @@
   };
 
   const sharedClasses =
-    "glass-base inline-block rounded-xl font-medium text-white no-underline bg-white/10 border border-white/20 hover:bg-white/20 hover:shadow-[0_5px_15px_rgba(0,0,0,0.2)]";
+    "glass-base glass-shadow-sm inline-block rounded-xl font-medium text-white no-underline bg-glass hover:bg-glass-hover hover:glass-shadow-hover";
 </script>
 
 {#if href && !disabled}

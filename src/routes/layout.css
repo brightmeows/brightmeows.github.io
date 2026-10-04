@@ -62,10 +62,12 @@
   --color-cyan-hover-from: #4dd0e1;
   --color-cyan-hover-to: #00bcd4;
 
-  /* 玻璃面板底色体系（单一来源：bg-glass / bg-glass-light / bg-glass-hover） */
-  --color-glass: rgb(255 255 255 / 0.07);
-  --color-glass-light: rgb(255 255 255 / 0.12);
-  --color-glass-hover: rgb(255 255 255 / 0.05);
+  /* 玻璃底色体系（单一来源：bg-glass / bg-glass-light / bg-glass-deep / bg-glass-hover；
+     默认值为星空主题，近黑主题由 :root[data-theme="dark"] 块覆盖） */
+  --color-glass: rgb(148 190 255 / 0.08);
+  --color-glass-light: rgb(148 190 255 / 0.14);
+  --color-glass-deep: rgb(8 10 28 / 0.45);
+  --color-glass-hover: rgb(148 190 255 / 0.18);
 
   /* 玻璃圆角体系 */
   --radius-glass-sm: 10px;
@@ -101,16 +103,47 @@
 }
 
 /* ===== 主题变量（浅色端与深色端）=====
-   两套主题只改页面背景与星空渐变：玻璃、文字、强调色与代码块配色两套共用。
+   两套主题改变：页面背景、星空渐变、玻璃底色与光学参数（星空端玻璃偏冷调，
+   近黑端整体压暗）；文字、强调色与代码块配色两套共用。
    这组规则刻意不放进 @layer：@theme 生成的变量在 theme 层，而层内规则
    无论优先级都压不过未分层规则，放进 layer 会被主题默认值盖掉。 */
 :root {
   --gradient-sky: linear-gradient(180deg, #0f0c29, #302b63 50%, var(--color-background));
+
+  /* 液态玻璃光学参数（星空主题）：冷调，边缘与光晕较强 */
+  --glass-edge-x: rgb(0 0 0 / 0.45);
+  --glass-edge-y: rgb(255 255 255 / 0.3);
+  --glass-glow-top: rgb(255 255 255 / 0.16);
+  --glass-glow-bottom: rgb(255 255 255 / 0.06);
+  --glass-sheen-top: rgb(255 255 255 / 0.05);
+  --glass-sheen-bottom: rgb(255 255 255 / 0.02);
+  --glass-blur: 14px;
+  --glass-saturate: 1.3;
+  --glass-shadow-sm: 0 4px 24px rgb(0 0 0 / 0.25);
+  --glass-shadow-md: 0 8px 32px rgb(0 0 0 / 0.35);
+  --glass-shadow-hover: 0 10px 32px rgb(0 0 0 / 0.4);
 }
 
 :root[data-theme="dark"] {
   --color-background: #0a0a14;
   --gradient-sky: linear-gradient(180deg, #05050d, #0d0d1c 50%, #0a0a14);
+
+  /* 近黑主题：玻璃底色与光学参数整体压暗（边缘更深、光晕更弱、磨砂更薄） */
+  --color-glass: rgb(255 255 255 / 0.04);
+  --color-glass-light: rgb(255 255 255 / 0.07);
+  --color-glass-deep: rgb(0 0 0 / 0.5);
+  --color-glass-hover: rgb(255 255 255 / 0.1);
+  --glass-edge-x: rgb(0 0 0 / 0.65);
+  --glass-edge-y: rgb(255 255 255 / 0.18);
+  --glass-glow-top: rgb(255 255 255 / 0.09);
+  --glass-glow-bottom: rgb(255 255 255 / 0.035);
+  --glass-sheen-top: rgb(255 255 255 / 0.03);
+  --glass-sheen-bottom: rgb(255 255 255 / 0.012);
+  --glass-blur: 12px;
+  --glass-saturate: 1.15;
+  --glass-shadow-sm: 0 4px 24px rgb(0 0 0 / 0.45);
+  --glass-shadow-md: 0 8px 32px rgb(0 0 0 / 0.55);
+  --glass-shadow-hover: 0 10px 32px rgb(0 0 0 / 0.6);
 }
 
 /* 星空画布底色：星星与流星的亮度由组件按主题另行调暗 */
@@ -133,28 +166,69 @@
   animation: fadeIn 0.6s ease-out forwards;
 }
 
+/* ===== 液态玻璃（Liquid Aqua）基础工具类 =====
+   玻璃表面 = 磨砂 + 左右深边缘 + 上下浅边缘 + 上下光晕；参数全部来自上方
+   主题块的逐主题变量。glass-base 用于玻璃表面（面板、弹层、表格外框），
+   glass-edge 用于只需边缘的小控件（按钮、输入框），投影是可切换参数
+   （glass-shadow-sm/md/hover，默认 md 档）。 */
+@utility glass-base {
+  --glass-shadow-drop: var(--glass-shadow-md);
+  position: relative;
+  color: white;
+  background-image: linear-gradient(
+    180deg,
+    var(--glass-sheen-top),
+    transparent 30%,
+    transparent 72%,
+    var(--glass-sheen-bottom)
+  );
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-edge-y);
+  border-left-color: var(--glass-edge-x);
+  border-right-color: var(--glass-edge-x);
+  box-shadow:
+    inset 0 1px 0 var(--glass-glow-top),
+    inset 0 -1px 0 var(--glass-glow-bottom),
+    var(--glass-shadow-drop);
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    transform 0.3s ease;
+}
+
+@utility glass-edge {
+  --glass-shadow-drop: 0 0 0 rgb(0 0 0 / 0);
+  border: 1px solid var(--glass-edge-y);
+  border-left-color: var(--glass-edge-x);
+  border-right-color: var(--glass-edge-x);
+  box-shadow:
+    inset 0 1px 0 var(--glass-glow-top),
+    inset 0 -1px 0 var(--glass-glow-bottom),
+    var(--glass-shadow-drop);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+@utility glass-shadow-sm {
+  --glass-shadow-drop: var(--glass-shadow-sm);
+}
+
+@utility glass-shadow-md {
+  --glass-shadow-drop: var(--glass-shadow-md);
+}
+
+@utility glass-shadow-hover {
+  --glass-shadow-drop: var(--glass-shadow-hover);
+}
+
 @layer components {
-  /* ===== 玻璃效果基础类 ===== */
-  .glass-base {
-    @apply relative text-white backdrop-blur;
-    transition:
-      background-color 0.3s ease,
-      border-color 0.3s ease,
-      box-shadow 0.3s ease,
-      transform 0.3s ease;
-  }
-
-  .glass-shadow-sm {
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-  }
-
-  .glass-shadow-md {
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  }
-
   /* ===== 加载状态容器 ===== */
   .glass-loading-container {
-    @apply rounded-[15px] border-white/10 bg-black/20 p-8;
+    @apply rounded-[15px] glass-edge bg-glass-deep p-8;
   }
 
   /* ===== 表格样式 ===== */
@@ -172,12 +246,7 @@
 
   /* ===== 统计卡片 ===== */
   .stat-card {
-    @apply rounded-[10px] border border-white/10 bg-white/5 p-4 text-center;
-  }
-
-  /* ===== 弹出框 ===== */
-  .popover-glass {
-    @apply fixed z-2000 overflow-hidden rounded-xl border border-white/20 bg-glass shadow-[0_10px_24px_rgba(0,0,0,0.45)] backdrop-blur-sm;
+    @apply rounded-[10px] glass-edge bg-glass p-4 text-center;
   }
 
   /* ===== 分段标题下边框 ===== */
@@ -185,9 +254,9 @@
     @apply mb-6 border-b-2 border-white/10 pb-4;
   }
 
-  /* ===== 表格外层容器 ===== */
+  /* ===== 表格外层容器（表的液态玻璃对象；表体内行保持平铺分隔线） ===== */
   .table-wrapper {
-    @apply overflow-x-auto rounded-[10px] border border-white/10 bg-black/20;
+    @apply overflow-x-auto rounded-[10px] glass-edge bg-glass-deep;
   }
 
   /* ===== 蓝色强调链接 ===== */
@@ -218,8 +287,7 @@
 
   /* ===== 滚动导航标签 ===== */
   .tag-scroll {
-    @apply cursor-pointer rounded-[18px] bg-white/10 px-4 py-2 font-bold text-white opacity-80 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:opacity-90;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    @apply cursor-pointer rounded-[18px] glass-edge bg-glass px-4 py-2 font-bold text-white opacity-80 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:opacity-90;
   }
 
   /* ===== 进度条 ===== */

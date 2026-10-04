@@ -65,7 +65,7 @@
     <LevelOrderEditor bind:levels {disabled} {onchange} />
   </div>
 
-  <details class="mt-4 rounded-lg border border-white/15 bg-black/20 p-3">
+  <details class="mt-4 rounded-lg glass-edge bg-glass-deep p-3">
     <summary class="cursor-pointer text-[0.9rem] text-white/60">
       {m["editor.extra_json_title"]()}
     </summary>

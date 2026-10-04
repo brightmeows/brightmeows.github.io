@@ -87,7 +87,7 @@
     <ul class="flex flex-col gap-1.5">
       {#each levels as level, index (index)}
         <li
-          class="flex items-center gap-2 rounded-lg border border-white/10 bg-black/20 px-2 py-1.5 {dropIndex ===
+          class="flex items-center gap-2 rounded-lg glass-edge bg-glass-deep px-2 py-1.5 {dropIndex ===
           index
             ? 'border-[#64b5f6]/60'
             : ''}"
@@ -188,9 +188,7 @@
         </li>
       {/each}
       {#if levels.length === 0}
-        <li
-          class="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-[0.9rem] text-white/50"
-        >
+        <li class="rounded-lg glass-edge bg-glass-deep px-3 py-2 text-[0.9rem] text-white/50">
           {m["editor.level_order_empty"]()}
         </li>
       {/if}
