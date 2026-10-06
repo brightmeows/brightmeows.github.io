@@ -108,11 +108,11 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`�
 
 ## 依赖升级挂起项
 
-以下升级经评估后刻意挂起，勿随批升级，各等触发条件：
+以下升级经评估后刻意挂起，勿随批升级，各等触发条件；有 dependabot 击穿风险的条目在 `.github/dependabot.yml` 用 ignore 机械挡住（2026-10-06 katex 曾被自动升穿无兜底的挂起项，见下）。
 
-- **typescript 6 到 7** — TS 7 为 Go 原生移植。svelte-check 需 `--tsgo` 旗标且 TS 6/7 双装；SvelteKit 依赖的 `rootDirs` 适配已被官方关闭为 not planned，长期方案是 Kit 3 扁平化配置。触发条件：Kit 3 stable 后一起动。oxlint-tsgolint 7 自带 TS 7 语义的类型检查引擎，与项目 typescript 版本解耦，互不阻塞。
-- **katex 0.17 到 0.18** — 0.18.0 对 CSS class 加前缀（`.strut` 变 `.katex-strut` 等），与渲染器输出不匹配会导致公式排版退化；且 SvelTeX 的 peer range 为 `^0.16 || ^0.17`，尚不支持 0.18。触发条件：SvelTeX 放开 peer range 后，升级并目检博客数学页确认 `[&_.katex]` 系选择器仍命中。
-- **SvelteKit 3** — RC 中。触发条件：stable 后用 `sv migrate sveltekit-3` 迁移，要点：`$lib` 改 `#lib`、配置扁平化、跨页 form actions 导航行为变更。
+- **typescript 6 到 7** — TS 7.0.2 已发布（2026-07），Go 原生移植。svelte-check 需 `--tsgo` 旗标且 TS 6/7 双装；Kit 3.0.1 的 peer 仍锁 `typescript ^6.0.0`，生态未放开。与 Kit 3 迁移绑死执行：迁移完成后随迁移做 TS7 双装（见下条）。oxlint-tsgolint 7 自带 TS 7 语义的类型检查引擎，与项目 typescript 版本解耦，互不阻塞。
+- **katex 0.18.2 到 0.19** — 0.19 已发布，SvelTeX 0.5.1 的 peer range 仍为 `^0.16 || ^0.17`。0.18.2 已于 2026-10-06 由 dependabot 自动升入（PR #158，击穿当时无 ignore 兜底的挂起项），事后实测风险未发生：katex.min.css 与渲染输出同版本，0.18 的内部 class 前缀化（`.strut` 改 `.katex-strut`）两侧一致，站点也无硬编码旧内部 class，数学页正常。触发条件：SvelTeX 放开 peer range 后升 0.19 并目检博客数学页（dependabot.yml 的 ignore 挡 0.19+，届时解除）。
+- **SvelteKit 3** — 3.0.1 已 stable（2026-10-01 发布；adapter-static 4.0.0 同日配套，peer 绑定 Kit 3）。触发条件已满足，迁移前置验证先行：`svelte.config.js` 在 Kit 3 不再支持，SvelTeX 的 preprocess 链要挪进 vite 插件选项，而 SvelTeX 0.5.1 对 Kit 3 兼容性未表态——先在独立 worktree 试装跑通 `pnpm build` 再正式迁移（`npx sv migrate sveltekit-3`）。已知影响面：`$lib` 改 `#lib` 且 import 带扩展名；`$app/environment` 改名 `$app/env`；`pushState` 弃用改 `goto({ shallow: true })`（`?edit=1` 的实现点）；`$app/paths` 的 `resolve` 参数去前导斜杠；tsconfig 改 extends `$app/tsconfig`；`invalidateAll` 改 `refreshAll`（本仓未用）；adapter-static 升 4；跨页 form actions 导航行为变更（本仓无 form actions）。
 
 ## 其他挂起项
 

@@ -30,7 +30,7 @@
 - **`math.css.type: "none"` 不删** — 否则 SvelTeX 会从 CDN 注入 katex 样式表（hybrid 模式默认拉 jsdelivr）。本项目 katex CSS 由 `MarkdownContent.svelte` 本地 import，保证离线构建与版本一致。
 - **`remark-gfm` 必须显式挂在 `markdown.remarkPlugins`** — SvelTeX 默认不启用 GFM（表格/任务列表/删除线），不挂就没有表格（已实测证实）。
 - **`remark-retext` 是必需的依赖** — SvelTeX 的 unified 后端在 MarkdownHandler 里无条件 `await import('remark-retext')`，即使不用 `retextPlugins`。缺了它首次构建即报 `ERR_MODULE_NOT_FOUND`。
-- **`katex` 固定在 `^0.17`** — 见根 `AGENTS.md` 的依赖升级挂起项。SvelTeX 的 peer range 不含 0.18。
+- **`katex` 0.18.2 运行在 SvelTeX peer range 之外** — 2026-10-06 dependabot 自动升级（PR #158）击穿了当时的挂起项；实测自洽：katex.min.css 与渲染输出同版本（0.18 的内部 class 前缀化两侧一致），`MarkdownContent` 的 `[&_.katex]` 系选择器不受影响。0.19 的升级等 SvelTeX 放开 peer range（挂起项见根 `AGENTS.md`，dependabot 已 ignore 挡住）。
 - **扩展名两处注册** — `.md`/`.svx` 既要写进 SvelTeX 的 `extensions` 配置，也要写进 `svelte.config.ts` 顶层 `extensions`（Svelte 编译器层面）。漏掉任一处文件就不被处理。
 - **`frontmatter` 导出为 `metadata` 对象** — 与 mdsvex 摊平成独立命名导出的行为不同，读取方式为 `post.metadata?.title`。类型声明见 `src/sveltex.d.ts`。
 - **缩进代码块与自动链接被刻意禁用** — SvelTeX 为与 Svelte 语法共存而禁用这两者（同 MDX 的做法）。文章用围栏代码块和显式链接，不要用四空格缩进或裸 URL。
