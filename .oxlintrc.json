@@ -209,7 +209,7 @@
       {
         "patterns": [
           {
-            "group": ["$lib/loaders", "$lib/loaders/*"],
+            "group": ["#lib/loaders", "#lib/loaders/*"],
             "message": "loaders 是构建期 Node 层（fs/path/process.cwd），只能在 +page.server.ts 等构建时入口导入；客户端代码请改用 $lib/data 从 R2 获取数据。"
           }
         ]
@@ -261,7 +261,7 @@
           {
             "patterns": [
               {
-                "group": ["$lib/loaders", "$lib/loaders/*"],
+                "group": ["#lib/loaders", "#lib/loaders/*"],
                 "message": "loaders 是构建期 Node 层；controllers 是客户端编排层，不允许触碰构建期数据入口。"
               },
               {

@@ -5,9 +5,9 @@
   import QuickActions from "./QuickActions.svelte";
   import TopBar from "./TopBar.svelte";
 
-  import GlassContainer from "$lib/components/ui/GlassContainer.svelte";
-  import StarryBackground from "$lib/components/ui/StarryBackground.svelte";
-  import type { TocItem } from "$lib/types/ui";
+  import GlassContainer from "#lib/components/ui/GlassContainer.svelte";
+  import StarryBackground from "#lib/components/ui/StarryBackground.svelte";
+  import type { TocItem } from "#lib/types/ui.js";
 
   interface Props {
     /** 覆写面包屑最后一段的标签（用于动态内容如难度表名、文章标题） */

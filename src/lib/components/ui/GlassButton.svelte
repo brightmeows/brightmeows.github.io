@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
 
-  import { styleToString } from "$lib/utils/ui/style";
+  import { styleToString } from "#lib/utils/ui/style.js";
 
   interface Props {
     /** 按钮文本或内容 */

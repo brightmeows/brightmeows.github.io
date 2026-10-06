@@ -3,8 +3,8 @@
   import { onDestroy, onMount } from "svelte";
   import type { Snippet } from "svelte";
 
-  import { m } from "$lib/paraglide/messages.js";
-  import { slugifyHeadingText } from "$lib/utils/infra/slugify";
+  import { m } from "#lib/paraglide/messages.js";
+  import { slugifyHeadingText } from "#lib/utils/infra/slugify.js";
 
   interface Props {
     className?: string;

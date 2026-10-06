@@ -2,17 +2,17 @@
   import { validateSharedId, type SharedIdError } from "@brightmeows/mirror/shared";
   import { onMount } from "svelte";
 
+  import PageShell from "#lib/components/layout/PageShell.svelte";
+  import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
+  import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
+  import { apiBase, SITE_ORIGIN } from "#lib/constants/site.js";
+  import { btnPrimary, inputPanel } from "#lib/constants/ui-classes.js";
+  import { fetchSharedCheckId } from "#lib/data/api/shared-api.js";
+  import { auth } from "#lib/data/store/auth-store.svelte.js";
+  import { sharedNewSeed } from "#lib/data/store/shared-new.svelte.js";
+  import { m } from "#lib/paraglide/messages.js";
+  import { sharedIdPreview } from "#lib/utils/shared-table.js";
   import { goto } from "$app/navigation";
-  import PageShell from "$lib/components/layout/PageShell.svelte";
-  import GlassPanel from "$lib/components/ui/GlassPanel.svelte";
-  import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
-  import { apiBase, SITE_ORIGIN } from "$lib/constants/site";
-  import { btnPrimary, inputPanel } from "$lib/constants/ui-classes";
-  import { fetchSharedCheckId } from "$lib/data/api/shared-api";
-  import { auth } from "$lib/data/store/auth-store.svelte";
-  import { sharedNewSeed } from "$lib/data/store/shared-new.svelte";
-  import { m } from "$lib/paraglide/messages.js";
-  import { sharedIdPreview } from "$lib/utils/shared-table";
 
   /**
    * 新建前置屏：id 实时预览与异步查重（需登录），可顺带填 name/symbol 作

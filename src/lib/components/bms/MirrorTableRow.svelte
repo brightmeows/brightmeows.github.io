@@ -4,15 +4,15 @@
 
   import MirrorTableEditRow from "./MirrorTableEditRow.svelte";
 
-  import Checkbox from "$lib/components/ui/Checkbox.svelte";
-  import GradientButton from "$lib/components/ui/GradientButton.svelte";
-  import { jsonPreview } from "$lib/components/ui/JsonPreview.svelte";
-  import { btnIconDanger, btnIconPlain } from "$lib/constants/ui-classes";
-  import { m } from "$lib/paraglide/messages.js";
-  import type { MirrorAdminUi } from "$lib/types/bms-view";
-  import type { JsonPreviewHandle } from "$lib/types/ui";
-  import { tableLabelOf } from "$lib/utils/mirror-tables";
-  import { clipboardFieldFeedback } from "$lib/utils/ui/clipboard.svelte";
+  import Checkbox from "#lib/components/ui/Checkbox.svelte";
+  import GradientButton from "#lib/components/ui/GradientButton.svelte";
+  import { jsonPreview } from "#lib/components/ui/JsonPreview.svelte";
+  import { btnIconDanger, btnIconPlain } from "#lib/constants/ui-classes.js";
+  import { m } from "#lib/paraglide/messages.js";
+  import type { MirrorAdminUi } from "#lib/types/bms-view.js";
+  import type { JsonPreviewHandle } from "#lib/types/ui.js";
+  import { tableLabelOf } from "#lib/utils/mirror-tables.js";
+  import { clipboardFieldFeedback } from "#lib/utils/ui/clipboard.svelte.js";
 
   interface Props {
     item: MirrorTableItem;

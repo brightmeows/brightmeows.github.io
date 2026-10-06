@@ -3,11 +3,11 @@
 
   import type { PageData } from "./$types";
 
-  import MarkdownContent from "$lib/components/content/MarkdownContent.svelte";
-  import { buildTocFromHeadings } from "$lib/components/layout/FloatingToc.svelte";
-  import PageShell from "$lib/components/layout/PageShell.svelte";
-  import { m } from "$lib/paraglide/messages.js";
-  import type { TocItem } from "$lib/types/ui";
+  import MarkdownContent from "#lib/components/content/MarkdownContent.svelte";
+  import { buildTocFromHeadings } from "#lib/components/layout/FloatingToc.svelte";
+  import PageShell from "#lib/components/layout/PageShell.svelte";
+  import { m } from "#lib/paraglide/messages.js";
+  import type { TocItem } from "#lib/types/ui.js";
 
   let { data }: { data: PageData } = $props();
   let tocItems = $state<TocItem[]>([]);

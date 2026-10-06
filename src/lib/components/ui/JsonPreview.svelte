@@ -1,5 +1,5 @@
 <script module lang="ts">
-  import type { JsonPreviewShowOptions, JsonPreviewHandle } from "$lib/types/ui";
+  import type { JsonPreviewShowOptions, JsonPreviewHandle } from "#lib/types/ui.js";
 
   export type JsonPreviewCopyHandler = (text: string) => Promise<void> | void;
 
@@ -48,8 +48,8 @@
   import { cubicOut } from "svelte/easing";
   import { fade, fly } from "svelte/transition";
 
-  import { m } from "$lib/paraglide/messages.js";
-  import { writeToClipboard } from "$lib/utils/ui/clipboard.svelte";
+  import { m } from "#lib/paraglide/messages.js";
+  import { writeToClipboard } from "#lib/utils/ui/clipboard.svelte.js";
 
   let open = $state(false);
   let value = $state<unknown>(undefined);

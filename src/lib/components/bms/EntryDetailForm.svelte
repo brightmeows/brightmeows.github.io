@@ -10,8 +10,8 @@
   } from "@brightmeows/bms/editor";
   import { untrack } from "svelte";
 
-  import { btnGhost, btnIconDanger, inputEditorMono } from "$lib/constants/ui-classes";
-  import { m } from "$lib/paraglide/messages.js";
+  import { btnGhost, btnIconDanger, inputEditorMono } from "#lib/constants/ui-classes.js";
+  import { m } from "#lib/paraglide/messages.js";
 
   /**
    * 条目详情编辑：核心字段加自定义字段键值行。自定义值按 JSON 文本编辑

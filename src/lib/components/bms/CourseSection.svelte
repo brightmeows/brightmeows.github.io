@@ -2,8 +2,8 @@
   import { formatConstraint, trophyEmoji } from "@brightmeows/bms/constants";
   import type { ResolvedCourseGroup } from "@brightmeows/bms/format";
 
-  import Checkbox from "$lib/components/ui/Checkbox.svelte";
-  import { m } from "$lib/paraglide/messages.js";
+  import Checkbox from "#lib/components/ui/Checkbox.svelte";
+  import { m } from "#lib/paraglide/messages.js";
 
   interface Props {
     groups: ResolvedCourseGroup[];

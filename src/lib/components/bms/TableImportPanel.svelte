@@ -1,10 +1,10 @@
 <script lang="ts">
   import { parseCombinedPackage, type TableImportResult } from "@brightmeows/bms/editor";
 
-  import { r2TableDataUrl, r2TableHeaderUrl } from "$lib/constants/r2";
-  import { btnGhost, inputEditorMono } from "$lib/constants/ui-classes";
-  import { m } from "$lib/paraglide/messages.js";
-  import { mirrorDirNameFromUrl } from "$lib/utils/shared-table";
+  import { r2TableDataUrl, r2TableHeaderUrl } from "#lib/constants/r2.js";
+  import { btnGhost, inputEditorMono } from "#lib/constants/ui-classes.js";
+  import { m } from "#lib/paraglide/messages.js";
+  import { mirrorDirNameFromUrl } from "#lib/utils/shared-table.js";
 
   /**
    * 编辑器导入面板：粘贴或上传 JSON（合并包、header、data 自动识别）与镜像表

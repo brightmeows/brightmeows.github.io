@@ -1,8 +1,8 @@
 import type { ChartData } from "@brightmeows/bms/format";
 
-import { r2TableHeaderUrl, r2TableDataUrl } from "$lib/constants/r2";
-import { m } from "$lib/paraglide/messages.js";
-import { fetchStream } from "$lib/utils/infra/fetch-stream";
+import { r2TableHeaderUrl, r2TableDataUrl } from "#lib/constants/r2.js";
+import { m } from "#lib/paraglide/messages.js";
+import { fetchStream } from "#lib/utils/infra/fetch-stream.js";
 
 /** 搜索索引类型 */
 export type SearchIndex = Record<string, string[]>;

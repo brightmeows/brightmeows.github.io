@@ -7,7 +7,7 @@ import {
 } from "@brightmeows/mirror/shared";
 import { sharedTablePath } from "@brightmeows/mirror/urls";
 
-import { m } from "$lib/paraglide/messages.js";
+import { m } from "#lib/paraglide/messages.js";
 
 /**
  * 共享表的纯函数：搜索过滤、按作者分组、header 表单转换、分页与导出。

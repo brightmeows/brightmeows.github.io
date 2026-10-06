@@ -15,8 +15,8 @@
   } from "@brightmeows/bms/course";
   import { entryLabel, filterEntryIndices, moveItem } from "@brightmeows/bms/editor";
 
-  import { btnGhost, btnIcon, btnIconDanger, inputEditorMono } from "$lib/constants/ui-classes";
-  import { m } from "$lib/paraglide/messages.js";
+  import { btnGhost, btnIcon, btnIconDanger, inputEditorMono } from "#lib/constants/ui-classes.js";
+  import { m } from "#lib/paraglide/messages.js";
 
   /**
    * 段位（course）结构化编辑器：分组与课程增删、constraint 多选、trophy 行与

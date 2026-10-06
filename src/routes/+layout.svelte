@@ -1,11 +1,11 @@
 <script lang="ts">
   import { onMount, type Snippet } from "svelte";
 
+  import { LEGACY_ORIGIN_REDIRECTS, SITE_ORIGIN } from "#lib/constants/site.js";
+  import { theme } from "#lib/data/store/theme-store.svelte.js";
+  import { m } from "#lib/paraglide/messages.js";
+  import { getLocale } from "#lib/paraglide/runtime.js";
   import { page } from "$app/state";
-  import { LEGACY_ORIGIN_REDIRECTS, SITE_ORIGIN } from "$lib/constants/site";
-  import { theme } from "$lib/data/store/theme-store.svelte";
-  import { m } from "$lib/paraglide/messages.js";
-  import { getLocale } from "$lib/paraglide/runtime";
 
   import "./layout.css";
 

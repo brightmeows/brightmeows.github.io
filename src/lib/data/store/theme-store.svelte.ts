@@ -4,12 +4,12 @@ import {
   THEME_STORAGE_KEY,
   type ThemeName,
   type ThemePreference,
-} from "$lib/utils/ui/theme";
+} from "#lib/utils/ui/theme.js";
 
 /**
  * 主题偏好的共享 store（Svelte 5 runes）。
  *
- * 值域见 `$lib/utils/theme`：light 是蓝紫星空端，dark 是近黑端，两者都是
+ * 值域见 `#lib/utils/theme`：light 是蓝紫星空端，dark 是近黑端，两者都是
  * 深色界面。首屏由 `app.html` 的内联脚本按同一约定先行写入
  * `<html data-theme>`；本 store 水合后接管：读取 localStorage 偏好，
  * 选浅色/深色写入并固定，选跟随系统清除键、随系统偏好实时变化，

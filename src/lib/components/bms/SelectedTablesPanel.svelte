@@ -3,11 +3,11 @@
   import { cubicIn, cubicOut } from "svelte/easing";
   import { fly } from "svelte/transition";
 
-  import Checkbox from "$lib/components/ui/Checkbox.svelte";
-  import { jsonPreview } from "$lib/components/ui/JsonPreview.svelte";
-  import { btnGradientBlue, btnGradientOrange } from "$lib/constants/ui-classes";
-  import { m } from "$lib/paraglide/messages.js";
-  import type { JsonPreviewHandle } from "$lib/types/ui";
+  import Checkbox from "#lib/components/ui/Checkbox.svelte";
+  import { jsonPreview } from "#lib/components/ui/JsonPreview.svelte";
+  import { btnGradientBlue, btnGradientOrange } from "#lib/constants/ui-classes.js";
+  import { m } from "#lib/paraglide/messages.js";
+  import type { JsonPreviewHandle } from "#lib/types/ui.js";
 
   interface Props {
     tables?: MirrorTableItem[];

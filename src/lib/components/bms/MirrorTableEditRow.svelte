@@ -3,10 +3,10 @@
   import type { MetaOverride } from "@brightmeows/mirror/user-layer";
   import { untrack } from "svelte";
 
-  import { btnDanger, btnGhostXs, inputInline } from "$lib/constants/ui-classes";
-  import { m } from "$lib/paraglide/messages.js";
-  import type { MirrorMetaFields } from "$lib/types/bms-view";
-  import { shouldSuggestTagOrder } from "$lib/utils/mirror-tables";
+  import { btnDanger, btnGhostXs, inputInline } from "#lib/constants/ui-classes.js";
+  import { m } from "#lib/paraglide/messages.js";
+  import type { MirrorMetaFields } from "#lib/types/bms-view.js";
+  import { shouldSuggestTagOrder } from "#lib/utils/mirror-tables.js";
 
   interface Props {
     item: MirrorTableItem;

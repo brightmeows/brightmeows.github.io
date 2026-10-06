@@ -9,7 +9,7 @@
 declare module "*.md" {
   import type { Component } from "svelte";
 
-  import type { BlogFrontmatter } from "$lib/types/blog";
+  import type { BlogFrontmatter } from "#lib/types/blog.js";
 
   const component: Component;
   export default component;
@@ -19,7 +19,7 @@ declare module "*.md" {
 declare module "*.svx" {
   import type { Component } from "svelte";
 
-  import type { BlogFrontmatter } from "$lib/types/blog";
+  import type { BlogFrontmatter } from "#lib/types/blog.js";
 
   const component: Component;
   export default component;

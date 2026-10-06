@@ -2,9 +2,9 @@ import type { MirrorTableItem } from "@brightmeows/mirror/types";
 import type { MetaOverride } from "@brightmeows/mirror/user-layer";
 import { normalizeTableUrl } from "@brightmeows/mirror/user-layer";
 
-import { m } from "$lib/paraglide/messages.js";
-import type { Tag1Group, Tag2Group } from "$lib/types/bms-view";
-import type { StringConverter } from "$lib/types/common";
+import { m } from "#lib/paraglide/messages.js";
+import type { Tag1Group, Tag2Group } from "#lib/types/bms-view.js";
+import type { StringConverter } from "#lib/types/common.js";
 
 /**
  * 构建搜索词（含 OpenCC 简繁日转换）

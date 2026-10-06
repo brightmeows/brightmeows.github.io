@@ -8,7 +8,7 @@
   } from "@brightmeows/bms/editor";
   import type { Snippet } from "svelte";
 
-  import type { EditorNotice } from "$lib/controllers/editor";
+  import type { EditorNotice } from "#lib/controllers/editor.js";
 
   /**
    * 编辑态内容组件：由合并页在进入编辑模式时动态加载（查看态包体不背编辑器）。
@@ -46,15 +46,15 @@
 </script>
 
 <script lang="ts">
-  import BmsDropZone from "$lib/components/bms/BmsDropZone.svelte";
-  import CourseEditor from "$lib/components/bms/CourseEditor.svelte";
-  import TableEntryEditor from "$lib/components/bms/TableEntryEditor.svelte";
-  import TableEntryImportPanel from "$lib/components/bms/TableEntryImportPanel.svelte";
-  import TableHeaderForm from "$lib/components/bms/TableHeaderForm.svelte";
-  import TableImportPanel from "$lib/components/bms/TableImportPanel.svelte";
-  import { btnGhostMd } from "$lib/constants/ui-classes";
-  import { m } from "$lib/paraglide/messages.js";
-  import { editorHeaderState } from "$lib/utils/editor-header";
+  import BmsDropZone from "#lib/components/bms/BmsDropZone.svelte";
+  import CourseEditor from "#lib/components/bms/CourseEditor.svelte";
+  import TableEntryEditor from "#lib/components/bms/TableEntryEditor.svelte";
+  import TableEntryImportPanel from "#lib/components/bms/TableEntryImportPanel.svelte";
+  import TableHeaderForm from "#lib/components/bms/TableHeaderForm.svelte";
+  import TableImportPanel from "#lib/components/bms/TableImportPanel.svelte";
+  import { btnGhostMd } from "#lib/constants/ui-classes.js";
+  import { m } from "#lib/paraglide/messages.js";
+  import { editorHeaderState } from "#lib/utils/editor-header.js";
 
   let {
     name = $bindable(""),

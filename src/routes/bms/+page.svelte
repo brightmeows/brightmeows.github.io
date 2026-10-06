@@ -5,10 +5,10 @@
   import BmsContentJa from "./index.ja.md";
   import BmsContentZh from "./index.zh.md";
 
-  import MarkdownContent from "$lib/components/content/MarkdownContent.svelte";
-  import { buildTocFromHeadings } from "$lib/components/layout/FloatingToc.svelte";
-  import PageShell from "$lib/components/layout/PageShell.svelte";
-  import type { TocItem } from "$lib/types/ui";
+  import MarkdownContent from "#lib/components/content/MarkdownContent.svelte";
+  import { buildTocFromHeadings } from "#lib/components/layout/FloatingToc.svelte";
+  import PageShell from "#lib/components/layout/PageShell.svelte";
+  import type { TocItem } from "#lib/types/ui.js";
 
   // 三语源文件，按构建 locale 选用
   const BmsContent =

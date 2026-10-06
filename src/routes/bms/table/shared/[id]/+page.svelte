@@ -4,15 +4,14 @@
   import { sharedTablePath } from "@brightmeows/mirror/urls";
   import { onMount } from "svelte";
 
-  import { page } from "$app/state";
-  import PageShell from "$lib/components/layout/PageShell.svelte";
-  import BmsTablePage from "$lib/components/pages/BmsTablePage.svelte";
-  import EmptyState from "$lib/components/ui/EmptyState.svelte";
-  import GlassPanel from "$lib/components/ui/GlassPanel.svelte";
-  import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
-  import { r2SharedDataUrl, r2SharedHeaderUrl } from "$lib/constants/r2";
-  import { SITE_ORIGIN, apiBase, isStaticHost } from "$lib/constants/site";
-  import { btnBar, btnGhostMd, btnPrimary, inputEditorBase } from "$lib/constants/ui-classes";
+  import PageShell from "#lib/components/layout/PageShell.svelte";
+  import BmsTablePage from "#lib/components/pages/BmsTablePage.svelte";
+  import EmptyState from "#lib/components/ui/EmptyState.svelte";
+  import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
+  import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
+  import { r2SharedDataUrl, r2SharedHeaderUrl } from "#lib/constants/r2.js";
+  import { SITE_ORIGIN, apiBase, isStaticHost } from "#lib/constants/site.js";
+  import { btnBar, btnGhostMd, btnPrimary, inputEditorBase } from "#lib/constants/ui-classes.js";
   import {
     deleteSharedTable,
     initialSharedEditState,
@@ -24,7 +23,7 @@
     validateNewTableId,
     type SharedEditDeps,
     type SharedEditState,
-  } from "$lib/controllers/shared-edit";
+  } from "#lib/controllers/shared-edit.js";
   import {
     fetchSharedCheckId,
     loadSharedTables,
@@ -32,11 +31,12 @@
     submitSharedDelete,
     submitSharedRename,
     submitSharedSave,
-  } from "$lib/data/api/shared-api";
-  import { auth } from "$lib/data/store/auth-store.svelte";
-  import { sharedNewSeed } from "$lib/data/store/shared-new.svelte";
-  import { m } from "$lib/paraglide/messages.js";
-  import { downloadJsonFile } from "$lib/utils/infra/download";
+  } from "#lib/data/api/shared-api.js";
+  import { auth } from "#lib/data/store/auth-store.svelte.js";
+  import { sharedNewSeed } from "#lib/data/store/shared-new.svelte.js";
+  import { m } from "#lib/paraglide/messages.js";
+  import { downloadJsonFile } from "#lib/utils/infra/download.js";
+  import { page } from "$app/state";
 
   /**
    * 共享表页面（查看与编辑合并）：查看态复用 BmsTablePage，编辑态由同地址的

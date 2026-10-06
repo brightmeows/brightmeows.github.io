@@ -1,5 +1,5 @@
-import type { StringConverter } from "$lib/types/common";
-import { getSearchConverters } from "$lib/utils/i18n/opencc-loader";
+import type { StringConverter } from "#lib/types/common.js";
+import { getSearchConverters } from "#lib/utils/i18n/opencc-loader.js";
 
 /**
  * 搜索输入的简繁日转换器共享 store（Svelte 5 runes）。

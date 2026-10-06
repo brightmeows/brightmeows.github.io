@@ -2,21 +2,25 @@
   import type { SharedTableItem } from "@brightmeows/mirror/shared";
   import { onMount } from "svelte";
 
+  import SharedTablesSection from "#lib/components/bms/SharedTablesSection.svelte";
+  import SharedTrashPanel from "#lib/components/bms/SharedTrashPanel.svelte";
+  import PageShell from "#lib/components/layout/PageShell.svelte";
+  import Checkbox from "#lib/components/ui/Checkbox.svelte";
+  import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
+  import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
+  import { SITE_ORIGIN } from "#lib/constants/site.js";
+  import { btnPrimaryLink } from "#lib/constants/ui-classes.js";
+  import { loadSharedTables, submitSharedDelete } from "#lib/data/api/shared-api.js";
+  import { auth } from "#lib/data/store/auth-store.svelte.js";
+  import { searchConverters } from "#lib/data/store/search-converters.svelte.js";
+  import { m } from "#lib/paraglide/messages.js";
+  import { buildSearchNeedles } from "#lib/utils/mirror-tables.js";
+  import {
+    filterMineOnly,
+    filterSharedTables,
+    groupSharedTables,
+  } from "#lib/utils/shared-table.js";
   import { resolve } from "$app/paths";
-  import SharedTablesSection from "$lib/components/bms/SharedTablesSection.svelte";
-  import SharedTrashPanel from "$lib/components/bms/SharedTrashPanel.svelte";
-  import PageShell from "$lib/components/layout/PageShell.svelte";
-  import Checkbox from "$lib/components/ui/Checkbox.svelte";
-  import GlassPanel from "$lib/components/ui/GlassPanel.svelte";
-  import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
-  import { SITE_ORIGIN } from "$lib/constants/site";
-  import { btnPrimaryLink } from "$lib/constants/ui-classes";
-  import { loadSharedTables, submitSharedDelete } from "$lib/data/api/shared-api";
-  import { auth } from "$lib/data/store/auth-store.svelte";
-  import { searchConverters } from "$lib/data/store/search-converters.svelte";
-  import { m } from "$lib/paraglide/messages.js";
-  import { buildSearchNeedles } from "$lib/utils/mirror-tables";
-  import { filterMineOnly, filterSharedTables, groupSharedTables } from "$lib/utils/shared-table";
 
   /**
    * 共享表列表：按作者分组、我的组置顶、“只看我的”筛选、搜索；
@@ -87,7 +91,7 @@
   <h1 class="page-title text-center">{pageTitle}</h1>
   <p class="mt-2 text-center text-[1.1rem] text-white-70">{m["shared.subtitle"]()}</p>
   <div class="mt-4 text-center">
-    <a class={btnPrimaryLink} href={resolve("/bms/table/shared/new", {})}>
+    <a class={btnPrimaryLink} href={resolve("/bms/table/shared/new")}>
       {m["shared.create_button"]()}
     </a>
   </div>

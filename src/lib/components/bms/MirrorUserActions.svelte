@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import GlassPanel from "$lib/components/ui/GlassPanel.svelte";
-  import { SITE_ORIGIN } from "$lib/constants/site";
-  import { btnGhostXs } from "$lib/constants/ui-classes";
+  import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
+  import { SITE_ORIGIN } from "#lib/constants/site.js";
+  import { btnGhostXs } from "#lib/constants/ui-classes.js";
   import {
     fetchFetchStatus,
     fetchPreview,
@@ -12,9 +12,9 @@
     submitRestore,
     type PreviewResult,
     type RemovedRecord,
-  } from "$lib/data/api/mirror-user-api";
-  import { auth } from "$lib/data/store/auth-store.svelte";
-  import { m } from "$lib/paraglide/messages.js";
+  } from "#lib/data/api/mirror-user-api.js";
+  import { auth } from "#lib/data/store/auth-store.svelte.js";
+  import { m } from "#lib/paraglide/messages.js";
 
   interface Props {
     /** 添加或恢复成功后回调（用于刷新清单）。 */

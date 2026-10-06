@@ -3,14 +3,14 @@
   import type { DisabledEntry } from "@brightmeows/mirror/user-layer";
   import { onMount, tick } from "svelte";
 
-  import GroupedTablesSection from "$lib/components/bms/GroupedTablesSection.svelte";
-  import MirrorAdminPanel from "$lib/components/bms/MirrorAdminPanel.svelte";
-  import MirrorUserActions from "$lib/components/bms/MirrorUserActions.svelte";
-  import SelectedTablesPanel from "$lib/components/bms/SelectedTablesPanel.svelte";
-  import PageShell from "$lib/components/layout/PageShell.svelte";
-  import Checkbox from "$lib/components/ui/Checkbox.svelte";
-  import JsonPreview from "$lib/components/ui/JsonPreview.svelte";
-  import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
+  import GroupedTablesSection from "#lib/components/bms/GroupedTablesSection.svelte";
+  import MirrorAdminPanel from "#lib/components/bms/MirrorAdminPanel.svelte";
+  import MirrorUserActions from "#lib/components/bms/MirrorUserActions.svelte";
+  import SelectedTablesPanel from "#lib/components/bms/SelectedTablesPanel.svelte";
+  import PageShell from "#lib/components/layout/PageShell.svelte";
+  import Checkbox from "#lib/components/ui/Checkbox.svelte";
+  import JsonPreview from "#lib/components/ui/JsonPreview.svelte";
+  import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
   import {
     collapseAdminEdit,
     initialMirrorAdminState,
@@ -20,8 +20,8 @@
     toggleAdminEdit,
     type MirrorAdminDeps,
     type MirrorAdminState,
-  } from "$lib/controllers/mirror-admin";
-  import { toFailure } from "$lib/data/api/http";
+  } from "#lib/controllers/mirror-admin.js";
+  import { toFailure } from "#lib/data/api/http.js";
   import {
     adminAuthorize,
     adminDisable,
@@ -30,15 +30,15 @@
     adminRestore,
     fetchAdminOverview,
     type TrashEntry,
-  } from "$lib/data/api/mirror-admin-api";
-  import { loadMirrorTables } from "$lib/data/api/mirror-table-loader";
-  import { submitDelete } from "$lib/data/api/mirror-user-api";
-  import { auth } from "$lib/data/store/auth-store.svelte";
-  import { searchConverters } from "$lib/data/store/search-converters.svelte";
-  import { m } from "$lib/paraglide/messages.js";
-  import type { MirrorAdminUi, MirrorMetaFields } from "$lib/types/bms-view";
-  import type { AsyncState } from "$lib/types/common";
-  import type { JsonPreviewHandle, TocItem } from "$lib/types/ui";
+  } from "#lib/data/api/mirror-admin-api.js";
+  import { loadMirrorTables } from "#lib/data/api/mirror-table-loader.js";
+  import { submitDelete } from "#lib/data/api/mirror-user-api.js";
+  import { auth } from "#lib/data/store/auth-store.svelte.js";
+  import { searchConverters } from "#lib/data/store/search-converters.svelte.js";
+  import { m } from "#lib/paraglide/messages.js";
+  import type { MirrorAdminUi, MirrorMetaFields } from "#lib/types/bms-view.js";
+  import type { AsyncState } from "#lib/types/common.js";
+  import type { JsonPreviewHandle, TocItem } from "#lib/types/ui.js";
   import {
     buildSearchNeedles,
     collectTagValues,
@@ -50,9 +50,9 @@
     setTableProtected,
     sourceUrlOf,
     tableLabelOf,
-  } from "$lib/utils/mirror-tables";
-  import { clipboardFeedback } from "$lib/utils/ui/clipboard.svelte";
-  import { buildGroupTocItems } from "$lib/utils/ui/toc";
+  } from "#lib/utils/mirror-tables.js";
+  import { clipboardFeedback } from "#lib/utils/ui/clipboard.svelte.js";
+  import { buildGroupTocItems } from "#lib/utils/ui/toc.js";
 
   /**
    * 镜像列表页：清单加载与筛选分组、用户操作区与管理区。清单状态走

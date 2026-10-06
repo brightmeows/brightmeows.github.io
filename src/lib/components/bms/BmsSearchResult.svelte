@@ -4,14 +4,14 @@
 
   import BmsLinkButtons from "./BmsLinkButtons.svelte";
 
-  import GlassContainer from "$lib/components/ui/GlassContainer.svelte";
-  import GradientButton from "$lib/components/ui/GradientButton.svelte";
-  import type { TableLoadState } from "$lib/data/api/bms-search";
-  import type { SearchResult } from "$lib/data/api/search-aggregator";
-  import { m } from "$lib/paraglide/messages.js";
-  import { formatBytes } from "$lib/utils/infra/format";
-  import { validateUrl } from "$lib/utils/infra/url";
-  import { clipboardFieldFeedback } from "$lib/utils/ui/clipboard.svelte";
+  import GlassContainer from "#lib/components/ui/GlassContainer.svelte";
+  import GradientButton from "#lib/components/ui/GradientButton.svelte";
+  import type { TableLoadState } from "#lib/data/api/bms-search.js";
+  import type { SearchResult } from "#lib/data/api/search-aggregator.js";
+  import { m } from "#lib/paraglide/messages.js";
+  import { formatBytes } from "#lib/utils/infra/format.js";
+  import { validateUrl } from "#lib/utils/infra/url.js";
+  import { clipboardFieldFeedback } from "#lib/utils/ui/clipboard.svelte.js";
 
   interface Props {
     result: SearchResult;

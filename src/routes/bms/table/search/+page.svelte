@@ -2,22 +2,22 @@
   import { onMount, onDestroy } from "svelte";
   import { SvelteMap } from "svelte/reactivity";
 
-  import BmsSearchResult from "$lib/components/bms/BmsSearchResult.svelte";
-  import PageShell from "$lib/components/layout/PageShell.svelte";
-  import EmptyState from "$lib/components/ui/EmptyState.svelte";
-  import { createEpochGuard, runTableLoad, waitingState } from "$lib/controllers/table-load";
-  import type { CandidateEntry, TableLoadState } from "$lib/data/api/bms-search";
+  import BmsSearchResult from "#lib/components/bms/BmsSearchResult.svelte";
+  import PageShell from "#lib/components/layout/PageShell.svelte";
+  import EmptyState from "#lib/components/ui/EmptyState.svelte";
+  import { createEpochGuard, runTableLoad, waitingState } from "#lib/controllers/table-load.js";
+  import type { CandidateEntry, TableLoadState } from "#lib/data/api/bms-search.js";
   import {
     detectQueryType,
     loadTableHeader,
     loadTableDataWithProgress,
-  } from "$lib/data/api/bms-search";
-  import type { SearchResult } from "$lib/data/api/search-aggregator";
-  import { IncrementalAggregator } from "$lib/data/api/search-aggregator";
-  import { searchConverters } from "$lib/data/store/search-converters.svelte";
-  import { SearchIndexClient } from "$lib/data/store/search-index-client.svelte";
-  import { m } from "$lib/paraglide/messages.js";
-  import { buildSearchNeedles } from "$lib/utils/mirror-tables";
+  } from "#lib/data/api/bms-search.js";
+  import type { SearchResult } from "#lib/data/api/search-aggregator.js";
+  import { IncrementalAggregator } from "#lib/data/api/search-aggregator.js";
+  import { searchConverters } from "#lib/data/store/search-converters.svelte.js";
+  import { SearchIndexClient } from "#lib/data/store/search-index-client.svelte.js";
+  import { m } from "#lib/paraglide/messages.js";
+  import { buildSearchNeedles } from "#lib/utils/mirror-tables.js";
 
   // 搜索索引 Worker：创建、索引加载状态与消息协议封装在共享客户端里
   const indexClient = new SearchIndexClient();

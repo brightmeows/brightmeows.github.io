@@ -17,7 +17,7 @@ import {
   type TableLoadTasks,
 } from "./table-load";
 
-import type { TableLoadState } from "$lib/data/api/bms-search";
+import type { TableLoadState } from "#lib/data/api/bms-search.js";
 
 /** 状态机构造器与决策函数的行为锁定测试（对应页面内原实现的字段形状）。 */
 

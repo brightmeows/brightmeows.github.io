@@ -3,9 +3,9 @@ import type { Component } from "svelte";
 
 import type { PageLoad } from "./$types";
 
-import type { BlogPostMetadata } from "$lib/types/blog";
-import { extractDateFromSlug, EPOCH_DATE } from "$lib/utils/infra/date";
-import { formatTitle } from "$lib/utils/title";
+import type { BlogPostMetadata } from "#lib/types/blog.js";
+import { extractDateFromSlug, EPOCH_DATE } from "#lib/utils/infra/date.js";
+import { formatTitle } from "#lib/utils/title.js";
 
 interface BlogPostModule {
   default: Component;
