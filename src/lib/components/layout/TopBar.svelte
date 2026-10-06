@@ -5,7 +5,7 @@
   import { page } from "$app/state";
   import GlassButton from "$lib/components/ui/GlassButton.svelte";
   import GlassPanel from "$lib/components/ui/GlassPanel.svelte";
-  import { bmsNav, topLevelNav } from "$lib/constants/nav";
+  import { topLevelNav, type NavItem } from "$lib/constants/nav";
   import { apiBase, SITE_ORIGIN } from "$lib/constants/site";
   import { auth } from "$lib/data/auth-store.svelte";
   import { theme } from "$lib/data/theme-store.svelte";
@@ -30,14 +30,12 @@
   let lastScrollY = $state(0);
   let accumulatedDelta = $state(0);
 
-  // —— 弹层：头像卡 / 更多菜单 / 用户菜单，互斥展开 ——
+  // —— 弹层：头像卡 / 导航下拉与菜单 / 用户菜单，互斥展开；id 由触发方给定 ——
 
-  type Panel = "profile" | "bms" | "user" | "language" | "theme";
-
-  let openPanel = $state<Panel | null>(null);
+  let openPanel = $state<string | null>(null);
   let root: HTMLDivElement | undefined;
 
-  function togglePanel(panel: Panel): void {
+  function togglePanel(panel: string): void {
     openPanel = openPanel === panel ? null : panel;
   }
 
@@ -138,6 +136,13 @@
   ];
 </script>
 
+<!-- 下拉子页条目，宽屏各导航下拉共用 -->
+{#snippet dropdownEntries(entries: NavItem[])}
+  {#each entries as entry (entry.href)}
+    <a href={resolve(entry.href, {})} class={menuItemClass}>{entry.label()}</a>
+  {/each}
+{/snippet}
+
 <div
   bind:this={root}
   class="fixed inset-x-0 top-3 z-1000 px-3"
@@ -200,19 +205,20 @@
         {/if}
       </div>
 
-      <!-- 左区：顶层导航（/bms 子树折叠进 BMS 下拉；窄屏整条导航折进 BMS 菜单） -->
+      <!-- 左区：顶层导航（/bms 子树按服务/个人表拆成下拉；窄屏整条导航折进菜单） -->
       <nav aria-label={m["topbar.nav_aria"]()} class="hidden shrink-0 items-center sm:flex">
-        {#each topLevelNav as item (item.href)}
+        {#each topLevelNav as item, i (i)}
           {#if "children" in item}
+            {@const dropdownActive = item.children.some((child) => isActive(child.href))}
             <div class="relative">
               <button
                 type="button"
-                class="{linkBase} flex items-center gap-1 {isActive(item.href)
+                class="{linkBase} flex items-center gap-1 {dropdownActive
                   ? 'bg-white/15 font-semibold text-white'
                   : 'text-white/85 hover:bg-white/10 hover:text-white'}"
-                aria-expanded={openPanel === "bms"}
-                aria-current={isActive(item.href) ? "true" : undefined}
-                onclick={() => togglePanel("bms")}
+                aria-expanded={openPanel === item.id}
+                aria-current={dropdownActive ? "true" : undefined}
+                onclick={() => togglePanel(item.id)}
               >
                 {item.label()}
                 <svg
@@ -226,12 +232,10 @@
                 </svg>
               </button>
 
-              {#if openPanel === "bms"}
+              {#if openPanel === item.id}
                 <div class="absolute top-full left-0 mt-2 w-56">
                   <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
-                    {#each item.children as child (child.href)}
-                      <a href={resolve(child.href, {})} class={menuItemClass}>{child.label()}</a>
-                    {/each}
+                    {@render dropdownEntries(item.children)}
                   </GlassPanel>
                 </div>
               {/if}
@@ -250,15 +254,15 @@
         {/each}
       </nav>
 
-      <!-- BMS 菜单（窄屏唯一导航入口：先列顶层链接，再列 /bms 子树；宽屏由导航内下拉承担） -->
+      <!-- 菜单（窄屏唯一导航入口：先列顶层链接，再按分组列子页；宽屏由导航内下拉承担） -->
       <div class="relative shrink-0 sm:hidden">
         <button
           type="button"
           class="{linkBase} flex items-center gap-1 text-white/85 hover:bg-white/10 hover:text-white"
-          aria-expanded={openPanel === "bms"}
-          onclick={() => togglePanel("bms")}
+          aria-expanded={openPanel === "menu"}
+          onclick={() => togglePanel("menu")}
         >
-          {bmsNav.label()}
+          {m["topbar.menu"]()}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
@@ -270,17 +274,20 @@
           </svg>
         </button>
 
-        {#if openPanel === "bms"}
+        {#if openPanel === "menu"}
           <div class="absolute top-full left-0 mt-2 w-56">
             <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
-              {#each topLevelNav as item (item.href)}
+              {#each topLevelNav as item, i (i)}
                 {#if !("children" in item)}
                   <a href={resolve(item.href, {})} class={menuItemClass}>{item.label()}</a>
                 {/if}
               {/each}
               <div class="mx-2 my-1 border-t border-white/15"></div>
-              {#each bmsNav.children as child (child.href)}
-                <a href={resolve(child.href, {})} class={menuItemClass}>{child.label()}</a>
+              {#each topLevelNav as item, i (i)}
+                {#if "children" in item}
+                  <div class="px-3 pt-2 pb-1 text-xs font-medium text-white/50">{item.label()}</div>
+                  {@render dropdownEntries(item.children)}
+                {/if}
               {/each}
             </GlassPanel>
           </div>
