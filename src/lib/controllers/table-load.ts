@@ -8,9 +8,10 @@
  * 响应式流程，只从这里取状态与决策。
  */
 
+import type { ChartData } from "@brightmeows/bms/format";
+
 import type { TableLoadState } from "$lib/data/bms-search";
 import { m } from "$lib/paraglide/messages.js";
-import type { ChartData } from "$lib/types/bms-format";
 
 // ---- 状态构造器 ----
 

@@ -1,8 +1,9 @@
 <script lang="ts">
+  import { addLevel, moveItem, removeLevelAt } from "@brightmeows/bms/editor";
+
   import { btnGhostSm, btnIcon, inputEditorBase } from "$lib/constants/ui-classes";
   import { m } from "$lib/paraglide/messages.js";
   import { levelOrderToText, textToLevelOrder } from "$lib/utils/shared-table";
-  import { addLevel, moveItem, removeLevelAt } from "$lib/utils/table-editor";
 
   /**
    * level_order 列表编辑：增删与拖拽排序；文本模式用于一次性粘贴整份列表。

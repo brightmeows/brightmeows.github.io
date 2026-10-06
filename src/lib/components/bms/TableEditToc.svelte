@@ -14,10 +14,11 @@
 </script>
 
 <script lang="ts">
+  import { entryGroupAnchorId } from "@brightmeows/bms/editor";
+
   import Checkbox from "$lib/components/ui/Checkbox.svelte";
   import FloatingPanel from "$lib/components/ui/FloatingPanel.svelte";
   import { m } from "$lib/paraglide/messages.js";
-  import { entryGroupAnchorId } from "$lib/utils/table-editor";
 
   /**
    * 编辑态悬浮目录：分区锚点加“条目”下的等级子项。子项文字点击滚动到对应

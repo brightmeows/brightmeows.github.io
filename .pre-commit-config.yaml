@@ -50,6 +50,15 @@ repos:
 
   - repo: local
     hooks:
+      - id: bms-typecheck
+        name: pnpm check:bms
+        entry: pnpm check:bms
+        language: system
+        types: [text]
+        pass_filenames: false
+
+  - repo: local
+    hooks:
       - id: worker-typecheck
         name: pnpm check:worker
         entry: pnpm check:worker

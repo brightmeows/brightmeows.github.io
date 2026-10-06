@@ -5,7 +5,7 @@ import type {
   DifficultyGroup,
   ResolvedCourseGroup,
   Trophy,
-} from "$lib/types/bms-format";
+} from "./format.ts";
 
 /**
  * 按难度等级分组

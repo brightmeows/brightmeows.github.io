@@ -1,6 +1,6 @@
-import type { CandidateEntry } from "./bms-search";
+import type { ChartData } from "@brightmeows/bms/format";
 
-import type { ChartData } from "$lib/types/bms-format";
+import type { CandidateEntry } from "./bms-search";
 
 /** 谱面在一个难度表中的出现信息 */
 export interface ChartAppearance {

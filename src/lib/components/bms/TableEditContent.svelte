@@ -1,14 +1,14 @@
 <script module lang="ts">
-  import type { Snippet } from "svelte";
-
-  import type { EditorNotice } from "$lib/controllers/editor";
-  import type { CourseModel } from "$lib/utils/table-course";
+  import type { CourseModel } from "@brightmeows/bms/course";
   import type {
     BmsDropResult,
     EntryImportResult,
     LevelFilter,
     TableImportResult,
-  } from "$lib/utils/table-editor";
+  } from "@brightmeows/bms/editor";
+  import type { Snippet } from "svelte";
+
+  import type { EditorNotice } from "$lib/controllers/editor";
 
   /**
    * 编辑态内容组件：由合并页在进入编辑模式时动态加载（查看态包体不背编辑器）。

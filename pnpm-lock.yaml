@@ -207,6 +207,9 @@ importers:
 
   .:
     dependencies:
+      '@brightmeows/bms':
+        specifier: workspace:*
+        version: link:packages/bms
       '@brightmeows/mirror':
         specifier: workspace:*
         version: link:packages/mirror
@@ -307,6 +310,12 @@ importers:
       wrangler:
         specifier: ^4.147.0
         version: 4.147.0(@cloudflare/workers-types@5.20261003.1)(@types/node@26.6.4)
+
+  packages/bms:
+    dependencies:
+      '@brightmeows/mirror':
+        specifier: workspace:*
+        version: link:../mirror
 
   packages/mirror: {}
 

@@ -1,10 +1,11 @@
 <script lang="ts">
+  import type { ChartData } from "@brightmeows/bms/format";
+
   import BmsLinkButtons from "./BmsLinkButtons.svelte";
 
   import GradientButton from "$lib/components/ui/GradientButton.svelte";
   import { jsonPreview } from "$lib/components/ui/JsonPreview.svelte";
   import { m } from "$lib/paraglide/messages.js";
-  import type { ChartData } from "$lib/types/bms-format";
   import type { JsonPreviewHandle } from "$lib/types/ui";
 
   interface Props {

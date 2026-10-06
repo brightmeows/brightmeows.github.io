@@ -1,14 +1,4 @@
 <script lang="ts">
-  import EntryDetailForm from "$lib/components/bms/EntryDetailForm.svelte";
-  import Checkbox from "$lib/components/ui/Checkbox.svelte";
-  import {
-    btnGhost,
-    btnIconDanger,
-    btnIconPlain,
-    inputEditorMono,
-  } from "$lib/constants/ui-classes";
-  import { m } from "$lib/paraglide/messages.js";
-  import { levelSegmentColor } from "$lib/utils/bms-table";
   import {
     assignHintLevels,
     assignLevel,
@@ -27,7 +17,18 @@
     shortenHash,
     toggleSelection,
     type LevelFilter,
-  } from "$lib/utils/table-editor";
+  } from "@brightmeows/bms/editor";
+  import { levelSegmentColor } from "@brightmeows/bms/table";
+
+  import EntryDetailForm from "$lib/components/bms/EntryDetailForm.svelte";
+  import Checkbox from "$lib/components/ui/Checkbox.svelte";
+  import {
+    btnGhost,
+    btnIconDanger,
+    btnIconPlain,
+    inputEditorMono,
+  } from "$lib/constants/ui-classes";
+  import { m } from "$lib/paraglide/messages.js";
 
   /**
    * 条目编辑表：按等级分组（组表头即目录滚动锚点）、勾选与批量指派或删除、

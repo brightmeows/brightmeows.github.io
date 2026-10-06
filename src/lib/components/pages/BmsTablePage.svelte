@@ -1,7 +1,6 @@
 <script module lang="ts">
+  import type { TableEditPayload } from "@brightmeows/bms/editor";
   import type { Snippet } from "svelte";
-
-  import type { TableEditPayload } from "$lib/utils/table-editor";
 
   /** 来源：从哪里加载、草稿存哪。 */
   export interface TablePageSource {
@@ -40,6 +39,23 @@
 </script>
 
 <script lang="ts">
+  import { emptyCourseModel, serializeCourse, type CourseModel } from "@brightmeows/bms/course";
+  import {
+    buildCombinedPackage,
+    buildEditorHeader,
+    countUnassigned,
+    groupEntryIndices,
+    levelFilterFromSelection,
+    type DraftPayload,
+    type LevelFilter,
+  } from "@brightmeows/bms/editor";
+  import type { ChartData } from "@brightmeows/bms/format";
+  import { sortDifficultyGroups } from "@brightmeows/bms/table";
+  import {
+    computeTableStats,
+    groupChartsByLevel,
+    resolveCourses,
+  } from "@brightmeows/bms/transform";
   import { withLocalDataUrl } from "@brightmeows/mirror/shared";
   import type { Component } from "svelte";
   import { onMount } from "svelte";
@@ -76,24 +92,11 @@
     type DraftWriteResult,
   } from "$lib/data/table-drafts";
   import { m } from "$lib/paraglide/messages.js";
-  import type { ChartData } from "$lib/types/bms-format";
   import type { ProgressCallback } from "$lib/types/bms-view";
   import type { TocItem } from "$lib/types/ui";
-  import { sortDifficultyGroups } from "$lib/utils/bms-table";
-  import { computeTableStats, groupChartsByLevel, resolveCourses } from "$lib/utils/bms-transform";
   import { clipboardFeedback } from "$lib/utils/clipboard.svelte";
   import { downloadJsonFile } from "$lib/utils/download";
   import { editorHeaderState } from "$lib/utils/editor-header";
-  import { emptyCourseModel, serializeCourse, type CourseModel } from "$lib/utils/table-course";
-  import {
-    buildCombinedPackage,
-    buildEditorHeader,
-    countUnassigned,
-    groupEntryIndices,
-    levelFilterFromSelection,
-    type DraftPayload,
-    type LevelFilter,
-  } from "$lib/utils/table-editor";
   import { formatTitle } from "$lib/utils/title";
   import { resolveUrl } from "$lib/utils/url";
 

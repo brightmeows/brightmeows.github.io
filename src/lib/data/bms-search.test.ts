@@ -1,9 +1,8 @@
+import type { ChartData } from "@brightmeows/bms/format";
 import { describe, expect, it } from "vitest";
 
 import type { SearchIndexBundle } from "./bms-search";
 import { detectQueryType, filterChartsByKeys, searchIndices } from "./bms-search";
-
-import type { ChartData } from "$lib/types/bms-format";
 
 const MD5 = "d41d8cd98f00b204e9800998ecf8427e";
 const SHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
