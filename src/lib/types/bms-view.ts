@@ -68,3 +68,16 @@ export interface MirrorAdminUi {
 }
 
 export type MirrorOverviewState = "idle" | "loading" | "ready" | "error";
+
+/** 编辑态悬浮目录的分区锚点项。 */
+export interface EditTocSection {
+  id: string;
+  title: string;
+}
+
+/** 目录等级子项（count 为当前条目数，勾选状态由页面持有）。 */
+export interface EditTocLevel {
+  level: string;
+  unassigned: boolean;
+  count: number;
+}

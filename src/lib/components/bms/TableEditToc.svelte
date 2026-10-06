@@ -1,16 +1,8 @@
 <script module lang="ts">
   /** 目录分区项。 */
-  export interface EditTocSection {
-    id: string;
-    title: string;
-  }
+  import type { EditTocLevel, EditTocSection } from "$lib/types/bms-view";
 
-  /** 目录等级子项（count 为当前条目数，勾选状态由页面持有）。 */
-  export interface EditTocLevel {
-    level: string;
-    unassigned: boolean;
-    count: number;
-  }
+  export type { EditTocLevel, EditTocSection };
 </script>
 
 <script lang="ts">
