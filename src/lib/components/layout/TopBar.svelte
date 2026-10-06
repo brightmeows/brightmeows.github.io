@@ -3,6 +3,7 @@
 
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
+  import { createPanelGroup } from "$lib/components/ui/dropdown-panel.svelte";
   import GlassButton from "$lib/components/ui/GlassButton.svelte";
   import GlassPanel from "$lib/components/ui/GlassPanel.svelte";
   import { topLevelNav, type NavDropdown, type NavItem } from "$lib/constants/nav";
@@ -30,26 +31,12 @@
   let lastScrollY = $state(0);
   let accumulatedDelta = $state(0);
 
-  // —— 弹层：头像卡 / 导航下拉与菜单 / 用户菜单，互斥展开；id 由触发方给定 ——
+  // —— 弹层：头像卡 / 导航下拉与菜单 / 用户菜单，互斥展开；交互原语在
+  // dropdown-panel.svelte.ts（Escape 焦点恢复、外点关闭、互斥状态），
+  // 滚动即收起是顶栏自身行为，在下方 handleScroll 里调 panels.close()。 ——
 
-  let openPanel = $state<string | null>(null);
   let root: HTMLDivElement | undefined;
-
-  function togglePanel(panel: string): void {
-    openPanel = openPanel === panel ? null : panel;
-  }
-
-  function closePanel(): void {
-    openPanel = null;
-  }
-
-  // Esc 关闭当前弹层并把焦点送回触发按钮：弹层 DOM 随关闭移除，不回移则
-  // 焦点落回 body，键盘用户丢失位置。触发按钮互斥地持有 aria-expanded="true"。
-  function handleKeydown(event: KeyboardEvent): void {
-    if (event.key !== "Escape" || openPanel === null) return;
-    closePanel();
-    root?.querySelector<HTMLButtonElement>('[aria-expanded="true"]')?.focus();
-  }
+  const panels = createPanelGroup(() => root);
 
   function handleScroll(): void {
     const currentScrollY = window.scrollY;
@@ -57,8 +44,8 @@
     lastScrollY = currentScrollY;
 
     // 弹层展开时滚动即视为离开信号：关闭弹层，隐藏节奏照常执行
-    if (openPanel !== null) {
-      closePanel();
+    if (panels.openId !== null) {
+      panels.close();
     }
 
     if (isVisible) {
@@ -84,27 +71,17 @@
     }
   }
 
-  function onOutsidePointerDown(event: PointerEvent): void {
-    if (!root) return;
-    if (event.target instanceof Node && root.contains(event.target)) return;
-    closePanel();
-  }
-
   onMount(() => {
     lastScrollY = window.scrollY;
     window.addEventListener("scroll", handleScroll, { passive: true });
-    document.addEventListener("pointerdown", onOutsidePointerDown, true);
-    window.addEventListener("keydown", handleKeydown);
     void auth.ensureLoaded();
     return () => {
       window.removeEventListener("scroll", handleScroll);
-      document.removeEventListener("pointerdown", onOutsidePointerDown, true);
-      window.removeEventListener("keydown", handleKeydown);
     };
   });
 
   async function doLogout(): Promise<void> {
-    closePanel();
+    panels.close();
     await auth.logout();
   }
 
@@ -182,8 +159,8 @@
           type="button"
           class="cursor-pointer rounded-full border-2 border-transparent transition-colors duration-150 hover:border-white/40"
           aria-label={m["topbar.profile_card_aria"]()}
-          aria-expanded={openPanel === "profile"}
-          onclick={() => togglePanel("profile")}
+          aria-expanded={panels.isOpen("profile")}
+          onclick={() => panels.toggle("profile")}
         >
           <img
             class="size-10 rounded-full border-2 border-white/30"
@@ -192,7 +169,7 @@
           />
         </button>
 
-        {#if openPanel === "profile"}
+        {#if panels.isOpen("profile")}
           <div class="absolute top-full left-0 mt-2 w-[min(320px,calc(100vw-1.5rem))]">
             <GlassPanel class="rounded-2xl p-5" padding="none" rounded="none">
               <div class="text-center">
@@ -242,9 +219,9 @@
                 class="{linkBase} flex items-center gap-1 {dropdownActive
                   ? 'bg-white/15 font-semibold text-white'
                   : 'text-white/85 hover:bg-white/10 hover:text-white'}"
-                aria-expanded={openPanel === item.id}
+                aria-expanded={panels.isOpen(item.id)}
                 aria-current={dropdownActive ? "true" : undefined}
-                onclick={() => togglePanel(item.id)}
+                onclick={() => panels.toggle(item.id)}
               >
                 {item.label()}
                 <svg
@@ -258,7 +235,7 @@
                 </svg>
               </button>
 
-              {#if openPanel === item.id}
+              {#if panels.isOpen(item.id)}
                 <div class="absolute top-full left-0 mt-2 w-56">
                   <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
                     {@render dropdownEntries(item.children)}
@@ -285,8 +262,8 @@
         <button
           type="button"
           class="{linkBase} flex items-center gap-1 text-white/85 hover:bg-white/10 hover:text-white"
-          aria-expanded={openPanel === "menu"}
-          onclick={() => togglePanel("menu")}
+          aria-expanded={panels.isOpen("menu")}
+          onclick={() => panels.toggle("menu")}
         >
           {m["topbar.menu"]()}
           <svg
@@ -300,7 +277,7 @@
           </svg>
         </button>
 
-        {#if openPanel === "menu"}
+        {#if panels.isOpen("menu")}
           <div class="absolute top-full left-0 mt-2 w-56">
             <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
               {#each topLevelNav as item, i (i)}
@@ -368,12 +345,12 @@
             <button
               type="button"
               class="{linkBase} text-white/85 hover:bg-white/10 hover:text-white"
-              aria-expanded={openPanel === "user"}
-              onclick={() => togglePanel("user")}
+              aria-expanded={panels.isOpen("user")}
+              onclick={() => panels.toggle("user")}
             >
               {user.login}
             </button>
-            {#if openPanel === "user"}
+            {#if panels.isOpen("user")}
               <div class="absolute top-full right-0 mt-2 w-56">
                 <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
                   <div class="px-3 py-2 text-sm text-white/70">
@@ -405,8 +382,8 @@
             class="flex size-9 cursor-pointer items-center justify-center rounded-full text-white/60 transition-colors hover:bg-white/10 hover:text-white"
             title={m["topbar.theme"]()}
             aria-label={m["topbar.theme"]()}
-            aria-expanded={openPanel === "theme"}
-            onclick={() => togglePanel("theme")}
+            aria-expanded={panels.isOpen("theme")}
+            onclick={() => panels.toggle("theme")}
           >
             {#if theme.preference === "light"}
               <svg
@@ -449,7 +426,7 @@
             {/if}
           </button>
 
-          {#if openPanel === "theme"}
+          {#if panels.isOpen("theme")}
             <div class="absolute top-full right-0 mt-2 w-40">
               <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
                 {#each themeOptions as option (option.value)}
@@ -462,7 +439,7 @@
                     aria-current={active ? "true" : undefined}
                     onclick={() => {
                       theme.setPreference(option.value);
-                      closePanel();
+                      panels.close();
                     }}
                   >
                     {option.label()}
@@ -479,8 +456,8 @@
               class="flex size-9 cursor-pointer items-center justify-center rounded-full text-white/60 transition-colors hover:bg-white/10 hover:text-white"
               title={m["topbar.language"]()}
               aria-label={m["topbar.language"]()}
-              aria-expanded={openPanel === "language"}
-              onclick={() => togglePanel("language")}
+              aria-expanded={panels.isOpen("language")}
+              onclick={() => panels.toggle("language")}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -498,7 +475,7 @@
               </svg>
             </button>
 
-            {#if openPanel === "language"}
+            {#if panels.isOpen("language")}
               <div class="absolute top-full right-0 mt-2 w-40">
                 <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
                   {#each languages as language (language.code)}
