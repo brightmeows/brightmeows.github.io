@@ -13,11 +13,18 @@ import {
   countUnassigned,
   shouldWarnOverwrite,
 } from "@brightmeows/bms/editor";
+import { sharedPayloadMessage, type SharedPayloadMessage } from "@brightmeows/bms/shared";
 import type { SharedPayloadError } from "@brightmeows/mirror/shared";
 import { checkSharedPayload, withLocalDataUrl } from "@brightmeows/mirror/shared";
 
 import { m } from "#lib/paraglide/messages.js";
-import { sharedPayloadErrorMessage } from "#lib/utils/shared-table.js";
+import { translateMessage } from "#lib/utils/i18n/i18n.js";
+
+/** 载荷校验消息 → 当前语言文案（键与服务端错误码同键，未知键回透传）。 */
+function payloadNoticeText(error: Parameters<typeof sharedPayloadMessage>[0]): string {
+  const message: SharedPayloadMessage = sharedPayloadMessage(error);
+  return translateMessage(message.key, message.params) ?? message.key;
+}
 
 /** 保存的本地闸门：载荷校验与未指派检查（通过后才值得联网查并发）。 */
 export type LocalSaveGate =
@@ -89,7 +96,7 @@ export async function planEditorSave(deps: {
   if (gate.gate === "invalid_payload") {
     return {
       kind: "rejected",
-      notice: { kind: "error", text: sharedPayloadErrorMessage(gate.error) },
+      notice: { kind: "error", text: payloadNoticeText(gate.error) },
     };
   }
   if (gate.gate === "unassigned") {
@@ -155,7 +162,7 @@ export function planSaveAsShared(
   if (!check.ok) {
     return {
       kind: "invalid",
-      notice: { kind: "error", text: sharedPayloadErrorMessage(check.error) },
+      notice: { kind: "error", text: payloadNoticeText(check.error) },
     };
   }
   return mode === "bridge" ? { kind: "export" } : { kind: "claim" };
