@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { sharedIdPreview } from "@brightmeows/bms/shared";
   import { validateSharedId, type SharedIdError } from "@brightmeows/mirror/shared";
   import { onMount } from "svelte";
 
@@ -11,7 +12,6 @@
   import { auth } from "#lib/data/store/auth-store.svelte.js";
   import { sharedNewSeed } from "#lib/data/store/shared-new.svelte.js";
   import { m } from "#lib/paraglide/messages.js";
-  import { sharedIdPreview } from "#lib/utils/shared-table.js";
   import { goto } from "$app/navigation";
 
   /**

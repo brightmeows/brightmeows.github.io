@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { SharedAuthorGroup } from "@brightmeows/bms/shared";
   import type { SharedTableItem } from "@brightmeows/mirror/shared";
 
   import SharedTableRow from "./SharedTableRow.svelte";
@@ -6,7 +7,6 @@
   import EmptyState from "#lib/components/ui/EmptyState.svelte";
   import { m } from "#lib/paraglide/messages.js";
   import { slugifyTag } from "#lib/utils/mirror-tables.js";
-  import type { SharedAuthorGroup } from "#lib/utils/shared-table.js";
 
   /**
    * 共享表的分组列表：按作者分组（组头 GitHub login），行结构与镜像列表

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { filterMineOnly, filterSharedTables, groupSharedTables } from "@brightmeows/bms/shared";
   import type { SharedTableItem } from "@brightmeows/mirror/shared";
   import { onMount } from "svelte";
 
@@ -15,11 +16,6 @@
   import { searchConverters } from "#lib/data/store/search-converters.svelte.js";
   import { m } from "#lib/paraglide/messages.js";
   import { buildSearchNeedles } from "#lib/utils/mirror-tables.js";
-  import {
-    filterMineOnly,
-    filterSharedTables,
-    groupSharedTables,
-  } from "#lib/utils/shared-table.js";
   import { resolve } from "$app/paths";
 
   /**

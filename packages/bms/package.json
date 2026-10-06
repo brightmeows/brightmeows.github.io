@@ -24,6 +24,10 @@
       "types": "./src/format.ts",
       "default": "./src/format.ts"
     },
+    "./shared": {
+      "types": "./src/shared.ts",
+      "default": "./src/shared.ts"
+    },
     "./table": {
       "types": "./src/table.ts",
       "default": "./src/table.ts"

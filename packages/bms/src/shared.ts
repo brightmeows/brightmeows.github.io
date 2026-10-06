@@ -7,11 +7,9 @@ import {
 } from "@brightmeows/mirror/shared";
 import { sharedTablePath } from "@brightmeows/mirror/urls";
 
-import { m } from "#lib/paraglide/messages.js";
-
 /**
  * 共享表的纯函数：搜索过滤、按作者分组、header 表单转换、分页与导出。
- * 无副作用（纯函数）。
+ * 无副作用（纯函数），无 i18n 依赖（校验消息返回结构化键，调用方翻译）。
  */
 
 /** 作者分组（列表的分组键）：组头是 GitHub login，`isSelf` 用于置顶与筛选。 */
@@ -142,26 +140,32 @@ export function sharedIdPreview(id: string, origin: string): string {
   return `${origin.replace(/\/+$/u, "")}${sharedTablePath(id)}`;
 }
 
+/** 载荷校验错误的展示消息：键与服务端 `api.shared_*` 错误码同键。 */
+export interface SharedPayloadMessage {
+  key: `api.shared_${SharedPayloadError}`;
+  params?: Record<string, number>;
+}
+
 /**
- * 载荷校验错误 → 展示文案：与服务端 `api.shared_*` 错误码同键，
- * 保证“客户端预检”与“服务端拒绝”看到同一句话（字面量引用，
- * i18n 覆盖检查可收集）。
+ * 载荷校验错误 → 结构化消息（键加数量参数）：键与服务端 `api.shared_*`
+ * 错误码同键，保证“客户端预检”与“服务端拒绝”看到同一句话；翻译由
+ * 调用方经 translateMessage 完成（域逻辑不依赖 i18n 生成物）。
  */
-export function sharedPayloadErrorMessage(error: SharedPayloadError): string {
+export function sharedPayloadMessage(error: SharedPayloadError): SharedPayloadMessage {
   switch (error) {
     case "header_invalid":
-      return m["api.shared_header_invalid"]();
+      return { key: "api.shared_header_invalid" };
     case "header_too_large":
-      return m["api.shared_header_too_large"]({ limit: SHARED_MAX_HEADER_BYTES });
+      return { key: "api.shared_header_too_large", params: { limit: SHARED_MAX_HEADER_BYTES } };
     case "missing_identity":
-      return m["api.shared_missing_identity"]();
+      return { key: "api.shared_missing_identity" };
     case "data_invalid":
-      return m["api.shared_data_invalid"]();
+      return { key: "api.shared_data_invalid" };
     case "data_too_large":
-      return m["api.shared_data_too_large"]({ limit: SHARED_MAX_DATA_BYTES });
+      return { key: "api.shared_data_too_large", params: { limit: SHARED_MAX_DATA_BYTES } };
     case "too_many_entries":
-      return m["api.shared_too_many_entries"]({ limit: SHARED_MAX_ENTRIES });
+      return { key: "api.shared_too_many_entries", params: { limit: SHARED_MAX_ENTRIES } };
     case "entry_invalid":
-      return m["api.shared_entry_invalid"]();
+      return { key: "api.shared_entry_invalid" };
   }
 }

@@ -11,7 +11,7 @@ import {
   paginate,
   sharedIdPreview,
   textToLevelOrder,
-} from "./shared-table";
+} from "./shared.ts";
 
 function item(id: string, author: string, updatedAt = "2026-01-01", name = id): SharedTableItem {
   return {

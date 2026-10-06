@@ -19,3 +19,13 @@ interface TextEncoder {
 }
 
 declare const TextEncoder: new () => TextEncoder;
+
+/**
+ * URL 是浏览器与 Node 都提供的宿主 API，但它不在 ES2023 的 lib 里。
+ * 这里只声明共享表地址解析实际使用的最小面（构造与 pathname）。
+ */
+interface URL {
+  pathname: string;
+}
+
+declare const URL: new (input: string, base?: string | URL) => URL;
