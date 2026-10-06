@@ -168,26 +168,26 @@
   <div class="text-center">
     <h1 class="page-title mb-2">{model.pageTitle}</h1>
     {#if model.symbol.trim() !== ""}
-      <div class="text-[1.2rem] text-white/70 italic">
+      <div class="text-[1.2rem] text-white-70 italic">
         {m["table.symbol"]({ symbol: model.symbol })}
       </div>
     {/if}
     {#if !createMode}
-      <div class="mt-2 text-[1.2rem] text-white/70 italic">
+      <div class="mt-2 text-[1.2rem] text-white-70 italic">
         {m["table.import_hint"]()}
         {#if importUrl}
-          <span class="font-mono text-[0.95rem] break-all text-white/85">{importUrl}</span>
+          <span class="font-mono text-[0.95rem] break-all text-white-85">{importUrl}</span>
           <button class="link-accent" type="button" onclick={copyImportUrl}>
             {m["common.click_copy"]()}
           </button>
         {:else}
-          <span class="text-white/50">{m["table.reading"]()}</span>
+          <span class="text-white-50">{m["table.reading"]()}</span>
         {/if}
         {#if cb.copied}
           <span class="ml-2 text-[#4caf50]">{m["common.copied"]()}</span>
         {/if}
       </div>
-      <div class="mt-2 text-[1.2rem] text-white/70 italic">
+      <div class="mt-2 text-[1.2rem] text-white-70 italic">
         {#if headerUrl}
           <a class="link-accent" href={headerUrl} target="_blank" rel="noopener noreferrer">
             {m["table.view_header"]()}
@@ -270,10 +270,10 @@
       </div>
     {/if}
     {#if isEdit && model.ready && model.draftStatusText !== ""}
-      <div class="mt-2 text-[0.85rem] text-white/45">{model.draftStatusText}</div>
+      <div class="mt-2 text-[0.85rem] text-white-45">{model.draftStatusText}</div>
     {/if}
     {#if model.ready && model.tableStats}
-      <div class="mt-2 text-[1.2rem] text-white/70 italic">
+      <div class="mt-2 text-[1.2rem] text-white-70 italic">
         {m["table.stats"]({
           total: model.tableStats.totalCharts,
           difficulties: model.tableStats.difficulties.length,
@@ -299,7 +299,7 @@
   {#if model.pendingDraft !== null}
     <div class="py-2 text-center">
       <p class="text-[1.05rem] text-amber-200">{m["editor.draft_found_title"]()}</p>
-      <p class="mx-auto mt-2 max-w-120 text-[0.9rem] text-white/65">
+      <p class="mx-auto mt-2 max-w-120 text-[0.9rem] text-white-65">
         {m["editor.draft_found_desc"]({ time: model.formatClock(model.pendingDraft.savedAt) })}
       </p>
       <div class="mt-4 flex flex-wrap justify-center gap-3">
@@ -370,7 +370,7 @@
     <p class="message-error my-6">
       {message}
     </p>
-    <p class="mb-6 text-white/70">{tip}</p>
+    <p class="mb-6 text-white-70">{tip}</p>
     <button class={btnPrimaryLarge} type="button" onclick={() => void onRetry()}>
       {buttonLabel}
     </button>

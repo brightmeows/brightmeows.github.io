@@ -8,7 +8,7 @@
 
 <div class="fixed right-4 bottom-4 z-1000 flex flex-col gap-3">
   <button
-    class="flex size-14 items-center justify-center rounded-full border border-white/25 bg-white/15 text-white shadow-[0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur-sm transition-all hover:bg-white/25"
+    class="flex size-14 items-center justify-center rounded-full border border-white-25 bg-white-15 text-white shadow-[0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur-sm transition-all hover:bg-white-25"
     type="button"
     aria-label={m["common.back_to_top"]()}
     title={m["common.back_to_top"]()}

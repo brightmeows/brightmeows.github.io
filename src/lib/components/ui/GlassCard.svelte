@@ -53,7 +53,7 @@
   };
 
   const sharedClasses =
-    "glass-base bg-glass border border-white/10 hover:bg-glass-hover hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)]";
+    "glass-base bg-glass border border-white-10 hover:bg-glass-hover hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)]";
 </script>
 
 {#if href}

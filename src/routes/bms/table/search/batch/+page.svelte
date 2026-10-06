@@ -248,8 +248,8 @@
 
 {#snippet titlePane()}
   <h1 class="page-title text-center">{m["batch.page_title"]()}</h1>
-  <p class="mt-2 text-center text-[1.1rem] text-white/70">{m["batch.subtitle"]()}</p>
-  <p class="mt-3 text-center text-[0.95rem] text-white/40">
+  <p class="mt-2 text-center text-[1.1rem] text-white-70">{m["batch.subtitle"]()}</p>
+  <p class="mt-3 text-center text-[0.95rem] text-white-40">
     <a class="text-accent underline-offset-2 hover:underline" href="/bms/table/search">
       {m["batch.back_link"]()}
     </a>
@@ -261,21 +261,21 @@
     <!-- 索引加载进度 -->
     <div class="p-8 text-center">
       <div class="mb-6 text-[3rem]">⏳</div>
-      <p class="mb-4 text-white/80">{m["search.loading_index"]()}</p>
+      <p class="mb-4 text-white-80">{m["search.loading_index"]()}</p>
       <div class="mx-auto max-w-xs space-y-2 text-left">
         {#each indexClient.progress as item (item.name)}
           <div class="flex items-center gap-3 text-[0.9rem]">
             {#if item.status === "loading"}
               <div
-                class="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-white/30 border-t-[#64b5f6]"
+                class="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-white-30 border-t-[#64b5f6]"
               ></div>
-              <span class="text-white/60">{item.name}.json</span>
+              <span class="text-white-60">{item.name}.json</span>
             {:else if item.status === "done"}
               <span class="shrink-0 text-[#4caf50]">✓</span>
-              <span class="text-white/80">{item.name}.json</span>
+              <span class="text-white-80">{item.name}.json</span>
             {:else}
               <span class="shrink-0 text-[#ff6b6b]">✗</span>
-              <span class="text-white/50">{item.name}.json</span>
+              <span class="text-white-50">{item.name}.json</span>
             {/if}
           </div>
         {/each}
@@ -300,7 +300,7 @@
             placeholder={placeholderText}
             disabled={isProcessing}
             rows="10"
-            class="w-full resize-y rounded-[16px] border border-white/20 bg-white/10 px-6 py-4 font-mono text-[1rem] leading-relaxed text-white placeholder-white/40 transition-colors outline-none focus:border-[#64b5f6] focus:bg-white/15 disabled:cursor-not-allowed disabled:opacity-40"
+            class="w-full resize-y rounded-[16px] border border-white-20 bg-white-10 px-6 py-4 font-mono text-[1rem] leading-relaxed text-white placeholder-white-40 transition-colors outline-none focus:border-[#64b5f6] focus:bg-white-15 disabled:cursor-not-allowed disabled:opacity-40"
           ></textarea>
         </div>
         <div class="flex w-14 shrink-0 flex-col gap-3">
@@ -314,7 +314,7 @@
                 void performBatchSearch();
               }
             }}
-            class="flex h-14 flex-1 cursor-pointer items-center justify-center rounded-[16px] border border-white/20 bg-white/10 text-[1.3rem] text-white transition-colors hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
+            class="flex h-14 flex-1 cursor-pointer items-center justify-center rounded-[16px] border border-white-20 bg-white-10 text-[1.3rem] text-white transition-colors hover:bg-white-20 disabled:cursor-not-allowed disabled:opacity-40"
             aria-label={batchPhase === "loading-tables"
               ? m["common.cancel"]()
               : m["search.search"]()}
@@ -323,7 +323,7 @@
               ✕
             {:else if batchPhase === "aggregating"}
               <div
-                class="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-[#64b5f6]"
+                class="h-5 w-5 animate-spin rounded-full border-2 border-white-30 border-t-[#64b5f6]"
               ></div>
             {:else}
               🔍
@@ -333,12 +333,12 @@
       </div>
       <div class="mt-2 flex items-center gap-4">
         {#if queryCount > 0}
-          <span class="text-[0.95rem] text-white/50"
+          <span class="text-[0.95rem] text-white-50"
             >{m["batch.query_count"]({ count: queryCount })}</span
           >
         {/if}
       </div>
-      <p class="mt-3 text-[0.95rem] text-white/40">
+      <p class="mt-3 text-[0.95rem] text-white-40">
         {m["batch.help"]()}
       </p>
     </div>
@@ -384,7 +384,7 @@
         <!-- 下载 + 摘要 -->
         <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p class="text-white/80">
+            <p class="text-white-80">
               {m["batch.summary"]({ queries: resultQueries.length, charts: totalCharts })}
             </p>
             {#if tableSummary.error > 0}
@@ -409,13 +409,13 @@
                 class="flex w-full cursor-pointer items-center justify-between gap-3 py-1 text-left"
               >
                 <span class="flex min-w-0 flex-1 items-center gap-2 text-white">
-                  <span class="shrink-0 text-[0.8rem] text-white/40">
+                  <span class="shrink-0 text-[0.8rem] text-white-40">
                     {expandedQuery === query ? "▼" : "▶"}
                   </span>
                   <span class="truncate font-mono text-[0.95rem]">{query}</span>
                 </span>
                 <span
-                  class="shrink-0 rounded-[6px] bg-white/10 px-2.5 py-1 text-[0.85rem] text-white/70"
+                  class="shrink-0 rounded-[6px] bg-white-10 px-2.5 py-1 text-[0.85rem] text-white-70"
                 >
                   {m["batch.chart_count"]({ count: results.length })}
                 </span>

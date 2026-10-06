@@ -352,7 +352,7 @@
 {#snippet titlePane()}
   <h1 id="bms-table-mirror" class="page-title mb-2 scroll-mt-5 text-center">{pageTitle}</h1>
 
-  <div class="mt-1 text-center text-[1.1rem] text-white/70 italic">
+  <div class="mt-1 text-center text-[1.1rem] text-white-70 italic">
     {m["mirror.bms_hint_before"]()}
     <button class="link-accent" type="button" onclick={copyTables}>
       {m["common.click_copy"]()}
@@ -391,7 +391,7 @@
       <label
         class="flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-[0.35rem] text-[0.85rem] transition-colors duration-200 select-none {showProtectedOnly
           ? 'border-[#ffd54f] bg-[#ffd54f]/20 text-[#ffd54f]'
-          : 'border-white/20 text-white/50 hover:border-white/40 hover:text-white/70'}"
+          : 'border-white-20 text-white-50 hover:border-white-40 hover:text-white-70'}"
       >
         <Checkbox
           size="sm"
@@ -404,7 +404,7 @@
         <button
           class="cursor-pointer rounded-md border px-2 py-[0.35rem] text-[0.85rem] transition-colors duration-200 {adminPanelOpen
             ? 'border-[#64b5f6]/60 bg-[#64b5f6]/20 text-[#64b5f6]'
-            : 'border-white/20 text-white/50 hover:border-white/40 hover:text-white/70'}"
+            : 'border-white-20 text-white-50 hover:border-white-40 hover:text-white-70'}"
           type="button"
           aria-expanded={adminPanelOpen}
           onclick={toggleAdminPanel}
@@ -416,7 +416,7 @@
 
     <div class="relative w-full">
       <input
-        class="w-full rounded-xl border border-white/20 bg-black/20 px-4 py-3 pr-12 text-white outline-none placeholder:text-white/50 focus:border-[#64b5f6]/60 focus:ring-2 focus:ring-[#64b5f6]/30"
+        class="w-full rounded-xl border border-white-20 bg-black-20 px-4 py-3 pr-12 text-white outline-none placeholder:text-white-50 focus:border-[#64b5f6]/60 focus:ring-2 focus:ring-[#64b5f6]/30"
         type="text"
         placeholder={m["mirror.search_placeholder"]()}
         bind:value={searchQuery}
@@ -424,7 +424,7 @@
       />
       {#if searchQuery.trim().length > 0}
         <button
-          class="absolute top-1/2 right-2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg border border-white/20 bg-white/10 p-0 text-[1.25rem] leading-none text-white transition-all duration-200 ease-in-out hover:bg-white/20"
+          class="absolute top-1/2 right-2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg border border-white-20 bg-white-10 p-0 text-[1.25rem] leading-none text-white transition-all duration-200 ease-in-out hover:bg-white-20"
           type="button"
           aria-label={m["common.clear_search"]()}
           onclick={() => (searchQuery = "")}
@@ -434,7 +434,7 @@
       {/if}
     </div>
     {#if searchQuery.trim().length > 0 || showProtectedOnly}
-      <div class="text-[0.95rem] text-white/60">
+      <div class="text-[0.95rem] text-white-60">
         {m["common.matched"]({
           shown: protectedFilteredTables.length,
           total: tables.length,
@@ -474,7 +474,7 @@
       {m["common.load_failed_with_error"]({ error: m["common.unknown_error"]() })}
     </div>
   {:else if groupedByTags.length === 0}
-    <div class="mt-6 text-white/70">
+    <div class="mt-6 text-white-70">
       {showProtectedOnly ? m["mirror.no_match_protected"]() : m["mirror.no_match"]()}
     </div>
   {:else}

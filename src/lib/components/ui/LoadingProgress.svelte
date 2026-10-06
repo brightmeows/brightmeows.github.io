@@ -51,13 +51,13 @@
 
 {#if variant === "compact"}
   <div class="flex items-center gap-3 {className}">
-    <div class="h-2 flex-1 overflow-hidden rounded-md bg-white/10">
+    <div class="h-2 flex-1 overflow-hidden rounded-md bg-white-10">
       <div
         class="h-full rounded-md {isIndeterminate ? 'shimmer-bar' : 'progress-fill'}"
         style="width:{isIndeterminate ? 100 : progress}%"
       ></div>
     </div>
-    <span class="text-[0.85rem] text-white/70">{message}</span>
+    <span class="text-[0.85rem] text-white-70">{message}</span>
   </div>
 {:else}
   <div class="glass-loading-container {className}">
@@ -79,10 +79,10 @@
     </div>
 
     <div class="flex flex-col gap-2">
-      <span class="text-[0.9rem] text-white/60">{m["progress.current_step"]()}:</span>
+      <span class="text-[0.9rem] text-white-60">{m["progress.current_step"]()}:</span>
       <span class="font-medium text-white">{message}</span>
       {#if detail}
-        <span class="text-[0.85rem] text-white/50">{detail}</span>
+        <span class="text-[0.85rem] text-white-50">{detail}</span>
       {/if}
     </div>
   </div>

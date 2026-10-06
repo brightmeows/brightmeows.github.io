@@ -82,7 +82,7 @@
 </script>
 
 {#if unavailable}
-  <GlassPanel class="mt-4 text-[0.95rem] text-white/75">
+  <GlassPanel class="mt-4 text-[0.95rem] text-white-75">
     {m["mirror.api_unavailable_before"]()}
     <a
       class="link-accent"
@@ -105,19 +105,19 @@
         </div>
       {/if}
       {#if open}
-        <div class="rounded-lg border border-white/15 bg-black/20 p-3">
+        <div class="rounded-lg border border-white-15 bg-black-20 p-3">
           {#if entries.length === 0}
-            <div class="text-[0.9rem] text-white/60">{m["shared.no_trash"]()}</div>
+            <div class="text-[0.9rem] text-white-60">{m["shared.no_trash"]()}</div>
           {:else}
             <ul class="flex flex-col gap-2">
               {#each entries as record (record.id)}
                 <li
-                  class="flex flex-wrap items-center justify-between gap-2 text-[0.9rem] text-white/75"
+                  class="flex flex-wrap items-center justify-between gap-2 text-[0.9rem] text-white-75"
                 >
                   <span>
                     {record.name}
-                    <span class="ml-2 font-mono text-[0.8rem] text-white/45">{record.id}</span>
-                    <span class="ml-2 text-white/45">{formatRemovedAt(record.removed_at)}</span>
+                    <span class="ml-2 font-mono text-[0.8rem] text-white-45">{record.id}</span>
+                    <span class="ml-2 text-white-45">{formatRemovedAt(record.removed_at)}</span>
                   </span>
                   <button
                     class={btnGhostXs}

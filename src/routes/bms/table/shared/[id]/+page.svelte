@@ -224,7 +224,7 @@
   >
     {#snippet actions()}
       {#if s?.item != null}
-        <span class="text-[0.95rem] text-white/60">
+        <span class="text-[0.95rem] text-white-60">
           {m["shared.author_label"]({ name: s.item.author })}
         </span>
       {/if}
@@ -250,8 +250,8 @@
       {#if canRename || canDelete}
         <div class="flex flex-col gap-4">
           {#if canRename}
-            <div class="rounded-lg border border-white/15 bg-black/20 p-3">
-              <div class="mb-2 text-[0.9rem] text-white/70">{m["shared.rename_section"]()}</div>
+            <div class="rounded-lg border border-white-15 bg-black-20 p-3">
+              <div class="mb-2 text-[0.9rem] text-white-70">{m["shared.rename_section"]()}</div>
               <div class="flex flex-wrap gap-2">
                 <input
                   class="{inputEditorBase} min-w-50 flex-1"
@@ -269,7 +269,7 @@
                   {m["shared.rename_button"]()}
                 </button>
               </div>
-              <p class="mt-2 text-[0.8rem] text-white/50">{m["shared.rename_hint"]()}</p>
+              <p class="mt-2 text-[0.8rem] text-white-50">{m["shared.rename_hint"]()}</p>
             </div>
           {/if}
           {#if canDelete}
@@ -304,11 +304,11 @@
   <GlassPanel>
     <div class="py-6 text-center">
       {#if s?.phase === "login"}
-        <p class="text-[1rem] text-white/75">{m["shared.login_required"]()}</p>
+        <p class="text-[1rem] text-white-75">{m["shared.login_required"]()}</p>
         <a class="{btnPrimary} mt-4 inline-block" href={loginHref}>{m["topbar.login"]()}</a>
       {:else if s?.phase === "notfound"}
         <p class="text-[1.05rem] text-red-300">{m["shared.not_found"]()}</p>
-        <p class="mt-2 text-[0.9rem] text-white/60">{m["shared.not_found_hint"]()}</p>
+        <p class="mt-2 text-[0.9rem] text-white-60">{m["shared.not_found_hint"]()}</p>
         <a class="link-accent mt-3 inline-block" href="/bms/table/shared/">
           {m["shared.back_to_list"]()}
         </a>
@@ -322,7 +322,7 @@
           {m["common.reload"]()}
         </button>
       {:else}
-        <p class="text-[1rem] text-white/75">{m["editor.bridge_new_hint"]()}</p>
+        <p class="text-[1rem] text-white-75">{m["editor.bridge_new_hint"]()}</p>
         <a
           class="link-accent mt-3 inline-block"
           href={`${SITE_ORIGIN}/bms/table/shared/new/`}

@@ -29,7 +29,7 @@
   }: Props = $props();
 </script>
 
-<tr class="hover:bg-white/5">
+<tr class="hover:bg-white-5">
   <td class="table-td-glass whitespace-nowrap">
     <span
       class="inline-block min-w-7.5 rounded-xl px-2 py-1 text-center text-[0.85rem] font-semibold text-white"

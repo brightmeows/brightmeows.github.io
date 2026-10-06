@@ -12,5 +12,5 @@
 
 <GlassCard {href} class="flex w-80 flex-col">
   <div class="accent-title mb-2">{title}</div>
-  <div class="text-[0.95rem] text-white/80">{description}</div>
+  <div class="text-[0.95rem] text-white-80">{description}</div>
 </GlassCard>

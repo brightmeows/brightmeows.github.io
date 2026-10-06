@@ -15,7 +15,7 @@
 
 {#snippet contentPane()}
   {#if data.posts.length === 0}
-    <div class="text-center text-white/70">{m["blog.no_posts"]()}</div>
+    <div class="text-center text-white-70">{m["blog.no_posts"]()}</div>
   {:else}
     <div class="flex flex-col gap-4">
       {#each data.posts as post (post.slug)}

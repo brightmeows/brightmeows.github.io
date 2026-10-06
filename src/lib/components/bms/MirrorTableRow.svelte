@@ -54,7 +54,7 @@
   );
 </script>
 
-<tr class="hover:bg-white/5 last:[&>td]:border-b-0">
+<tr class="hover:bg-white-5 last:[&>td]:border-b-0">
   <td class="table-td-glass wrap-break-word">
     <Checkbox checked={selected} onchange={(v: boolean) => onchange(v)} />
   </td>
@@ -174,7 +174,7 @@
         <span class="badge-copied">{m["common.copied_bang"]()}</span>
       {:else}
         <button
-          class="flex-none cursor-pointer rounded-md border border-white/20 bg-white/10 px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-white/80 transition-all duration-200 ease-in-out hover:bg-white/20 hover:text-white"
+          class="flex-none cursor-pointer rounded-md border border-white-20 bg-white-10 px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-white-80 transition-all duration-200 ease-in-out hover:bg-white-20 hover:text-white"
           onclick={() => cb.copy("mirror", new URL(item.url, window.location.origin).toString())}
           aria-label={m["mirror.copy_mirror_aria"]()}
         >
@@ -200,7 +200,7 @@
           <span class="badge-copied">{m["common.copied_bang"]()}</span>
         {:else}
           <button
-            class="flex-none cursor-pointer rounded-md border border-white/20 bg-white/10 px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-white/80 transition-all duration-200 ease-in-out hover:bg-white/20 hover:text-white"
+            class="flex-none cursor-pointer rounded-md border border-white-20 bg-white-10 px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-white-80 transition-all duration-200 ease-in-out hover:bg-white-20 hover:text-white"
             onclick={() => cb.copy("original", item.url_from!)}
             aria-label={m["mirror.copy_original_aria"]()}
           >
@@ -209,7 +209,7 @@
         {/if}
       </div>
     {:else}
-      <span class="text-white/50">{m["common.none"]()}</span>
+      <span class="text-white-50">{m["common.none"]()}</span>
     {/if}
   </td>
   {#if showActions}
@@ -225,7 +225,7 @@
             onclick={() => adminUi.toggleEdit(item)}
           >
             <svg
-              class="size-4 text-white/70"
+              class="size-4 text-white-70"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -272,8 +272,8 @@
 
 {#if adminUi.isAdmin && isExpanded}
   {#if adminUi.overviewState === "idle" || adminUi.overviewState === "loading"}
-    <tr class="bg-black/30 last:[&>td]:border-b-0">
-      <td colspan={columnCount} class="table-td-glass text-[0.9rem] text-white/60">
+    <tr class="bg-black-30 last:[&>td]:border-b-0">
+      <td colspan={columnCount} class="table-td-glass text-[0.9rem] text-white-60">
         {m["mirror.loading_override"]()}
       </td>
     </tr>

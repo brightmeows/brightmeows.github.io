@@ -45,7 +45,7 @@
     >
       {m["course.heading"]()}
       <span
-        class="text-[0.8rem] text-white/50 transition-transform duration-200 {collapsed
+        class="text-[0.8rem] text-white-50 transition-transform duration-200 {collapsed
           ? ''
           : 'rotate-180'}"
       >
@@ -57,7 +57,7 @@
       <label
         class="flex cursor-pointer items-center gap-1.5 rounded-[6px] border px-2.5 py-0.5 text-[0.8rem] transition-colors duration-200 select-none {groupMode
           ? 'border-accent bg-accent/20 text-accent'
-          : 'border-white/20 text-white/50 hover:border-white/40 hover:text-white/70'}"
+          : 'border-white-20 text-white-50 hover:border-white-40 hover:text-white-70'}"
       >
         <Checkbox size="sm" checked={groupMode} onchange={(v: boolean) => (groupMode = v)} />
         {m["course.grouped_display"]()}
@@ -68,14 +68,14 @@
   {#if !collapsed}
     {#each effectiveGroups as group, gi (gi)}
       {#if groupMode && effectiveGroups.length > 1}
-        <h4 class="mt-6 mb-4 text-center text-[1.2rem] font-semibold text-white/80 first:mt-0">
+        <h4 class="mt-6 mb-4 text-center text-[1.2rem] font-semibold text-white-80 first:mt-0">
           {m["course.group_n"]({ n: gi + 1 })}
         </h4>
       {/if}
 
       <div class="mx-auto mb-8 grid max-w-[70rem] grid-cols-1 gap-6 md:grid-cols-3">
         {#each group as course, ci (course.name ?? ci)}
-          <div class="rounded-[12px] border border-white/10 bg-white/[0.04] p-5">
+          <div class="rounded-[12px] border border-white-10 bg-white/[0.04] p-5">
             <!-- 段位名称 -->
             <h4 class="mb-3 text-[1.15rem] font-bold text-white">
               {course.name}
@@ -98,7 +98,7 @@
             {#if course.trophy && course.trophy.length > 0}
               <div class="mb-4 space-y-1">
                 {#each course.trophy as t (t.name)}
-                  <div class="flex items-center gap-2 text-[0.85rem] text-white/70">
+                  <div class="flex items-center gap-2 text-[0.85rem] text-white-70">
                     <span>{trophyEmoji(t.name)}</span>
                     <span>
                       {#if t.missrate !== undefined && t.scorerate !== undefined}
@@ -118,28 +118,28 @@
 
             <!-- 谱面列表（分隔线） -->
             {#if course.charts.length > 0}
-              <hr class="mb-3 border-t border-white/10" />
+              <hr class="mb-3 border-t border-white-10" />
               <ol class="space-y-2">
                 {#each course.charts as chart, chi (chart.md5 ?? chart.sha256 ?? chi)}
-                  <li class="flex items-start gap-2 text-[0.85rem] leading-tight text-white/80">
-                    <span class="mt-px min-w-[1.2rem] font-mono text-[0.75rem] text-white/50">
+                  <li class="flex items-start gap-2 text-[0.85rem] leading-tight text-white-80">
+                    <span class="mt-px min-w-[1.2rem] font-mono text-[0.75rem] text-white-50">
                       {chi + 1}.
                     </span>
                     <span class="flex-1">
                       {#if chart.resolved && chart.title}
                         <span class="font-medium text-white">{chart.title}</span>
                         {#if chart.artist}
-                          <span class="text-white/50"> / {chart.artist}</span>
+                          <span class="text-white-50"> / {chart.artist}</span>
                         {/if}
                         {#if chart.level}
                           <span
-                            class="ml-1.5 inline-block rounded-[4px] bg-white/10 px-1.5 py-0.5 font-mono text-[0.75rem] text-white/60"
+                            class="ml-1.5 inline-block rounded-[4px] bg-white-10 px-1.5 py-0.5 font-mono text-[0.75rem] text-white-60"
                           >
                             {symbol}{chart.level}
                           </span>
                         {/if}
                       {:else}
-                        <span class="font-mono text-white/40">
+                        <span class="font-mono text-white-40">
                           {hashPrefix(chart.md5 ?? chart.sha256)}
                         </span>
                         <span class="ml-1.5 text-[0.75rem] text-warning/60">
@@ -151,7 +151,7 @@
                 {/each}
               </ol>
             {:else}
-              <p class="text-[0.85rem] text-white/40 italic">{m["course.no_charts"]()}</p>
+              <p class="text-[0.85rem] text-white-40 italic">{m["course.no_charts"]()}</p>
             {/if}
           </div>
         {/each}

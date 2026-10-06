@@ -12,7 +12,7 @@
 
 {#snippet titlePane()}
   <h1 class="page-title text-center">{m["table.page_title"]()}</h1>
-  <p class="mt-2 text-center text-[1.1rem] text-white/70">{m["table.subtitle"]()}</p>
+  <p class="mt-2 text-center text-[1.1rem] text-white-70">{m["table.subtitle"]()}</p>
 {/snippet}
 
 {#snippet contentPane()}

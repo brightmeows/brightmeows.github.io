@@ -149,7 +149,7 @@
     </div>
   {:else if localOnly}
     <div
-      class="rounded-lg border border-white/15 bg-black/20 px-3 py-2 text-[0.9rem] text-white/65"
+      class="rounded-lg border border-white-15 bg-black-20 px-3 py-2 text-[0.9rem] text-white-65"
     >
       {m["editor.shared_local_hint"]()}
     </div>
@@ -173,18 +173,18 @@
     {/if}
   </section>
 
-  <hr class="border-white/10" />
+  <hr class="border-white-10" />
 
   <section id="course-list" class="scroll-mt-24">
     <CourseEditor bind:model={courseModel} {entries} disabled={busy} onchange={onChange} />
   </section>
 
   {#if levelRef}
-    <hr class="border-white/10" />
+    <hr class="border-white-10" />
     {@render levelRef()}
   {/if}
 
-  <hr class="border-white/10" />
+  <hr class="border-white-10" />
 
   <section id="charts-list" class="scroll-mt-24">
     <BmsDropZone {entries} disabled={busy} onadd={handleDropAdd} />
@@ -204,14 +204,14 @@
     </div>
   </section>
 
-  <hr class="border-white/10" />
+  <hr class="border-white-10" />
 
   <section id="import-export" class="scroll-mt-24">
     <TableImportPanel disabled={busy} onapply={handleImport} />
     <div class="mt-6">
       <div class="mb-3 flex flex-wrap items-center gap-3">
         <h3 class="tag-accent-sm">{m["editor.export_section"]()}</h3>
-        <span class="text-[0.85rem] text-white/50">{m["editor.export_hint"]()}</span>
+        <span class="text-[0.85rem] text-white-50">{m["editor.export_hint"]()}</span>
       </div>
       <div class="flex flex-wrap gap-2">
         <button class={btnGhostMd} type="button" onclick={() => onExport("header")}>

@@ -203,8 +203,8 @@
 
 {#snippet titlePane()}
   <h1 class="page-title text-center">{m["search.page_title"]()}</h1>
-  <p class="mt-2 text-center text-[1.1rem] text-white/70">{m["search.subtitle"]()}</p>
-  <p class="mt-3 text-center text-[0.95rem] text-white/40">
+  <p class="mt-2 text-center text-[1.1rem] text-white-70">{m["search.subtitle"]()}</p>
+  <p class="mt-3 text-center text-[0.95rem] text-white-40">
     <a class="text-accent underline-offset-2 hover:underline" href="/bms/table/search/batch">
       {m["search.batch_link"]()}
     </a>
@@ -216,21 +216,21 @@
     <!-- 索引加载进度 -->
     <div class="p-8 text-center">
       <div class="mb-6 text-[3rem]">⏳</div>
-      <p class="mb-4 text-white/80">{m["search.loading_index"]()}</p>
+      <p class="mb-4 text-white-80">{m["search.loading_index"]()}</p>
       <div class="mx-auto max-w-xs space-y-2 text-left">
         {#each indexClient.progress as item (item.name)}
           <div class="flex items-center gap-3 text-[0.9rem]">
             {#if item.status === "loading"}
               <div
-                class="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-white/30 border-t-[#64b5f6]"
+                class="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-white-30 border-t-[#64b5f6]"
               ></div>
-              <span class="text-white/60">{item.name}.json</span>
+              <span class="text-white-60">{item.name}.json</span>
             {:else if item.status === "done"}
               <span class="shrink-0 text-[#4caf50]">✓</span>
-              <span class="text-white/80">{item.name}.json</span>
+              <span class="text-white-80">{item.name}.json</span>
             {:else}
               <span class="shrink-0 text-[#ff6b6b]">✗</span>
-              <span class="text-white/50">{item.name}.json</span>
+              <span class="text-white-50">{item.name}.json</span>
             {/if}
           </div>
         {/each}
@@ -257,7 +257,7 @@
             onfocus={searchConverters.ensureLoaded}
             placeholder={m["search.input_placeholder"]()}
             disabled={isSearching}
-            class="w-full rounded-[16px] border border-white/20 bg-white/10 px-6 py-4 text-[1.1rem] text-white placeholder-white/40 transition-colors outline-none focus:border-[#64b5f6] focus:bg-white/15 disabled:cursor-not-allowed disabled:opacity-40"
+            class="w-full rounded-[16px] border border-white-20 bg-white-10 px-6 py-4 text-[1.1rem] text-white placeholder-white-40 transition-colors outline-none focus:border-[#64b5f6] focus:bg-white-15 disabled:cursor-not-allowed disabled:opacity-40"
           />
         </div>
         <button
@@ -270,7 +270,7 @@
               void performSearch();
             }
           }}
-          class="flex w-14 shrink-0 cursor-pointer items-center justify-center rounded-[16px] border border-white/20 bg-white/10 text-[1.3rem] text-white transition-colors hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-40"
+          class="flex w-14 shrink-0 cursor-pointer items-center justify-center rounded-[16px] border border-white-20 bg-white-10 text-[1.3rem] text-white transition-colors hover:bg-white-20 disabled:cursor-not-allowed disabled:opacity-40"
           aria-label={searchPhase === "loading-tables"
             ? m["search.cancel"]()
             : m["search.search"]()}
@@ -279,7 +279,7 @@
             ✕
           {:else if isSearching}
             <div
-              class="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-[#64b5f6]"
+              class="h-5 w-5 animate-spin rounded-full border-2 border-white-30 border-t-[#64b5f6]"
             ></div>
           {:else}
             🔍
@@ -288,12 +288,12 @@
       </div>
       <div class="mt-2 flex items-center gap-4">
         {#if queryTypeHint}
-          <span class="text-[0.95rem] text-white/50">{queryTypeHint}</span>
+          <span class="text-[0.95rem] text-white-50">{queryTypeHint}</span>
         {/if}
       </div>
-      <p class="mt-3 text-[0.95rem] text-white/40">
+      <p class="mt-3 text-[0.95rem] text-white-40">
         {m["search.help_prefix"]()}
-        <kbd class="rounded bg-white/10 px-1.5 py-0.5 text-white/60">Enter</kbd>
+        <kbd class="rounded bg-white-10 px-1.5 py-0.5 text-white-60">Enter</kbd>
         {m["search.help_rest"]()}
       </p>
     </div>
@@ -301,7 +301,7 @@
     <!-- ===== 搜索结果 ===== -->
     {#if searchResults.length > 0}
       <div>
-        <p class="mb-4 text-white/70">{m["search.found_count"]({ count: searchResults.length })}</p>
+        <p class="mb-4 text-white-70">{m["search.found_count"]({ count: searchResults.length })}</p>
         {#each sortedSearchResults as result (result.id)}
           <BmsSearchResult {result} {tableStates} onretry={retryTable} />
         {/each}
@@ -309,12 +309,12 @@
     {:else if searchPhase === "searching"}
       <div class="p-12 text-center">
         <div class="mb-4 text-[4rem]">🔍</div>
-        <p class="text-white/70">{m["search.searching"]()}</p>
+        <p class="text-white-70">{m["search.searching"]()}</p>
       </div>
     {:else if searchPhase === "loading-tables"}
       <div class="p-12 text-center">
         <div class="mb-4 text-[4rem]">⏳</div>
-        <p class="text-white/70">{m["search.loading_tables"]()}</p>
+        <p class="text-white-70">{m["search.loading_tables"]()}</p>
       </div>
     {:else if hasNoResults}
       <EmptyState

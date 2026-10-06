@@ -160,7 +160,7 @@
 </script>
 
 {#if unavailable}
-  <GlassPanel class="mt-4 text-[0.95rem] text-white/75">
+  <GlassPanel class="mt-4 text-[0.95rem] text-white-75">
     {m["mirror.api_unavailable_before"]()}
     <a
       class="link-accent"
@@ -171,13 +171,13 @@
   </GlassPanel>
 {:else if auth.status === "ready"}
   <GlassPanel class="mt-4">
-    <div class="text-[0.9rem] text-white/60">
+    <div class="text-[0.9rem] text-white-60">
       {m["shared.cross_before"]()}
       <a class="link-accent" href="/bms/table/shared/">{m["nav.shared"]()}</a>
       {m["shared.cross_after"]()}
     </div>
     {#if user === null}
-      <div class="text-[0.95rem] text-white/75">
+      <div class="text-[0.95rem] text-white-75">
         {m["mirror.login_hint"]()}
       </div>
     {:else}
@@ -196,7 +196,7 @@
           }}
         >
           <input
-            class="min-w-60 flex-1 rounded-xl border border-white/20 bg-black/20 px-3 py-2 text-white outline-none placeholder:text-white/50 focus:border-[#64b5f6]/60 focus:ring-2 focus:ring-[#64b5f6]/30"
+            class="min-w-60 flex-1 rounded-xl border border-white-20 bg-black-20 px-3 py-2 text-white outline-none placeholder:text-white-50 focus:border-[#64b5f6]/60 focus:ring-2 focus:ring-[#64b5f6]/30"
             type="url"
             bind:value={url}
             placeholder={m["mirror.add_url_placeholder"]()}
@@ -219,7 +219,7 @@
           <div class="text-[0.9rem] text-amber-300">{previewError}</div>
         {/if}
         {#if preview}
-          <div class="text-[0.9rem] text-white/70">
+          <div class="text-[0.9rem] text-white-70">
             {m["mirror.preview_result"]()}
             <strong class="text-white">{preview.name || m["mirror.no_name"]()}</strong>
             {preview.symbol ? m["mirror.preview_symbol"]({ symbol: preview.symbol }) : ""}{m[
@@ -237,18 +237,18 @@
         {/if}
 
         {#if showRemoved}
-          <div class="rounded-lg border border-white/15 bg-black/20 p-3">
+          <div class="rounded-lg border border-white-15 bg-black-20 p-3">
             {#if removed.length === 0}
-              <div class="text-[0.9rem] text-white/60">{m["mirror.no_removed"]()}</div>
+              <div class="text-[0.9rem] text-white-60">{m["mirror.no_removed"]()}</div>
             {:else}
               <ul class="flex flex-col gap-2">
                 {#each removed as record (record.dir_name)}
                   <li
-                    class="flex flex-wrap items-center justify-between gap-2 text-[0.9rem] text-white/75"
+                    class="flex flex-wrap items-center justify-between gap-2 text-[0.9rem] text-white-75"
                   >
                     <span>
                       {record.dir_name}
-                      <span class="ml-2 text-white/45">{formatRemovedAt(record.removed_at)}</span>
+                      <span class="ml-2 text-white-45">{formatRemovedAt(record.removed_at)}</span>
                     </span>
                     <button
                       class={btnGhostXs}

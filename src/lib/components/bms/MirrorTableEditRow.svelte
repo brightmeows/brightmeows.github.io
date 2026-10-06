@@ -57,7 +57,7 @@
   let tag2 = $state(untrack(() => override?.tag2 ?? ""));
   let tagOrder = $state(untrack(() => override?.tag_order ?? ""));
 
-  const helpText = "text-[0.8rem] text-white/45";
+  const helpText = "text-[0.8rem] text-white-45";
 
   const tagOrderPlaceholder = $derived.by(() => {
     if (shouldSuggestTagOrder(tag1, tag1Options)) {
@@ -90,9 +90,9 @@
   }
 </script>
 
-<tr class="bg-black/30 last:[&>td]:border-b-0">
+<tr class="bg-black-30 last:[&>td]:border-b-0">
   <td colspan={colCount} class="table-td-glass">
-    <div class="flex flex-col gap-4 rounded-lg border border-white/10 bg-black/20 p-4">
+    <div class="flex flex-col gap-4 rounded-lg border border-white-10 bg-black-20 p-4">
       <div class="flex justify-end">
         <button class={btnGhostXs} type="button" onclick={oncollapse}>
           {m["mirror.collapse_edit"]()}
@@ -100,10 +100,10 @@
       </div>
 
       <section class="flex flex-col gap-2">
-        <h4 class="text-[0.95rem] font-semibold text-white/90">{m["admin.auth_section"]()}</h4>
+        <h4 class="text-[0.95rem] font-semibold text-white-90">{m["admin.auth_section"]()}</h4>
         <p class={helpText}>{m["admin.auth_help"]()}</p>
         <div class="flex flex-wrap items-center gap-2">
-          <span class="text-[0.85rem] text-white/70">
+          <span class="text-[0.85rem] text-white-70">
             {item.protected === true
               ? m["mirror.protected_title"]()
               : m["mirror.unprotected_title"]()}
@@ -119,14 +119,14 @@
         </div>
       </section>
 
-      <div class="border-t border-white/10"></div>
+      <div class="border-t border-white-10"></div>
 
       <section class="flex flex-col gap-2">
-        <h4 class="text-[0.95rem] font-semibold text-white/90">{m["admin.danger_section"]()}</h4>
+        <h4 class="text-[0.95rem] font-semibold text-white-90">{m["admin.danger_section"]()}</h4>
         <p class={helpText}>{m["admin.danger_help"]()}</p>
         <div class="flex flex-wrap items-end gap-2">
           <div class="flex min-w-60 flex-1 flex-col gap-1">
-            <label class="text-[0.8rem] text-white/60" for="mirror-edit-disable-note">
+            <label class="text-[0.8rem] text-white-60" for="mirror-edit-disable-note">
               {m["admin.disable_note_aria"]()}
             </label>
             <input
@@ -153,19 +153,19 @@
             </button>
           {/if}
           {#if item.protected === true && canDelete && ondelete}
-            <span class="text-[0.8rem] text-white/45">{m["admin.delete_protected"]()}</span>
+            <span class="text-[0.8rem] text-white-45">{m["admin.delete_protected"]()}</span>
           {/if}
         </div>
       </section>
 
-      <div class="border-t border-white/10"></div>
+      <div class="border-t border-white-10"></div>
 
       <section class="flex flex-col gap-3">
-        <h4 class="text-[0.95rem] font-semibold text-white/90">{m["admin.meta_heading"]()}</h4>
+        <h4 class="text-[0.95rem] font-semibold text-white-90">{m["admin.meta_heading"]()}</h4>
         <p class={helpText}>{m["admin.meta_help"]()}</p>
         <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <div class="flex flex-col gap-1">
-            <label class="text-[0.8rem] text-white/60" for="mirror-edit-name">
+            <label class="text-[0.8rem] text-white-60" for="mirror-edit-name">
               {m["admin.meta_name"]()}
             </label>
             <input
@@ -178,7 +178,7 @@
             />
           </div>
           <div class="flex flex-col gap-1">
-            <label class="text-[0.8rem] text-white/60" for="mirror-edit-symbol">
+            <label class="text-[0.8rem] text-white-60" for="mirror-edit-symbol">
               {m["admin.meta_symbol"]()}
             </label>
             <input
@@ -191,10 +191,10 @@
             />
           </div>
           <div class="flex flex-col gap-1 sm:col-span-2 xl:col-span-1">
-            <span class="text-[0.8rem] text-white/60">{m["admin.meta_tag1"]()}</span>
+            <span class="text-[0.8rem] text-white-60">{m["admin.meta_tag1"]()}</span>
             <div class="grid grid-cols-2 gap-2">
               <div class="flex flex-col gap-1">
-                <label class="text-[0.75rem] text-white/45" for="mirror-edit-tag-order">
+                <label class="text-[0.75rem] text-white-45" for="mirror-edit-tag-order">
                   {m["admin.meta_tag_order"]()}
                 </label>
                 <input
@@ -209,7 +209,7 @@
                 />
               </div>
               <div class="flex flex-col gap-1">
-                <label class="text-[0.75rem] text-white/45" for="mirror-edit-tag1">
+                <label class="text-[0.75rem] text-white-45" for="mirror-edit-tag1">
                   {m["admin.meta_name"]()}
                 </label>
                 <input
@@ -226,7 +226,7 @@
             </div>
           </div>
           <div class="flex flex-col gap-1">
-            <label class="text-[0.8rem] text-white/60" for="mirror-edit-tag2">
+            <label class="text-[0.8rem] text-white-60" for="mirror-edit-tag2">
               {m["admin.meta_tag2"]()}
             </label>
             <input

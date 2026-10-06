@@ -27,7 +27,7 @@
 {#snippet titlePane()}
   <h1 class="page-title mb-4">{data.post.title}</h1>
   {#if data.post.date}
-    <div class="text-white/60">{data.post.date}</div>
+    <div class="text-white-60">{data.post.date}</div>
   {/if}
 {/snippet}
 

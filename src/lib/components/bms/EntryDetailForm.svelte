@@ -99,7 +99,7 @@
   <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
     {#each CORE_ENTRY_FIELDS as field (field)}
       <label class={field === "comment" ? "block sm:col-span-2" : "block"}>
-        <span class="mb-1 block text-[0.8rem] text-white/60">{FIELD_LABELS[field]}</span>
+        <span class="mb-1 block text-[0.8rem] text-white-60">{FIELD_LABELS[field]}</span>
         {#if field === "level"}
           <input
             class={inputEditorMono}
@@ -129,8 +129,8 @@
 
   <div class="mt-4">
     <div class="mb-2 flex flex-wrap items-center gap-2">
-      <span class="text-[0.85rem] text-white/70">{m["editor.entry_custom_title"]()}</span>
-      <span class="text-[0.8rem] text-white/45">{m["editor.entry_custom_hint"]()}</span>
+      <span class="text-[0.85rem] text-white-70">{m["editor.entry_custom_title"]()}</span>
+      <span class="text-[0.8rem] text-white-45">{m["editor.entry_custom_hint"]()}</span>
       <button
         class="{btnGhost} ml-auto"
         type="button"
@@ -141,7 +141,7 @@
       </button>
     </div>
     {#if custom.length === 0}
-      <p class="text-[0.85rem] text-white/45">{m["editor.entry_custom_empty"]()}</p>
+      <p class="text-[0.85rem] text-white-45">{m["editor.entry_custom_empty"]()}</p>
     {:else}
       <div class="flex flex-col gap-2">
         {#each custom as row, index (index)}

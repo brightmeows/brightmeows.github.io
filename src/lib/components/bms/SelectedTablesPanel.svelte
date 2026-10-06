@@ -5,6 +5,7 @@
 
   import Checkbox from "$lib/components/ui/Checkbox.svelte";
   import { jsonPreview } from "$lib/components/ui/JsonPreview.svelte";
+  import { btnGradientBlue, btnGradientOrange } from "$lib/constants/ui-classes";
   import { m } from "$lib/paraglide/messages.js";
   import type { JsonPreviewHandle } from "$lib/types/ui";
 
@@ -79,7 +80,7 @@
     out:fly={{ y: 24, opacity: 0, duration: 140, easing: cubicIn }}
   >
     <div
-      class="flex w-max flex-nowrap items-center gap-4 rounded-xl border border-white/20 bg-glass p-3 px-4 shadow-[0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur-[6px]"
+      class="flex w-max flex-nowrap items-center gap-4 rounded-xl border border-white-20 bg-glass p-3 px-4 shadow-[0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur-[6px]"
     >
       <Checkbox
         checked={allSelected}
@@ -91,7 +92,7 @@
       </div>
       <div class="flex flex-nowrap gap-3">
         <button
-          class="gradient-btn gradient-btn-blue rounded-lg px-[0.8rem] py-2 text-[0.9rem]"
+          class={btnGradientBlue}
           type="button"
           use:jsonPreview={{
             preview: mirrorPreview,
@@ -105,7 +106,7 @@
           {m["selected.mirror_json"]()}
         </button>
         <button
-          class="gradient-btn gradient-btn-orange rounded-lg px-[0.8rem] py-2 text-[0.9rem]"
+          class={btnGradientOrange}
           type="button"
           use:jsonPreview={{
             preview: mirrorPreview,

@@ -59,7 +59,7 @@
             )};border-color:${levelSegmentColor(idx, groups.length)};`}
           >
             {symbol}{group.level}
-            <span class="rounded-[10px] bg-black/20 px-2 py-[0.1rem] text-[0.9rem] opacity-90">
+            <span class="rounded-[10px] bg-black-20 px-2 py-[0.1rem] text-[0.9rem] opacity-90">
               ({group.charts.length})
             </span>
           </button>
@@ -92,7 +92,7 @@
         {@const groupColor = levelSegmentColor(gIndex, groups.length)}
         <tbody id={`difficulty-group-${group.level}`} class="scroll-mt-5">
           <tr>
-            <td colspan="6" class="border-b-2 border-white/10 px-4 py-3">
+            <td colspan="6" class="border-b-2 border-white-10 px-4 py-3">
               <div class="flex items-center gap-4">
                 <span
                   class="shadow-[0_2px_8px rgba(0,0,0,0.2)] rounded-[20px] px-6 py-2 text-[1.2rem] font-bold text-white"
@@ -100,7 +100,7 @@
                 >
                   {symbol}{group.level}
                 </span>
-                <span class="text-[1.1rem] text-white/80">
+                <span class="text-[1.1rem] text-white-80">
                   {m["table.chart_count"]({ count: group.charts.length })}
                 </span>
               </div>

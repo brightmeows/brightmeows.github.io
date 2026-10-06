@@ -36,7 +36,7 @@
   </div>
 
   {#if !data.recentPosts || data.recentPosts.length === 0}
-    <div class="text-center text-white/70">{m["blog.no_posts"]()}</div>
+    <div class="text-center text-white-70">{m["blog.no_posts"]()}</div>
   {:else}
     <div class="flex flex-col gap-4">
       {#each data.recentPosts as post (post.slug)}
