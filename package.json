@@ -44,7 +44,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^26.6.3",
     "gray-matter": "^4.0.3",
-    "katex": "^0.17.0",
+    "katex": "^0.18.2",
     "opencc-js": "^1.4.2",
     "oxfmt": "^0.71.0",
     "oxlint": "^1.85.0",

@@ -216,7 +216,7 @@ importers:
         version: 2.25.4(typescript@6.0.3)(vite@8.3.2(@types/node@26.6.3)(esbuild@0.28.1)(jiti@2.7.0))
       '@nvl/sveltex':
         specifier: ^0.5.1
-        version: 0.5.1(katex@0.17.0)(micromark@4.0.0(supports-color@10.2.2))(rehype-stringify@10.0.1)(remark-parse@11.0.0(supports-color@10.2.2))(remark-rehype@11.1.2)(remark-retext@6.0.1)(shiki@4.5.0)(supports-color@10.2.2)(unified@11.0.5)
+        version: 0.5.1(katex@0.18.11)(micromark@4.0.0(supports-color@10.2.2))(rehype-stringify@10.0.1)(remark-parse@11.0.0(supports-color@10.2.2))(remark-rehype@11.1.2)(remark-retext@6.0.1)(shiki@4.5.0)(supports-color@10.2.2)(unified@11.0.5)
       '@sveltejs/adapter-static':
         specifier: ^3.0.10
         version: 3.0.10(@sveltejs/kit@2.70.3(@sveltejs/vite-plugin-svelte@7.3.1(svelte@5.57.1)(vite@8.3.2(@types/node@26.6.3)(esbuild@0.28.1)(jiti@2.7.0)))(svelte@5.57.1)(typescript@6.0.3)(vite@8.3.2(@types/node@26.6.3)(esbuild@0.28.1)(jiti@2.7.0)))
@@ -242,8 +242,8 @@ importers:
         specifier: ^4.0.3
         version: 4.0.3
       katex:
-        specifier: ^0.17.0
-        version: 0.17.0
+        specifier: ^0.18.2
+        version: 0.18.11
       opencc-js:
         specifier: ^1.4.2
         version: 1.4.2
@@ -1775,6 +1775,10 @@ packages:
     resolution: {integrity: sha512-yPVavfyCcRhmorC7rWlkHn15b4wDVgVmBA7kV4QVBsF7kv/9TKJAbAXVTxvTnwP8HHKjRCJDClKbciiYS7p0DQ==}
     engines: {node: '>=16'}
 
+  commander@15.0.0:
+    resolution: {integrity: sha512-z67u4ZhzCL/Tydu1lJARtEZYWbWaN7oYLHbsuzocr6y4N6WZAagG3RQ4FW61V1/0+jImpj293XfrcYnd1qxtPg==}
+    engines: {node: '>=22.12.0'}
+
   commander@8.3.0:
     resolution: {integrity: sha512-OkTL9umf+He2DZkUq8f8J9of7yL6RJKI24dVITBmNfZBmri9zYZQrKkuXiKhyfPSu8tUhnVBB1iKXevvnlR4Ww==}
     engines: {node: '>= 12'}
@@ -2103,8 +2107,9 @@ packages:
     resolution: {integrity: sha512-Eeo8Ys1doU1z+x8AZsPpQu+p/QcZBI5PeOo7QGQdy2x2m0MU/hYagBbGOmXwr5KVbEfVuWv9LpnQWeehogurjg==}
     hasBin: true
 
-  katex@0.17.0:
-    resolution: {integrity: sha512-Vdw0ATsQ9V+LuegM/BTwQqV/6cTl5lbGcIrU+BCgLxyf6bo38ybOr372tuSIxir3CN720flu1meYR6XzNMwQnw==}
+  katex@0.18.11:
+    resolution: {integrity: sha512-yvyz/2VMKqoho/35Hat5w37wIEdWJ5ElVMidTAlWrxr5uW4aBGsEpveTmKh18/zw08v/7lGswCPon4OhqmqrTA==}
+    deprecated: Accidentally published with breaking changes. Use 0.19.0 instead.
     hasBin: true
 
   kind-of@6.0.3:
@@ -3428,7 +3433,7 @@ snapshots:
       '@tybys/wasm-util': 0.10.4
     optional: true
 
-  '@nvl/sveltex@0.5.1(katex@0.17.0)(micromark@4.0.0(supports-color@10.2.2))(rehype-stringify@10.0.1)(remark-parse@11.0.0(supports-color@10.2.2))(remark-rehype@11.1.2)(remark-retext@6.0.1)(shiki@4.5.0)(supports-color@10.2.2)(unified@11.0.5)':
+  '@nvl/sveltex@0.5.1(katex@0.18.11)(micromark@4.0.0(supports-color@10.2.2))(rehype-stringify@10.0.1)(remark-parse@11.0.0(supports-color@10.2.2))(remark-rehype@11.1.2)(remark-retext@6.0.1)(shiki@4.5.0)(supports-color@10.2.2)(unified@11.0.5)':
     dependencies:
       '@types/html-escaper': 3.0.4
       '@types/js-yaml': 4.0.9
@@ -3476,7 +3481,7 @@ snapshots:
       uuid: 14.0.2
       xregexp: 5.1.2
     optionalDependencies:
-      katex: 0.17.0
+      katex: 0.18.11
       micromark: 4.0.0(supports-color@10.2.2)
       rehype-stringify: 10.0.1
       remark-parse: 11.0.0(supports-color@10.2.2)
@@ -4053,6 +4058,8 @@ snapshots:
 
   commander@11.1.0: {}
 
+  commander@15.0.0: {}
+
   commander@8.3.0: {}
 
   comment-json@4.6.2:
@@ -4381,9 +4388,9 @@ snapshots:
     dependencies:
       commander: 8.3.0
 
-  katex@0.17.0:
+  katex@0.18.11:
     dependencies:
-      commander: 8.3.0
+      commander: 15.0.0
 
   kind-of@6.0.3: {}
 
