@@ -34,29 +34,29 @@
 <section>
   <div class="mb-3 flex flex-wrap items-center gap-3">
     <h3 class="tag-accent-sm">{m["editor.header_section"]()}</h3>
-    <span class="text-[0.85rem] text-white/50">{m["editor.header_hint"]()}</span>
+    <span class="text-[0.85rem] text-white-50">{m["editor.header_hint"]()}</span>
   </div>
   <div class="grid gap-4 sm:grid-cols-2">
     <label class="block">
-      <span class="mb-1.5 block text-[0.9rem] text-white/70">
+      <span class="mb-1.5 block text-[0.9rem] text-white-70">
         {m["editor.field_name"]()}
         <span class="text-amber-300">*</span>
       </span>
       <input class={inputEditorLg} type="text" bind:value={name} oninput={onchange} {disabled} />
     </label>
     <label class="block">
-      <span class="mb-1.5 block text-[0.9rem] text-white/70">
+      <span class="mb-1.5 block text-[0.9rem] text-white-70">
         {m["editor.field_symbol"]()}
         <span class="text-amber-300">*</span>
       </span>
       <input class={inputEditorLg} type="text" bind:value={symbol} oninput={onchange} {disabled} />
     </label>
     <label class="block">
-      <span class="mb-1.5 block text-[0.9rem] text-white/70">{m["editor.field_tag"]()}</span>
+      <span class="mb-1.5 block text-[0.9rem] text-white-70">{m["editor.field_tag"]()}</span>
       <input class={inputEditorLg} type="text" bind:value={tag} oninput={onchange} {disabled} />
     </label>
     <label class="block">
-      <span class="mb-1.5 block text-[0.9rem] text-white/70">{m["editor.field_mode"]()}</span>
+      <span class="mb-1.5 block text-[0.9rem] text-white-70">{m["editor.field_mode"]()}</span>
       <input class={inputEditorLg} type="text" bind:value={mode} oninput={onchange} {disabled} />
     </label>
   </div>
@@ -65,11 +65,11 @@
     <LevelOrderEditor bind:levels {disabled} {onchange} />
   </div>
 
-  <details class="mt-4 rounded-lg border border-white/15 bg-black/20 p-3">
-    <summary class="cursor-pointer text-[0.9rem] text-white/60">
+  <details class="mt-4 rounded-lg border border-white-15 bg-black-20 p-3">
+    <summary class="cursor-pointer text-[0.9rem] text-white-60">
       {m["editor.extra_json_title"]()}
     </summary>
     <pre
-      class="mt-2 max-h-64 overflow-auto font-mono text-[0.8rem] whitespace-pre-wrap text-white/70">{extraJson}</pre>
+      class="mt-2 max-h-64 overflow-auto font-mono text-[0.8rem] whitespace-pre-wrap text-white-70">{extraJson}</pre>
   </details>
 </section>

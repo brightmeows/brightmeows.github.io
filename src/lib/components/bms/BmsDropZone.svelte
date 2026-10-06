@@ -150,7 +150,7 @@
   aria-label={m["editor.bms_drop_title"]()}
   class="rounded-lg border border-dashed px-4 py-4 transition-colors duration-200 {dragging
     ? 'border-[#64b5f6] bg-[#64b5f6]/10'
-    : 'border-white/25 bg-black/10'}"
+    : 'border-white-25 bg-black-10'}"
   ondragover={(event) => {
     event.preventDefault();
     if (!disabled && !busy) dragging = true;
@@ -167,8 +167,8 @@
 >
   <div class="flex flex-wrap items-center gap-3">
     <div class="min-w-0 flex-1">
-      <div class="text-[0.9rem] text-white/75">{m["editor.bms_drop_title"]()}</div>
-      <div class="text-[0.82rem] text-white/50">{m["editor.bms_drop_hint"]()}</div>
+      <div class="text-[0.9rem] text-white-75">{m["editor.bms_drop_title"]()}</div>
+      <div class="text-[0.82rem] text-white-50">{m["editor.bms_drop_hint"]()}</div>
     </div>
     <button class={btnGhost} type="button" {disabled} onclick={() => fileInput?.click()}>
       {m["editor.bms_drop_button"]()}

@@ -28,8 +28,8 @@
       </thead>
       <tbody>
         {#each tables as table (table.id)}
-          <tr class="transition-colors hover:bg-white/5">
-            <td class="table-td-glass wrap-break-word text-white/80">{table.symbol ?? ""}</td>
+          <tr class="transition-colors hover:bg-white-5">
+            <td class="table-td-glass wrap-break-word text-white-80">{table.symbol ?? ""}</td>
             <td class="table-td-glass wrap-break-word">
               <a
                 href={resolve(`/bms/table/${table.id}`, {})}
@@ -38,7 +38,7 @@
                 {table.name}
               </a>
             </td>
-            <td class="table-td-glass wrap-break-word text-white/60">{table.id}</td>
+            <td class="table-td-glass wrap-break-word text-white-60">{table.id}</td>
           </tr>
         {/each}
       </tbody>

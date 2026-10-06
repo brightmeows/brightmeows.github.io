@@ -60,7 +60,7 @@
 <section>
   <div class="mb-3 flex flex-wrap items-center gap-3">
     <h3 class="tag-accent-sm">{m["editor.field_level_order"]()}</h3>
-    <span class="text-[0.85rem] text-white/50">{m["editor.level_order_hint"]()}</span>
+    <span class="text-[0.85rem] text-white-50">{m["editor.level_order_hint"]()}</span>
     <div class="ml-auto flex gap-2">
       {#if textMode}
         <button class={btnGhostSm} type="button" {disabled} onclick={applyTextMode}>
@@ -83,12 +83,12 @@
       bind:value={textValue}
       placeholder={m["editor.level_order_placeholder"]()}
       {disabled}></textarea>
-    <p class="mt-1 text-[0.8rem] text-white/45">{m["editor.level_order_text_hint"]()}</p>
+    <p class="mt-1 text-[0.8rem] text-white-45">{m["editor.level_order_text_hint"]()}</p>
   {:else}
     <ul class="flex flex-col gap-1.5">
       {#each levels as level, index (index)}
         <li
-          class="flex items-center gap-2 rounded-lg border border-white/10 bg-black/20 px-2 py-1.5 {dropIndex ===
+          class="flex items-center gap-2 rounded-lg border border-white-10 bg-black-20 px-2 py-1.5 {dropIndex ===
           index
             ? 'border-[#64b5f6]/60'
             : ''}"
@@ -110,7 +110,7 @@
             dropIndex = null;
           }}
         >
-          <span class="cursor-grab text-white/35" aria-hidden="true">
+          <span class="cursor-grab text-white-35" aria-hidden="true">
             <svg class="size-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <circle cx="9" cy="6" r="1.6" />
               <circle cx="15" cy="6" r="1.6" />
@@ -120,7 +120,7 @@
               <circle cx="15" cy="18" r="1.6" />
             </svg>
           </span>
-          <span class="min-w-0 flex-1 truncate font-mono text-[0.95rem] text-white/90">{level}</span
+          <span class="min-w-0 flex-1 truncate font-mono text-[0.95rem] text-white-90">{level}</span
           >
           <button
             class={btnIcon}
@@ -190,7 +190,7 @@
       {/each}
       {#if levels.length === 0}
         <li
-          class="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-[0.9rem] text-white/50"
+          class="rounded-lg border border-white-10 bg-black-20 px-3 py-2 text-[0.9rem] text-white-50"
         >
           {m["editor.level_order_empty"]()}
         </li>

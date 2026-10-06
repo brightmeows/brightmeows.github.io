@@ -56,7 +56,7 @@
                 {m["shared.mine_badge"]()}
               </span>
             {/if}
-            <span class="text-[0.9rem] text-white/50">
+            <span class="text-[0.9rem] text-white-50">
               {m["shared.group_count"]({ count: group.items.length })}
             </span>
           </div>

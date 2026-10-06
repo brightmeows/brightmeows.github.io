@@ -127,7 +127,7 @@
                 {g.tag1}
               </button>
               {#if g.subgroups.length > 0}
-                <span class="mx-1 text-white/40">|</span>
+                <span class="mx-1 text-white-40">|</span>
               {/if}
               {#each g.subgroups as sg (sg.tag2)}
                 <button
@@ -137,7 +137,7 @@
                 >
                   {sg.tag2}
                   <span
-                    class="rounded-[10px] bg-black/20 px-2 py-[0.1rem] text-[0.9rem] opacity-90"
+                    class="rounded-[10px] bg-black-20 px-2 py-[0.1rem] text-[0.9rem] opacity-90"
                   >
                     ({sg.items.length})
                   </span>

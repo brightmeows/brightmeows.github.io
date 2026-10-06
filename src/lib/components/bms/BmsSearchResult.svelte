@@ -49,7 +49,7 @@
       <h3 class="mb-1 text-[1.2rem] font-bold text-white">
         {result.title ?? m["search.untitled"]()}
       </h3>
-      <p class="text-white/70">{result.artist ?? m["search.unknown_artist"]()}</p>
+      <p class="text-white-70">{result.artist ?? m["search.unknown_artist"]()}</p>
     </div>
     <div class="flex shrink-0 flex-wrap items-center justify-end gap-2">
       {#if result.md5}
@@ -113,7 +113,7 @@
               </a>
             </div>
             {#if entry.chart.comment}
-              <p class="mt-1.5 text-[0.85rem] text-white/50">{entry.chart.comment}</p>
+              <p class="mt-1.5 text-[0.85rem] text-white-50">{entry.chart.comment}</p>
             {/if}
           </div>
           {#if bundleUrl ?? diffUrl}
@@ -149,12 +149,12 @@
         <div class="card-dark flex flex-col gap-2">
           <div class="flex items-center justify-between">
             <a
-              class="text-white/80 no-underline transition-colors hover:text-accent"
+              class="text-white-80 no-underline transition-colors hover:text-accent"
               href={tableHref}
             >
               {displayName}
             </a>
-            <span class="text-[0.8rem] text-white/50">
+            <span class="text-[0.8rem] text-white-50">
               {loadState.bytesTotal > 0
                 ? `${formatBytes(loadState.bytesLoaded)} / ${formatBytes(loadState.bytesTotal)}`
                 : formatBytes(loadState.bytesLoaded)}
@@ -164,22 +164,22 @@
             <div class="progress-track">
               <div class="progress-fill" style="width:{loadState.progress}%"></div>
             </div>
-            <span class="shrink-0 text-[0.8rem] text-white/50">{loadState.progress}%</span>
+            <span class="shrink-0 text-[0.8rem] text-white-50">{loadState.progress}%</span>
           </div>
         </div>
       {:else if loadState?.status === "loading-header" || loadState?.status === "parsing"}
         <!-- 表头加载/解析中 -->
         <div class="card-dark flex items-center gap-3">
           <div
-            class="h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-white/30 border-t-accent"
+            class="h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-white-30 border-t-accent"
           ></div>
           <a
-            class="flex-1 text-white/60 no-underline transition-colors hover:text-accent"
+            class="flex-1 text-white-60 no-underline transition-colors hover:text-accent"
             href={tableHref}
           >
             {loadState.name}
           </a>
-          <span class="shrink-0 text-[0.8rem] text-white/40">
+          <span class="shrink-0 text-[0.8rem] text-white-40">
             {loadState.status === "loading-header"
               ? m["search.loading_header"]()
               : m["search.parsing"]()}
@@ -190,13 +190,13 @@
         <div class="card-dark flex items-center gap-3">
           <span class="shrink-0 text-error">✗</span>
           <div class="flex flex-1 flex-col gap-0.5">
-            <span class="text-white/80">{loadState.name}</span>
+            <span class="text-white-80">{loadState.name}</span>
             <span class="text-[0.8rem] text-error/70">{loadState.errorMessage}</span>
           </div>
           <button
             type="button"
             onclick={() => onretry(entry.tableId)}
-            class="cursor-pointer rounded-md border border-white/20 bg-white/10 px-3 py-1 text-[0.8rem] text-white/80 transition-colors hover:bg-white/20"
+            class="cursor-pointer rounded-md border border-white-20 bg-white-10 px-3 py-1 text-[0.8rem] text-white-80 transition-colors hover:bg-white-20"
           >
             {m["common.retry"]()}
           </button>
@@ -204,14 +204,14 @@
       {:else}
         <!-- 等待中或状态未知 -->
         <div class="card-dark flex items-center gap-3">
-          <span class="shrink-0 text-white/30">○</span>
+          <span class="shrink-0 text-white-30">○</span>
           <a
-            class="flex-1 text-white/50 no-underline transition-colors hover:text-accent"
+            class="flex-1 text-white-50 no-underline transition-colors hover:text-accent"
             href={tableHref}
           >
             {entry.tableName}
           </a>
-          <span class="shrink-0 text-[0.8rem] text-white/30">{m["search.waiting"]()}</span>
+          <span class="shrink-0 text-[0.8rem] text-white-30">{m["search.waiting"]()}</span>
         </div>
       {/if}
     {/each}

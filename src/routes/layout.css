@@ -72,6 +72,33 @@
   --radius-glass-md: 14px;
   --radius-glass-lg: 18px;
   --radius-glass-xl: 20px;
+
+  /* 白色系与黑色系的透明度阶梯：原任意值修饰符（white-10 等）的同值令牌。
+     color-mix(in oklab, white N%, transparent) 与直写 rgb 同值，替换前后
+     渲染逐像素等价；类名即值（bg-white-10），不做语义归并——零视觉变化
+     约束下语义命名是假语义。只定义实际用到的档位，新档位先加令牌再用。 */
+  --color-white-5: rgb(255 255 255 / 0.05);
+  --color-white-8: rgb(255 255 255 / 0.08);
+  --color-white-10: rgb(255 255 255 / 0.1);
+  --color-white-15: rgb(255 255 255 / 0.15);
+  --color-white-20: rgb(255 255 255 / 0.2);
+  --color-white-25: rgb(255 255 255 / 0.25);
+  --color-white-30: rgb(255 255 255 / 0.3);
+  --color-white-35: rgb(255 255 255 / 0.35);
+  --color-white-40: rgb(255 255 255 / 0.4);
+  --color-white-45: rgb(255 255 255 / 0.45);
+  --color-white-50: rgb(255 255 255 / 0.5);
+  --color-white-55: rgb(255 255 255 / 0.55);
+  --color-white-60: rgb(255 255 255 / 0.6);
+  --color-white-65: rgb(255 255 255 / 0.65);
+  --color-white-70: rgb(255 255 255 / 0.7);
+  --color-white-75: rgb(255 255 255 / 0.75);
+  --color-white-80: rgb(255 255 255 / 0.8);
+  --color-white-85: rgb(255 255 255 / 0.85);
+  --color-white-90: rgb(255 255 255 / 0.9);
+  --color-black-10: rgb(0 0 0 / 0.1);
+  --color-black-20: rgb(0 0 0 / 0.2);
+  --color-black-30: rgb(0 0 0 / 0.3);
 }
 
 @layer base {
@@ -154,40 +181,35 @@
 
   /* ===== 加载状态容器 ===== */
   .glass-loading-container {
-    @apply rounded-[15px] border-white/10 bg-black/20 p-8;
+    @apply rounded-[15px] border-white-10 bg-black-20 p-8;
   }
 
   /* ===== 表格样式 ===== */
   .table-glass {
-    @apply w-full table-fixed border-collapse overflow-hidden rounded-[10px] bg-white/5;
+    @apply w-full table-fixed border-collapse overflow-hidden rounded-[10px] bg-white-5;
   }
 
   .table-th-glass {
-    @apply border-b-2 border-white/10 bg-accent/20 px-4 py-3 text-left font-semibold text-white;
+    @apply border-b-2 border-white-10 bg-accent/20 px-4 py-3 text-left font-semibold text-white;
   }
 
   .table-td-glass {
-    @apply border-b border-white/5 px-4 py-3 text-white/90;
-  }
-
-  /* ===== 统计卡片 ===== */
-  .stat-card {
-    @apply rounded-[10px] border border-white/10 bg-white/5 p-4 text-center;
+    @apply border-b border-white-5 px-4 py-3 text-white-90;
   }
 
   /* ===== 弹出框 ===== */
   .popover-glass {
-    @apply fixed z-2000 overflow-hidden rounded-xl border border-white/20 bg-glass shadow-[0_10px_24px_rgba(0,0,0,0.45)] backdrop-blur-sm;
+    @apply fixed z-2000 overflow-hidden rounded-xl border border-white-20 bg-glass shadow-[0_10px_24px_rgba(0,0,0,0.45)] backdrop-blur-sm;
   }
 
   /* ===== 分段标题下边框 ===== */
   .section-divider {
-    @apply mb-6 border-b-2 border-white/10 pb-4;
+    @apply mb-6 border-b-2 border-white-10 pb-4;
   }
 
   /* ===== 表格外层容器 ===== */
   .table-wrapper {
-    @apply overflow-x-auto rounded-[10px] border border-white/10 bg-black/20;
+    @apply overflow-x-auto rounded-[10px] border border-white-10 bg-black-20;
   }
 
   /* ===== 蓝色强调链接 ===== */
@@ -218,13 +240,13 @@
 
   /* ===== 滚动导航标签 ===== */
   .tag-scroll {
-    @apply cursor-pointer rounded-[18px] bg-white/10 px-4 py-2 font-bold text-white opacity-80 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:opacity-90;
+    @apply cursor-pointer rounded-[18px] bg-white-10 px-4 py-2 font-bold text-white opacity-80 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:opacity-90;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   }
 
   /* ===== 进度条 ===== */
   .progress-track {
-    @apply h-2 flex-1 overflow-hidden rounded-full bg-white/10;
+    @apply h-2 flex-1 overflow-hidden rounded-full bg-white-10;
   }
 
   .progress-fill {
@@ -234,51 +256,12 @@
 
   /* ===== 深色卡片 ===== */
   .card-dark {
-    @apply rounded-[10px] bg-black/20 px-4 py-3;
-  }
-
-  /* ===== 渐变按钮基础类（供不受组件包装的场合使用） ===== */
-  .gradient-btn {
-    @apply inline-flex cursor-pointer items-center justify-center gap-[0.2rem] rounded-md border-none px-2 py-[0.35rem] text-[0.85rem] font-semibold text-white no-underline;
-    transition: all 0.2s ease-in-out;
-  }
-  .gradient-btn:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  }
-
-  .gradient-btn-blue {
-    background: linear-gradient(135deg, var(--color-blue-from), var(--color-blue-to));
-  }
-  .gradient-btn-blue:hover {
-    background: linear-gradient(135deg, var(--color-blue-hover-from), var(--color-blue-hover-to));
-  }
-
-  .gradient-btn-orange {
-    background: linear-gradient(135deg, var(--color-orange-from), var(--color-orange-to));
-  }
-  .gradient-btn-orange:hover {
-    background: linear-gradient(
-      135deg,
-      var(--color-orange-hover-from),
-      var(--color-orange-hover-to)
-    );
-  }
-
-  .gradient-btn-green {
-    background: linear-gradient(135deg, var(--color-green-from), var(--color-green-to));
-  }
-  .gradient-btn-green:hover {
-    background: linear-gradient(135deg, var(--color-green-hover-from), var(--color-green-hover-to));
+    @apply rounded-[10px] bg-black-20 px-4 py-3;
   }
 
   /* ===== 已复制状态徽章 ===== */
   .badge-copied {
     @apply flex-none rounded-md border border-success/30 bg-success/10 px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-green-300;
-  }
-
-  /* ===== 等级徽章 ===== */
-  .badge-level {
-    @apply inline-block rounded-[8px] px-3 py-1 text-[0.9rem] font-bold;
   }
 
   /* ===== 标题组合行（flex 换行 + 间距） ===== */

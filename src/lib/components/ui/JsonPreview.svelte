@@ -219,18 +219,18 @@
     tabindex="-1"
     aria-labelledby="json-preview-label"
   >
-    <div class="flex items-center justify-between gap-3 border-b border-white/10 p-3">
-      <div id="json-preview-label" class="text-[0.9rem] font-semibold text-white/90">{label}</div>
+    <div class="flex items-center justify-between gap-3 border-b border-white-10 p-3">
+      <div id="json-preview-label" class="text-[0.9rem] font-semibold text-white-90">{label}</div>
       <div class="flex gap-2">
         <button
-          class="cursor-pointer rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-[0.85rem] font-semibold text-white transition-all duration-200 ease-in-out hover:bg-white/15"
+          class="cursor-pointer rounded-lg border border-white-15 bg-white-10 px-3 py-2 text-[0.85rem] font-semibold text-white transition-all duration-200 ease-in-out hover:bg-white-15"
           type="button"
           onclick={copyJson}
         >
           {copied ? m["common.copied"]() : m["common.copy"]()}
         </button>
         <button
-          class="cursor-pointer rounded-lg border border-white/15 bg-white/10 px-3 py-2 text-[0.85rem] font-semibold text-white transition-all duration-200 ease-in-out hover:bg-white/15"
+          class="cursor-pointer rounded-lg border border-white-15 bg-white-10 px-3 py-2 text-[0.85rem] font-semibold text-white transition-all duration-200 ease-in-out hover:bg-white-15"
           type="button"
           onclick={hideNow}
         >
@@ -239,7 +239,7 @@
       </div>
     </div>
     <pre
-      class="overflow-auto bg-black/20 p-3 font-mono text-[0.8rem] leading-relaxed text-white/90"
+      class="overflow-auto bg-black-20 p-3 font-mono text-[0.8rem] leading-relaxed text-white-90"
       style={`max-height:${maxHeightRem}rem;`}><code>{jsonText}</code></pre>
   </div>
 {/if}

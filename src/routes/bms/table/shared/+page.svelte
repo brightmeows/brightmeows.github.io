@@ -85,7 +85,7 @@
 
 {#snippet titlePane()}
   <h1 class="page-title text-center">{pageTitle}</h1>
-  <p class="mt-2 text-center text-[1.1rem] text-white/70">{m["shared.subtitle"]()}</p>
+  <p class="mt-2 text-center text-[1.1rem] text-white-70">{m["shared.subtitle"]()}</p>
   <div class="mt-4 text-center">
     <a class={btnPrimaryLink} href={resolve("/bms/table/shared/new", {})}>
       {m["shared.create_button"]()}
@@ -108,7 +108,7 @@
     {/if}
 
     {#if unavailable}
-      <GlassPanel class="text-[0.95rem] text-white/75">
+      <GlassPanel class="text-[0.95rem] text-white-75">
         {m["mirror.api_unavailable_before"]()}
         <a
           class="link-accent"
@@ -125,7 +125,7 @@
         <label
           class="flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-[0.35rem] text-[0.85rem] transition-colors duration-200 select-none {mineOnly
             ? 'border-[#ffd54f] bg-[#ffd54f]/20 text-[#ffd54f]'
-            : 'border-white/20 text-white/50 hover:border-white/40 hover:text-white/70'}"
+            : 'border-white-20 text-white-50 hover:border-white-40 hover:text-white-70'}"
         >
           <Checkbox size="sm" checked={mineOnly} onchange={(v: boolean) => (mineOnly = v)} />
           {m["shared.mine_filter"]()}
@@ -135,7 +135,7 @@
 
     <div class="relative w-full">
       <input
-        class="w-full rounded-xl border border-white/20 bg-black/20 px-4 py-3 pr-12 text-white outline-none placeholder:text-white/50 focus:border-[#64b5f6]/60 focus:ring-2 focus:ring-[#64b5f6]/30"
+        class="w-full rounded-xl border border-white-20 bg-black-20 px-4 py-3 pr-12 text-white outline-none placeholder:text-white-50 focus:border-[#64b5f6]/60 focus:ring-2 focus:ring-[#64b5f6]/30"
         type="text"
         placeholder={m["shared.search_placeholder"]()}
         bind:value={searchQuery}
@@ -143,7 +143,7 @@
       />
       {#if searchQuery.trim().length > 0}
         <button
-          class="absolute top-1/2 right-2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg border border-white/20 bg-white/10 p-0 text-[1.25rem] leading-none text-white transition-all duration-200 ease-in-out hover:bg-white/20"
+          class="absolute top-1/2 right-2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg border border-white-20 bg-white-10 p-0 text-[1.25rem] leading-none text-white transition-all duration-200 ease-in-out hover:bg-white-20"
           type="button"
           aria-label={m["common.clear_search"]()}
           onclick={() => (searchQuery = "")}
@@ -153,7 +153,7 @@
       {/if}
     </div>
     {#if showFilterRow}
-      <div class="text-[0.95rem] text-white/60">
+      <div class="text-[0.95rem] text-white-60">
         {m["common.matched"]({
           shown: groups.reduce((sum, group) => sum + group.items.length, 0),
           total: tables.length,

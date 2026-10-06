@@ -127,7 +127,7 @@
   const linkBase =
     "rounded-lg px-3 py-1.5 text-sm no-underline transition-colors duration-150 cursor-pointer";
   const menuItemClass =
-    "block rounded-xl px-3 py-2 text-left text-sm text-white/90 no-underline transition-colors duration-150 cursor-pointer hover:bg-white/10";
+    "block rounded-xl px-3 py-2 text-left text-sm text-white-90 no-underline transition-colors duration-150 cursor-pointer hover:bg-white-10";
 
   // 语言菜单：三语自称固定（不随界面语言变化），顺序 ja → zh-cn → en。
   // 文案仍走 messages，保持用户可见文本单一来源；label 延迟求值，
@@ -157,13 +157,13 @@
       <div class="relative shrink-0">
         <button
           type="button"
-          class="cursor-pointer rounded-full border-2 border-transparent transition-colors duration-150 hover:border-white/40"
+          class="cursor-pointer rounded-full border-2 border-transparent transition-colors duration-150 hover:border-white-40"
           aria-label={m["topbar.profile_card_aria"]()}
           aria-expanded={panels.isOpen("profile")}
           onclick={() => panels.toggle("profile")}
         >
           <img
-            class="size-10 rounded-full border-2 border-white/30"
+            class="size-10 rounded-full border-2 border-white-30"
             src="/assets/avatar.png"
             alt="Miyako Meow"
           />
@@ -174,7 +174,7 @@
             <GlassPanel class="rounded-2xl p-5" padding="none" rounded="none">
               <div class="text-center">
                 <img
-                  class="mx-auto mb-3 h-24 w-24 rounded-full border-4 border-white/30 shadow-[0_0_20px_rgba(255,255,255,0.2)] transition-transform duration-300 ease-in-out hover:scale-105 hover:rotate-[5deg]"
+                  class="mx-auto mb-3 h-24 w-24 rounded-full border-4 border-white-30 shadow-[0_0_20px_rgba(255,255,255,0.2)] transition-transform duration-300 ease-in-out hover:scale-105 hover:rotate-[5deg]"
                   src="/assets/avatar.png"
                   alt="Miyako Meow"
                 />
@@ -184,7 +184,7 @@
                   {m["topbar.nickname"]()}
                 </h2>
                 <p class="mt-1 mb-4 text-[#a5b4fc]">{m["topbar.motto"]()}</p>
-                <p class="mb-5 text-sm leading-relaxed text-white/90">{m["topbar.bio"]()}</p>
+                <p class="mb-5 text-sm leading-relaxed text-white-90">{m["topbar.bio"]()}</p>
                 <div class="flex flex-wrap justify-center gap-3">
                   <GlassButton
                     href="https://codeberg.org/brightmeows"
@@ -217,8 +217,8 @@
               <button
                 type="button"
                 class="{linkBase} flex items-center gap-1 {dropdownActive
-                  ? 'bg-white/15 font-semibold text-white'
-                  : 'text-white/85 hover:bg-white/10 hover:text-white'}"
+                  ? 'bg-white-15 font-semibold text-white'
+                  : 'text-white-85 hover:bg-white-10 hover:text-white'}"
                 aria-expanded={panels.isOpen(item.id)}
                 aria-current={dropdownActive ? "true" : undefined}
                 onclick={() => panels.toggle(item.id)}
@@ -247,8 +247,8 @@
             <a
               href={resolve(item.href, {})}
               class="{linkBase} {isActive(item.href)
-                ? 'bg-white/15 font-semibold text-white'
-                : 'text-white/85 hover:bg-white/10 hover:text-white'}"
+                ? 'bg-white-15 font-semibold text-white'
+                : 'text-white-85 hover:bg-white-10 hover:text-white'}"
               aria-current={isActive(item.href) ? "page" : undefined}
             >
               {item.label()}
@@ -261,7 +261,7 @@
       <div class="relative shrink-0 sm:hidden">
         <button
           type="button"
-          class="{linkBase} flex items-center gap-1 text-white/85 hover:bg-white/10 hover:text-white"
+          class="{linkBase} flex items-center gap-1 text-white-85 hover:bg-white-10 hover:text-white"
           aria-expanded={panels.isOpen("menu")}
           onclick={() => panels.toggle("menu")}
         >
@@ -285,10 +285,10 @@
                   <a href={resolve(item.href, {})} class={menuItemClass}>{item.label()}</a>
                 {/if}
               {/each}
-              <div class="mx-2 my-1 border-t border-white/15"></div>
+              <div class="mx-2 my-1 border-t border-white-15"></div>
               {#each topLevelNav as item, i (i)}
                 {#if "children" in item}
-                  <div class="px-3 pt-2 pb-1 text-xs font-medium text-white/50">{item.label()}</div>
+                  <div class="px-3 pt-2 pb-1 text-xs font-medium text-white-50">{item.label()}</div>
                   {@render dropdownEntries(item.children)}
                 {/if}
               {/each}
@@ -306,14 +306,14 @@
           <div class="flex min-w-0 items-center gap-1 overflow-hidden px-2">
             {#each breadcrumbs as item, index (index)}
               {#if index > 0}
-                <span class="shrink-0 text-white/40 select-none">→</span>
+                <span class="shrink-0 text-white-40 select-none">→</span>
               {/if}
               {#if index === breadcrumbs.length - 1}
                 <span class="truncate font-medium text-white">{item.label}</span>
               {:else}
                 <a
                   href={resolve(item.href ?? "/", {})}
-                  class="shrink-0 cursor-pointer text-white/80 no-underline transition-colors duration-150 hover:text-white"
+                  class="shrink-0 cursor-pointer text-white-80 no-underline transition-colors duration-150 hover:text-white"
                 >
                   {item.label}
                 </a>
@@ -331,20 +331,20 @@
           {#if auth.status === "unavailable"}
             <a
               href={SITE_ORIGIN}
-              class="{linkBase} block text-white/85 hover:bg-white/10 hover:text-white"
+              class="{linkBase} block text-white-85 hover:bg-white-10 hover:text-white"
               title={m["topbar.static_hint_title"]()}
             >
               {m["topbar.go_main_site"]()}
             </a>
           {:else if auth.status === "ready" && auth.user === null}
-            <a href={loginHref} class="{linkBase} block bg-white/15 text-white hover:bg-white/25">
+            <a href={loginHref} class="{linkBase} block bg-white-15 text-white hover:bg-white-25">
               {m["topbar.login"]()}
             </a>
           {:else if auth.status === "ready" && auth.user !== null}
             {@const user = auth.user}
             <button
               type="button"
-              class="{linkBase} text-white/85 hover:bg-white/10 hover:text-white"
+              class="{linkBase} text-white-85 hover:bg-white-10 hover:text-white"
               aria-expanded={panels.isOpen("user")}
               onclick={() => panels.toggle("user")}
             >
@@ -353,7 +353,7 @@
             {#if panels.isOpen("user")}
               <div class="absolute top-full right-0 mt-2 w-56">
                 <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
-                  <div class="px-3 py-2 text-sm text-white/70">
+                  <div class="px-3 py-2 text-sm text-white-70">
                     {m["topbar.remaining"]({ count: user.remaining })}
                   </div>
                   {#if user.role === "admin"}
@@ -372,14 +372,14 @@
               </div>
             {/if}
           {:else}
-            <div class="h-9 w-16 animate-pulse rounded-full bg-white/10" aria-hidden="true"></div>
+            <div class="h-9 w-16 animate-pulse rounded-full bg-white-10" aria-hidden="true"></div>
           {/if}
         </div>
 
         <div class="relative">
           <button
             type="button"
-            class="flex size-9 cursor-pointer items-center justify-center rounded-full text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+            class="flex size-9 cursor-pointer items-center justify-center rounded-full text-white-60 transition-colors hover:bg-white-10 hover:text-white"
             title={m["topbar.theme"]()}
             aria-label={m["topbar.theme"]()}
             aria-expanded={panels.isOpen("theme")}
@@ -453,7 +453,7 @@
           <div class="relative">
             <button
               type="button"
-              class="flex size-9 cursor-pointer items-center justify-center rounded-full text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+              class="flex size-9 cursor-pointer items-center justify-center rounded-full text-white-60 transition-colors hover:bg-white-10 hover:text-white"
               title={m["topbar.language"]()}
               aria-label={m["topbar.language"]()}
               aria-expanded={panels.isOpen("language")}

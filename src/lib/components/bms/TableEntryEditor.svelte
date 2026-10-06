@@ -248,7 +248,7 @@
 <section>
   <div class="mb-3 flex flex-wrap items-center gap-3">
     <h3 class="tag-accent-sm">{m["editor.entries_section"]()}</h3>
-    <span class="text-[0.9rem] text-white/50">
+    <span class="text-[0.9rem] text-white-50">
       {m["editor.entries_total"]({ count: entries.length })}
     </span>
     {#if unassignedCount > 0}
@@ -275,7 +275,7 @@
       {disabled}
     />
     <div class="flex flex-wrap items-center gap-2">
-      <span class="text-[0.85rem] text-white/60">
+      <span class="text-[0.85rem] text-white-60">
         {m["editor.entries_selected"]({ count: selectedCount })}
       </span>
       <button class={btnGhost} type="button" {disabled} onclick={selectAllFiltered}>
@@ -285,7 +285,7 @@
         {m["editor.entries_clear_selection"]()}
       </button>
       <select
-        class="rounded-md border border-white/20 bg-black/30 px-2 py-1 text-[0.85rem] text-white outline-none"
+        class="rounded-md border border-white-20 bg-black-30 px-2 py-1 text-[0.85rem] text-white outline-none"
         bind:value={batchChoice}
         {disabled}
       >
@@ -328,16 +328,16 @@
   {/if}
 
   {#if bulkOpen}
-    <div class="mb-4 rounded-lg border border-white/15 bg-black/20 p-3">
-      <p class="mb-2 text-[0.85rem] text-white/60">{m["editor.bulk_paste_hint"]()}</p>
+    <div class="mb-4 rounded-lg border border-white-15 bg-black-20 p-3">
+      <p class="mb-2 text-[0.85rem] text-white-60">{m["editor.bulk_paste_hint"]()}</p>
       <textarea class="{inputEditorMono} min-h-32" bind:value={bulkText} placeholder="[…]"
       ></textarea>
       <div class="mt-2 flex flex-wrap items-center gap-3">
-        <label class="flex items-center gap-1.5 text-[0.85rem] text-white/70">
+        <label class="flex items-center gap-1.5 text-[0.85rem] text-white-70">
           <input type="radio" bind:group={bulkMode} value="append" />
           {m["editor.bulk_mode_append"]()}
         </label>
-        <label class="flex items-center gap-1.5 text-[0.85rem] text-white/70">
+        <label class="flex items-center gap-1.5 text-[0.85rem] text-white-70">
           <input type="radio" bind:group={bulkMode} value="replace" />
           {m["editor.bulk_mode_replace"]()}
         </label>
@@ -394,7 +394,7 @@
         {@const groupCollapsed = collapsedGroups.has(groupKey(group.level, group.unassigned))}
         <tbody id={entryGroupAnchorId(group.level, group.unassigned)} class="scroll-mt-5">
           <tr>
-            <td colspan="5" class="border-b-2 border-white/10 px-4 py-3">
+            <td colspan="5" class="border-b-2 border-white-10 px-4 py-3">
               <button
                 class="flex cursor-pointer items-center gap-4 border-none bg-transparent p-0 text-left"
                 type="button"
@@ -407,11 +407,11 @@
                 >
                   {groupLabel}
                 </span>
-                <span class="text-[1.1rem] text-white/80">
+                <span class="text-[1.1rem] text-white-80">
                   {m["table.chart_count"]({ count: group.indices.length })}
                 </span>
                 <span
-                  class="text-[0.8rem] text-white/50 transition-transform duration-200 {groupCollapsed
+                  class="text-[0.8rem] text-white-50 transition-transform duration-200 {groupCollapsed
                     ? ''
                     : 'rotate-180'}"
                 >
@@ -424,7 +424,7 @@
             {#each group.indices as index (index)}
               {@const entry = entries[index] ?? {}}
               <tr
-                class="hover:bg-white/5 last:[&>td]:border-b-0 {editingIndex === index
+                class="hover:bg-white-5 last:[&>td]:border-b-0 {editingIndex === index
                   ? 'bg-[#64b5f6]/10'
                   : ''}"
               >
@@ -445,20 +445,20 @@
                     {groupLabel}
                   </span>
                   {#if isUnassigned(entry) && hintFor(entry) !== null}
-                    <div class="mt-1 text-[0.75rem] text-white/40">
+                    <div class="mt-1 text-[0.75rem] text-white-40">
                       {m["editor.entry_level_hint"]({ level: hintFor(entry) ?? "" })}
                     </div>
                   {/if}
                 </td>
                 <td class="table-td-glass min-w-50 wrap-break-word">
-                  <div class="text-white/90">
+                  <div class="text-white-90">
                     {entryLabel(entry) || m["editor.entry_unnamed"]()}
                   </div>
                   {#if typeof entry.artist === "string" && entry.artist !== ""}
-                    <div class="text-[0.8rem] text-white/50">{entry.artist}</div>
+                    <div class="text-[0.8rem] text-white-50">{entry.artist}</div>
                   {/if}
                 </td>
-                <td class="table-td-glass font-mono text-[0.8rem] wrap-break-word text-white/55">
+                <td class="table-td-glass font-mono text-[0.8rem] wrap-break-word text-white-55">
                   {shortHash(entry)}
                 </td>
                 <td class="table-td-glass px-2">
@@ -519,7 +519,7 @@
       {#if groups.length === 0}
         <tbody>
           <tr>
-            <td class="table-td-glass text-center text-white/50" colspan="5">
+            <td class="table-td-glass text-center text-white-50" colspan="5">
               {entries.length === 0
                 ? m["editor.entries_empty"]()
                 : m["editor.entries_empty_filtered"]()}

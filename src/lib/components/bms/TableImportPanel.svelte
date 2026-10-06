@@ -171,12 +171,12 @@
     `cursor-pointer rounded-md border px-3 py-1.5 text-[0.85rem] transition-colors duration-200 ${
       active
         ? "border-[#64b5f6]/60 bg-[#64b5f6]/20 text-[#64b5f6]"
-        : "border-white/20 text-white/50 hover:border-white/40 hover:text-white/70"
+        : "border-white-20 text-white-50 hover:border-white-40 hover:text-white-70"
     }`;
 </script>
 
-<details class="rounded-lg border border-white/15 bg-black/20 p-3">
-  <summary class="cursor-pointer text-[0.9rem] text-white/70">
+<details class="rounded-lg border border-white-15 bg-black-20 p-3">
+  <summary class="cursor-pointer text-[0.9rem] text-white-70">
     {m["editor.import_section"]()}
   </summary>
 
@@ -195,7 +195,7 @@
         {entry.label}
       </button>
     {/each}
-    <div class="ml-auto flex flex-wrap items-center gap-3 text-[0.85rem] text-white/70">
+    <div class="ml-auto flex flex-wrap items-center gap-3 text-[0.85rem] text-white-70">
       <label class="flex items-center gap-1.5">
         <input type="radio" bind:group={dataMode} value="replace" {disabled} />
         {m["editor.import_replace"]()}
@@ -209,7 +209,7 @@
 
   <div class="mt-2">
     {#if tab === "json"}
-      <p class="mb-2 text-[0.85rem] text-white/60">{m["editor.import_json_hint"]()}</p>
+      <p class="mb-2 text-[0.85rem] text-white-60">{m["editor.import_json_hint"]()}</p>
       <textarea
         class="{inputEditorMono} min-h-32"
         bind:value={jsonText}
@@ -221,9 +221,9 @@
         </button>
       </div>
     {:else if tab === "file"}
-      <p class="mb-2 text-[0.85rem] text-white/60">{m["editor.import_file_hint"]()}</p>
+      <p class="mb-2 text-[0.85rem] text-white-60">{m["editor.import_file_hint"]()}</p>
       <input
-        class="text-[0.85rem] file:cursor-pointer file:rounded-md file:border-0 file:bg-white/10 file:px-3 file:py-1.5 file:text-white/80"
+        class="text-[0.85rem] file:cursor-pointer file:rounded-md file:border-0 file:bg-white-10 file:px-3 file:py-1.5 file:text-white-80"
         type="file"
         accept="application/json,.json"
         {disabled}
@@ -233,10 +233,10 @@
         }}
       />
       {#if busy}
-        <span class="ml-2 text-[0.85rem] text-white/60">{m["editor.import_busy"]()}</span>
+        <span class="ml-2 text-[0.85rem] text-white-60">{m["editor.import_busy"]()}</span>
       {/if}
     {:else}
-      <p class="mb-2 text-[0.85rem] text-white/60">{m["editor.import_fork_hint"]()}</p>
+      <p class="mb-2 text-[0.85rem] text-white-60">{m["editor.import_fork_hint"]()}</p>
       <div class="flex flex-wrap gap-2">
         <input
           class="{inputEditorMono} min-w-60 flex-1"
