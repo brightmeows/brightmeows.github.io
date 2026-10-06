@@ -5,7 +5,7 @@
   import { page } from "$app/state";
   import GlassButton from "$lib/components/ui/GlassButton.svelte";
   import GlassPanel from "$lib/components/ui/GlassPanel.svelte";
-  import { moreNav, topLevelNav } from "$lib/constants/nav";
+  import { topLevelNav, type NavDropdown, type NavItem } from "$lib/constants/nav";
   import { apiBase, SITE_ORIGIN } from "$lib/constants/site";
   import { auth } from "$lib/data/auth-store.svelte";
   import { theme } from "$lib/data/theme-store.svelte";
@@ -30,19 +30,25 @@
   let lastScrollY = $state(0);
   let accumulatedDelta = $state(0);
 
-  // —— 弹层：头像卡 / 更多菜单 / 用户菜单，互斥展开 ——
+  // —— 弹层：头像卡 / 导航下拉与菜单 / 用户菜单，互斥展开；id 由触发方给定 ——
 
-  type Panel = "profile" | "more" | "user" | "language" | "theme";
-
-  let openPanel = $state<Panel | null>(null);
+  let openPanel = $state<string | null>(null);
   let root: HTMLDivElement | undefined;
 
-  function togglePanel(panel: Panel): void {
+  function togglePanel(panel: string): void {
     openPanel = openPanel === panel ? null : panel;
   }
 
   function closePanel(): void {
     openPanel = null;
+  }
+
+  // Esc 关闭当前弹层并把焦点送回触发按钮：弹层 DOM 随关闭移除，不回移则
+  // 焦点落回 body，键盘用户丢失位置。触发按钮互斥地持有 aria-expanded="true"。
+  function handleKeydown(event: KeyboardEvent): void {
+    if (event.key !== "Escape" || openPanel === null) return;
+    closePanel();
+    root?.querySelector<HTMLButtonElement>('[aria-expanded="true"]')?.focus();
   }
 
   function handleScroll(): void {
@@ -88,10 +94,12 @@
     lastScrollY = window.scrollY;
     window.addEventListener("scroll", handleScroll, { passive: true });
     document.addEventListener("pointerdown", onOutsidePointerDown, true);
+    window.addEventListener("keydown", handleKeydown);
     void auth.ensureLoaded();
     return () => {
       window.removeEventListener("scroll", handleScroll);
       document.removeEventListener("pointerdown", onOutsidePointerDown, true);
+      window.removeEventListener("keydown", handleKeydown);
     };
   });
 
@@ -123,6 +131,22 @@
     return page.url.pathname === href || page.url.pathname.startsWith(`${href}/`);
   }
 
+  // 只有“最长匹配前缀”所在的下拉才高亮：isActive 是前缀匹配，概览条目
+  // （/bms）会吞掉整个子树，self-sp/self-dp 是连字符路径、无法被自身更长的
+  // 前缀条目命中，须按匹配长度归属，否则个人表页面下两个下拉同时高亮。
+  function isActiveDropdown(item: NavDropdown): boolean {
+    let owner: { id: string; len: number } | undefined;
+    for (const entry of topLevelNav) {
+      if (!("children" in entry)) continue;
+      for (const child of entry.children) {
+        if (isActive(child.href) && (owner === undefined || child.href.length > owner.len)) {
+          owner = { id: entry.id, len: child.href.length };
+        }
+      }
+    }
+    return owner?.id === item.id;
+  }
+
   const linkBase =
     "rounded-lg px-3 py-1.5 text-sm no-underline transition-colors duration-150 cursor-pointer";
   const menuItemClass =
@@ -137,6 +161,13 @@
     { code: "en", label: () => m["topbar.lang_en"]() },
   ];
 </script>
+
+<!-- 下拉子页条目，宽屏各导航下拉共用 -->
+{#snippet dropdownEntries(entries: NavItem[])}
+  {#each entries as entry (entry.href)}
+    <a href={resolve(entry.href, {})} class={menuItemClass}>{entry.label()}</a>
+  {/each}
+{/snippet}
 
 <div
   bind:this={root}
@@ -200,30 +231,64 @@
         {/if}
       </div>
 
-      <!-- 左区：顶层导航（窄屏折进“更多”） -->
+      <!-- 左区：顶层导航（/bms 子树按服务/个人表拆成下拉；窄屏整条导航折进菜单） -->
       <nav aria-label={m["topbar.nav_aria"]()} class="hidden shrink-0 items-center sm:flex">
-        {#each topLevelNav as item (item.href)}
-          <a
-            href={resolve(item.href, {})}
-            class="{linkBase} {isActive(item.href)
-              ? 'bg-white/15 font-semibold text-white'
-              : 'text-white/85 hover:bg-white/10 hover:text-white'}"
-            aria-current={isActive(item.href) ? "page" : undefined}
-          >
-            {item.label()}
-          </a>
+        {#each topLevelNav as item, i (i)}
+          {#if "children" in item}
+            {@const dropdownActive = isActiveDropdown(item)}
+            <div class="relative">
+              <button
+                type="button"
+                class="{linkBase} flex items-center gap-1 {dropdownActive
+                  ? 'bg-white/15 font-semibold text-white'
+                  : 'text-white/85 hover:bg-white/10 hover:text-white'}"
+                aria-expanded={openPanel === item.id}
+                aria-current={dropdownActive ? "true" : undefined}
+                onclick={() => togglePanel(item.id)}
+              >
+                {item.label()}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  class="size-3.5"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M7 10l5 5 5-5z" />
+                </svg>
+              </button>
+
+              {#if openPanel === item.id}
+                <div class="absolute top-full left-0 mt-2 w-56">
+                  <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
+                    {@render dropdownEntries(item.children)}
+                  </GlassPanel>
+                </div>
+              {/if}
+            </div>
+          {:else}
+            <a
+              href={resolve(item.href, {})}
+              class="{linkBase} {isActive(item.href)
+                ? 'bg-white/15 font-semibold text-white'
+                : 'text-white/85 hover:bg-white/10 hover:text-white'}"
+              aria-current={isActive(item.href) ? "page" : undefined}
+            >
+              {item.label()}
+            </a>
+          {/if}
         {/each}
       </nav>
 
-      <!-- “更多”菜单（静态全量子页入口；窄屏兼作唯一导航入口） -->
-      <div class="relative shrink-0">
+      <!-- 菜单（窄屏唯一导航入口：先列顶层链接，再按分组列子页；宽屏由导航内下拉承担） -->
+      <div class="relative shrink-0 sm:hidden">
         <button
           type="button"
           class="{linkBase} flex items-center gap-1 text-white/85 hover:bg-white/10 hover:text-white"
-          aria-expanded={openPanel === "more"}
-          onclick={() => togglePanel("more")}
+          aria-expanded={openPanel === "menu"}
+          onclick={() => togglePanel("menu")}
         >
-          {m["topbar.more"]()}
+          {m["topbar.menu"]()}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
@@ -235,17 +300,20 @@
           </svg>
         </button>
 
-        {#if openPanel === "more"}
+        {#if openPanel === "menu"}
           <div class="absolute top-full left-0 mt-2 w-56">
             <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
-              <div class="sm:hidden">
-                {#each topLevelNav as item (item.href)}
+              {#each topLevelNav as item, i (i)}
+                {#if !("children" in item)}
                   <a href={resolve(item.href, {})} class={menuItemClass}>{item.label()}</a>
-                {/each}
-                <div class="mx-2 my-1 border-t border-white/15"></div>
-              </div>
-              {#each moreNav as item (item.href)}
-                <a href={resolve(item.href, {})} class={menuItemClass}>{item.label()}</a>
+                {/if}
+              {/each}
+              <div class="mx-2 my-1 border-t border-white/15"></div>
+              {#each topLevelNav as item, i (i)}
+                {#if "children" in item}
+                  <div class="px-3 pt-2 pb-1 text-xs font-medium text-white/50">{item.label()}</div>
+                  {@render dropdownEntries(item.children)}
+                {/if}
               {/each}
             </GlassPanel>
           </div>
