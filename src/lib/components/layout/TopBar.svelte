@@ -5,7 +5,7 @@
   import { page } from "$app/state";
   import GlassButton from "$lib/components/ui/GlassButton.svelte";
   import GlassPanel from "$lib/components/ui/GlassPanel.svelte";
-  import { moreNav, topLevelNav } from "$lib/constants/nav";
+  import { bmsNav, topLevelNav } from "$lib/constants/nav";
   import { apiBase, SITE_ORIGIN } from "$lib/constants/site";
   import { auth } from "$lib/data/auth-store.svelte";
   import { theme } from "$lib/data/theme-store.svelte";
@@ -32,7 +32,7 @@
 
   // —— 弹层：头像卡 / 更多菜单 / 用户菜单，互斥展开 ——
 
-  type Panel = "profile" | "more" | "user" | "language" | "theme";
+  type Panel = "profile" | "bms" | "user" | "language" | "theme";
 
   let openPanel = $state<Panel | null>(null);
   let root: HTMLDivElement | undefined;
@@ -200,30 +200,65 @@
         {/if}
       </div>
 
-      <!-- 左区：顶层导航（窄屏折进“更多”） -->
+      <!-- 左区：顶层导航（/bms 子树折叠进 BMS 下拉；窄屏整条导航折进 BMS 菜单） -->
       <nav aria-label={m["topbar.nav_aria"]()} class="hidden shrink-0 items-center sm:flex">
         {#each topLevelNav as item (item.href)}
-          <a
-            href={resolve(item.href, {})}
-            class="{linkBase} {isActive(item.href)
-              ? 'bg-white/15 font-semibold text-white'
-              : 'text-white/85 hover:bg-white/10 hover:text-white'}"
-            aria-current={isActive(item.href) ? "page" : undefined}
-          >
-            {item.label()}
-          </a>
+          {#if "children" in item}
+            <div class="relative">
+              <button
+                type="button"
+                class="{linkBase} flex items-center gap-1 {isActive(item.href)
+                  ? 'bg-white/15 font-semibold text-white'
+                  : 'text-white/85 hover:bg-white/10 hover:text-white'}"
+                aria-expanded={openPanel === "bms"}
+                aria-current={isActive(item.href) ? "true" : undefined}
+                onclick={() => togglePanel("bms")}
+              >
+                {item.label()}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  class="size-3.5"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M7 10l5 5 5-5z" />
+                </svg>
+              </button>
+
+              {#if openPanel === "bms"}
+                <div class="absolute top-full left-0 mt-2 w-56">
+                  <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
+                    {#each item.children as child (child.href)}
+                      <a href={resolve(child.href, {})} class={menuItemClass}>{child.label()}</a>
+                    {/each}
+                  </GlassPanel>
+                </div>
+              {/if}
+            </div>
+          {:else}
+            <a
+              href={resolve(item.href, {})}
+              class="{linkBase} {isActive(item.href)
+                ? 'bg-white/15 font-semibold text-white'
+                : 'text-white/85 hover:bg-white/10 hover:text-white'}"
+              aria-current={isActive(item.href) ? "page" : undefined}
+            >
+              {item.label()}
+            </a>
+          {/if}
         {/each}
       </nav>
 
-      <!-- “更多”菜单（静态全量子页入口；窄屏兼作唯一导航入口） -->
-      <div class="relative shrink-0">
+      <!-- BMS 菜单（窄屏唯一导航入口：先列顶层链接，再列 /bms 子树；宽屏由导航内下拉承担） -->
+      <div class="relative shrink-0 sm:hidden">
         <button
           type="button"
           class="{linkBase} flex items-center gap-1 text-white/85 hover:bg-white/10 hover:text-white"
-          aria-expanded={openPanel === "more"}
-          onclick={() => togglePanel("more")}
+          aria-expanded={openPanel === "bms"}
+          onclick={() => togglePanel("bms")}
         >
-          {m["topbar.more"]()}
+          {bmsNav.label()}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
@@ -235,17 +270,17 @@
           </svg>
         </button>
 
-        {#if openPanel === "more"}
+        {#if openPanel === "bms"}
           <div class="absolute top-full left-0 mt-2 w-56">
             <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
-              <div class="sm:hidden">
-                {#each topLevelNav as item (item.href)}
+              {#each topLevelNav as item (item.href)}
+                {#if !("children" in item)}
                   <a href={resolve(item.href, {})} class={menuItemClass}>{item.label()}</a>
-                {/each}
-                <div class="mx-2 my-1 border-t border-white/15"></div>
-              </div>
-              {#each moreNav as item (item.href)}
-                <a href={resolve(item.href, {})} class={menuItemClass}>{item.label()}</a>
+                {/if}
+              {/each}
+              <div class="mx-2 my-1 border-t border-white/15"></div>
+              {#each bmsNav.children as child (child.href)}
+                <a href={resolve(child.href, {})} class={menuItemClass}>{child.label()}</a>
               {/each}
             </GlassPanel>
           </div>
