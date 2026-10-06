@@ -3,7 +3,7 @@
 
   import { page } from "$app/state";
   import { LEGACY_ORIGIN_REDIRECTS, SITE_ORIGIN } from "$lib/constants/site";
-  import { theme } from "$lib/data/theme-store.svelte";
+  import { theme } from "$lib/data/store/theme-store.svelte";
   import { m } from "$lib/paraglide/messages.js";
   import { getLocale } from "$lib/paraglide/runtime";
 

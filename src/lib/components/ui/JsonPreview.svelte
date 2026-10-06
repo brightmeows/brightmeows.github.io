@@ -49,7 +49,7 @@
   import { fade, fly } from "svelte/transition";
 
   import { m } from "$lib/paraglide/messages.js";
-  import { writeToClipboard } from "$lib/utils/clipboard.svelte";
+  import { writeToClipboard } from "$lib/utils/ui/clipboard.svelte";
 
   let open = $state(false);
   let value = $state<unknown>(undefined);

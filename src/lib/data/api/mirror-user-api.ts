@@ -20,7 +20,7 @@ import {
 import { requestJson } from "./http";
 
 import { m } from "$lib/paraglide/messages.js";
-import { translateMessage } from "$lib/utils/i18n";
+import { translateMessage } from "$lib/utils/i18n/i18n";
 
 /**
  * 镜像表用户操作接口的客户端封装。

@@ -11,8 +11,8 @@
   import { m } from "$lib/paraglide/messages.js";
   import type { MirrorAdminUi } from "$lib/types/bms-view";
   import type { JsonPreviewHandle } from "$lib/types/ui";
-  import { clipboardFieldFeedback } from "$lib/utils/clipboard.svelte";
   import { tableLabelOf } from "$lib/utils/mirror-tables";
+  import { clipboardFieldFeedback } from "$lib/utils/ui/clipboard.svelte";
 
   interface Props {
     item: MirrorTableItem;

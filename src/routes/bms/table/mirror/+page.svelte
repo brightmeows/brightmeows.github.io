@@ -21,8 +21,7 @@
     type MirrorAdminDeps,
     type MirrorAdminState,
   } from "$lib/controllers/mirror-admin";
-  import { auth } from "$lib/data/auth-store.svelte";
-  import { toFailure } from "$lib/data/http";
+  import { toFailure } from "$lib/data/api/http";
   import {
     adminAuthorize,
     adminDisable,
@@ -31,15 +30,15 @@
     adminRestore,
     fetchAdminOverview,
     type TrashEntry,
-  } from "$lib/data/mirror-admin-api";
-  import { loadMirrorTables } from "$lib/data/mirror-table-loader";
-  import { submitDelete } from "$lib/data/mirror-user-api";
-  import { searchConverters } from "$lib/data/search-converters.svelte";
+  } from "$lib/data/api/mirror-admin-api";
+  import { loadMirrorTables } from "$lib/data/api/mirror-table-loader";
+  import { submitDelete } from "$lib/data/api/mirror-user-api";
+  import { auth } from "$lib/data/store/auth-store.svelte";
+  import { searchConverters } from "$lib/data/store/search-converters.svelte";
   import { m } from "$lib/paraglide/messages.js";
   import type { MirrorAdminUi, MirrorMetaFields } from "$lib/types/bms-view";
   import type { AsyncState } from "$lib/types/common";
   import type { JsonPreviewHandle, TocItem } from "$lib/types/ui";
-  import { clipboardFeedback } from "$lib/utils/clipboard.svelte";
   import {
     buildSearchNeedles,
     collectTagValues,
@@ -52,7 +51,8 @@
     sourceUrlOf,
     tableLabelOf,
   } from "$lib/utils/mirror-tables";
-  import { buildGroupTocItems } from "$lib/utils/toc";
+  import { clipboardFeedback } from "$lib/utils/ui/clipboard.svelte";
+  import { buildGroupTocItems } from "$lib/utils/ui/toc";
 
   /**
    * 镜像列表页：清单加载与筛选分组、用户操作区与管理区。清单状态走

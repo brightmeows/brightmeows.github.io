@@ -13,7 +13,7 @@
     type MeteorState,
     type StarState,
     type Viewport,
-  } from "$lib/utils/starfield";
+  } from "$lib/utils/ui/starfield";
 
   const METEOR_COUNT = 8;
   /** 单帧时长上限（秒）：标签页恢复后的首帧防跳变 */

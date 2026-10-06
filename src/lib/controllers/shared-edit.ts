@@ -17,8 +17,12 @@ import type { SharedTableItem } from "@brightmeows/mirror/shared";
 import { validateSharedId } from "@brightmeows/mirror/shared";
 import { sharedTablePath } from "@brightmeows/mirror/urls";
 
-import { ApiUnavailableError } from "$lib/data/http";
-import type { SharedCreateResult, SharedPayloadBody, SharedSaveResult } from "$lib/data/shared-api";
+import { ApiUnavailableError } from "$lib/data/api/http";
+import type {
+  SharedCreateResult,
+  SharedPayloadBody,
+  SharedSaveResult,
+} from "$lib/data/api/shared-api";
 import { m } from "$lib/paraglide/messages.js";
 
 /** 页面阶段：域状态机（login/notfound 是域结果，不并入 AsyncState；

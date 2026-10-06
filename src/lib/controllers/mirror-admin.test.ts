@@ -10,7 +10,7 @@ import {
   type MirrorAdminDeps,
 } from "./mirror-admin";
 
-import type { AdminOverview } from "$lib/data/mirror-admin-api";
+import type { AdminOverview } from "$lib/data/api/mirror-admin-api";
 
 /**
  * 管理区状态转移的行为锁定测试：每条路径对应页面内实现的一条分支

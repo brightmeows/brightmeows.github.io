@@ -2,7 +2,7 @@
   import type { Snippet } from "svelte";
 
   import { m } from "$lib/paraglide/messages.js";
-  import { styleToString } from "$lib/utils/style";
+  import { styleToString } from "$lib/utils/ui/style";
 
   interface Props {
     /** 图标内容 */

@@ -81,8 +81,7 @@
     planSaveAsShared,
     type EditorNotice,
   } from "$lib/controllers/editor";
-  import { fetchBmsHeader, fetchBmsTableData } from "$lib/data/bms-data";
-  import { sharedNewSeed } from "$lib/data/shared-new.svelte";
+  import { fetchBmsHeader, fetchBmsTableData } from "$lib/data/api/bms-data";
   import {
     deleteDraft,
     loadDraft,
@@ -90,15 +89,16 @@
     takeDraftClaim,
     writeDraftClaim,
     type DraftWriteResult,
-  } from "$lib/data/table-drafts";
+  } from "$lib/data/api/table-drafts";
+  import { sharedNewSeed } from "$lib/data/store/shared-new.svelte";
   import { m } from "$lib/paraglide/messages.js";
   import type { ProgressCallback } from "$lib/types/bms-view";
   import type { TocItem } from "$lib/types/ui";
-  import { clipboardFeedback } from "$lib/utils/clipboard.svelte";
-  import { downloadJsonFile } from "$lib/utils/download";
   import { editorHeaderState } from "$lib/utils/editor-header";
+  import { downloadJsonFile } from "$lib/utils/infra/download";
+  import { resolveUrl } from "$lib/utils/infra/url";
   import { formatTitle } from "$lib/utils/title";
-  import { resolveUrl } from "$lib/utils/url";
+  import { clipboardFeedback } from "$lib/utils/ui/clipboard.svelte";
 
   /**
    * 难度表页面（查看与编辑合并为同一路由）：

@@ -4,7 +4,6 @@
   import GlassPanel from "$lib/components/ui/GlassPanel.svelte";
   import { SITE_ORIGIN } from "$lib/constants/site";
   import { btnGhostXs } from "$lib/constants/ui-classes";
-  import { auth } from "$lib/data/auth-store.svelte";
   import {
     fetchFetchStatus,
     fetchPreview,
@@ -13,7 +12,8 @@
     submitRestore,
     type PreviewResult,
     type RemovedRecord,
-  } from "$lib/data/mirror-user-api";
+  } from "$lib/data/api/mirror-user-api";
+  import { auth } from "$lib/data/store/auth-store.svelte";
   import { m } from "$lib/paraglide/messages.js";
 
   interface Props {

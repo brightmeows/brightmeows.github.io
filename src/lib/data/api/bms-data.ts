@@ -2,9 +2,9 @@ import type { ChartData, HeaderData } from "@brightmeows/bms/format";
 
 import { m } from "$lib/paraglide/messages.js";
 import type { ProgressCallback } from "$lib/types/bms-view";
-import { fetchStream } from "$lib/utils/fetch-stream";
-import { formatBytes } from "$lib/utils/format";
-import { resolveUrl, resolveUrlAs } from "$lib/utils/url";
+import { fetchStream } from "$lib/utils/infra/fetch-stream";
+import { formatBytes } from "$lib/utils/infra/format";
+import { resolveUrl, resolveUrlAs } from "$lib/utils/infra/url";
 
 /**
  * JSONP 请求

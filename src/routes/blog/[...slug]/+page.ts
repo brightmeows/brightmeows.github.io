@@ -4,7 +4,7 @@ import type { Component } from "svelte";
 import type { PageLoad } from "./$types";
 
 import type { BlogPostMetadata } from "$lib/types/blog";
-import { extractDateFromSlug, EPOCH_DATE } from "$lib/utils/date";
+import { extractDateFromSlug, EPOCH_DATE } from "$lib/utils/infra/date";
 import { formatTitle } from "$lib/utils/title";
 
 interface BlogPostModule {

@@ -18,7 +18,7 @@
     r2TableHeaderUrl,
   } from "$lib/constants/r2";
   import { btnGhost, inputEditorMono } from "$lib/constants/ui-classes";
-  import { loadSharedTables } from "$lib/data/shared-api";
+  import { loadSharedTables } from "$lib/data/api/shared-api";
   import { m } from "$lib/paraglide/messages.js";
   import { pageCount, paginate } from "$lib/utils/shared-table";
 

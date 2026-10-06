@@ -8,9 +8,9 @@
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
   import { apiBase, SITE_ORIGIN } from "$lib/constants/site";
   import { btnPrimary, inputPanel } from "$lib/constants/ui-classes";
-  import { auth } from "$lib/data/auth-store.svelte";
-  import { fetchSharedCheckId } from "$lib/data/shared-api";
-  import { sharedNewSeed } from "$lib/data/shared-new.svelte";
+  import { fetchSharedCheckId } from "$lib/data/api/shared-api";
+  import { auth } from "$lib/data/store/auth-store.svelte";
+  import { sharedNewSeed } from "$lib/data/store/shared-new.svelte";
   import { m } from "$lib/paraglide/messages.js";
   import { sharedIdPreview } from "$lib/utils/shared-table";
 

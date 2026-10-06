@@ -8,7 +8,7 @@
  * mirror-admin.test.ts 锁定（与 2026-10 之前的页面内实现逐分支一致）。
  */
 
-import type { AdminOverview } from "$lib/data/mirror-admin-api";
+import type { AdminOverview } from "$lib/data/api/mirror-admin-api";
 import { m } from "$lib/paraglide/messages.js";
 import type { MirrorOverviewState } from "$lib/types/bms-view";
 

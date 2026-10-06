@@ -4,7 +4,7 @@
   import type { Snippet } from "svelte";
 
   import { m } from "$lib/paraglide/messages.js";
-  import { slugifyHeadingText } from "$lib/utils/slugify";
+  import { slugifyHeadingText } from "$lib/utils/infra/slugify";
 
   interface Props {
     className?: string;
