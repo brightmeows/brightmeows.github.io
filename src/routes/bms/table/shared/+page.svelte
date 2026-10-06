@@ -11,9 +11,9 @@
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
   import { SITE_ORIGIN } from "$lib/constants/site";
   import { btnPrimaryLink } from "$lib/constants/ui-classes";
-  import { auth } from "$lib/data/auth-store.svelte";
-  import { searchConverters } from "$lib/data/search-converters.svelte";
-  import { loadSharedTables, submitSharedDelete } from "$lib/data/shared-api";
+  import { loadSharedTables, submitSharedDelete } from "$lib/data/api/shared-api";
+  import { auth } from "$lib/data/store/auth-store.svelte";
+  import { searchConverters } from "$lib/data/store/search-converters.svelte";
   import { m } from "$lib/paraglide/messages.js";
   import { buildSearchNeedles } from "$lib/utils/mirror-tables";
   import { filterMineOnly, filterSharedTables, groupSharedTables } from "$lib/utils/shared-table";

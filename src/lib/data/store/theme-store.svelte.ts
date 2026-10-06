@@ -4,7 +4,7 @@ import {
   THEME_STORAGE_KEY,
   type ThemeName,
   type ThemePreference,
-} from "$lib/utils/theme";
+} from "$lib/utils/ui/theme";
 
 /**
  * 主题偏好的共享 store（Svelte 5 runes）。

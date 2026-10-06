@@ -1,7 +1,7 @@
 <script module lang="ts">
   import { resolve } from "$app/paths";
   import type { TocItem } from "$lib/types/ui";
-  import { slugifyHeadingText } from "$lib/utils/slugify";
+  import { slugifyHeadingText } from "$lib/utils/infra/slugify";
 
   interface HeadingInfo {
     id: string;

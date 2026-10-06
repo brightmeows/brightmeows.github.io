@@ -8,7 +8,7 @@
   import JsonPreview from "$lib/components/ui/JsonPreview.svelte";
   import { m } from "$lib/paraglide/messages.js";
   import type { JsonPreviewHandle } from "$lib/types/ui";
-  import { validateUrl } from "$lib/utils/url";
+  import { validateUrl } from "$lib/utils/infra/url";
 
   let chartPreview = $state<JsonPreviewHandle | undefined>();
 

@@ -2,7 +2,7 @@ import type { ChartData } from "@brightmeows/bms/format";
 
 import { r2TableHeaderUrl, r2TableDataUrl } from "$lib/constants/r2";
 import { m } from "$lib/paraglide/messages.js";
-import { fetchStream } from "$lib/utils/fetch-stream";
+import { fetchStream } from "$lib/utils/infra/fetch-stream";
 
 /** 搜索索引类型 */
 export type SearchIndex = Record<string, string[]>;

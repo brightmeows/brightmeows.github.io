@@ -7,12 +7,12 @@
   import GlassPanel from "$lib/components/ui/GlassPanel.svelte";
   import { topLevelNav, type NavDropdown, type NavItem } from "$lib/constants/nav";
   import { apiBase, SITE_ORIGIN } from "$lib/constants/site";
-  import { auth } from "$lib/data/auth-store.svelte";
-  import { theme } from "$lib/data/theme-store.svelte";
+  import { auth } from "$lib/data/store/auth-store.svelte";
+  import { theme } from "$lib/data/store/theme-store.svelte";
   import { m } from "$lib/paraglide/messages.js";
   import { getLocale, setLocale } from "$lib/paraglide/runtime";
-  import { deriveBreadcrumbs } from "$lib/utils/breadcrumbs";
-  import type { ThemePreference } from "$lib/utils/theme";
+  import { deriveBreadcrumbs } from "$lib/utils/ui/breadcrumbs";
+  import type { ThemePreference } from "$lib/utils/ui/theme";
 
   interface Props {
     /** 覆写面包屑最后一段的标签（用于动态内容如难度表名、文章标题） */

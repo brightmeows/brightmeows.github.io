@@ -9,17 +9,17 @@
   import GradientButton from "$lib/components/ui/GradientButton.svelte";
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
   import { createEpochGuard, runTableLoad } from "$lib/controllers/table-load";
-  import type { CandidateEntry, QueryType, TableLoadState } from "$lib/data/bms-search";
+  import type { CandidateEntry, QueryType, TableLoadState } from "$lib/data/api/bms-search";
   import {
     detectQueryType,
     filterChartsByKeys,
     loadFullTableData,
     loadTableHeader,
-  } from "$lib/data/bms-search";
-  import { IncrementalAggregator } from "$lib/data/search-aggregator";
-  import type { SearchResult } from "$lib/data/search-aggregator";
-  import { searchConverters } from "$lib/data/search-converters.svelte";
-  import { SearchIndexClient } from "$lib/data/search-index-client.svelte";
+  } from "$lib/data/api/bms-search";
+  import { IncrementalAggregator } from "$lib/data/api/search-aggregator";
+  import type { SearchResult } from "$lib/data/api/search-aggregator";
+  import { searchConverters } from "$lib/data/store/search-converters.svelte";
+  import { SearchIndexClient } from "$lib/data/store/search-index-client.svelte";
   import { m } from "$lib/paraglide/messages.js";
   import { buildSearchNeedles } from "$lib/utils/mirror-tables";
 

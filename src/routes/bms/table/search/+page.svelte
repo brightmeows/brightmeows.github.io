@@ -6,16 +6,16 @@
   import PageShell from "$lib/components/layout/PageShell.svelte";
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
   import { createEpochGuard, runTableLoad, waitingState } from "$lib/controllers/table-load";
-  import type { CandidateEntry, TableLoadState } from "$lib/data/bms-search";
+  import type { CandidateEntry, TableLoadState } from "$lib/data/api/bms-search";
   import {
     detectQueryType,
     loadTableHeader,
     loadTableDataWithProgress,
-  } from "$lib/data/bms-search";
-  import type { SearchResult } from "$lib/data/search-aggregator";
-  import { IncrementalAggregator } from "$lib/data/search-aggregator";
-  import { searchConverters } from "$lib/data/search-converters.svelte";
-  import { SearchIndexClient } from "$lib/data/search-index-client.svelte";
+  } from "$lib/data/api/bms-search";
+  import type { SearchResult } from "$lib/data/api/search-aggregator";
+  import { IncrementalAggregator } from "$lib/data/api/search-aggregator";
+  import { searchConverters } from "$lib/data/store/search-converters.svelte";
+  import { SearchIndexClient } from "$lib/data/store/search-index-client.svelte";
   import { m } from "$lib/paraglide/messages.js";
   import { buildSearchNeedles } from "$lib/utils/mirror-tables";
 

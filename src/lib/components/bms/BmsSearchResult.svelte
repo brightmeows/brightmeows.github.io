@@ -6,12 +6,12 @@
 
   import GlassContainer from "$lib/components/ui/GlassContainer.svelte";
   import GradientButton from "$lib/components/ui/GradientButton.svelte";
-  import type { TableLoadState } from "$lib/data/bms-search";
-  import type { SearchResult } from "$lib/data/search-aggregator";
+  import type { TableLoadState } from "$lib/data/api/bms-search";
+  import type { SearchResult } from "$lib/data/api/search-aggregator";
   import { m } from "$lib/paraglide/messages.js";
-  import { clipboardFieldFeedback } from "$lib/utils/clipboard.svelte";
-  import { formatBytes } from "$lib/utils/format";
-  import { validateUrl } from "$lib/utils/url";
+  import { formatBytes } from "$lib/utils/infra/format";
+  import { validateUrl } from "$lib/utils/infra/url";
+  import { clipboardFieldFeedback } from "$lib/utils/ui/clipboard.svelte";
 
   interface Props {
     result: SearchResult;

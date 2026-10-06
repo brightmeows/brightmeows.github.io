@@ -1,4 +1,4 @@
-import type { CandidateEntry, WorkerMessage, WorkerSearchRequest } from "./bms-search";
+import type { CandidateEntry, WorkerMessage, WorkerSearchRequest } from "../api/bms-search";
 
 import { m } from "$lib/paraglide/messages.js";
 
@@ -41,7 +41,7 @@ export class SearchIndexClient {
   start(): void {
     if (this.#worker) return;
     try {
-      const worker = new Worker(new URL("./bms-search.worker.ts", import.meta.url), {
+      const worker = new Worker(new URL("../api/bms-search.worker.ts", import.meta.url), {
         type: "module",
       });
       worker.addEventListener("message", (e: MessageEvent<WorkerMessage>) => {

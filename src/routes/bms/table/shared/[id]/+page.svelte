@@ -25,7 +25,6 @@
     type SharedEditDeps,
     type SharedEditState,
   } from "$lib/controllers/shared-edit";
-  import { auth } from "$lib/data/auth-store.svelte";
   import {
     fetchSharedCheckId,
     loadSharedTables,
@@ -33,10 +32,11 @@
     submitSharedDelete,
     submitSharedRename,
     submitSharedSave,
-  } from "$lib/data/shared-api";
-  import { sharedNewSeed } from "$lib/data/shared-new.svelte";
+  } from "$lib/data/api/shared-api";
+  import { auth } from "$lib/data/store/auth-store.svelte";
+  import { sharedNewSeed } from "$lib/data/store/shared-new.svelte";
   import { m } from "$lib/paraglide/messages.js";
-  import { downloadJsonFile } from "$lib/utils/download";
+  import { downloadJsonFile } from "$lib/utils/infra/download";
 
   /**
    * 共享表页面（查看与编辑合并）：查看态复用 BmsTablePage，编辑态由同地址的

@@ -13,7 +13,7 @@ import {
   type SharedEditDeps,
 } from "./shared-edit";
 
-import { ApiUnavailableError } from "$lib/data/http";
+import { ApiUnavailableError } from "$lib/data/api/http";
 import { m } from "$lib/paraglide/messages.js";
 
 /**

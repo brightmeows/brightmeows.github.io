@@ -3,7 +3,7 @@
 
   import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
   import { m } from "$lib/paraglide/messages.js";
-  import { resolveUrl } from "$lib/utils/url";
+  import { resolveUrl } from "$lib/utils/infra/url";
 
   interface Props {
     headerUrl?: string;

@@ -1,5 +1,5 @@
-import type { CurrentUser } from "./mirror-user-api";
-import { ApiUnavailableError, fetchCurrentUser, submitLogout } from "./mirror-user-api";
+import type { CurrentUser } from "../api/mirror-user-api";
+import { ApiUnavailableError, fetchCurrentUser, submitLogout } from "../api/mirror-user-api";
 
 /** 登录态拉取状态。 */
 export type AuthStatus =

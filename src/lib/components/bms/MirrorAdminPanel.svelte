@@ -3,7 +3,7 @@
 
   import GlassPanel from "$lib/components/ui/GlassPanel.svelte";
   import { btnGhostXs, inputInline } from "$lib/constants/ui-classes";
-  import type { AdminOverview, TrashEntry } from "$lib/data/mirror-admin-api";
+  import type { AdminOverview, TrashEntry } from "$lib/data/api/mirror-admin-api";
   import { m } from "$lib/paraglide/messages.js";
   import type { MirrorOverviewState } from "$lib/types/bms-view";
 

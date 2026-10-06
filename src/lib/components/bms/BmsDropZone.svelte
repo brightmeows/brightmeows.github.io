@@ -10,7 +10,7 @@
 
   import { btnGhost } from "$lib/constants/ui-classes";
   import { m } from "$lib/paraglide/messages.js";
-  import { md5 } from "$lib/utils/md5";
+  import { md5 } from "$lib/utils/infra/md5";
 
   /**
    * 本地 BMS/BMSON 拖拽区：目录递归收集（上限 200 个文件）、MD5 与 SHA-256、
