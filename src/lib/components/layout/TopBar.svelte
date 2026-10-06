@@ -5,7 +5,7 @@
   import { page } from "$app/state";
   import GlassButton from "$lib/components/ui/GlassButton.svelte";
   import GlassPanel from "$lib/components/ui/GlassPanel.svelte";
-  import { topLevelNav, type NavItem } from "$lib/constants/nav";
+  import { topLevelNav, type NavDropdown, type NavItem } from "$lib/constants/nav";
   import { apiBase, SITE_ORIGIN } from "$lib/constants/site";
   import { auth } from "$lib/data/auth-store.svelte";
   import { theme } from "$lib/data/theme-store.svelte";
@@ -121,6 +121,22 @@
     return page.url.pathname === href || page.url.pathname.startsWith(`${href}/`);
   }
 
+  // 只有“最长匹配前缀”所在的下拉才高亮：isActive 是前缀匹配，概览条目
+  // （/bms）会吞掉整个子树，self-sp/self-dp 是连字符路径、无法被自身更长的
+  // 前缀条目命中，须按匹配长度归属，否则个人表页面下两个下拉同时高亮。
+  function isActiveDropdown(item: NavDropdown): boolean {
+    let owner: { id: string; len: number } | undefined;
+    for (const entry of topLevelNav) {
+      if (!("children" in entry)) continue;
+      for (const child of entry.children) {
+        if (isActive(child.href) && (owner === undefined || child.href.length > owner.len)) {
+          owner = { id: entry.id, len: child.href.length };
+        }
+      }
+    }
+    return owner?.id === item.id;
+  }
+
   const linkBase =
     "rounded-lg px-3 py-1.5 text-sm no-underline transition-colors duration-150 cursor-pointer";
   const menuItemClass =
@@ -209,7 +225,7 @@
       <nav aria-label={m["topbar.nav_aria"]()} class="hidden shrink-0 items-center sm:flex">
         {#each topLevelNav as item, i (i)}
           {#if "children" in item}
-            {@const dropdownActive = item.children.some((child) => isActive(child.href))}
+            {@const dropdownActive = isActiveDropdown(item)}
             <div class="relative">
               <button
                 type="button"
