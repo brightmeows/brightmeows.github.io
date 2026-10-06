@@ -1,12 +1,13 @@
 <script lang="ts">
+  import type { ChartData, DifficultyGroup } from "@brightmeows/bms/format";
+  import { levelSegmentColor } from "@brightmeows/bms/table";
+
   import ChartTableRow from "./ChartTableRow.svelte";
 
   import EmptyState from "$lib/components/ui/EmptyState.svelte";
   import JsonPreview from "$lib/components/ui/JsonPreview.svelte";
   import { m } from "$lib/paraglide/messages.js";
-  import type { ChartData, DifficultyGroup } from "$lib/types/bms-format";
   import type { JsonPreviewHandle } from "$lib/types/ui";
-  import { levelSegmentColor } from "$lib/utils/bms-table";
   import { validateUrl } from "$lib/utils/url";
 
   let chartPreview = $state<JsonPreviewHandle | undefined>();

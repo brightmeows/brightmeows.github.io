@@ -1,4 +1,4 @@
-import type { ChartData, DifficultyGroup } from "$lib/types/bms-format";
+import type { ChartData, DifficultyGroup } from "./format.ts";
 
 /**
  * 难度分组的分段配色：查看器的等级跳转胶囊与编辑器的分组表头共用一套颜色，

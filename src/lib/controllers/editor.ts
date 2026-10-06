@@ -7,17 +7,17 @@
  * 组件内实现逐分支一致）。
  */
 
+import type { DraftPayload, TableEditPayload } from "@brightmeows/bms/editor";
+import {
+  buildCombinedPackage,
+  countUnassigned,
+  shouldWarnOverwrite,
+} from "@brightmeows/bms/editor";
 import type { SharedPayloadError } from "@brightmeows/mirror/shared";
 import { checkSharedPayload, withLocalDataUrl } from "@brightmeows/mirror/shared";
 
 import { m } from "$lib/paraglide/messages.js";
 import { sharedPayloadErrorMessage } from "$lib/utils/shared-table";
-import type { DraftPayload, TableEditPayload } from "$lib/utils/table-editor";
-import {
-  buildCombinedPackage,
-  countUnassigned,
-  shouldWarnOverwrite,
-} from "$lib/utils/table-editor";
 
 /** 保存的本地闸门：载荷校验与未指派检查（通过后才值得联网查并发）。 */
 export type LocalSaveGate =

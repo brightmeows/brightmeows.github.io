@@ -4,7 +4,7 @@
  * charts/md5/sha256 归一到统一的编辑行，序列化时统一写为 `charts`。
  */
 
-import { moveItem } from "./table-editor";
+import { moveItem } from "./editor.ts";
 
 /** 规范固定的 constraint 取值（未知值原样保留在模型里）。 */
 export const COURSE_CONSTRAINTS: readonly string[] = [

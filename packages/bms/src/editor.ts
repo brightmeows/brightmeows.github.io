@@ -1,6 +1,6 @@
 import { applyEntryFields } from "@brightmeows/mirror/shared";
 
-import { sortLevelValues } from "$lib/utils/bms-table";
+import { sortLevelValues } from "./table.ts";
 
 /**
  * 难度表编辑器的纯函数层：条目筛选与批量操作、字段编辑提交、导出合并包、

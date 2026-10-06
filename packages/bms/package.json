@@ -1,0 +1,39 @@
+{
+  "name": "@brightmeows/bms",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./constants": {
+      "types": "./src/constants.ts",
+      "default": "./src/constants.ts"
+    },
+    "./course": {
+      "types": "./src/course.ts",
+      "default": "./src/course.ts"
+    },
+    "./editor": {
+      "types": "./src/editor.ts",
+      "default": "./src/editor.ts"
+    },
+    "./file": {
+      "types": "./src/file.ts",
+      "default": "./src/file.ts"
+    },
+    "./format": {
+      "types": "./src/format.ts",
+      "default": "./src/format.ts"
+    },
+    "./table": {
+      "types": "./src/table.ts",
+      "default": "./src/table.ts"
+    },
+    "./transform": {
+      "types": "./src/transform.ts",
+      "default": "./src/transform.ts"
+    }
+  },
+  "dependencies": {
+    "@brightmeows/mirror": "workspace:*"
+  }
+}

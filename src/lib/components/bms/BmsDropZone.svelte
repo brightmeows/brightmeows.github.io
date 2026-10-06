@@ -1,15 +1,16 @@
 <script lang="ts">
-  import { btnGhost } from "$lib/constants/ui-classes";
-  import { m } from "$lib/paraglide/messages.js";
+  import { entryHashes, type BmsDropResult } from "@brightmeows/bms/editor";
   import {
     bmsTextToFields,
     bmsonTextToFields,
     decodeBmsBytes,
     fieldsToEntry,
     isBmsFileName,
-  } from "$lib/utils/bms-file";
+  } from "@brightmeows/bms/file";
+
+  import { btnGhost } from "$lib/constants/ui-classes";
+  import { m } from "$lib/paraglide/messages.js";
   import { md5 } from "$lib/utils/md5";
-  import { entryHashes, type BmsDropResult } from "$lib/utils/table-editor";
 
   /**
    * 本地 BMS/BMSON 拖拽区：目录递归收集（上限 200 个文件）、MD5 与 SHA-256、

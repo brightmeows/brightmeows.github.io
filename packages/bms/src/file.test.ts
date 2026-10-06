@@ -6,7 +6,7 @@ import {
   decodeBmsBytes,
   fieldsToEntry,
   isBmsFileName,
-} from "./bms-file";
+} from "./file.ts";
 
 describe("isBmsFileName", () => {
   it("accepts the BMS family extensions case-insensitively", () => {

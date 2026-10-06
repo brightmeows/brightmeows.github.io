@@ -1,5 +1,6 @@
+import type { ChartData, HeaderData } from "@brightmeows/bms/format";
+
 import { m } from "$lib/paraglide/messages.js";
-import type { ChartData, HeaderData } from "$lib/types/bms-format";
 import type { ProgressCallback } from "$lib/types/bms-view";
 import { fetchStream } from "$lib/utils/fetch-stream";
 import { formatBytes } from "$lib/utils/format";

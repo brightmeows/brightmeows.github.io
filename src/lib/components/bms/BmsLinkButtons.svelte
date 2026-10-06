@@ -1,7 +1,8 @@
 <script lang="ts">
+  import type { ChartData } from "@brightmeows/bms/format";
+  import { getBmsLinks } from "@brightmeows/bms/table";
+
   import IconButton from "$lib/components/ui/IconButton.svelte";
-  import type { ChartData } from "$lib/types/bms-format";
-  import { getBmsLinks } from "$lib/utils/bms-table";
 
   interface Props {
     chart: ChartData;

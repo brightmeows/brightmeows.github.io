@@ -14,7 +14,7 @@ import {
   removeGroupFromModel,
   serializeCourse,
   type EditableCourse,
-} from "./table-course";
+} from "./course.ts";
 
 const course = (fields: Partial<EditableCourse> = {}): EditableCourse => ({
   name: "",

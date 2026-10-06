@@ -6,6 +6,7 @@
 
 - `src/AGENTS.md` — 站点域：SvelteKit 应用、Markdown 管线（SvelTeX）、博客、组件与数据层。
 - `packages/mirror/AGENTS.md` — 镜像表内核：URL 构造、清单变换、用户层类型与镜像数据纪律。
+- `packages/bms/AGENTS.md` — BMS 表内容域：格式模型、文件解码、图表视图变换、编辑器纯逻辑与段位。
 - `packages/worker/AGENTS.md` — Cloudflare Worker：镜像路由、写接口、D1、部署与 Cloudflare 外部状态。
 - `scripts/AGENTS.md` — 仓库校验脚本、数据管线、抓取工作流与对拍。
 
@@ -21,7 +22,7 @@
 pre-commit run --all-files --quiet    # 手动触发全部 hooks
 ```
 
-Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`、`pnpm check:worker`、`pnpm check:config`、`pnpm check:i18n`、`pnpm test`、no-confusable-unicode、cn-quotes、site-config、i18n-coverage、conventional-commit（commit-msg stage 校验提交信息）。
+Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`、`pnpm check:bms`、`pnpm check:worker`、`pnpm check:config`、`pnpm check:i18n`、`pnpm test`、no-confusable-unicode、cn-quotes、site-config、i18n-coverage、conventional-commit（commit-msg stage 校验提交信息）。
 
 ### 手动命令
 

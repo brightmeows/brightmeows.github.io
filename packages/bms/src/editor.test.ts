@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { CoreEntryField } from "./table-editor";
+import type { CoreEntryField } from "./editor.ts";
 import {
   LEVEL_FILTER_ALL_OPTION,
   LEVEL_FILTER_UNASSIGNED_OPTION,
@@ -31,7 +31,7 @@ import {
   shouldWarnOverwrite,
   toggleSelection,
   valueToText,
-} from "./table-editor";
+} from "./editor.ts";
 
 const entry = (fields: Record<string, unknown>): Record<string, unknown> => ({ ...fields });
 

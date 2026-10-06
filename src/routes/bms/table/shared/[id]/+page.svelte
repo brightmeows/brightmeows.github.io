@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { draftStorageKey, type TableEditPayload } from "@brightmeows/bms/editor";
   import { withLocalDataUrl, type SharedTableItem } from "@brightmeows/mirror/shared";
   import { sharedTablePath } from "@brightmeows/mirror/urls";
   import { onMount } from "svelte";
@@ -36,7 +37,6 @@
   import { sharedNewSeed } from "$lib/data/shared-new.svelte";
   import { m } from "$lib/paraglide/messages.js";
   import { downloadJsonFile } from "$lib/utils/download";
-  import { draftStorageKey, type TableEditPayload } from "$lib/utils/table-editor";
 
   /**
    * 共享表页面（查看与编辑合并）：查看态复用 BmsTablePage，编辑态由同地址的

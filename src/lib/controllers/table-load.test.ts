@@ -1,3 +1,4 @@
+import type { ChartData } from "@brightmeows/bms/format";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -17,7 +18,6 @@ import {
 } from "./table-load";
 
 import type { TableLoadState } from "$lib/data/bms-search";
-import type { ChartData } from "$lib/types/bms-format";
 
 /** 状态机构造器与决策函数的行为锁定测试（对应页面内原实现的字段形状）。 */
 

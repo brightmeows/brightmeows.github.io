@@ -1,4 +1,4 @@
-import type { DraftPayload } from "$lib/utils/table-editor";
+import type { DraftPayload } from "@brightmeows/bms/editor";
 
 /**
  * 表编辑器草稿的 IndexedDB 存储：单快照、按表键隔离、结构克隆直存

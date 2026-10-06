@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getBmsLinks, sortDifficultyGroups } from "./bms-table";
+import { getBmsLinks, sortDifficultyGroups } from "./table.ts";
 
 describe("getBmsLinks", () => {
   it("对 md5 与 sha256 做 trim 与 URL 编码", () => {

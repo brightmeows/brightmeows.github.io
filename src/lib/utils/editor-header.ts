@@ -4,8 +4,8 @@
  * 反向依赖 table-editor 的 moveItem）之间形成循环导入。
  */
 
-import { parseCourse, type CourseModel } from "$lib/utils/table-course";
-import { levelOrderOf, splitEditorHeader } from "$lib/utils/table-editor";
+import { parseCourse, type CourseModel } from "@brightmeows/bms/course";
+import { levelOrderOf, splitEditorHeader } from "@brightmeows/bms/editor";
 
 /** 头部编辑态：由原始 header 拆出的可编辑字段。 */
 export interface EditorHeaderState {
