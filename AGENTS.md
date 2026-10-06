@@ -110,7 +110,7 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`�
 
 以下升级经评估后刻意挂起，勿随批升级，各等触发条件；有 dependabot 击穿风险的条目在 `.github/dependabot.yml` 用 ignore 机械挡住（2026-10-06 katex 曾被自动升穿无兜底的挂起项，见下）。
 
-- **typescript 6 到 7** — Kit 3 已迁移（3.0.1），TS7 双装是紧随的独立 PR：`typescript@7` 与 `@typescript/native-preview` 双装后 svelte-check 加 `--tsgo` 旗标（TS 6/7 双装期保留回退）。oxlint-tsgolint 7 自带 TS 7 语义的类型检查引擎，与项目 typescript 版本解耦，互不阻塞。
+- **typescript 6 到 7** — Kit 3 已迁移（3.0.1），TS7 双装在 2026-10-07 实测未达可用：双装本身可装（`typescript@~6` 主 + `@typescript/native@npm:typescript@7` 别名，svelte-check 给出的官方方案），但 svelte-check 4.7.6 的 `--tsgo` 模式对本仓的 `.svelte` module script 具名导出（`JsonPreview` 的 `jsonPreview`、`TableEditContentProps` 等）与组件句柄类型解析不工作（13 个 tsgo 特有类型错误，TS6 下为零）。触发条件：svelte-check 的 tsgo 集成覆盖 Svelte 模块类型后重做双装。oxlint-tsgolint 7 自带 TS 7 语义的类型检查引擎，与项目 typescript 版本解耦，互不阻塞——lint 侧已在 TS7 语义下运行。
 - **katex 0.18.2 到 0.19** — 0.19 已发布，SvelTeX 0.5.1 的 peer range 仍为 `^0.16 || ^0.17`。0.18.2 已于 2026-10-06 由 dependabot 自动升入（PR #158，击穿当时无 ignore 兜底的挂起项），事后实测风险未发生：katex.min.css 与渲染输出同版本，0.18 的内部 class 前缀化（`.strut` 改 `.katex-strut`）两侧一致，站点也无硬编码旧内部 class，数学页正常。触发条件：SvelTeX 放开 peer range 后升 0.19 并目检博客数学页（dependabot.yml 的 ignore 挡 0.19+，届时解除）。
 
 ## 其他挂起项
