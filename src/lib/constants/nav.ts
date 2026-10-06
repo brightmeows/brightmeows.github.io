@@ -9,7 +9,7 @@
  * 下拉，不随页面变化。路径均为站内绝对路径，渲染时经 resolve() 处理 base。
  */
 
-import { m } from "$lib/paraglide/messages.js";
+import { m } from "#lib/paraglide/messages.js";
 
 export interface NavItem {
   /** 站内绝对路径 */

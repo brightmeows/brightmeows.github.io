@@ -4,11 +4,11 @@
 
   import ChartTableRow from "./ChartTableRow.svelte";
 
-  import EmptyState from "$lib/components/ui/EmptyState.svelte";
-  import JsonPreview from "$lib/components/ui/JsonPreview.svelte";
-  import { m } from "$lib/paraglide/messages.js";
-  import type { JsonPreviewHandle } from "$lib/types/ui";
-  import { validateUrl } from "$lib/utils/infra/url";
+  import EmptyState from "#lib/components/ui/EmptyState.svelte";
+  import JsonPreview from "#lib/components/ui/JsonPreview.svelte";
+  import { m } from "#lib/paraglide/messages.js";
+  import type { JsonPreviewHandle } from "#lib/types/ui.js";
+  import { validateUrl } from "#lib/utils/infra/url.js";
 
   let chartPreview = $state<JsonPreviewHandle | undefined>();
 

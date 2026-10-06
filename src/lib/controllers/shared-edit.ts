@@ -17,13 +17,13 @@ import type { SharedTableItem } from "@brightmeows/mirror/shared";
 import { validateSharedId } from "@brightmeows/mirror/shared";
 import { sharedTablePath } from "@brightmeows/mirror/urls";
 
-import { ApiUnavailableError } from "$lib/data/api/http";
+import { ApiUnavailableError } from "#lib/data/api/http.js";
 import type {
   SharedCreateResult,
   SharedPayloadBody,
   SharedSaveResult,
-} from "$lib/data/api/shared-api";
-import { m } from "$lib/paraglide/messages.js";
+} from "#lib/data/api/shared-api.js";
+import { m } from "#lib/paraglide/messages.js";
 
 /** 页面阶段：域状态机（login/notfound 是域结果，不并入 AsyncState；
  *  接口不可用不单独设相——四条路径都回落到清单或错误，原实现的

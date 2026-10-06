@@ -1,16 +1,16 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import GlassPanel from "$lib/components/ui/GlassPanel.svelte";
-  import { SITE_ORIGIN } from "$lib/constants/site";
-  import { btnGhostXs } from "$lib/constants/ui-classes";
+  import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
+  import { SITE_ORIGIN } from "#lib/constants/site.js";
+  import { btnGhostXs } from "#lib/constants/ui-classes.js";
   import {
     fetchSharedRemoved,
     submitSharedRestore,
     type SharedRemovedEntry,
-  } from "$lib/data/api/shared-api";
-  import { auth } from "$lib/data/store/auth-store.svelte";
-  import { m } from "$lib/paraglide/messages.js";
+  } from "#lib/data/api/shared-api.js";
+  import { auth } from "#lib/data/store/auth-store.svelte.js";
+  import { m } from "#lib/paraglide/messages.js";
 
   /**
    * 共享表回收站：登录后展示自己的删除记录（admin 看全部），30 天内可恢复；

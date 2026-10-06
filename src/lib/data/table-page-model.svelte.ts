@@ -14,7 +14,6 @@ import { sortDifficultyGroups } from "@brightmeows/bms/table";
 import { computeTableStats, groupChartsByLevel, resolveCourses } from "@brightmeows/bms/transform";
 import { withLocalDataUrl } from "@brightmeows/mirror/shared";
 
-import { goto } from "$app/navigation";
 import {
   buildSharedExportPackage,
   commitEditorSave,
@@ -22,8 +21,8 @@ import {
   planEditorSave,
   planSaveAsShared,
   type EditorNotice,
-} from "$lib/controllers/editor";
-import { fetchBmsHeader, fetchBmsTableData } from "$lib/data/api/bms-data";
+} from "#lib/controllers/editor.js";
+import { fetchBmsHeader, fetchBmsTableData } from "#lib/data/api/bms-data.js";
 import {
   deleteDraft,
   loadDraft,
@@ -31,14 +30,15 @@ import {
   takeDraftClaim,
   writeDraftClaim,
   type DraftWriteResult,
-} from "$lib/data/api/table-drafts";
-import { sharedNewSeed } from "$lib/data/store/shared-new.svelte";
-import { m } from "$lib/paraglide/messages.js";
-import type { EditTocLevel, EditTocSection, ProgressCallback } from "$lib/types/bms-view";
-import type { TocItem } from "$lib/types/ui";
-import { editorHeaderState } from "$lib/utils/editor-header";
-import { downloadJsonFile } from "$lib/utils/infra/download";
-import { resolveUrl } from "$lib/utils/infra/url";
+} from "#lib/data/api/table-drafts.js";
+import { sharedNewSeed } from "#lib/data/store/shared-new.svelte.js";
+import { m } from "#lib/paraglide/messages.js";
+import type { EditTocLevel, EditTocSection, ProgressCallback } from "#lib/types/bms-view.js";
+import type { TocItem } from "#lib/types/ui.js";
+import { editorHeaderState } from "#lib/utils/editor-header.js";
+import { downloadJsonFile } from "#lib/utils/infra/download.js";
+import { resolveUrl } from "#lib/utils/infra/url.js";
+import { goto } from "$app/navigation";
 
 /** 来源：从哪里加载、草稿存哪。 */
 export interface TablePageSource {

@@ -2,9 +2,9 @@
   import { draftStorageKey } from "@brightmeows/bms/editor";
   import { onMount } from "svelte";
 
+  import BmsTablePage from "#lib/components/pages/BmsTablePage.svelte";
+  import { SITE_ORIGIN, isStaticHost } from "#lib/constants/site.js";
   import { page } from "$app/state";
-  import BmsTablePage from "$lib/components/pages/BmsTablePage.svelte";
-  import { SITE_ORIGIN, isStaticHost } from "$lib/constants/site";
 
   // 自托管表数据在站内静态目录：header 与 data 与查看页同一来源。
   const table = $derived(page.params.table ?? "");

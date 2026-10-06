@@ -1,6 +1,6 @@
 import type { CandidateEntry, WorkerMessage, WorkerSearchRequest } from "../api/bms-search";
 
-import { m } from "$lib/paraglide/messages.js";
+import { m } from "#lib/paraglide/messages.js";
 
 /** 索引加载阶段。 */
 export type IndexPhase = "loading" | "ready" | "error";

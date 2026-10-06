@@ -1,9 +1,9 @@
 <script lang="ts">
   import type { PageData } from "./$types";
 
-  import BmsTableList from "$lib/components/bms/BmsTableList.svelte";
-  import PageShell from "$lib/components/layout/PageShell.svelte";
-  import { m } from "$lib/paraglide/messages.js";
+  import BmsTableList from "#lib/components/bms/BmsTableList.svelte";
+  import PageShell from "#lib/components/layout/PageShell.svelte";
+  import { m } from "#lib/paraglide/messages.js";
 
   let { data }: { data: PageData } = $props();
 </script>

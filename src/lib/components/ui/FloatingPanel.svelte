@@ -5,7 +5,7 @@
 
   import GlassPanel from "./GlassPanel.svelte";
 
-  import { m } from "$lib/paraglide/messages.js";
+  import { m } from "#lib/paraglide/messages.js";
 
   interface Props {
     sessionKey: string;

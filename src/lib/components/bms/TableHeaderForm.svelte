@@ -1,7 +1,7 @@
 <script lang="ts">
-  import LevelOrderEditor from "$lib/components/bms/LevelOrderEditor.svelte";
-  import { inputEditorLg } from "$lib/constants/ui-classes";
-  import { m } from "$lib/paraglide/messages.js";
+  import LevelOrderEditor from "#lib/components/bms/LevelOrderEditor.svelte";
+  import { inputEditorLg } from "#lib/constants/ui-classes.js";
+  import { m } from "#lib/paraglide/messages.js";
 
   /**
    * 头部字段表单：name/symbol/tag/mode 与 level_order 列表可编辑；

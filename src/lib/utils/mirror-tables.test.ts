@@ -17,7 +17,7 @@ import {
   tableLabelOf,
 } from "./mirror-tables";
 
-import { m } from "$lib/paraglide/messages.js";
+import { m } from "#lib/paraglide/messages.js";
 
 describe("buildSearchNeedles", () => {
   it("空白输入返回空数组，非空白做 NFKC 与小写归一", () => {

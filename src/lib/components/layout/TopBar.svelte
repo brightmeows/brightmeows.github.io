@@ -1,19 +1,19 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
+  import { createPanelGroup } from "#lib/components/ui/dropdown-panel.svelte.js";
+  import GlassButton from "#lib/components/ui/GlassButton.svelte";
+  import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
+  import { topLevelNav, type NavDropdown, type NavItem } from "#lib/constants/nav.js";
+  import { apiBase, SITE_ORIGIN } from "#lib/constants/site.js";
+  import { auth } from "#lib/data/store/auth-store.svelte.js";
+  import { theme } from "#lib/data/store/theme-store.svelte.js";
+  import { m } from "#lib/paraglide/messages.js";
+  import { getLocale, setLocale } from "#lib/paraglide/runtime.js";
+  import { deriveBreadcrumbs } from "#lib/utils/ui/breadcrumbs.js";
+  import type { ThemePreference } from "#lib/utils/ui/theme.js";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
-  import { createPanelGroup } from "$lib/components/ui/dropdown-panel.svelte";
-  import GlassButton from "$lib/components/ui/GlassButton.svelte";
-  import GlassPanel from "$lib/components/ui/GlassPanel.svelte";
-  import { topLevelNav, type NavDropdown, type NavItem } from "$lib/constants/nav";
-  import { apiBase, SITE_ORIGIN } from "$lib/constants/site";
-  import { auth } from "$lib/data/store/auth-store.svelte";
-  import { theme } from "$lib/data/store/theme-store.svelte";
-  import { m } from "$lib/paraglide/messages.js";
-  import { getLocale, setLocale } from "$lib/paraglide/runtime";
-  import { deriveBreadcrumbs } from "$lib/utils/ui/breadcrumbs";
-  import type { ThemePreference } from "$lib/utils/ui/theme";
 
   interface Props {
     /** 覆写面包屑最后一段的标签（用于动态内容如难度表名、文章标题） */
@@ -142,7 +142,7 @@
 <!-- 下拉子页条目，宽屏各导航下拉共用 -->
 {#snippet dropdownEntries(entries: NavItem[])}
   {#each entries as entry (entry.href)}
-    <a href={resolve(entry.href, {})} class={menuItemClass}>{entry.label()}</a>
+    <a href={entry.href} class={menuItemClass}>{entry.label()}</a>
   {/each}
 {/snippet}
 
@@ -245,7 +245,7 @@
             </div>
           {:else}
             <a
-              href={resolve(item.href, {})}
+              href={item.href}
               class="{linkBase} {isActive(item.href)
                 ? 'bg-white-15 font-semibold text-white'
                 : 'text-white-85 hover:bg-white-10 hover:text-white'}"
@@ -282,7 +282,7 @@
             <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
               {#each topLevelNav as item, i (i)}
                 {#if !("children" in item)}
-                  <a href={resolve(item.href, {})} class={menuItemClass}>{item.label()}</a>
+                  <a href={item.href} class={menuItemClass}>{item.label()}</a>
                 {/if}
               {/each}
               <div class="mx-2 my-1 border-t border-white-15"></div>
@@ -312,7 +312,7 @@
                 <span class="truncate font-medium text-white">{item.label}</span>
               {:else}
                 <a
-                  href={resolve(item.href ?? "/", {})}
+                  href={item.href ?? "/"}
                   class="shrink-0 cursor-pointer text-white-80 no-underline transition-colors duration-150 hover:text-white"
                 >
                   {item.label}
@@ -357,7 +357,7 @@
                     {m["topbar.remaining"]({ count: user.remaining })}
                   </div>
                   {#if user.role === "admin"}
-                    <a href={resolve("/bms/table/mirror#mirror-admin", {})} class={menuItemClass}>
+                    <a href={resolve("/bms/table/mirror#mirror-admin")} class={menuItemClass}>
                       {m["topbar.admin_panel"]()}
                     </a>
                   {/if}

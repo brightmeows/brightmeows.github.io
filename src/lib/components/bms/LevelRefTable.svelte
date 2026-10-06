@@ -1,9 +1,9 @@
 <script lang="ts">
   import type { LevelRefItem } from "@brightmeows/bms/format";
 
-  import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
-  import { m } from "$lib/paraglide/messages.js";
-  import { resolveUrl } from "$lib/utils/infra/url";
+  import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
+  import { m } from "#lib/paraglide/messages.js";
+  import { resolveUrl } from "#lib/utils/infra/url.js";
 
   interface Props {
     headerUrl?: string;

@@ -1,7 +1,6 @@
 <script module lang="ts">
-  import { resolve } from "$app/paths";
-  import type { TocItem } from "$lib/types/ui";
-  import { slugifyHeadingText } from "$lib/utils/infra/slugify";
+  import type { TocItem } from "#lib/types/ui.js";
+  import { slugifyHeadingText } from "#lib/utils/infra/slugify.js";
 
   interface HeadingInfo {
     id: string;
@@ -103,9 +102,9 @@
   import { onMount } from "svelte";
   import { SvelteMap } from "svelte/reactivity";
 
-  import { browser } from "$app/environment";
-  import FloatingPanel from "$lib/components/ui/FloatingPanel.svelte";
-  import { m } from "$lib/paraglide/messages.js";
+  import FloatingPanel from "#lib/components/ui/FloatingPanel.svelte";
+  import { m } from "#lib/paraglide/messages.js";
+  import { browser } from "$app/env";
 
   interface FlatTocItem {
     id: string;
@@ -113,7 +112,6 @@
     href: string;
     depth: number;
   }
-
   interface Props {
     items?: TocItem[];
     title?: string;
@@ -237,7 +235,7 @@
     <nav class="max-h-[calc(60vh-3rem)] overflow-auto pr-1">
       {#each flatItems as item (item.id)}
         <a
-          href={item.href.startsWith("#") ? item.href : resolve(item.href || "", {})}
+          href={item.href.startsWith("#") ? item.href : item.href || "/"}
           class={[
             "block rounded-lg py-2 pr-3 text-[0.9rem] leading-snug transition-colors",
             activeId === (item.href.startsWith("#") ? item.href.slice(1) : item.id)

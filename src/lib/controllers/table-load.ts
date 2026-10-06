@@ -10,8 +10,8 @@
 
 import type { ChartData } from "@brightmeows/bms/format";
 
-import type { TableLoadState } from "$lib/data/api/bms-search";
-import { m } from "$lib/paraglide/messages.js";
+import type { TableLoadState } from "#lib/data/api/bms-search.js";
+import { m } from "#lib/paraglide/messages.js";
 
 // ---- 状态构造器 ----
 

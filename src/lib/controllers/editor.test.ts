@@ -9,7 +9,7 @@ import {
   planSaveAsShared,
 } from "./editor";
 
-import { m } from "$lib/paraglide/messages.js";
+import { m } from "#lib/paraglide/messages.js";
 
 /** 决策点的行为锁定测试：闸门顺序与草稿来源优先级对应组件内原实现。 */
 

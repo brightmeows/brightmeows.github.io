@@ -16,8 +16,8 @@ import {
 import type { SharedPayloadError } from "@brightmeows/mirror/shared";
 import { checkSharedPayload, withLocalDataUrl } from "@brightmeows/mirror/shared";
 
-import { m } from "$lib/paraglide/messages.js";
-import { sharedPayloadErrorMessage } from "$lib/utils/shared-table";
+import { m } from "#lib/paraglide/messages.js";
+import { sharedPayloadErrorMessage } from "#lib/utils/shared-table.js";
 
 /** 保存的本地闸门：载荷校验与未指派检查（通过后才值得联网查并发）。 */
 export type LocalSaveGate =

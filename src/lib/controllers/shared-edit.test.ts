@@ -13,8 +13,8 @@ import {
   type SharedEditDeps,
 } from "./shared-edit";
 
-import { ApiUnavailableError } from "$lib/data/api/http";
-import { m } from "$lib/paraglide/messages.js";
+import { ApiUnavailableError } from "#lib/data/api/http.js";
+import { m } from "#lib/paraglide/messages.js";
 
 /**
  * 加载回退链与保存流的行为锁定测试：每条路径对应页面内实现的一条分支。

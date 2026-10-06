@@ -1,11 +1,11 @@
 <script lang="ts">
   import type { DisabledEntry } from "@brightmeows/mirror/user-layer";
 
-  import GlassPanel from "$lib/components/ui/GlassPanel.svelte";
-  import { btnGhostXs, inputInline } from "$lib/constants/ui-classes";
-  import type { AdminOverview, TrashEntry } from "$lib/data/api/mirror-admin-api";
-  import { m } from "$lib/paraglide/messages.js";
-  import type { MirrorOverviewState } from "$lib/types/bms-view";
+  import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
+  import { btnGhostXs, inputInline } from "#lib/constants/ui-classes.js";
+  import type { AdminOverview, TrashEntry } from "#lib/data/api/mirror-admin-api.js";
+  import { m } from "#lib/paraglide/messages.js";
+  import type { MirrorOverviewState } from "#lib/types/bms-view.js";
 
   interface Props {
     overviewState: MirrorOverviewState;

@@ -18,7 +18,7 @@ import { sharedTablePath } from "@brightmeows/mirror/urls";
 import { requestJson } from "./http";
 import { fetchSiteTableList } from "./table-list";
 
-import { m } from "$lib/paraglide/messages.js";
+import { m } from "#lib/paraglide/messages.js";
 
 /**
  * 共享表接口的客户端封装（与 mirror-user-api 同构：契约在

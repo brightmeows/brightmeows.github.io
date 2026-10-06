@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { SharedTableItem } from "@brightmeows/mirror/shared";
 
-  import { btnIconDanger, btnIconPlain } from "$lib/constants/ui-classes";
-  import { m } from "$lib/paraglide/messages.js";
+  import { btnIconDanger, btnIconPlain } from "#lib/constants/ui-classes.js";
+  import { m } from "#lib/paraglide/messages.js";
 
   interface Props {
     item: SharedTableItem;

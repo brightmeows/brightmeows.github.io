@@ -1,8 +1,8 @@
 <script lang="ts">
-  import BlogPostCard from "$lib/components/content/BlogPostCard.svelte";
-  import PageShell from "$lib/components/layout/PageShell.svelte";
-  import { m } from "$lib/paraglide/messages.js";
-  import type { BlogPost } from "$lib/types/blog";
+  import BlogPostCard from "#lib/components/content/BlogPostCard.svelte";
+  import PageShell from "#lib/components/layout/PageShell.svelte";
+  import { m } from "#lib/paraglide/messages.js";
+  import type { BlogPost } from "#lib/types/blog.js";
 
   let { data }: { data: { posts: BlogPost[] } } = $props();
 </script>

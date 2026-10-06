@@ -3,13 +3,13 @@
 
   import MirrorTableRow from "./MirrorTableRow.svelte";
 
-  import Checkbox from "$lib/components/ui/Checkbox.svelte";
-  import EmptyState from "$lib/components/ui/EmptyState.svelte";
-  import ScrollSyncGroup from "$lib/components/ui/ScrollSyncGroup.svelte";
-  import { m } from "$lib/paraglide/messages.js";
-  import type { MirrorAdminUi, Tag1Group, Tag2Group } from "$lib/types/bms-view";
-  import type { JsonPreviewHandle } from "$lib/types/ui";
-  import { slugifyTag } from "$lib/utils/mirror-tables";
+  import Checkbox from "#lib/components/ui/Checkbox.svelte";
+  import EmptyState from "#lib/components/ui/EmptyState.svelte";
+  import ScrollSyncGroup from "#lib/components/ui/ScrollSyncGroup.svelte";
+  import { m } from "#lib/paraglide/messages.js";
+  import type { MirrorAdminUi, Tag1Group, Tag2Group } from "#lib/types/bms-view.js";
+  import type { JsonPreviewHandle } from "#lib/types/ui.js";
+  import { slugifyTag } from "#lib/utils/mirror-tables.js";
 
   // 值域与类型域同名合并是标准 TS 惯用法；oxlint 误报 no-redeclare（typescript-eslint 不报）
   // oxlint-disable-next-line no-redeclare

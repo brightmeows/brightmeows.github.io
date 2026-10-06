@@ -1,7 +1,7 @@
-import { m } from "$lib/paraglide/messages.js";
-import type { Tag1Group } from "$lib/types/bms-view";
-import type { TocItem } from "$lib/types/ui";
-import { slugifyTag } from "$lib/utils/mirror-tables";
+import { m } from "#lib/paraglide/messages.js";
+import type { Tag1Group } from "#lib/types/bms-view.js";
+import type { TocItem } from "#lib/types/ui.js";
+import { slugifyTag } from "#lib/utils/mirror-tables.js";
 
 /**
  * 为分组构建 TOC 项

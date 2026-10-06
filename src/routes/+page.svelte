@@ -3,12 +3,12 @@
 
   import type { PageData } from "./$types";
 
+  import BlogPostCard from "#lib/components/content/BlogPostCard.svelte";
+  import { buildTocFromHeadings } from "#lib/components/layout/FloatingToc.svelte";
+  import PageShell from "#lib/components/layout/PageShell.svelte";
+  import { m } from "#lib/paraglide/messages.js";
+  import type { TocItem } from "#lib/types/ui.js";
   import { resolve } from "$app/paths";
-  import BlogPostCard from "$lib/components/content/BlogPostCard.svelte";
-  import { buildTocFromHeadings } from "$lib/components/layout/FloatingToc.svelte";
-  import PageShell from "$lib/components/layout/PageShell.svelte";
-  import { m } from "$lib/paraglide/messages.js";
-  import type { TocItem } from "$lib/types/ui";
 
   let { data }: { data: PageData } = $props();
   let tocItems = $state<TocItem[]>([]);
@@ -29,7 +29,7 @@
     <h2 class="section-title m-0">{m["nav.blog"]()}</h2>
     <a
       class="text-sm text-accent-light no-underline transition hover:text-accent"
-      href={resolve("/blog", {})}
+      href={resolve("/blog")}
     >
       {m["home.view_all"]()}
     </a>

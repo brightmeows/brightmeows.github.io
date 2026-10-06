@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { m } from "$lib/paraglide/messages.js";
+  import { m } from "#lib/paraglide/messages.js";
 
   interface Props {
     /** 进度 0-100（确定模式）。不确定模式时无需传此值 */

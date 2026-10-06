@@ -5,33 +5,33 @@
     TablePageCapabilities,
     TablePagePublish,
     TablePageSource,
-  } from "$lib/data/table-page-model.svelte";
+  } from "#lib/data/table-page-model.svelte.js";
 </script>
 
 <script lang="ts">
   import type { Component, Snippet } from "svelte";
   import { onMount } from "svelte";
 
-  import { pushState } from "$app/navigation";
-  import ChartsTableSection from "$lib/components/bms/ChartsTableSection.svelte";
-  import CourseSection from "$lib/components/bms/CourseSection.svelte";
-  import LevelRefTable from "$lib/components/bms/LevelRefTable.svelte";
-  import type { TableEditContentProps } from "$lib/components/bms/TableEditContent.svelte";
-  import TableEditToc from "$lib/components/bms/TableEditToc.svelte";
-  import PageShell from "$lib/components/layout/PageShell.svelte";
-  import EmptyState from "$lib/components/ui/EmptyState.svelte";
-  import LoadingProgress from "$lib/components/ui/LoadingProgress.svelte";
-  import { btnBar, btnGhostMd, btnPrimary, btnPrimaryLarge } from "$lib/constants/ui-classes";
-  import type { EditorNotice } from "$lib/controllers/editor";
+  import ChartsTableSection from "#lib/components/bms/ChartsTableSection.svelte";
+  import CourseSection from "#lib/components/bms/CourseSection.svelte";
+  import LevelRefTable from "#lib/components/bms/LevelRefTable.svelte";
+  import type { TableEditContentProps } from "#lib/components/bms/TableEditContent.svelte";
+  import TableEditToc from "#lib/components/bms/TableEditToc.svelte";
+  import PageShell from "#lib/components/layout/PageShell.svelte";
+  import EmptyState from "#lib/components/ui/EmptyState.svelte";
+  import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
+  import { btnBar, btnGhostMd, btnPrimary, btnPrimaryLarge } from "#lib/constants/ui-classes.js";
+  import type { EditorNotice } from "#lib/controllers/editor.js";
   import {
     createTableModel,
     type TablePageCapabilities,
     type TablePagePublish,
     type TablePageSource,
-  } from "$lib/data/table-page-model.svelte";
-  import { m } from "$lib/paraglide/messages.js";
-  import { formatTitle } from "$lib/utils/title";
-  import { clipboardFeedback } from "$lib/utils/ui/clipboard.svelte";
+  } from "#lib/data/table-page-model.svelte.js";
+  import { m } from "#lib/paraglide/messages.js";
+  import { formatTitle } from "#lib/utils/title.js";
+  import { clipboardFeedback } from "#lib/utils/ui/clipboard.svelte.js";
+  import { goto } from "$app/navigation";
 
   /**
    * 难度表页面（查看与编辑合并为同一路由）：
@@ -82,9 +82,11 @@
     if (next === "edit" && isEdit) return;
     if (next === "view" && !isEdit) return;
     const url = new URL(window.location.href);
+
     if (next === "edit") url.searchParams.set("edit", "1");
     else url.searchParams.delete("edit");
-    pushState(url, {});
+
+    goto(url, { shallow: true });
     isEdit = next === "edit";
   }
 
@@ -92,7 +94,7 @@
   let EditContent = $state<Component<TableEditContentProps> | null>(null);
   async function ensureEditContent(): Promise<void> {
     if (EditContent !== null) return;
-    const mod = await import("$lib/components/bms/TableEditContent.svelte");
+    const mod = await import("#lib/components/bms/TableEditContent.svelte");
     EditContent = mod.default;
   }
   $effect(() => {

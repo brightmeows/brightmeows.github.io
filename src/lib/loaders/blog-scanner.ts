@@ -7,7 +7,7 @@ import type { BlogPost } from "../types/blog";
 
 import { extractFirstSentence, validateFrontmatter } from "./blog-metadata";
 
-import { extractDateFromSlug, EPOCH_DATE } from "$lib/utils/infra/date";
+import { extractDateFromSlug, EPOCH_DATE } from "#lib/utils/infra/date.js";
 
 /**
  * 从 Markdown 内容中提取第一个 ATX 标题（# Title）

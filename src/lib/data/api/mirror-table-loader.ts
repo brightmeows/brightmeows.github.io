@@ -2,7 +2,7 @@ import type { MirrorTableItem } from "@brightmeows/mirror/types";
 
 import { fetchSiteTableList } from "./table-list";
 
-import { m } from "$lib/paraglide/messages.js";
+import { m } from "#lib/paraglide/messages.js";
 
 /** 清单加载选项。 */
 export interface LoadMirrorTablesOptions {

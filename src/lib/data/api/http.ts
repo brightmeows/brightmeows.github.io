@@ -1,7 +1,7 @@
-import { apiBase } from "$lib/constants/site";
-import { m } from "$lib/paraglide/messages.js";
-import type { AsyncState } from "$lib/types/common";
-import { messageInputs, translateMessage } from "$lib/utils/i18n/i18n";
+import { apiBase } from "#lib/constants/site.js";
+import { m } from "#lib/paraglide/messages.js";
+import type { AsyncState } from "#lib/types/common.js";
+import { messageInputs, translateMessage } from "#lib/utils/i18n/i18n.js";
 
 /**
  * 站点侧 API 传输层的单份实现：跨源基址、凭据携带与错误封套翻译。

@@ -1,7 +1,6 @@
 <script lang="ts">
-  import { resolve } from "$app/paths";
-  import { m } from "$lib/paraglide/messages.js";
-  import type { TableEntry } from "$lib/types/bms-view";
+  import { m } from "#lib/paraglide/messages.js";
+  import type { TableEntry } from "#lib/types/bms-view.js";
 
   interface Props {
     tables: TableEntry[];
@@ -32,7 +31,7 @@
             <td class="table-td-glass wrap-break-word text-white-80">{table.symbol ?? ""}</td>
             <td class="table-td-glass wrap-break-word">
               <a
-                href={resolve(`/bms/table/${table.id}`, {})}
+                href={`/bms/table/${table.id}`}
                 class="text-accent no-underline transition-colors hover:text-accent-light"
               >
                 {table.name}

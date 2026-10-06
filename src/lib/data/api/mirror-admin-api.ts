@@ -6,7 +6,7 @@ import type {
 
 import { requestJson } from "./http";
 
-import type { MirrorMetaFields } from "$lib/types/bms-view";
+import type { MirrorMetaFields } from "#lib/types/bms-view.js";
 
 /**
  * 站长治理接口的客户端封装。

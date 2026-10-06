@@ -13,7 +13,7 @@
  * 功能在加载完成前不可用，但用户无进度反馈。
  */
 
-import type { StringConverter } from "$lib/types/common";
+import type { StringConverter } from "#lib/types/common.js";
 
 let cached: StringConverter[] | null = null;
 let loading: Promise<StringConverter[]> | null = null;

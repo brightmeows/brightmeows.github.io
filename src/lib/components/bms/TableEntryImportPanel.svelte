@@ -10,17 +10,17 @@
   } from "@brightmeows/bms/editor";
   import { onMount } from "svelte";
 
-  import Checkbox from "$lib/components/ui/Checkbox.svelte";
+  import Checkbox from "#lib/components/ui/Checkbox.svelte";
   import {
     r2SharedDataUrl,
     r2SharedHeaderUrl,
     r2TableDataUrl,
     r2TableHeaderUrl,
-  } from "$lib/constants/r2";
-  import { btnGhost, inputEditorMono } from "$lib/constants/ui-classes";
-  import { loadSharedTables } from "$lib/data/api/shared-api";
-  import { m } from "$lib/paraglide/messages.js";
-  import { pageCount, paginate } from "$lib/utils/shared-table";
+  } from "#lib/constants/r2.js";
+  import { btnGhost, inputEditorMono } from "#lib/constants/ui-classes.js";
+  import { loadSharedTables } from "#lib/data/api/shared-api.js";
+  import { m } from "#lib/paraglide/messages.js";
+  import { pageCount, paginate } from "#lib/utils/shared-table.js";
 
   /**
    * 跨表选择导入：从镜像或共享表里按标题/哈希挑条目追加到当前表。

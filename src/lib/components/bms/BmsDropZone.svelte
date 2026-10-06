@@ -8,9 +8,9 @@
     isBmsFileName,
   } from "@brightmeows/bms/file";
 
-  import { btnGhost } from "$lib/constants/ui-classes";
-  import { m } from "$lib/paraglide/messages.js";
-  import { md5 } from "$lib/utils/infra/md5";
+  import { btnGhost } from "#lib/constants/ui-classes.js";
+  import { m } from "#lib/paraglide/messages.js";
+  import { md5 } from "#lib/utils/infra/md5.js";
 
   /**
    * 本地 BMS/BMSON 拖拽区：目录递归收集（上限 200 个文件）、MD5 与 SHA-256、

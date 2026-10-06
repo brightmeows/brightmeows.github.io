@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
 
-  import { m } from "$lib/paraglide/messages.js";
-  import { styleToString } from "$lib/utils/ui/style";
+  import { m } from "#lib/paraglide/messages.js";
+  import { styleToString } from "#lib/utils/ui/style.js";
 
   interface Props {
     /** 图标内容 */

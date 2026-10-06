@@ -1,7 +1,7 @@
 import type { PageServerLoad } from "./$types";
 
-import { getBmsTables } from "$lib/loaders";
-import { formatTitle } from "$lib/utils/title";
+import { getBmsTables } from "#lib/loaders/index.js";
+import { formatTitle } from "#lib/utils/title.js";
 
 export const prerender = true;
 

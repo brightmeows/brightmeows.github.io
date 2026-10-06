@@ -2,7 +2,7 @@
   import type { ChartData } from "@brightmeows/bms/format";
   import { getBmsLinks } from "@brightmeows/bms/table";
 
-  import IconButton from "$lib/components/ui/IconButton.svelte";
+  import IconButton from "#lib/components/ui/IconButton.svelte";
 
   interface Props {
     chart: ChartData;

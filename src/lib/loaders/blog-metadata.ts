@@ -1,5 +1,5 @@
-import { m } from "$lib/paraglide/messages.js";
-import type { BlogFrontmatter } from "$lib/types/blog";
+import { m } from "#lib/paraglide/messages.js";
+import type { BlogFrontmatter } from "#lib/types/blog.js";
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 

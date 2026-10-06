@@ -10,7 +10,7 @@ import type {
 } from "./bms-search";
 import { getCachedIndices, setCachedIndices, getVersion, setVersion } from "./bms-search-idb";
 
-import { R2_INDEXES_BASE } from "$lib/constants/r2";
+import { R2_INDEXES_BASE } from "#lib/constants/r2.js";
 
 // ---- state ----
 
