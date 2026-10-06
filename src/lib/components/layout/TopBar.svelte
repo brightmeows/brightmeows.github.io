@@ -43,6 +43,14 @@
     openPanel = null;
   }
 
+  // Esc 关闭当前弹层并把焦点送回触发按钮：弹层 DOM 随关闭移除，不回移则
+  // 焦点落回 body，键盘用户丢失位置。触发按钮互斥地持有 aria-expanded="true"。
+  function handleKeydown(event: KeyboardEvent): void {
+    if (event.key !== "Escape" || openPanel === null) return;
+    closePanel();
+    root?.querySelector<HTMLButtonElement>('[aria-expanded="true"]')?.focus();
+  }
+
   function handleScroll(): void {
     const currentScrollY = window.scrollY;
     const delta = currentScrollY - lastScrollY;
@@ -86,10 +94,12 @@
     lastScrollY = window.scrollY;
     window.addEventListener("scroll", handleScroll, { passive: true });
     document.addEventListener("pointerdown", onOutsidePointerDown, true);
+    window.addEventListener("keydown", handleKeydown);
     void auth.ensureLoaded();
     return () => {
       window.removeEventListener("scroll", handleScroll);
       document.removeEventListener("pointerdown", onOutsidePointerDown, true);
+      window.removeEventListener("keydown", handleKeydown);
     };
   });
 
