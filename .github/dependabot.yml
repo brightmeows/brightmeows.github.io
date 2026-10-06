@@ -9,6 +9,12 @@ updates:
       - "dependencies"
       - "automated"
     open-pull-requests-limit: 20
+    ignore:
+      # katex 的升级挂起等 SvelTeX 放开 peer range（^0.16 || ^0.17 不含 0.18+）。
+      # 0.18.2 已于 2026-10-06 被 dependabot 自动升入并实测自洽（PR #158，
+      # 击穿了当时无 ignore 兜底的挂起项），0.19+ 由本条机械挡住。
+      - dependency-name: "katex"
+        versions: [">=0.19"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
