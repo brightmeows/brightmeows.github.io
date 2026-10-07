@@ -1,11 +1,11 @@
 /**
  * 头部编辑态的拆分助手：原始 header 与编辑器可编辑字段之间的映射。
- * 独立成模块以避免 table-editor（拆字段）与 table-course（course 解析，
- * 反向依赖 table-editor 的 moveItem）之间形成循环导入。
+ * 独立成子模块以避免 editor（拆字段）与 course（course 解析，反向依赖
+ * editor 的 moveItem）之间形成循环导入。
  */
 
-import { parseCourse, type CourseModel } from "@brightmeows/bms/course";
-import { levelOrderOf, splitEditorHeader } from "@brightmeows/bms/editor";
+import { parseCourse, type CourseModel } from "./course.ts";
+import { levelOrderOf, splitEditorHeader } from "./editor.ts";
 
 /** 头部编辑态：由原始 header 拆出的可编辑字段。 */
 export interface EditorHeaderState {

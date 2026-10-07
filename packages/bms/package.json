@@ -24,6 +24,10 @@
       "types": "./src/format.ts",
       "default": "./src/format.ts"
     },
+    "./header": {
+      "types": "./src/header.ts",
+      "default": "./src/header.ts"
+    },
     "./shared": {
       "types": "./src/shared.ts",
       "default": "./src/shared.ts"

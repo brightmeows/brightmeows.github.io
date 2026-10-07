@@ -10,6 +10,7 @@ import {
   type TableEditPayload,
 } from "@brightmeows/bms/editor";
 import type { ChartData } from "@brightmeows/bms/format";
+import { editorHeaderState } from "@brightmeows/bms/header";
 import { sortDifficultyGroups } from "@brightmeows/bms/table";
 import { computeTableStats, groupChartsByLevel, resolveCourses } from "@brightmeows/bms/transform";
 import { withLocalDataUrl } from "@brightmeows/mirror/shared";
@@ -35,7 +36,6 @@ import { sharedNewSeed } from "#lib/data/store/shared-new.svelte.js";
 import { m } from "#lib/paraglide/messages.js";
 import type { EditTocLevel, EditTocSection, ProgressCallback } from "#lib/types/bms-view.js";
 import type { TocItem } from "#lib/types/ui.js";
-import { editorHeaderState } from "#lib/utils/editor-header.js";
 import { downloadJsonFile } from "#lib/utils/infra/download.js";
 import { resolveUrl } from "#lib/utils/infra/url.js";
 import { goto } from "$app/navigation";
