@@ -46,6 +46,8 @@
 </script>
 
 <script lang="ts">
+  import { editorHeaderState } from "@brightmeows/bms/header";
+
   import BmsDropZone from "#lib/components/bms/BmsDropZone.svelte";
   import CourseEditor from "#lib/components/bms/CourseEditor.svelte";
   import TableEntryEditor from "#lib/components/bms/TableEntryEditor.svelte";
@@ -54,7 +56,6 @@
   import TableImportPanel from "#lib/components/bms/TableImportPanel.svelte";
   import { btnGhostMd } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
-  import { editorHeaderState } from "#lib/utils/editor-header.js";
 
   let {
     name = $bindable(""),
