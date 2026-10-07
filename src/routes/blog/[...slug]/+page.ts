@@ -16,7 +16,7 @@ export const load: PageLoad = async ({ params }) => {
   const slug = params.slug.replace(/\/$/, "");
 
   try {
-    const post = (await import(`$blog/${slug}.md`)) as BlogPostModule;
+    const post = (await import(`#blog/${slug}.md`)) as BlogPostModule;
     const meta = post.metadata ?? {};
 
     // 元数据优先使用 frontmatter 导出，无 frontmatter 时从 slug 推算

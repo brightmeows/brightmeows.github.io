@@ -1,5 +1,3 @@
-import path from "node:path";
-
 import { paraglideVitePlugin } from "@inlang/paraglide-js";
 import { sveltex } from "@nvl/sveltex";
 import adapter from "@sveltejs/adapter-static";
@@ -73,9 +71,4 @@ export default defineConfig({
       strategy: ["cookie", "baseLocale"],
     }),
   ],
-  resolve: {
-    alias: {
-      $blog: path.resolve("./content/blog"),
-    },
-  },
 });
