@@ -36,7 +36,7 @@
     "@brightmeows/mirror": "workspace:*"
   },
   "devDependencies": {
-    "@inlang/paraglide-js": "^2.25.4",
+    "@inlang/paraglide-js": "^2.27.0",
     "@nvl/sveltex": "^0.5.1",
     "@sveltejs/adapter-static": "^4.0.0",
     "@sveltejs/kit": "^3.0.0",
