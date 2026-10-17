@@ -12,6 +12,11 @@
   import { m } from "#lib/paraglide/messages.js";
   import { getLocale, setLocale } from "#lib/paraglide/runtime.js";
   import { deriveBreadcrumbs } from "#lib/utils/ui/breadcrumbs.js";
+  import {
+    computeAnchoredPanelPosition,
+    type PanelAlign,
+    type PanelPosition,
+  } from "#lib/utils/ui/panel-position.js";
   import type { ThemePreference } from "#lib/utils/ui/theme.js";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
@@ -40,15 +45,9 @@
   const panels = createPanelGroup(() => root);
 
   // —— 弹层定位：弹层经 popoverLayer 进 top layer，脱离 DOM 流后位置由触
-  // 发按钮的视口坐标决定（top + 8px 对应原 mt-2）。宽度变化意味着顶栏重
-  // 排，收起全部弹层；高度变化多为移动端地址栏伸缩，忽略。 ——
-  type PanelAlign = "left" | "right";
-  interface PanelPosition {
-    top: number;
-    left?: number;
-    right?: number;
-  }
-
+  // 发按钮的视口坐标决定（换算在 utils/ui/panel-position，纯函数直测）。
+  // 宽度变化意味着顶栏重排，收起全部弹层；高度变化多为移动端地址栏伸
+  // 缩，忽略。 ——
   let panelPosition = $state<PanelPosition | null>(null);
 
   function togglePanel(id: string, align: PanelAlign, event: Event): void {
@@ -59,11 +58,11 @@
       panelPosition = null;
       return;
     }
-    const rect = anchor.getBoundingClientRect();
-    panelPosition = {
-      top: rect.bottom + 8,
-      ...(align === "left" ? { left: rect.left } : { right: window.innerWidth - rect.right }),
-    };
+    panelPosition = computeAnchoredPanelPosition(
+      anchor.getBoundingClientRect(),
+      window.innerWidth,
+      align
+    );
   }
 
   function panelPositionStyle(pos: PanelPosition): string {
