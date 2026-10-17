@@ -67,6 +67,10 @@
   --color-glass-light: rgb(255 255 255 / 0.12);
   --color-glass-hover: rgb(255 255 255 / 0.05);
 
+  /* 玻璃光照令牌：顶部内侧天光 + 底部内侧遮蔽，替代实线边框表达玻璃厚度；
+     玻璃家族（glass-base 与 popover-glass）统一引用，与外阴影合成书写 */
+  --glass-lighting: inset 0 1px 0 rgb(255 255 255 / 0.16), inset 0 -1px 0 rgb(0 0 0 / 0.35);
+
   /* 玻璃圆角体系 */
   --radius-glass-sm: 10px;
   --radius-glass-md: 14px;
@@ -172,11 +176,15 @@
   }
 
   .glass-shadow-sm {
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    box-shadow:
+      var(--glass-lighting),
+      0 4px 30px rgba(0, 0, 0, 0.1);
   }
 
   .glass-shadow-md {
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    box-shadow:
+      var(--glass-lighting),
+      0 8px 32px rgba(0, 0, 0, 0.3);
   }
 
   /* ===== 加载状态容器 ===== */
@@ -199,7 +207,7 @@
 
   /* ===== 弹出框 ===== */
   .popover-glass {
-    @apply fixed z-2000 overflow-hidden rounded-xl border border-white-20 bg-glass shadow-[0_10px_24px_rgba(0,0,0,0.45)] backdrop-blur-sm;
+    @apply fixed z-2000 overflow-hidden rounded-xl bg-glass shadow-[var(--glass-lighting),0_10px_24px_rgba(0,0,0,0.45)] backdrop-blur-sm;
   }
 
   /* ===== 分段标题下边框 ===== */

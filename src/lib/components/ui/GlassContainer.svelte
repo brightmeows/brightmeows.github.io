@@ -49,11 +49,7 @@
   };
 
   const variantClass = $derived(
-    variant === "default"
-      ? "bg-glass border border-white-10"
-      : variant === "light"
-        ? "bg-glass-light border border-white-15"
-        : "bg-black-20 border border-white-5"
+    variant === "default" ? "bg-glass" : variant === "light" ? "bg-glass-light" : "bg-black-20"
   );
 </script>
 
