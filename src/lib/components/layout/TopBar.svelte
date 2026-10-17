@@ -4,6 +4,7 @@
   import { createPanelGroup } from "#lib/components/ui/dropdown-panel.svelte.js";
   import GlassButton from "#lib/components/ui/GlassButton.svelte";
   import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
+  import { popoverLayer } from "#lib/components/ui/popover-layer.js";
   import { topLevelNav, type NavDropdown, type NavItem } from "#lib/constants/nav.js";
   import { apiBase, SITE_ORIGIN } from "#lib/constants/site.js";
   import { auth } from "#lib/data/store/auth-store.svelte.js";
@@ -37,6 +38,50 @@
 
   let root: HTMLDivElement | undefined;
   const panels = createPanelGroup(() => root);
+
+  // —— 弹层定位：弹层经 popoverLayer 进 top layer，脱离 DOM 流后位置由触
+  // 发按钮的视口坐标决定（top + 8px 对应原 mt-2）。宽度变化意味着顶栏重
+  // 排，收起全部弹层；高度变化多为移动端地址栏伸缩，忽略。 ——
+  type PanelAlign = "left" | "right";
+  interface PanelPosition {
+    top: number;
+    left?: number;
+    right?: number;
+  }
+
+  let panelPosition = $state<PanelPosition | null>(null);
+
+  function togglePanel(id: string, align: PanelAlign, event: Event): void {
+    const anchor = event.currentTarget;
+    if (!(anchor instanceof HTMLElement)) return;
+    panels.toggle(id);
+    if (!panels.isOpen(id)) {
+      panelPosition = null;
+      return;
+    }
+    const rect = anchor.getBoundingClientRect();
+    panelPosition = {
+      top: rect.bottom + 8,
+      ...(align === "left" ? { left: rect.left } : { right: window.innerWidth - rect.right }),
+    };
+  }
+
+  function panelPositionStyle(pos: PanelPosition): string {
+    const horizontal = pos.left !== undefined ? `left:${pos.left}px` : `right:${pos.right}px`;
+    return `top:${pos.top}px;${horizontal}`;
+  }
+
+  $effect(() => {
+    let lastWidth = window.innerWidth;
+    const onResize = (): void => {
+      if (window.innerWidth === lastWidth) return;
+      lastWidth = window.innerWidth;
+      panels.close();
+      panelPosition = null;
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  });
 
   function handleScroll(): void {
     const currentScrollY = window.scrollY;
@@ -162,7 +207,7 @@
           class="cursor-pointer rounded-full border-2 border-transparent transition-colors duration-150 hover:border-white-40"
           aria-label={m["topbar.profile_card_aria"]()}
           aria-expanded={panels.isOpen("profile")}
-          onclick={() => panels.toggle("profile")}
+          onclick={(event) => togglePanel("profile", "left", event)}
         >
           <img
             class="size-10 rounded-full border-2 border-white-30"
@@ -172,7 +217,11 @@
         </button>
 
         {#if panels.isOpen("profile")}
-          <div class="absolute top-full left-0 mt-2 w-[min(320px,calc(100vw-1.5rem))]">
+          <div
+            use:popoverLayer
+            class="fixed w-[min(320px,calc(100vw-1.5rem))]"
+            style={panelPosition ? panelPositionStyle(panelPosition) : ""}
+          >
             <GlassPanel class="rounded-2xl p-5" padding="none" rounded="none">
               <div class="text-center">
                 <img
@@ -223,7 +272,7 @@
                   : 'text-white-85 hover:bg-white-10 hover:text-white'}"
                 aria-expanded={panels.isOpen(item.id)}
                 aria-current={dropdownActive ? "true" : undefined}
-                onclick={() => panels.toggle(item.id)}
+                onclick={(event) => togglePanel(item.id, "left", event)}
               >
                 {item.label()}
                 <svg
@@ -238,7 +287,11 @@
               </button>
 
               {#if panels.isOpen(item.id)}
-                <div class="absolute top-full left-0 mt-2 w-56">
+                <div
+                  use:popoverLayer
+                  class="fixed w-56"
+                  style={panelPosition ? panelPositionStyle(panelPosition) : ""}
+                >
                   <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
                     {@render dropdownEntries(item.children)}
                   </GlassPanel>
@@ -265,7 +318,7 @@
           type="button"
           class="{linkBase} flex items-center gap-1 text-white-85 hover:bg-white-10 hover:text-white"
           aria-expanded={panels.isOpen("menu")}
-          onclick={() => panels.toggle("menu")}
+          onclick={(event) => togglePanel("menu", "left", event)}
         >
           {m["topbar.menu"]()}
           <svg
@@ -280,7 +333,11 @@
         </button>
 
         {#if panels.isOpen("menu")}
-          <div class="absolute top-full left-0 mt-2 w-56">
+          <div
+            use:popoverLayer
+            class="fixed w-56"
+            style={panelPosition ? panelPositionStyle(panelPosition) : ""}
+          >
             <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
               {#each topLevelNav as item, i (i)}
                 {#if !("children" in item)}
@@ -348,12 +405,16 @@
               type="button"
               class="{linkBase} text-white-85 hover:bg-white-10 hover:text-white"
               aria-expanded={panels.isOpen("user")}
-              onclick={() => panels.toggle("user")}
+              onclick={(event) => togglePanel("user", "right", event)}
             >
               {user.login}
             </button>
             {#if panels.isOpen("user")}
-              <div class="absolute top-full right-0 mt-2 w-56">
+              <div
+                use:popoverLayer
+                class="fixed w-56"
+                style={panelPosition ? panelPositionStyle(panelPosition) : ""}
+              >
                 <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
                   <div class="px-3 py-2 text-sm text-white-70">
                     {m["topbar.remaining"]({ count: user.remaining })}
@@ -385,7 +446,7 @@
             title={m["topbar.theme"]()}
             aria-label={m["topbar.theme"]()}
             aria-expanded={panels.isOpen("theme")}
-            onclick={() => panels.toggle("theme")}
+            onclick={(event) => togglePanel("theme", "right", event)}
           >
             {#if theme.preference === "light"}
               <svg
@@ -429,7 +490,11 @@
           </button>
 
           {#if panels.isOpen("theme")}
-            <div class="absolute top-full right-0 mt-2 w-40">
+            <div
+              use:popoverLayer
+              class="fixed w-40"
+              style={panelPosition ? panelPositionStyle(panelPosition) : ""}
+            >
               <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
                 {#each themeOptions as option (option.value)}
                   {@const active = theme.preference === option.value}
@@ -459,7 +524,7 @@
               title={m["topbar.language"]()}
               aria-label={m["topbar.language"]()}
               aria-expanded={panels.isOpen("language")}
-              onclick={() => panels.toggle("language")}
+              onclick={(event) => togglePanel("language", "right", event)}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -478,7 +543,11 @@
             </button>
 
             {#if panels.isOpen("language")}
-              <div class="absolute top-full right-0 mt-2 w-40">
+              <div
+                use:popoverLayer
+                class="fixed w-40"
+                style={panelPosition ? panelPositionStyle(panelPosition) : ""}
+              >
                 <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
                   {#each languages as language (language.code)}
                     {@const active = getLocale() === language.code}

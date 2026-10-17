@@ -140,6 +140,20 @@
   --gradient-sky: linear-gradient(180deg, #05050d, #0d0d1c 50%, #0a0a14);
 }
 
+/* ===== Popover UA 样式重置 =====
+   popoverLayer 提升到 top layer 的弹层带 UA 默认样式（canvas 底色、
+   border、inset:0、margin:auto），会垫在玻璃弹层下变成不透明色块；
+   弹层视觉全部由 GlassPanel 承担，这里只保留定位与内容自适应。 */
+[popover] {
+  margin: 0;
+  border: none;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  inset: auto;
+  overflow: visible;
+}
+
 /* 星空画布底色：星星与流星的亮度由组件按主题另行调暗 */
 .sky-canvas {
   background-image: var(--gradient-sky);
