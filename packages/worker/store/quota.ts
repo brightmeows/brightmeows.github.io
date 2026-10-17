@@ -21,7 +21,7 @@ export async function consumeOperation(env: Env, login: string, now: Date): Prom
   )
     .bind(login, date, DAILY_OPERATION_LIMIT)
     .run();
-  if ((result.meta.changes ?? 0) === 0) {
+  if (result.meta.changes === 0) {
     throw new RateLimitError(DAILY_OPERATION_LIMIT);
   }
   const row = await env.MIRROR_DB.prepare(

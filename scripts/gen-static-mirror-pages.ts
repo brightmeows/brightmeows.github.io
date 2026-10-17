@@ -139,7 +139,7 @@ export function generateStaticSharedPages(
   for (const item of list) {
     const id = item.id;
     if (typeof id !== "string" || id.trim() === "") {
-      throw new Error(`共享表清单条目缺少 id：${item.name ?? "(unnamed)"}`);
+      throw new Error(`共享表清单条目缺少 id：${item.name}`);
     }
     const page = injectBmstableMeta(shell, r2SharedHeaderUrl(options.r2Base, id));
     const target = path.join(sharedDir, id, "index.html");
@@ -176,7 +176,7 @@ export function generateStaticMirrorPages(
   for (const item of remapped) {
     const dirName = item.dir_name;
     if (typeof dirName !== "string" || dirName.trim() === "") {
-      throw new Error(`清单条目缺少 dir_name：${item.name ?? "(未命名)"}`);
+      throw new Error(`清单条目缺少 dir_name：${item.name}`);
     }
     const page = injectBmstableMeta(shell, r2TableHeaderUrl(options.r2Base, dirName));
     const target = path.join(mirrorDir, dirName, "index.html");

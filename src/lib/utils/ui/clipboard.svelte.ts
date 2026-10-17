@@ -3,10 +3,8 @@
  */
 export async function writeToClipboard(text: string): Promise<boolean> {
   try {
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(text);
-      return true;
-    }
+    await navigator.clipboard.writeText(text);
+    return true;
   } catch {
     // clipboard API unavailable
   }

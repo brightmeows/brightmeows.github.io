@@ -48,6 +48,7 @@
   import { cubicOut } from "svelte/easing";
   import { fade, fly } from "svelte/transition";
 
+  import { popoverLayer } from "#lib/components/ui/popover-layer.js";
   import { m } from "#lib/paraglide/messages.js";
   import { writeToClipboard } from "#lib/utils/ui/clipboard.svelte.js";
 
@@ -110,52 +111,27 @@
     open = false;
   }
 
-  function fixedContainingBlock(node: HTMLElement): DOMRect | undefined {
-    let el: HTMLElement | null = node.parentElement;
-    while (el) {
-      const style = getComputedStyle(el);
-      const contain = style.contain ?? "";
-      const willChange = style.willChange ?? "";
-
-      const createsContainingBlock =
-        style.transform !== "none" ||
-        style.perspective !== "none" ||
-        style.filter !== "none" ||
-        style.backdropFilter !== "none" ||
-        contain.includes("paint") ||
-        willChange.includes("transform") ||
-        willChange.includes("filter");
-
-      if (createsContainingBlock) return el.getBoundingClientRect();
-      el = el.parentElement;
-    }
-    return undefined;
-  }
-
   function updatePositionAtPointer(clientX: number, clientY: number): void {
     if (!open) return;
     if (!popoverEl) return;
 
+    // top layer 的 containing block 即视口：无祖先 transform/filter 干扰，
+    // 光标坐标可直接使用（原 fixedContainingBlock 坐标换算已随迁移删除）
     const margin = 12;
     const offset = 18;
-    const containingRect = fixedContainingBlock(popoverEl);
-    const viewportW = containingRect?.width ?? window.innerWidth;
-    const viewportH = containingRect?.height ?? window.innerHeight;
-    const baseLeft = containingRect?.left ?? 0;
-    const baseTop = containingRect?.top ?? 0;
-    const localX = clientX - baseLeft;
-    const localY = clientY - baseTop;
+    const viewportW = window.innerWidth;
+    const viewportH = window.innerHeight;
     const popRect = popoverEl.getBoundingClientRect();
 
-    let left = localX + offset;
+    let left = clientX + offset;
     if (left + popRect.width + margin > viewportW) {
-      left = localX - offset - popRect.width;
+      left = clientX - offset - popRect.width;
     }
     left = Math.max(margin, Math.min(left, viewportW - popRect.width - margin));
 
-    let top = localY + offset;
+    let top = clientY + offset;
     if (top + popRect.height + margin > viewportH) {
-      top = localY - offset - popRect.height;
+      top = clientY - offset - popRect.height;
     }
     top = Math.max(margin, Math.min(top, viewportH - popRect.height - margin));
 
@@ -209,6 +185,7 @@
 {#if open}
   <div
     bind:this={popoverEl}
+    use:popoverLayer
     class="popover-glass w-[min(44rem,calc(100vw-2rem))]"
     style={popoverStyle}
     in:fly={{ y: 10, opacity: 0, duration: 160, easing: cubicOut }}

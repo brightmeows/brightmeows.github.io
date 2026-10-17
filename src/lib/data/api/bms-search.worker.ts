@@ -205,11 +205,8 @@ function handleSearch(req: WorkerSearchRequest): void {
 // ---- message handler ----
 
 self.addEventListener("message", (e: MessageEvent<WorkerSearchRequest>) => {
-  const msg = e.data;
-
-  if (msg.type === "search") {
-    handleSearch(msg);
-  }
+  // WorkerSearchRequest 当前仅 search 一种消息，类型扩展时再恢复分派
+  handleSearch(e.data);
 });
 
 // ---- startup ----

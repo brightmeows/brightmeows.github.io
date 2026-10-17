@@ -67,6 +67,10 @@
   --color-glass-light: rgb(255 255 255 / 0.12);
   --color-glass-hover: rgb(255 255 255 / 0.05);
 
+  /* 玻璃光照令牌：顶部内侧天光 + 底部内侧遮蔽，替代实线边框表达玻璃厚度；
+     玻璃家族（glass-base 与 popover-glass）统一引用，与外阴影合成书写 */
+  --glass-lighting: inset 0 1px 0 rgb(255 255 255 / 0.16), inset 0 -1px 0 rgb(0 0 0 / 0.35);
+
   /* 玻璃圆角体系 */
   --radius-glass-sm: 10px;
   --radius-glass-md: 14px;
@@ -133,11 +137,39 @@
    无论优先级都压不过未分层规则，放进 layer 会被主题默认值盖掉。 */
 :root {
   --gradient-sky: linear-gradient(180deg, #0f0c29, #302b63 50%, var(--color-background));
+  /* 减少透明度偏好下玻璃家族的回退实色：取背景渐变中间调，
+     回退后仍是熟悉的深色界面，只是失去透明 */
+  --glass-fallback: rgb(48 43 99 / 0.98);
 }
 
 :root[data-theme="dark"] {
   --color-background: #0a0a14;
   --gradient-sky: linear-gradient(180deg, #05050d, #0d0d1c 50%, #0a0a14);
+  --glass-fallback: rgb(10 10 20 / 0.98);
+}
+
+/* 减少透明度偏好：玻璃家族停用背景模糊、底色换主题实色，光照保留（保持
+   玻璃板结构感，只失去透明）。unlayered 规则压过 utilities 层的 bg-* */
+@media (prefers-reduced-transparency: reduce) {
+  .glass-base,
+  .popover-glass {
+    background-color: var(--glass-fallback);
+    backdrop-filter: none;
+  }
+}
+
+/* ===== Popover UA 样式重置 =====
+   popoverLayer 提升到 top layer 的弹层带 UA 默认样式（canvas 底色、
+   border、inset:0、margin:auto），会垫在玻璃弹层下变成不透明色块；
+   弹层视觉全部由 GlassPanel 承担，这里只保留定位与内容自适应。 */
+[popover] {
+  margin: 0;
+  border: none;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  inset: auto;
+  overflow: visible;
 }
 
 /* 星空画布底色：星星与流星的亮度由组件按主题另行调暗 */
@@ -172,11 +204,15 @@
   }
 
   .glass-shadow-sm {
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    box-shadow:
+      var(--glass-lighting),
+      0 4px 30px rgba(0, 0, 0, 0.1);
   }
 
   .glass-shadow-md {
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    box-shadow:
+      var(--glass-lighting),
+      0 8px 32px rgba(0, 0, 0, 0.3);
   }
 
   /* ===== 加载状态容器 ===== */
@@ -199,7 +235,7 @@
 
   /* ===== 弹出框 ===== */
   .popover-glass {
-    @apply fixed z-2000 overflow-hidden rounded-xl border border-white-20 bg-glass shadow-[0_10px_24px_rgba(0,0,0,0.45)] backdrop-blur-sm;
+    @apply fixed z-2000 overflow-hidden rounded-xl bg-glass shadow-[var(--glass-lighting),0_10px_24px_rgba(0,0,0,0.45)] backdrop-blur-sm;
   }
 
   /* ===== 分段标题下边框 ===== */

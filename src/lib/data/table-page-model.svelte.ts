@@ -102,7 +102,7 @@ export function createTableModel(input: TableModelInput) {
   const conflictCheck = $derived(publish().conflictCheck);
   const saveAsShared = $derived(publish().saveAsShared ?? "none");
   const siteOrigin = $derived(publish().siteOrigin);
-  const canWrite = $derived(capabilities().canWrite ?? false);
+  const canWrite = $derived(Boolean(capabilities().canWrite ?? false));
   const createMode = $derived(capabilities().createMode ?? false);
   const seed = $derived(capabilities().seed);
 
@@ -128,7 +128,7 @@ export function createTableModel(input: TableModelInput) {
   let loadDetail = $state("");
 
   // ---- 编辑与草稿状态 ----
-  let dirty = $state(false);
+  let dirty = $state<boolean>(false);
   let busy = $state(false);
   let pendingDraft = $state<DraftPayload | null>(null);
   let draftStatus = $state<DraftStatus>("idle");
@@ -146,7 +146,7 @@ export function createTableModel(input: TableModelInput) {
   );
 
   // ---- 等级参考（查看态与编辑态共用同一加载状态） ----
-  let levelRefHasData = $state(false);
+  let levelRefHasData = $state<boolean>(false);
   let levelRefLoadState = $state<"idle" | "loading" | "done" | "not-found" | "error">("idle");
   const showLevelRefPane = $derived(
     levelRefLoadState === "idle" || levelRefLoadState === "loading" || levelRefHasData
@@ -175,7 +175,7 @@ export function createTableModel(input: TableModelInput) {
   // ---- 派生：目录 ----
   const difficultyTocItems = $derived.by(() => {
     const sorted = sortedDifficultyGroups;
-    if (!sorted || sorted.length === 0) return [];
+    if (sorted.length === 0) return [];
     return sorted.map((group) => {
       const id = `difficulty-group-${group.level}`;
       return {
