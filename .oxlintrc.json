@@ -46,6 +46,9 @@
     "complexity": ["error", 15],
     "max-depth": ["error", 4],
     "max-lines-per-function": ["error", 150],
+    // nursery 逐条启用（typeAware 已开）：拎恒真恒假条件与冗余判空
+    // （真 bug 高发区，sample-car 同款）；存量 38 处随启用同批修完
+    "typescript/no-unnecessary-condition": "error",
 
     "constructor-super": "error",
     "import/namespace": "off",
@@ -225,13 +228,16 @@
   },
   "overrides": [
     {
-      // 测试资产：describe/it 嵌套与断言数据体量下三闸语义失真，
-      // 整组 off（生产码闸门不受影响）
+      // 测试资产：describe/it 嵌套与断言数据体量下三闸语义失真，整组
+      // off（生产码闸门不受影响）；no-unnecessary-condition 对“类型非空
+      // 但运行时可能缺失”的测试防御（全局桩初始化、构造数据兜底）按
+      // 动机冲突目录级忽略——与 no-unsafe-type-assertion 的挂起策略一致
       "files": ["**/*.test.ts"],
       "rules": {
         "complexity": "off",
         "max-depth": "off",
-        "max-lines-per-function": "off"
+        "max-lines-per-function": "off",
+        "typescript/no-unnecessary-condition": "off"
       }
     },
     {
@@ -281,6 +287,15 @@
     {
       "files": ["src/lib/data/api/search-aggregator.ts"],
       "rules": { "complexity": ["error", 56] }
+    },
+    {
+      // tsgolint 对本文件 $derived 链（publish().onSave !== undefined &&
+      // canWrite 等）的类型视图把 boolean 收窄为 false 字面量，整条
+      // no-unnecessary-condition 误报；主链 svelte-check（TS6）对同行
+      // 0 错误，以主链为准。解除条件：tsgolint 修正 .svelte.ts 的
+      // $derived 类型传播后收回为 error
+      "files": ["src/lib/data/table-page-model.svelte.ts"],
+      "rules": { "typescript/no-unnecessary-condition": "off" }
     },
     {
       "files": ["src/lib/data/table-page-model.svelte.ts"],

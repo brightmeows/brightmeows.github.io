@@ -32,13 +32,14 @@ export interface TableListProjection {
 export function projectTableList(list: MirrorTableItem[]): TableListProjection[] {
   return list
     .map((item) => ({
-      dir_name: String(item.dir_name ?? ""),
-      name: String(item.name ?? ""),
+      dir_name: String(item.dir_name),
+      name: String(item.name),
       symbol: String(item.symbol ?? ""),
       tag1: String(item.tag1 ?? ""),
       tag2: String(item.tag2 ?? ""),
       tag_order: String(item.tag_order ?? ""),
-      url_from: String(item.url_from ?? item.url ?? ""),
+      // url_from 运行时缺失回落 url（旧清单形态，manifest.test 锁定）
+      url_from: String(item.url_from ?? item.url),
     }))
     .sort((a, b) => (a.dir_name < b.dir_name ? -1 : a.dir_name > b.dir_name ? 1 : 0));
 }
@@ -66,7 +67,7 @@ export function transformTableList(
   return list.map((item) => {
     const dirName = item.dir_name;
     if (typeof dirName !== "string" || dirName.trim() === "") {
-      throw new Error(`清单条目缺少 dir_name：${item.name ?? "(未命名)"}`);
+      throw new Error(`清单条目缺少 dir_name：${item.name}`);
     }
     return {
       ...item,

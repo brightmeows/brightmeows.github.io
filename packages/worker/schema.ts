@@ -26,7 +26,7 @@ export async function upgradeSchema(db: D1Database): Promise<void> {
   let version = await readSchemaVersion(db);
   while (version < SCHEMA_VERSION) {
     const step = MIGRATION_STEPS[version];
-    if (step === undefined) {
+    if (!(version in MIGRATION_STEPS)) {
       throw new Error(`缺少 schema 升级步骤：版本 ${version}`);
     }
     // 整批原子执行：任一条失败即回滚，不会留下半个 schema

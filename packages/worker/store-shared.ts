@@ -155,9 +155,9 @@ export async function insertSharedTable(env: Env, row: SharedRow): Promise<boole
         row.entries
       ),
     ]);
+    // results 为二元组（batch 两条语句），第二个结果类型上必然存在
     const insert = results[1];
-    if (insert === undefined) return false;
-    return insert.success && insert.meta.changes > 0;
+    return insert.meta.changes > 0;
   } catch (error) {
     // D1 的 batch 在语句失败时抛异常并回滚整批：id 冲突（UNIQUE 约束）按
     // 插入失败返回，别名删除随回滚保留；数据库故障等其余错误继续抛出，

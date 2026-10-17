@@ -181,7 +181,7 @@ export async function handleSharedCreate(request: Request, env: Env, now: Date):
   if (auth instanceof Response) return auth;
   const { session, body, id } = auth;
 
-  const payload = preparePayload(body?.header, body?.data);
+  const payload = preparePayload(body.header, body.data);
   if (payload instanceof Response) return payload;
 
   const count = await countSharedFor(env, session.login);
@@ -257,7 +257,7 @@ export async function handleSharedSave(request: Request, env: Env, now: Date): P
     });
   }
 
-  const payload = preparePayload(body?.header, body?.data);
+  const payload = preparePayload(body.header, body.data);
   if (payload instanceof Response) return payload;
 
   const at = now.toISOString();
@@ -299,7 +299,7 @@ export async function handleSharedRename(request: Request, env: Env, now: Date):
   const auth = await readSharedWrite(request, env, now);
   if (auth instanceof Response) return auth;
   const { session, body, id: oldId } = auth;
-  const newResult = validateSharedId(typeof body?.new_id === "string" ? body.new_id : "");
+  const newResult = validateSharedId(typeof body.new_id === "string" ? body.new_id : "");
   if (!newResult.ok) return idFailure(newResult.error);
   const newId = newResult.id;
 
