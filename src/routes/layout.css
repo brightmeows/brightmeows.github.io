@@ -137,11 +137,25 @@
    无论优先级都压不过未分层规则，放进 layer 会被主题默认值盖掉。 */
 :root {
   --gradient-sky: linear-gradient(180deg, #0f0c29, #302b63 50%, var(--color-background));
+  /* 减少透明度偏好下玻璃家族的回退实色：取背景渐变中间调，
+     回退后仍是熟悉的深色界面，只是失去透明 */
+  --glass-fallback: rgb(48 43 99 / 0.98);
 }
 
 :root[data-theme="dark"] {
   --color-background: #0a0a14;
   --gradient-sky: linear-gradient(180deg, #05050d, #0d0d1c 50%, #0a0a14);
+  --glass-fallback: rgb(10 10 20 / 0.98);
+}
+
+/* 减少透明度偏好：玻璃家族停用背景模糊、底色换主题实色，光照保留（保持
+   玻璃板结构感，只失去透明）。unlayered 规则压过 utilities 层的 bg-* */
+@media (prefers-reduced-transparency: reduce) {
+  .glass-base,
+  .popover-glass {
+    background-color: var(--glass-fallback);
+    backdrop-filter: none;
+  }
 }
 
 /* 星空画布底色：星星与流星的亮度由组件按主题另行调暗 */
