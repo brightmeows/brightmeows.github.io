@@ -40,6 +40,13 @@
     "static/bms/"
   ],
   "rules": {
+    // 复杂度三闸（complexity/max-depth/max-lines-per-function，style 类显式启用）：
+    // 全局阈值为新代码线 15/4/150；存量超线按域在 overrides 放宽至现值上限，
+    // 棘轮语义——不许比现值更糟，触碰重构后收紧回全局线并删除对应放宽块
+    "complexity": ["error", 15],
+    "max-depth": ["error", 4],
+    "max-lines-per-function": ["error", 150],
+
     "constructor-super": "error",
     "import/namespace": "off",
     "for-direction": "error",
@@ -217,6 +224,72 @@
     ]
   },
   "overrides": [
+    {
+      // 测试资产：describe/it 嵌套与断言数据体量下三闸语义失真，
+      // 整组 off（生产码闸门不受影响）
+      "files": ["**/*.test.ts"],
+      "rules": {
+        "complexity": "off",
+        "max-depth": "off",
+        "max-lines-per-function": "off"
+      }
+    },
+    {
+      // Worker 路由与处理器：分支密集是路由/校验职责的固有形态。
+      // 棘轮放宽：域阈值 = 组内较大现值，routeApi 的 39 由 per-file 兜底
+      // （api.ts per-file 块）
+      "files": ["packages/worker/**/*.ts"],
+      "rules": {
+        "complexity": ["error", 30],
+        "max-depth": ["error", 5]
+      }
+    },
+    {
+      "files": ["packages/worker/api.ts"],
+      "rules": { "complexity": ["error", 40] }
+    },
+    {
+      // BMS 域：格式解码与段位解析的分支密集段（棘轮同上）
+      "files": ["packages/bms/src/**/*.ts"],
+      "rules": {
+        "complexity": ["error", 22],
+        "max-depth": ["error", 5]
+      }
+    },
+    {
+      // mirror 域：mergeTableList 的合并分支（棘轮同上）
+      "files": ["packages/mirror/src/**/*.ts"],
+      "rules": { "complexity": ["error", 32] }
+    },
+    {
+      // scripts 管线与校验脚本：参数解析/状态解析/网段判断/活跃集合合并
+      // 的分支密集段（棘轮同上）
+      "files": ["scripts/**/*.ts"],
+      "rules": { "complexity": ["error", 28] }
+    },
+    {
+      // 站点 src（lib 与 routes）：数据取数回退链、页面编排与导入面板
+      // 嵌套（棘轮同上）；search-aggregator 的 resolveGroup（56）与
+      // createTableModel（667 行）为已知重构目标，现值即阈值，
+      // 触碰重构后收紧回域线并删除本块
+      "files": ["src/lib/**", "src/routes/**"],
+      "rules": {
+        "complexity": ["error", 22],
+        "max-depth": ["error", 6]
+      }
+    },
+    {
+      "files": ["src/lib/data/api/search-aggregator.ts"],
+      "rules": { "complexity": ["error", 56] }
+    },
+    {
+      "files": ["src/lib/data/table-page-model.svelte.ts"],
+      "rules": { "max-lines-per-function": ["error", 670] }
+    },
+    {
+      "files": ["src/lib/components/ui/StarryBackground.svelte"],
+      "rules": { "max-lines-per-function": ["error", 220] }
+    },
     {
       "files": ["*.svelte", "**/*.svelte"],
       "rules": {
