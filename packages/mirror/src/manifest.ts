@@ -32,7 +32,7 @@ export interface TableListProjection {
 export function projectTableList(list: MirrorTableItem[]): TableListProjection[] {
   return list
     .map((item) => ({
-      dir_name: String(item.dir_name),
+      dir_name: String(item.dir_name ?? ""),
       name: String(item.name),
       symbol: String(item.symbol ?? ""),
       tag1: String(item.tag1 ?? ""),
