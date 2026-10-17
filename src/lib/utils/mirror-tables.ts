@@ -96,7 +96,7 @@ export function groupByTags(tables: MirrorTableItem[]): Tag1Group[] {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([tag2, items]) => ({
         tag2,
-        items: items.sort((x, y) => (x.name ?? "").localeCompare(y.name ?? "")),
+        items: items.sort((x, y) => x.name.localeCompare(y.name)),
       }));
     return { tag1, order: isNaN(order) ? 999 : order, subgroups };
   });

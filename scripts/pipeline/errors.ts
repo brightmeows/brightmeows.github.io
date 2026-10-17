@@ -24,7 +24,7 @@ function describeCause(cause: unknown): string {
 
 function safeStringify(value: unknown): string {
   try {
-    return JSON.stringify(value) ?? "未知错误";
+    return JSON.stringify(value);
   } catch {
     return "未知错误";
   }

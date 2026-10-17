@@ -84,7 +84,7 @@ function str(value: unknown): string {
   if (typeof value === "string") return value;
   if (typeof value === "number" || typeof value === "boolean") return String(value);
   if (value === undefined || value === null) return "";
-  return JSON.stringify(value) ?? "";
+  return JSON.stringify(value);
 }
 
 function numberText(value: unknown): string {

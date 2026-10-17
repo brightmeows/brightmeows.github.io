@@ -54,7 +54,7 @@ export function findDomainsInText(text: string, domains: string[]): string[] {
   const hits: string[] = [];
   for (const domain of domains) {
     let from = 0;
-    while (true) {
+    for (;;) {
       const index = text.indexOf(domain, from);
       if (index === -1) break;
       from = index + domain.length;

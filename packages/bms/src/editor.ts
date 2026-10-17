@@ -31,7 +31,7 @@ const CORE_FIELD_SET: ReadonlySet<string> = new Set(CORE_ENTRY_FIELDS);
 /** 把 JSON 值渲染为可编辑的 JSON 文本（字符串带引号；undefined 与 null 渲染为空串）。 */
 export function valueToText(value: unknown): string {
   if (value === undefined || value === null) return "";
-  return JSON.stringify(value) ?? "";
+  return JSON.stringify(value);
 }
 
 /** 头部核心字段的未知值转文本：字符串原样，空缺转空串，其余 String 化。 */
@@ -154,15 +154,15 @@ export function commitEntryEdit(
   original: Record<string, unknown>,
   input: EntryCommitInput
 ): EntryCommitResult {
-  const md5 = (input.core.md5 ?? "").trim();
-  const sha256 = (input.core.sha256 ?? "").trim();
+  const md5 = input.core.md5.trim();
+  const sha256 = input.core.sha256.trim();
   if (md5 === "" && sha256 === "") {
     return { ok: false, error: "identity", detail: undefined };
   }
 
   const fields: Record<string, unknown> = {};
   for (const field of CORE_ENTRY_FIELDS) {
-    const value = (input.core[field] ?? "").trim();
+    const value = input.core[field].trim();
     fields[field] = value === "" ? undefined : value;
   }
 

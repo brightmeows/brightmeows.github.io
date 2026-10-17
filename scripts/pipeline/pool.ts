@@ -15,7 +15,7 @@ export async function mapPool<T, R>(
   let nextIndex = 0;
   const workerCount = Math.max(1, Math.min(limit, items.length));
   const workers = Array.from({ length: workerCount }, async () => {
-    while (true) {
+    for (;;) {
       const index = nextIndex;
       nextIndex += 1;
       if (index >= items.length) {

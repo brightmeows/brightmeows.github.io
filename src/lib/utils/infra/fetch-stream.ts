@@ -38,14 +38,13 @@ export async function fetchStream(
   const chunks: Uint8Array[] = [];
   let loaded = 0;
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (value) {
-      chunks.push(value);
-      loaded += value.length;
-      onProgress({ loaded, total });
-    }
+  for (;;) {
+    // done 蕴含 value 为 undefined，二者合一可同时消除 done 的恒真判定
+    const { value } = await reader.read();
+    if (!value) break;
+    chunks.push(value);
+    loaded += value.length;
+    onProgress({ loaded, total });
   }
 
   const combined = new Uint8Array(loaded);

@@ -89,7 +89,7 @@ async function listTrash(env: Env): Promise<TrashEntry[]> {
       const stamp = rest.slice(0, first);
       const dirName = rest.slice(first + 1, second);
       const id = `${stamp}/${dirName}`;
-      const uploaded = object.uploaded?.getTime() ?? 0;
+      const uploaded = object.uploaded.getTime();
       const existing = map.get(id);
       if (existing === undefined || uploaded > existing.uploaded) {
         map.set(id, { trash_prefix: `${TRASH_PREFIX}${id}`, dir_name: dirName, stamp, uploaded });
