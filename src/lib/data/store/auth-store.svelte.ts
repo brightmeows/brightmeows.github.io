@@ -25,12 +25,22 @@ class AuthStore {
   status = $state<AuthStatus>("idle");
 
   #loaded = false;
+  #pending: Promise<void> | null = null;
 
-  /** 幂等拉取登录态；重复调用不重复请求。 */
+  /**
+   * 幂等拉取登录态；并发调用等待同一个在途请求。
+   *
+   * 只置标记不等待会让后到的调用方（共享表页在整页加载时与顶栏同时调用）
+   * 立刻拿到 user === null、误判成未登录：顶栏稍后显示登录用户，页面却停在
+   * 登录提示。
+   */
   async ensureLoaded(): Promise<void> {
     if (this.#loaded) return;
-    this.#loaded = true;
-    await this.#fetch();
+    this.#pending ??= this.#fetch().finally(() => {
+      this.#pending = null;
+      this.#loaded = true;
+    });
+    await this.#pending;
   }
 
   /** 强制重新拉取登录态（OAuth 回调落地、写操作后使用）。 */
