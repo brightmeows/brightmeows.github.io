@@ -1,6 +1,6 @@
 /**
  * 用户层 D1 行的通用窄化：角色列与可空文本列。
- * 各 store 模块与 store-shared 共用。
+ * 各 store 模块共用。
  */
 
 import type { UserRole } from "@brightmeows/mirror/user-layer";

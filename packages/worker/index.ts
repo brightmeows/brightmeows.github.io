@@ -14,7 +14,7 @@
  * 3. `/api/*`：登录、预览、添加、删除、恢复与状态轮询（见 worker/api.ts）；
  *    `/api/internal/*` 是给 GitHub Actions 的内部端点（见 worker/internal.ts）。
  *
- * 清单读取与合成在 worker/manifest.ts；用户层存在 D1（worker/store.ts），
+ * 清单读取与合成在 worker/manifest.ts；用户层存在 D1（worker/store/user-layer.ts），
  * 同 isolate 内 60 秒内存缓存（写接口完成后主动失效）；用户层不可用时退化为
  * 纯管线清单。
  *
@@ -45,7 +45,7 @@ import {
 import { handleInternal } from "./internal.ts";
 import { MANIFEST_MAX_AGE, loadMergedManifest } from "./manifest.ts";
 import { ensureSchemaOnce } from "./schema.ts";
-import { getSharedAlias, getSharedRow, listSharedRows, sharedRowToItem } from "./store-shared.ts";
+import { getSharedAlias, getSharedRow, listSharedRows, sharedRowToItem } from "./store/shared.ts";
 
 const MIRROR_ROOT = "/bms/table/mirror/";
 const SHARED_ROOT = "/bms/table/shared/";
@@ -258,7 +258,7 @@ export default {
       return Response.redirect(new URL(`${cleanPath}${url.search}`, url.origin).toString(), 301);
     }
 
-    // 用户层在 D1（见 worker/store.ts）：首个请求初始化 schema（isolate 内只执行一次）。
+    // 用户层在 D1（见 worker/store/user-layer.ts）：首个请求初始化 schema（isolate 内只执行一次）。
     // 读取路径容忍失败并按纯管线清单降级；写接口依赖 D1，初始化失败即报错。
     if (
       path.startsWith(MIRROR_ROOT) ||

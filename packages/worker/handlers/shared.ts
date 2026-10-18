@@ -31,6 +31,8 @@ import { TRASH_RETENTION_DAYS } from "@brightmeows/mirror/user-layer";
 import { getSession, type Session } from "../auth.ts";
 import type { Env } from "../env.ts";
 import { allowedOrigins, checkAllowedOrigin, failure, json, readJsonBody } from "../http.ts";
+import { writeAudit, writeFoldedAudit } from "../store/audit.ts";
+import { triggerDeploy } from "../store/deploy.ts";
 import {
   countSharedFor,
   copySharedObjects,
@@ -52,9 +54,7 @@ import {
   sharedIdBlocked,
   updateSharedMeta,
   type SharedRow,
-} from "../store-shared.ts";
-import { writeAudit, writeFoldedAudit } from "../store/audit.ts";
-import { triggerDeploy } from "../store/deploy.ts";
+} from "../store/shared.ts";
 
 /** 自助恢复窗口的截止时间（ISO）：与回收站清理窗口同源。 */
 function trashCutoffIso(now: Date): string {
