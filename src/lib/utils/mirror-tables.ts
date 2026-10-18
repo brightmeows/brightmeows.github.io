@@ -63,15 +63,18 @@ export function slugifyTag(tag: string): string {
 }
 
 /**
- * 按 tag1/tag2 分组排序
+ * 按 tag1/tag2 分组排序；缺标签的回退文案由调用方注入（本函数不依赖 i18n）。
  */
-export function groupByTags(tables: MirrorTableItem[]): Tag1Group[] {
+export function groupByTags(
+  tables: MirrorTableItem[],
+  fallbacks: { untagged: string; other: string }
+): Tag1Group[] {
   const groupsMap: Record<string, { order: number; tag2Map: Record<string, MirrorTableItem[]> }> =
     {};
 
   tables.forEach((item) => {
-    const tag1 = item.tag1 ?? m["mirror.untagged"]();
-    const tag2 = item.tag2 ?? m["mirror.other"]();
+    const tag1 = item.tag1 ?? fallbacks.untagged;
+    const tag2 = item.tag2 ?? fallbacks.other;
     const orderRaw = item.tag_order;
     const order = typeof orderRaw === "number" ? orderRaw : parseInt(String(orderRaw ?? "999"), 10);
 
