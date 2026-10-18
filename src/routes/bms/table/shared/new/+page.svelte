@@ -100,7 +100,9 @@
     busy = true;
     try {
       sharedNewSeed.set(name.trim(), symbol.trim());
-      await goto(`${preview}`);
+      // 新表只在编辑态呈现：查看分支会去拉尚不存在的表头（R2 对象还没有）。
+      // 带 ?edit=1 后共享表页先渲染 loading，等状态就绪再以空 headerUrl 进新表模式。
+      await goto(`${preview}?edit=1`);
     } finally {
       busy = false;
     }
