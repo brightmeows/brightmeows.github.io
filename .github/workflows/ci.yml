@@ -45,6 +45,7 @@ jobs:
       - run: pnpm check:bms
       - run: pnpm check:config
       - run: pnpm check:i18n
+      - run: pnpm check:jsdoc
 
   test:
     runs-on: ubuntu-latest
