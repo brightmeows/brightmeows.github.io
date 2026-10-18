@@ -105,7 +105,12 @@
   let protectedFilteredTables = $derived(
     showProtectedOnly ? filteredTables.filter((t) => t.protected === true) : filteredTables
   );
-  let groupedByTags = $derived(groupByTags(protectedFilteredTables));
+  let groupedByTags = $derived(
+    groupByTags(protectedFilteredTables, {
+      untagged: m["mirror.untagged"](),
+      other: m["mirror.other"](),
+    })
+  );
   // 展示顺序 URL 列表（用于浮动面板 JSON 排序，与 GroupedTablesSection 内顺序一致）
   let displayOrderUrls = $derived(
     groupedByTags.flatMap((group) => group.subgroups.flatMap((sg) => sg.items.map((i) => i.url)))

@@ -63,24 +63,32 @@ describe("slugifyTag", () => {
 });
 
 describe("groupByTags", () => {
+  const FALLBACKS = { untagged: "未分类", other: "其它" };
+
   it("按 tag1/tag2 分组，子组与组内条目有序", () => {
-    const groups = groupByTags([
-      { name: "beta", tag1: "X", tag2: "T2", tag_order: "1", url: "u1" },
-      { name: "alpha", tag1: "X", tag2: "T1", tag_order: "1", url: "u2" },
-      { name: "gamma", tag1: "Y", tag2: "T1", tag_order: "2", url: "u3" },
-    ]);
+    const groups = groupByTags(
+      [
+        { name: "beta", tag1: "X", tag2: "T2", tag_order: "1", url: "u1" },
+        { name: "alpha", tag1: "X", tag2: "T1", tag_order: "1", url: "u2" },
+        { name: "gamma", tag1: "Y", tag2: "T1", tag_order: "2", url: "u3" },
+      ],
+      FALLBACKS
+    );
     expect(groups.map((g) => g.tag1)).toEqual(["X", "Y"]);
     expect(groups[0]!.subgroups.map((s) => s.tag2)).toEqual(["T1", "T2"]);
     expect(groups[0]!.subgroups[0]!.items.map((i) => i.name)).toEqual(["alpha"]);
   });
 
   it("tag_order 取同 tag1 内最小值，缺失或非数字记为 999", () => {
-    const groups = groupByTags([
-      { name: "a", tag1: "B", tag_order: "5", url: "u1" },
-      { name: "b", tag1: "B", tag_order: "2", url: "u2" },
-      { name: "c", tag1: "C", url: "u3" },
-      { name: "d", tag1: "D", tag_order: "abc", url: "u4" },
-    ]);
+    const groups = groupByTags(
+      [
+        { name: "a", tag1: "B", tag_order: "5", url: "u1" },
+        { name: "b", tag1: "B", tag_order: "2", url: "u2" },
+        { name: "c", tag1: "C", url: "u3" },
+        { name: "d", tag1: "D", tag_order: "abc", url: "u4" },
+      ],
+      FALLBACKS
+    );
     expect(groups.map((g) => [g.tag1, g.order])).toEqual([
       ["B", 2],
       ["C", 999],
@@ -88,10 +96,10 @@ describe("groupByTags", () => {
     ]);
   });
 
-  it("缺省标签回落为消息文案（未分类 / 其它）", () => {
-    const groups = groupByTags([{ name: "x", url: "u" }]);
-    expect(groups[0]!.tag1).toBe(m["mirror.untagged"]());
-    expect(groups[0]!.subgroups[0]!.tag2).toBe(m["mirror.other"]());
+  it("缺省标签回落为注入的回退文案（生产调用方传消息文案）", () => {
+    const groups = groupByTags([{ name: "x", url: "u" }], FALLBACKS);
+    expect(groups[0]!.tag1).toBe(FALLBACKS.untagged);
+    expect(groups[0]!.subgroups[0]!.tag2).toBe(FALLBACKS.other);
   });
 });
 
