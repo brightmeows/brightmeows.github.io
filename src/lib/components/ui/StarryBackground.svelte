@@ -100,10 +100,11 @@
       const g = sprite.getContext("2d");
       if (!g) return;
 
-      // head 平移到精灵内原点（CSS 像素坐标乘 dpr），尾迹沿 dx/dy 方向展开
+      // head 平移到精灵内原点（CSS 像素坐标乘 dpr）；dx/dy 指向尾端，旋转后
+      // 本地 -x 轴 = 尾端方向，线段沿 -x 展开即从尾到头，渐变透明端落在尾上
       g.translate(-minX * dpr, -minY * dpr);
       g.scale(dpr, dpr);
-      g.rotate(Math.atan2(dy, dx));
+      g.rotate(Math.atan2(-dy, -dx));
 
       const len = Math.hypot(dx, dy);
       const gradient = g.createLinearGradient(-len, 0, 0, 0);
