@@ -14,6 +14,12 @@ const siteLocale =
   process.env.PUBLIC_SITE_LOCALE ?? (process.env.NODE_ENV === "development" ? "zh-cn" : "en");
 const staticTarget = process.env.PUBLIC_SITE_KIND === "static";
 
+// 应用版本：多语构建由 scripts/build-site.ts 生成一次并经 BUILD_VERSION 注入，
+// 四个 flavor 共用同一个值——各语言树 HTML 内嵌的 version 与合并后的
+// _app/version.json 必须一致，版本分叉会让非英语客户端在未命中路由的
+// fallback 上反复整页刷新（404 空白）。单遍构建与 dev 留空，由 Kit 取默认值。
+const appVersion = process.env.BUILD_VERSION;
+
 // Kit 3：svelte.config.ts 移除，SvelTeX preprocess 链与 kit 配置并入
 // sveltekit() 插件选项（SvelTeX 工厂是异步的，模块顶层 await）。
 const sveltexPreprocess = await sveltex(
@@ -49,6 +55,7 @@ export default defineConfig({
   plugins: [
     tailwindcss(),
     sveltekit({
+      ...(appVersion === undefined ? {} : { version: { name: appVersion } }),
       preprocess: [sveltexPreprocess, vitePreprocess()],
       extensions: [".svelte", ".svx", ".md"],
       adapter: adapter({

@@ -43,11 +43,12 @@ const FLAVORS: Flavor[] = [
   { out: path.join(".build-out", "static"), locale: "en", static: true },
 ];
 
-function buildFlavor(flavor: Flavor): void {
+function buildFlavor(flavor: Flavor, version: string): void {
   const env: NodeJS.ProcessEnv = {
     ...process.env,
     BUILD_OUT: flavor.out,
     PUBLIC_SITE_LOCALE: flavor.locale,
+    BUILD_VERSION: version,
   };
   if (flavor.static) env.PUBLIC_SITE_KIND = "static";
   console.log(`\n=== build ${flavor.locale}${flavor.static ? " (static)" : ""} → ${flavor.out}`);
@@ -79,7 +80,12 @@ function main(): void {
   rmSync("build", { recursive: true, force: true });
   rmSync("build-static", { recursive: true, force: true });
 
-  for (const flavor of FLAVORS) buildFlavor(flavor);
+  // 应用版本：本次组装只生成一次，四个 flavor 共用（外部已设则沿用）。
+  // 版本号内嵌进各树 HTML 的客户端配置，并与 _app/version.json 比对；
+  // 分叉会让非英语客户端在未命中路由的 fallback 上反复整页刷新。
+  const version = process.env.BUILD_VERSION ?? Date.now().toString();
+
+  for (const flavor of FLAVORS) buildFlavor(flavor, version);
 
   mkdirSync("build", { recursive: true });
   cpSync(path.join(".build-out", "en"), "build", { recursive: true });
@@ -92,12 +98,11 @@ function main(): void {
 
   // 各语言树页面引用的 /_app 走共享根：同名文件按内容哈希命名（内容一致才同名），
   // 各语言独有 chunk 互不碰撞，构建期合并后按原样取（见 worker/i18n.ts 的
-  // isSharedAsset）。version.json 按构建时间取值会分叉，统一用 en 树的值，
-  // 避免非英语客户端版本比对永远不一致。
+  // isSharedAsset）。四个 flavor 由 BUILD_VERSION 注入同一个应用版本，
+  // 各树 HTML 内嵌 version 与合并后的 version.json 天然一致。
   for (const locale of LOCALES) {
     if (locale === "en") continue;
     const tree = path.join("build", "_i18n", locale);
-    cpSync(path.join("build", "_app", "version.json"), path.join(tree, "_app", "version.json"));
     cpSync(path.join(tree, "_app"), path.join("build", "_app"), { recursive: true, force: true });
     rmSync(path.join(tree, "_app"), { recursive: true, force: true });
 
