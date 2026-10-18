@@ -59,7 +59,12 @@
           ? 'border-accent bg-accent/20 text-accent'
           : 'border-white-20 text-white-50 hover:border-white-40 hover:text-white-70'}"
       >
-        <Checkbox size="sm" checked={groupMode} onchange={(v: boolean) => (groupMode = v)} />
+        <Checkbox
+          size="sm"
+          ariaLabel={m["course.grouped_display"]()}
+          checked={groupMode}
+          onchange={(v: boolean) => (groupMode = v)}
+        />
         {m["course.grouped_display"]()}
       </label>
     {/if}

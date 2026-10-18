@@ -127,7 +127,12 @@
             ? 'border-[#ffd54f] bg-[#ffd54f]/20 text-[#ffd54f]'
             : 'border-white-20 text-white-50 hover:border-white-40 hover:text-white-70'}"
         >
-          <Checkbox size="sm" checked={mineOnly} onchange={(v: boolean) => (mineOnly = v)} />
+          <Checkbox
+            size="sm"
+            ariaLabel={m["shared.mine_filter"]()}
+            checked={mineOnly}
+            onchange={(v: boolean) => (mineOnly = v)}
+          />
           {m["shared.mine_filter"]()}
         </label>
       {/if}
