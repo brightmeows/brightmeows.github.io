@@ -83,6 +83,7 @@
       class="flex w-max flex-nowrap items-center gap-4 rounded-xl border border-white-20 bg-glass p-3 px-4 shadow-[0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur-[6px]"
     >
       <Checkbox
+        ariaLabel={m["common.select_all_aria"]()}
         checked={allSelected}
         indeterminate={someSelected}
         onchange={(v: boolean) => handleSelectAll(v)}

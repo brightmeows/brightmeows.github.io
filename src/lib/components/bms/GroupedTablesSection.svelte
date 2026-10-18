@@ -152,6 +152,7 @@
             <div class="section-divider">
               <div class="flex items-center gap-4">
                 <Checkbox
+                  ariaLabel={m["mirror.select_group_aria"]({ name: g.tag1 })}
                   checked={tag1State(g, selectedMap) === CheckboxState.Checked}
                   indeterminate={tag1State(g, selectedMap) === CheckboxState.Indeterminate}
                   onchange={(v: boolean) => onTag1Change(v, g)}
@@ -166,6 +167,7 @@
               <div id={`tag2-group-${slugifyTag(g.tag1)}-${slugifyTag(sg.tag2)}`} class="mt-4">
                 <div class="mt-2 mb-2 flex items-center gap-2">
                   <Checkbox
+                    ariaLabel={m["mirror.select_group_aria"]({ name: sg.tag2 })}
                     checked={tag2State(sg, selectedMap) === CheckboxState.Checked}
                     indeterminate={tag2State(sg, selectedMap) === CheckboxState.Indeterminate}
                     onchange={(v: boolean) => onTag2Change(v, sg)}

@@ -400,6 +400,7 @@
       >
         <Checkbox
           size="sm"
+          ariaLabel={m["mirror.protected_filter"]()}
           checked={showProtectedOnly}
           onchange={(v: boolean) => (showProtectedOnly = v)}
         />

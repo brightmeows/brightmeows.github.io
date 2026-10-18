@@ -12,8 +12,8 @@
     disabled?: boolean;
     /** 值变化回调，参数为选中状态 */
     onchange?: (checked: boolean) => void;
-    /** 无障碍标签（没有可见文字标签时提供） */
-    ariaLabel?: string | undefined;
+    /** 无障碍标签（必填：可见标签由外部元素承载时也需给出同名文案） */
+    ariaLabel: string;
     /** 自定义类名 */
     class?: string;
   }

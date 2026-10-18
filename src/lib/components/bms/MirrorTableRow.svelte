@@ -56,7 +56,11 @@
 
 <tr class="hover:bg-white-5 last:[&>td]:border-b-0">
   <td class="table-td-glass wrap-break-word">
-    <Checkbox checked={selected} onchange={(v: boolean) => onchange(v)} />
+    <Checkbox
+      ariaLabel={m["mirror.select_row_aria"]({ name: tableLabelOf(item) })}
+      checked={selected}
+      onchange={(v: boolean) => onchange(v)}
+    />
   </td>
   <td class="table-td-glass wrap-break-word">
     {item.symbol ?? ""}
