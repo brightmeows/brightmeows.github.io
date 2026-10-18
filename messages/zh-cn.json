@@ -635,5 +635,6 @@
   "topbar.theme_light": "浅色主题",
   "topbar.theme_system": "跟随系统",
   "userapi.no_request_id": "接口未返回请求 id",
+  "userapi.admin_overview_invalid": "后台总览响应形状异常",
   "userapi.unknown_state": "状态取值未知"
 }

@@ -635,5 +635,6 @@
   "topbar.theme_light": "ライトテーマ",
   "topbar.theme_system": "システムに従う",
   "userapi.no_request_id": "API がリクエスト id を返しませんでした",
+  "userapi.admin_overview_invalid": "管理 overview の応答形式が不正です",
   "userapi.unknown_state": "状態の値が不明です"
 }

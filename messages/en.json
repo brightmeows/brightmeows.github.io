@@ -635,5 +635,6 @@
   "topbar.theme_light": "Light theme",
   "topbar.theme_system": "Follow system",
   "userapi.no_request_id": "API did not return a request id",
+  "userapi.admin_overview_invalid": "Admin overview response is malformed",
   "userapi.unknown_state": "Unknown status value"
 }
