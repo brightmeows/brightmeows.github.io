@@ -4,7 +4,7 @@
 
 ## Commands
 
-- `pnpm build` — 多语构建入口（`scripts/build-site.ts`）：en、zh-cn、ja 三个主站 flavor 加 en 静态共四遍（各自经 `BUILD_OUT` 落临时目录），组装出 `build/`（en 根 + `_i18n/zh-cn`、`_i18n/ja` 内部树，`_app` 多语 chunk 合并到共享根、`version.json` 统一取 en、各语言树 `html lang` 改写）与 `build-static/`（静态宿主单语，隐藏语言切换器）；`pnpm build:flavor` 跑单遍
+- `pnpm build` — 多语构建入口（`scripts/build-site.ts`）：en、zh-cn、ja 三个主站 flavor 加 en 静态共四遍（各自经 `BUILD_OUT` 落临时目录），组装出 `build/`（en 根 + `_i18n/zh-cn`、`_i18n/ja` 内部树，`_app` 多语 chunk 合并到共享根、四个 flavor 由 `BUILD_VERSION` 注入同一个应用版本（各树 HTML 内嵌 version 与 `_app/version.json` 一致）、各语言树 `html lang` 改写）与 `build-static/`（静态宿主单语，隐藏语言切换器）；`pnpm build:flavor` 跑单遍
 - `node scripts/detect-mirror-change.ts [--out=<路径>]` — 比对 R2 清单与 R2 基线对象（`meta/last-notified.json`）的投影，stdout 只打印 `true`/`false`，变动时可写出新基线供工作流推回
 - `node scripts/gen-static-mirror-pages.ts --target=<目标名> [--site-base=<域名>]` — 生成静态宿主的镜像页与共享表页（每表只生成一个查看/编辑合并页、统一注入 meta；编辑态由客户端的 `?edit=1` 解释）、两份站点清单与域配置提交物（`CNAME`/`.domains`，域名从配置解析；需先 `pnpm build`；默认写入 `build-static/`，`--build-dir` 可覆盖；从主站拉取已合成的镜像与共享清单（两次拉取任一失败即整步失败），需网络；`--site-base` 仅本地演练覆盖，此时不生成域配置）
 - `node scripts/fetch-tables.ts` — 本地跑数据管线（基线经 rclone 同步自 R2，用户层经站点 Worker 的内部接口读取，需要 `INTERNAL_API_TOKEN`；写 `tables/`、`indexes/`、`warnings.log`；产物已 gitignore）
