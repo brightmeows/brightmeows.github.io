@@ -136,6 +136,17 @@ repos:
         types: [text]
         pass_filenames: false
 
+  # 导出函数 JSDoc 覆盖：导出契约必须有非空文档描述；纯离线、毫秒级。
+  # oxlint 原生实现 jsdoc/require-jsdoc 后退役换规则（见 scripts/AGENTS.md）。
+  - repo: local
+    hooks:
+      - id: jsdoc-coverage
+        name: exported functions have JSDoc
+        entry: node scripts/check-jsdoc.ts
+        language: system
+        types: [text]
+        pass_filenames: false
+
   # 提交信息遵循 Conventional Commits（见 AGENTS.md“提交格式”）
   - repo: local
     hooks:

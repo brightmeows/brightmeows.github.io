@@ -18,6 +18,7 @@
 - `scripts/check-commit-msg.py` — Conventional Commits 格式校验（见根 `AGENTS.md` 的“提交格式”节），pre-commit commit-msg stage 与 CI 的 PR job 共用。
 - `scripts/check-site-config.ts` — 离线一致性校验（八条断言：`--target` 合法、wrangler routes ⊆ 配置、工作流无硬编码域名、CORS 覆盖全部目标、基线文件名与 `r2.baselineObject` 一致、版本来源唯一（devEngines 范围加工作流不传 pnpm 版本）、wrangler vars 与配置一致（含 `SITE_ORIGINS` 白名单与 `COOKIE_DOMAIN`）、静态目标 siteBase 主机与 target 名对齐）。`pnpm check:config` 调用它，pre-commit 与 CI 都跑。
 - `scripts/check-i18n-coverage.ts` — i18n 覆盖校验（六条断言：三语 key 对称、占位符一致、源码引用与 Worker 错误码常量表（`@brightmeows/mirror/api` 的 `API_ERROR_CODES` 全部值）存在于 messages、Worker 源码里的 `code:` 字面量视为漂移、死 key、src 残留中日韩字符（注释/console/测试/AGENTS/领域术语按豁免清单）、en 值漏翻（语言自称键豁免））。`pnpm check:i18n` 调用它，pre-commit 与 CI 都跑；豁免口径见脚本头注。
+- `scripts/check-jsdoc.ts` — 导出函数 JSDoc 覆盖校验：`export function` 与 `export const` 箭头/函数表达式必须有 `/** */` 且去掉 tag 行后有非空描述。范围 `src/`、`packages/`、`scripts/` 的非测试 `.ts`（`.svelte` 组件脚本与 `*.test.ts` 豁免，`.d.ts` 与 paraglide 生成物不参与）。`pnpm check:jsdoc` 调用它，pre-commit 与 CI 都跑；判定逻辑拆纯函数由相邻单测锁定。2026-10 查证时 oxlint 原生未实现 `jsdoc/require-jsdoc`（上游 tracking issue 里仍在 TODO）、JS 插件机制承载 eslint-plugin-jsdoc 仍为 alpha 且无兼容实测记录，故自造；oxlint 原生实现该规则后退役换规则。
 - `scripts/check-r2-cors.ts` — 只读比对桶 CORS policy 与配置（需 `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID`/`R2_BUCKET`）；不在日常 CI 跑，由 `config-drift.yml` 在配置变更的 PR 与手动触发时调用。
 - `scripts/site-config.ts` / `scripts/site-target.ts` — 读取并校验 `config/site.json`、打印某静态目标的站点基址、平台原域与 git-pages 服务主机名（`--legacy-base` / `--server`；供工作流把域名从 YAML 里移出）。
 

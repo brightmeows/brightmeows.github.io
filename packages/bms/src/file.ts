@@ -6,6 +6,7 @@
 
 export const BMS_FILE_EXTENSIONS: readonly string[] = [".bms", ".bme", ".bml", ".pms", ".bmson"];
 
+/** 按扩展名判定 BMS 系谱面文件（.bms/.bme/.bml/.pms/.bmson）。 */
 export function isBmsFileName(name: string): boolean {
   const lower = name.toLowerCase();
   return BMS_FILE_EXTENSIONS.some((extension) => lower.endsWith(extension));

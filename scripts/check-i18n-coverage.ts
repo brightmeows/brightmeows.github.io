@@ -57,6 +57,7 @@ export type Messages = Record<string, string>;
 /** 主站语言：key 对称与占位符一致性以 en 为基准逐语对照。 */
 export const LOCALES = ["en", "zh-cn", "ja"] as const;
 
+/** 解析并校验 messages JSON：必须是纯字符串值的对象。 */
 export function parseMessages(text: string): Messages {
   const data: unknown = JSON.parse(text);
   if (typeof data !== "object" || data === null || Array.isArray(data)) {
@@ -91,6 +92,7 @@ export function keyParityIssues(
   return issues;
 }
 
+/** 提取消息里的占位符名集合。 */
 export function placeholders(message: string): Set<string> {
   return new Set([...message.matchAll(PLACEHOLDER_PATTERN)].map((match) => match[1] ?? ""));
 }
@@ -149,6 +151,7 @@ export function refIssues(refs: string[], messages: Messages): string[] {
     .map((key) => `源码引用了 messages 中不存在的 key：${key}`);
 }
 
+/** 常量表错误码校验：必须在 api. 命名空间且每个码都有消息条目。 */
 export function workerCodeIssues(codes: string[], messages: Messages): string[] {
   const issues: string[] = [];
   for (const code of codes) {

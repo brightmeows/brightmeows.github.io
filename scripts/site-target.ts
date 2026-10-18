@@ -14,6 +14,7 @@ import { pathToFileURL } from "node:url";
 
 import { findStaticTarget, readSiteConfig, CONFIG_PATH } from "./site-config.ts";
 
+/** 静态目标的站点基址（尾部补斜杠）。 */
 export function resolveSiteBase(targetName: string): string {
   const target = findStaticTarget(readSiteConfig(CONFIG_PATH), targetName);
   return `${target.siteBase.replace(/\/+$/, "")}/`;

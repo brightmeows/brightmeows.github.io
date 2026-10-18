@@ -28,7 +28,8 @@
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
     "check:config": "node scripts/check-site-config.ts",
-    "check:i18n": "node scripts/check-i18n-coverage.ts"
+    "check:i18n": "node scripts/check-i18n-coverage.ts",
+    "check:jsdoc": "node scripts/check-jsdoc.ts"
   },
   "exports": {},
   "dependencies": {

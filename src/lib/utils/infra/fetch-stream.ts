@@ -11,6 +11,7 @@ export interface StreamProgress {
   total: number;
 }
 
+/** 流式拉取：携带进度回调，返回响应与完整字节（无 body 或无回调时一次读全）。 */
 export async function fetchStream(
   url: string,
   signal?: AbortSignal,

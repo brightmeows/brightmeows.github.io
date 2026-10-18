@@ -70,6 +70,7 @@ async function isRetryableAdd(env: Env, entry: AddedEntry, now: Date): Promise<b
   return !Number.isFinite(addedAt) || now.getTime() - addedAt > ADD_RETRY_AFTER_MS;
 }
 
+/** 添加表：登记添加请求并触发单表抓取工作流，返回的 id 供前端轮询。 */
 export async function handleAdd(request: Request, env: Env, now: Date): Promise<Response> {
   if (!checkAllowedOrigin(request, allowedOrigins(env))) {
     return failure(403, "Origin check failed", { code: API_ERROR_CODES.originCheckFailed });
@@ -193,6 +194,7 @@ export async function handleAdd(request: Request, env: Env, now: Date): Promise<
   });
 }
 
+/** 删除表：写黑名单（可见性优先）并移对象入回收站，作者 30 天内可恢复。 */
 export async function handleDelete(request: Request, env: Env, now: Date): Promise<Response> {
   if (!checkAllowedOrigin(request, allowedOrigins(env))) {
     return failure(403, "Origin check failed", { code: API_ERROR_CODES.originCheckFailed });
@@ -279,6 +281,7 @@ export async function handleDelete(request: Request, env: Env, now: Date): Promi
   });
 }
 
+/** 自助恢复：30 天内按目录名从回收站还原并移出黑名单。 */
 export async function handleRestore(request: Request, env: Env, now: Date): Promise<Response> {
   if (!checkAllowedOrigin(request, allowedOrigins(env))) {
     return failure(403, "Origin check failed", { code: API_ERROR_CODES.originCheckFailed });
@@ -346,6 +349,7 @@ export async function handleRestore(request: Request, env: Env, now: Date): Prom
   });
 }
 
+/** 查询抓取状态：前端轮询点，无记录返回 404。 */
 export async function handleStatus(env: Env, requestId: string): Promise<Response> {
   const status = await readFetchStatus(env, requestId);
   if (status === null) {

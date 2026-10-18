@@ -56,6 +56,7 @@ function base64UrlToBytes(text: string): Uint8Array {
   return bytes;
 }
 
+/** JSON 编码为 base64url（会话载荷与 state 的存储形态）。 */
 export function encodeJson(value: unknown): string {
   return bytesToBase64Url(new TextEncoder().encode(JSON.stringify(value)));
 }
@@ -157,6 +158,7 @@ export async function verifySessionToken(
   }
 }
 
+/** base64url 载荷解码回 JSON（字段结构由调用方校验）。 */
 export function decodeJson(payload: string): unknown {
   return JSON.parse(new TextDecoder().decode(base64UrlToBytes(payload)));
 }
@@ -175,6 +177,7 @@ export function sessionCookie(env: Env, token: string): string {
   return `${SESSION_COOKIE}=${token}; Path=/; Domain=${env.COOKIE_DOMAIN}; HttpOnly; Secure; SameSite=Lax; Max-Age=${SESSION_MAX_AGE_SECONDS}`;
 }
 
+/** 登出用的过期 cookie：同名同域、Max-Age=0 立即失效。 */
 export function clearSessionCookie(env: Env): string {
   return `${SESSION_COOKIE}=; Path=/; Domain=${env.COOKIE_DOMAIN}; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
 }

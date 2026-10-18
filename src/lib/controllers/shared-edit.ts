@@ -44,6 +44,7 @@ export interface SharedEditState {
   seed: { name: string; symbol: string } | undefined;
 }
 
+/** 共享表编辑页初始状态：loading 相、非新建。 */
 export function initialSharedEditState(): SharedEditState {
   return {
     phase: "loading",

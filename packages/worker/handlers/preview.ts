@@ -77,6 +77,7 @@ export function extractHeaderUrl(text: string, pageUrl: string): string | null {
   return null;
 }
 
+/** 表源预览：登录用户提交 URL，轻量三步提取 header 提示供添加表单预填。 */
 export async function handlePreview(request: Request, env: Env, now: Date): Promise<Response> {
   if (!checkAllowedOrigin(request, allowedOrigins(env))) {
     return failure(403, "Origin check failed", { code: API_ERROR_CODES.originCheckFailed });

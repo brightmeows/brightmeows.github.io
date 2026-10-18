@@ -72,6 +72,7 @@ export interface CourseModel {
   present: boolean;
 }
 
+/** 全空段位模型（扁平形态、无分组）。 */
 export function emptyCourseModel(): CourseModel {
   return { shape: "flat", groups: [], present: false };
 }

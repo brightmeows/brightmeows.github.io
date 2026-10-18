@@ -380,6 +380,7 @@ function parseRole(record: Record<string, unknown>, context: string): UserRole {
   return value;
 }
 
+/** 窄化添加记录行：字段缺失或类型不符即抛 TypeError，context 用于定位。 */
 export function parseAddedEntry(value: unknown, context: string): AddedEntry {
   const record = asRecord(value, context);
   return {
@@ -391,6 +392,7 @@ export function parseAddedEntry(value: unknown, context: string): AddedEntry {
   };
 }
 
+/** 窄化抓取结果行；symbol 可省略。 */
 export function parseFetchedEntry(value: unknown): FetchedEntry {
   const record = asRecord(value, "fetched");
   const symbol = optionalString(record, "symbol", "fetched");
@@ -404,6 +406,7 @@ export function parseFetchedEntry(value: unknown): FetchedEntry {
   };
 }
 
+/** 窄化删除黑名单行；trash_prefix 是回收站对象前缀，恢复要用。 */
 export function parseRemovedEntry(value: unknown, context: string): RemovedEntry {
   const record = asRecord(value, context);
   return {
@@ -416,6 +419,7 @@ export function parseRemovedEntry(value: unknown, context: string): RemovedEntry
   };
 }
 
+/** 窄化禁用行；目录名与禁用原因可省略。 */
 export function parseDisabledEntry(value: unknown, context: string): DisabledEntry {
   const record = asRecord(value, context);
   const dirName = optionalNonEmptyString(record, "dir_name", context);
@@ -429,6 +433,7 @@ export function parseDisabledEntry(value: unknown, context: string): DisabledEnt
   };
 }
 
+/** 窄化替换规则行。 */
 export function parseReplaceEntry(value: unknown, context: string): ReplaceRuleEntry {
   const record = asRecord(value, context);
   return {
@@ -439,6 +444,7 @@ export function parseReplaceEntry(value: unknown, context: string): ReplaceRuleE
   };
 }
 
+/** 窄化授权行；目录名可省略。 */
 export function parseAuthorizedEntry(value: unknown, context: string): AuthorizedEntry {
   const record = asRecord(value, context);
   const dirName = optionalNonEmptyString(record, "dir_name", context);
@@ -450,6 +456,7 @@ export function parseAuthorizedEntry(value: unknown, context: string): Authorize
   };
 }
 
+/** 窄化元数据覆盖行：只收非空字段，空值字段不进结果。 */
 export function parseMetaEntry(value: unknown, context: string): MetaOverride {
   const record = asRecord(value, context);
   const url = requiredString(record, "url", context);

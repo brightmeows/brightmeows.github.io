@@ -22,7 +22,7 @@
 pre-commit run --all-files --quiet    # 手动触发全部 hooks
 ```
 
-Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`、`pnpm check:bms`、`pnpm check:worker`、`pnpm check:config`、`pnpm check:i18n`、`pnpm test`、no-confusable-unicode、cn-quotes、site-config、i18n-coverage、conventional-commit（commit-msg stage 校验提交信息）。
+Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`、`pnpm check:bms`、`pnpm check:worker`、`pnpm check:config`、`pnpm check:i18n`、`pnpm check:jsdoc`、`pnpm test`、no-confusable-unicode、cn-quotes、site-config、i18n-coverage、jsdoc-coverage、conventional-commit（commit-msg stage 校验提交信息）。
 
 ### 手动命令
 
@@ -31,6 +31,7 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`�
 - `pnpm test`
 - `pnpm check:config` — 配置一致性校验（离线，毫秒级）
 - `pnpm check:i18n` — i18n 覆盖校验（三语 key 对称与占位符、引用/死 key、源码 CJK 残留、英文漏翻；离线，毫秒级）
+- `pnpm check:jsdoc` — 导出函数 JSDoc 覆盖校验（离线，毫秒级，见 `scripts/AGENTS.md`）
 
 域内命令见子文档：部署与 wrangler 相关在 `packages/worker/AGENTS.md`；管线、抓取、对拍与校验脚本在 `scripts/AGENTS.md`。
 
@@ -67,7 +68,7 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`�
 
 ## 架构边界
 
-- **纯 SSG（含一处边缘例外）** — `@sveltejs/adapter-static` + 全局 `prerender = true`，不加 server routes / API endpoints。例外是 Cloudflare Worker（`packages/worker/index.ts`）：`assets.run_worker_first` 为全量 `true`，每个请求先过 Worker——先做镜像表动态路由与写接口，再做边缘语言分发（按 cookie、无 cookie 时按 Accept-Language 把请求映射到 `build/` 里的 en 根树或 `_i18n/zh-cn`、`_i18n/ja` 内部树；内部前缀永不进入用户 URL，命中即 301 回干净路径），其余请求回落静态资源。多语产物由 `pnpm build`（`scripts/build-site.ts`）四遍 flavor 构建组装，静态宿主发单独的 `build-static/` 单语产物。
+- **纯 SSG（含一处边缘例外）** — `@sveltejs/adapter-static` + 全局 `prerender = true`，不加 server routes / API endpoints。例外是 Cloudflare Worker（`packages/worker/index.ts`）：`assets.run_worker_first` 为全量 `true`，每个请求先过 Worker——镜像表动态路由与写接口之外，还承担边缘语言分发（分发机制见 `packages/worker/AGENTS.md`），其余请求回落静态资源。多语产物由 `pnpm build`（构建机制见 `scripts/AGENTS.md`）四遍 flavor 构建组装，静态宿主发单独的 `build-static/` 单语产物。
 
 ### 数据流总图
 

@@ -240,6 +240,7 @@ export function isUnassigned(entry: Record<string, unknown>): boolean {
   return typeof level === "string" && level.trim() === "";
 }
 
+/** 统计等级未指派的条目数。 */
 export function countUnassigned(entries: readonly Record<string, unknown>[]): number {
   let count = 0;
   for (const entry of entries) {

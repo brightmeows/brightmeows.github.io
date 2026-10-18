@@ -17,6 +17,7 @@ export interface AnchorRect {
   right: number;
 }
 
+/** 锚定面板定位：顶部贴锚点下缘 8px，按对齐方向给出 left 或 right 偏移。 */
 export function computeAnchoredPanelPosition(
   anchorRect: AnchorRect,
   viewportWidth: number,
