@@ -248,7 +248,7 @@
                   >
                     <span>
                       {record.dir_name}
-                      <span class="ml-2 text-white-45">{formatRemovedAt(record.removed_at)}</span>
+                      <span class="ml-2 text-white-50">{formatRemovedAt(record.removed_at)}</span>
                     </span>
                     <button
                       class={btnGhostXs}

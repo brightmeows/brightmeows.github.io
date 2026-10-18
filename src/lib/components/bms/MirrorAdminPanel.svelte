@@ -116,7 +116,7 @@
             {#each overview.disabled as item (item.url)}
               <li class="flex flex-wrap items-center gap-2">
                 <span>
-                  {item.dir_name ?? item.url}{#if item.note}<span class="ml-1 text-white-45"
+                  {item.dir_name ?? item.url}{#if item.note}<span class="ml-1 text-white-50"
                       >{m["admin.note_wrap"]({ note: item.note })}</span
                     >{/if}
                 </span>
@@ -141,7 +141,7 @@
             {#each overview.trash as item (item.trash_prefix)}
               <li class="flex flex-wrap items-center gap-2">
                 <span
-                  >{item.dir_name}<span class="ml-2 text-white-45">{formatTime(item.uploaded)}</span
+                  >{item.dir_name}<span class="ml-2 text-white-50">{formatTime(item.uploaded)}</span
                   ></span
                 >
                 <button
@@ -164,11 +164,11 @@
           <ul class="flex flex-col gap-1 text-[0.85rem] text-white-70">
             {#each overview.audit as entry}
               <li>
-                <span class="text-white-45">{formatTime(entry.at)}</span>
+                <span class="text-white-50">{formatTime(entry.at)}</span>
                 <span class="ml-2 text-white-90">{entry.actor}</span>
                 <span class="ml-2 text-[#64b5f6]">{entry.action}</span>
                 <span class="ml-2">{entry.dir_name ?? entry.url ?? ""}</span>
-                {#if entry.detail}<span class="ml-2 text-white-45">{entry.detail}</span>{/if}
+                {#if entry.detail}<span class="ml-2 text-white-50">{entry.detail}</span>{/if}
               </li>
             {/each}
           </ul>

@@ -83,7 +83,7 @@
       bind:value={textValue}
       placeholder={m["editor.level_order_placeholder"]()}
       {disabled}></textarea>
-    <p class="mt-1 text-[0.8rem] text-white-45">{m["editor.level_order_text_hint"]()}</p>
+    <p class="mt-1 text-[0.8rem] text-white-50">{m["editor.level_order_text_hint"]()}</p>
   {:else}
     <ul class="flex flex-col gap-1.5">
       {#each levels as level, index (index)}

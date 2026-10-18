@@ -130,7 +130,7 @@
   <div class="mt-4">
     <div class="mb-2 flex flex-wrap items-center gap-2">
       <span class="text-[0.85rem] text-white-70">{m["editor.entry_custom_title"]()}</span>
-      <span class="text-[0.8rem] text-white-45">{m["editor.entry_custom_hint"]()}</span>
+      <span class="text-[0.8rem] text-white-50">{m["editor.entry_custom_hint"]()}</span>
       <button
         class="{btnGhost} ml-auto"
         type="button"
@@ -141,7 +141,7 @@
       </button>
     </div>
     {#if custom.length === 0}
-      <p class="text-[0.85rem] text-white-45">{m["editor.entry_custom_empty"]()}</p>
+      <p class="text-[0.85rem] text-white-50">{m["editor.entry_custom_empty"]()}</p>
     {:else}
       <div class="flex flex-col gap-2">
         {#each custom as row, index (index)}

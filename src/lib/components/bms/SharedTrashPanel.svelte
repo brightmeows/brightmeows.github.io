@@ -116,8 +116,8 @@
                 >
                   <span>
                     {record.name}
-                    <span class="ml-2 font-mono text-[0.8rem] text-white-45">{record.id}</span>
-                    <span class="ml-2 text-white-45">{formatRemovedAt(record.removed_at)}</span>
+                    <span class="ml-2 font-mono text-[0.8rem] text-white-50">{record.id}</span>
+                    <span class="ml-2 text-white-50">{formatRemovedAt(record.removed_at)}</span>
                   </span>
                   <button
                     class={btnGhostXs}
