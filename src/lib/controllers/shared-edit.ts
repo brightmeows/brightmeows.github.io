@@ -1,7 +1,7 @@
 /**
  * 共享表编辑页的编排：加载回退链、保存流与改名校验。
  *
- * 页面（src/routes/bms/table/shared/[id]/edit/+page.svelte）只持 `$state`
+ * 页面（src/routes/bms/table/shared/[id]/+page.svelte）只持 `$state`
  * 并在事件里调用本模块；DOM 与导航（confirm、window.location、goto）留在
  * 页面。取数经依赖注入收编——页面传真实现，单测传假实现，回退链的每条
  * 路径都是纯函数断言（见 shared-edit.test.ts）。
