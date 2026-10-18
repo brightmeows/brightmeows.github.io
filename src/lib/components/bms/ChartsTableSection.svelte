@@ -50,7 +50,7 @@
       <div class="mb-6 flex flex-wrap gap-3">
         {#each groups as group, idx (group.level)}
           <button
-            class="flex cursor-pointer items-center justify-center gap-2 rounded-[25px] border-2 border-transparent px-6 py-3 text-[1.1rem] font-bold text-white opacity-70 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:opacity-90 hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)] active:-translate-y-px active:opacity-90"
+            class="flex cursor-pointer items-center justify-center gap-2 rounded-[25px] border-2 border-transparent px-6 py-3 text-[1.1rem] font-bold text-white transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.2)] hover:brightness-110 active:-translate-y-px active:brightness-95"
             type="button"
             onclick={() => scrollToDifficultyGroup(group.level)}
             style={`background-color:${levelSegmentColor(

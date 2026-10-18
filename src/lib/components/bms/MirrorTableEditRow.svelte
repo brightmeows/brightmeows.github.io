@@ -57,7 +57,7 @@
   let tag2 = $state(untrack(() => override?.tag2 ?? ""));
   let tagOrder = $state(untrack(() => override?.tag_order ?? ""));
 
-  const helpText = "text-[0.8rem] text-white-45";
+  const helpText = "text-[0.8rem] text-white-50";
 
   const tagOrderPlaceholder = $derived.by(() => {
     if (shouldSuggestTagOrder(tag1, tag1Options)) {
@@ -153,7 +153,7 @@
             </button>
           {/if}
           {#if item.protected === true && canDelete && ondelete}
-            <span class="text-[0.8rem] text-white-45">{m["admin.delete_protected"]()}</span>
+            <span class="text-[0.8rem] text-white-50">{m["admin.delete_protected"]()}</span>
           {/if}
         </div>
       </section>
@@ -194,7 +194,7 @@
             <span class="text-[0.8rem] text-white-60">{m["admin.meta_tag1"]()}</span>
             <div class="grid grid-cols-2 gap-2">
               <div class="flex flex-col gap-1">
-                <label class="text-[0.75rem] text-white-45" for="mirror-edit-tag-order">
+                <label class="text-[0.75rem] text-white-50" for="mirror-edit-tag-order">
                   {m["admin.meta_tag_order"]()}
                 </label>
                 <input
@@ -209,7 +209,7 @@
                 />
               </div>
               <div class="flex flex-col gap-1">
-                <label class="text-[0.75rem] text-white-45" for="mirror-edit-tag1">
+                <label class="text-[0.75rem] text-white-50" for="mirror-edit-tag1">
                   {m["admin.meta_name"]()}
                 </label>
                 <input

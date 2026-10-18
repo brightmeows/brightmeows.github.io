@@ -154,7 +154,7 @@
   {#snippet courseCard(course: EditableCourse, groupIndex: number, courseIndex: number)}
     <div class="rounded-lg border border-white-15 bg-black-20 p-3">
       <div class="flex flex-wrap items-center gap-2">
-        <span class="text-[0.8rem] text-white-45">
+        <span class="text-[0.8rem] text-white-50">
           {m["editor.course_group_course"]({ group: groupIndex + 1, index: courseIndex + 1 })}
         </span>
         <div class="ml-auto flex items-center gap-1">
@@ -341,7 +341,7 @@
             {/each}
           </div>
         {:else}
-          <p class="text-[0.85rem] text-white-45">{m["editor.course_trophy_empty"]()}</p>
+          <p class="text-[0.85rem] text-white-50">{m["editor.course_trophy_empty"]()}</p>
         {/if}
       </div>
 
@@ -537,13 +537,13 @@
             {/each}
           </div>
         {:else}
-          <p class="text-[0.85rem] text-white-45">{m["editor.course_charts_empty"]()}</p>
+          <p class="text-[0.85rem] text-white-50">{m["editor.course_charts_empty"]()}</p>
         {/if}
       </div>
 
       {#if Object.keys(course.extra).length > 0}
         <details class="mt-2 rounded-md border border-white-10 p-2">
-          <summary class="cursor-pointer text-[0.78rem] text-white-45">
+          <summary class="cursor-pointer text-[0.78rem] text-white-50">
             {m["editor.course_extra"]()}
           </summary>
           <pre
@@ -603,7 +603,7 @@
               {@render courseCard(course, groupIndex, courseIndex)}
             {/each}
             {#if group.courses.length === 0}
-              <p class="text-[0.85rem] text-white-45">{m["editor.course_group_empty"]()}</p>
+              <p class="text-[0.85rem] text-white-50">{m["editor.course_group_empty"]()}</p>
             {/if}
           </div>
           <div class="mt-2">
@@ -628,7 +628,7 @@
         {@render courseCard(course, 0, courseIndex)}
       {/each}
       {#if (model.groups[0]?.courses.length ?? 0) === 0}
-        <p class="text-[0.85rem] text-white-45">{m["editor.course_empty"]()}</p>
+        <p class="text-[0.85rem] text-white-50">{m["editor.course_empty"]()}</p>
       {/if}
     </div>
   {/if}

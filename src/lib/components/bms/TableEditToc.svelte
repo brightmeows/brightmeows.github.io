@@ -74,7 +74,7 @@
 
     {#if levels.length > 0}
       <div class="mt-2 border-t border-white-10 pt-2">
-        <div class="px-3 pb-1 text-[0.8rem] text-white-45">
+        <div class="px-3 pb-1 text-[0.8rem] text-white-50">
           {m["editor.entries_filter_level"]()}
         </div>
         {#each levels as group (group.unassigned ? "__unassigned__" : group.level)}

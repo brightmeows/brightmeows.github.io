@@ -3,9 +3,12 @@ import type { ChartData, DifficultyGroup } from "./format.ts";
 /**
  * 难度分组的分段配色：查看器的等级跳转胶囊与编辑器的分组表头共用一套颜色，
  * 同一分组的色值在两态保持一致。
+ *
+ * 色板取“白字对比度 ≥ 4.5:1”的深色档（axe 校验），胶囊与分组表头都是白字：
+ * 浅一档的 Material 500 级颜色（如 #4caf50）白字只有 2.7:1，不要换回去。
  */
 export function levelSegmentColor(index: number, total: number): string {
-  const palette = ["#4caf50", "#2196f3", "#ff9800", "#f44336", "#ce50d8", "#9c27b0"] as const;
+  const palette = ["#2e7d32", "#1565c0", "#c2410c", "#c62828", "#8e24aa", "#6a1b9a"] as const;
   if (total <= 0) return palette[1];
   const bins = palette.length;
   const size = Math.ceil(total / bins);

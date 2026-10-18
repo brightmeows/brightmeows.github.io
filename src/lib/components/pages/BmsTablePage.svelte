@@ -281,7 +281,7 @@
       </div>
     {/if}
     {#if isEdit && model.ready && model.draftStatusText !== ""}
-      <div class="mt-2 text-[0.85rem] text-white-45">{model.draftStatusText}</div>
+      <div class="mt-2 text-[0.85rem] text-white-50">{model.draftStatusText}</div>
     {/if}
     {#if model.ready && model.tableStats}
       <div class="mt-2 text-[1.2rem] text-white-70 italic">
