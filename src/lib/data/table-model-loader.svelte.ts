@@ -112,8 +112,11 @@ export function createTableLoader(deps: TableLoaderDeps) {
     if (seed !== undefined) {
       deps.setSeedIdentity(seed);
     }
-    await deps.prepareNewTable();
+    // 先清空再应用草稿：认领（另存为我的共享表）会把源表的头部与条目一起
+    // 搬进来，清空若排在 prepareNewTable 之后会把刚套用的条目抹掉，
+    // 认领结果只剩头部字段。
     deps.setEntries([]);
+    await deps.prepareNewTable();
     headerLoadState = "loaded";
     dataLoadState = "loaded";
   }
