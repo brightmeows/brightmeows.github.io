@@ -9,10 +9,11 @@
  * - 站点客户端（src/lib/data/）：端点函数用窄化函数兜底响应字段；
  * - 脚本内部客户端（scripts/internal-api.ts）：内部端点的类型来源。
  *
- * 行为冻结口径：窄化函数的兜底语义与 2026-10 之前的客户端实现逐字段一致
- * （缺失字段回落默认值或请求入参）；admin 端点历史上是类型断言、无客户端
- * 运行时校验，契约只提供类型不提供窄化。窄化不做 i18n——校验失败返回
- * null 或兜底值，错误文案由调用方翻译（内核无消息依赖）。
+ * 兜底语义由 api.test.ts 锁定：非 admin 端点与 2026-10 之前的客户端实现
+ * 逐字段一致（缺失字段回落默认值或请求入参）；admin 端点窄化自 2026-10
+ * 新增（此前客户端是类型断言、无运行时校验），语义见各函数注释。窄化
+ * 不做 i18n——校验失败返回 null 或兜底值，错误文案由调用方翻译（内核无
+ * 消息依赖）。
  *
  * 约束与镜像内核一致：零依赖、可擦除语法、相对导入带 .ts 扩展名。
  */
@@ -290,7 +291,7 @@ export function narrowFetchStatus(body: unknown, fallbackId: string): FetchStatu
 }
 
 // ---------------------------------------------------------------------------
-// 站长治理（/api/admin/*，类型断言、无客户端运行时校验）
+// 站长治理（/api/admin/*）
 // ---------------------------------------------------------------------------
 
 /** 回收站条目（表级聚合，取同一张表最近一次删除）。 */
@@ -327,6 +328,228 @@ export interface AdminMutationResponse {
   ok: boolean;
   deployTriggered: boolean;
   restoredObjects?: number;
+}
+
+function asString(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
+}
+
+function asOptString(value: unknown): string | undefined {
+  return typeof value === "string" ? value : undefined;
+}
+
+function asRole(value: unknown): UserRole {
+  return value === "admin" ? "admin" : "user";
+}
+
+/** 条目数组窄化：非数组返回空，缺必须字段的条目跳过。 */
+function narrowEntries<T>(
+  value: unknown,
+  narrowItem: (item: Record<string, unknown>) => T | null
+): T[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (!isRecord(item)) return [];
+    const narrowed = narrowItem(item);
+    return narrowed === null ? [] : [narrowed];
+  });
+}
+
+function narrowAuthorized(item: Record<string, unknown>): AuthorizedEntry | null {
+  const url = asString(item.url);
+  const author = asString(item.author);
+  const authorizedAt = asString(item.authorized_at);
+  if (url === null || author === null || authorizedAt === null) return null;
+  const dirName = asOptString(item.dir_name);
+  return {
+    url,
+    author,
+    authorized_at: authorizedAt,
+    ...(dirName === undefined ? {} : { dir_name: dirName }),
+  };
+}
+
+function narrowDisabled(item: Record<string, unknown>): DisabledEntry | null {
+  const url = asString(item.url);
+  const author = asString(item.author);
+  const disabledAt = asString(item.disabled_at);
+  if (url === null || author === null || disabledAt === null) return null;
+  const dirName = asOptString(item.dir_name);
+  const note = asOptString(item.note);
+  return {
+    url,
+    author,
+    disabled_at: disabledAt,
+    ...(dirName === undefined ? {} : { dir_name: dirName }),
+    ...(note === undefined ? {} : { note }),
+  };
+}
+
+function narrowReplaceRule(item: Record<string, unknown>): ReplaceRuleEntry | null {
+  const from = asString(item.from);
+  const to = asString(item.to);
+  const author = asString(item.author);
+  const updatedAt = asString(item.updated_at);
+  if (from === null || to === null || author === null || updatedAt === null) return null;
+  return { from, to, author, updated_at: updatedAt };
+}
+
+function narrowMetaOverride(item: Record<string, unknown>): MetaOverride | null {
+  const url = asString(item.url);
+  const updatedAt = asString(item.updated_at);
+  if (url === null || updatedAt === null) return null;
+  const name = asOptString(item.name);
+  const symbol = asOptString(item.symbol);
+  const tag1 = asOptString(item.tag1);
+  const tag2 = asOptString(item.tag2);
+  const tagOrder = asOptString(item.tag_order);
+  return {
+    url,
+    updated_at: updatedAt,
+    ...(name === undefined ? {} : { name }),
+    ...(symbol === undefined ? {} : { symbol }),
+    ...(tag1 === undefined ? {} : { tag1 }),
+    ...(tag2 === undefined ? {} : { tag2 }),
+    ...(tagOrder === undefined ? {} : { tag_order: tagOrder }),
+  };
+}
+
+function narrowAdded(item: Record<string, unknown>): AddedEntry | null {
+  const id = asString(item.id);
+  const url = asString(item.url);
+  const author = asString(item.author);
+  const addedAt = asString(item.added_at);
+  if (id === null || url === null || author === null || addedAt === null) return null;
+  return { id, url, author, role: asRole(item.role), added_at: addedAt };
+}
+
+function narrowRemovedEntry(item: Record<string, unknown>): RemovedEntry | null {
+  const url = asString(item.url);
+  const dirName = asString(item.dir_name);
+  const author = asString(item.author);
+  const removedAt = asString(item.removed_at);
+  const trashPrefix = asString(item.trash_prefix);
+  if (
+    url === null ||
+    dirName === null ||
+    author === null ||
+    removedAt === null ||
+    trashPrefix === null
+  ) {
+    return null;
+  }
+  return {
+    url,
+    dir_name: dirName,
+    author,
+    role: asRole(item.role),
+    removed_at: removedAt,
+    trash_prefix: trashPrefix,
+  };
+}
+
+const AUDIT_ACTIONS: readonly AuditEntry["action"][] = [
+  "add",
+  "remove",
+  "restore",
+  "authorize",
+  "deauthorize",
+  "disable",
+  "enable",
+  "replace",
+  "meta",
+  "migrate",
+  "shared_create",
+  "shared_save",
+  "shared_rename",
+  "shared_remove",
+  "shared_restore",
+];
+
+function isAuditAction(value: string): value is AuditEntry["action"] {
+  return AUDIT_ACTIONS.some((action) => action === value);
+}
+
+function narrowAudit(item: Record<string, unknown>): AuditEntry | null {
+  const at = asString(item.at);
+  const actor = asString(item.actor);
+  const action = asString(item.action);
+  if (at === null || actor === null || action === null || !isAuditAction(action)) return null;
+  const url = asOptString(item.url);
+  const dirName = asOptString(item.dir_name);
+  const detail = asOptString(item.detail);
+  const count = typeof item.count === "number" ? item.count : undefined;
+  return {
+    at,
+    actor,
+    role: asRole(item.role),
+    action,
+    ...(url === undefined ? {} : { url }),
+    ...(dirName === undefined ? {} : { dir_name: dirName }),
+    ...(detail === undefined ? {} : { detail }),
+    ...(count === undefined ? {} : { count }),
+  };
+}
+
+function narrowTrashEntry(item: Record<string, unknown>): TrashEntry | null {
+  const trashPrefix = asString(item.trash_prefix);
+  const dirName = asString(item.dir_name);
+  const stamp = asString(item.stamp);
+  if (
+    trashPrefix === null ||
+    dirName === null ||
+    stamp === null ||
+    typeof item.uploaded !== "number"
+  ) {
+    return null;
+  }
+  return { trash_prefix: trashPrefix, dir_name: dirName, stamp, uploaded: item.uploaded };
+}
+
+/**
+ * 后台总览窄化：整体非对象返回 null（调用方按非法响应处理）；字段级兜底——
+ * counts 缺失回落 0，条目数组非数组返回空、缺必须字段的条目跳过（与
+ * narrowRemovedEntries 同一口径），可选字符串字段非法时丢弃该字段。
+ */
+export function narrowAdminOverview(body: unknown): AdminOverviewResponse | null {
+  if (!isRecord(body)) return null;
+  const counts = isRecord(body.counts) ? body.counts : {};
+  const count = (value: unknown): number => (typeof value === "number" ? value : 0);
+  return {
+    counts: {
+      authorized: count(counts.authorized),
+      disabled: count(counts.disabled),
+      replace: count(counts.replace),
+      meta: count(counts.meta),
+      added: count(counts.added),
+      removed: count(counts.removed),
+      trash: count(counts.trash),
+    },
+    authorized: narrowEntries<AuthorizedEntry>(body.authorized, narrowAuthorized),
+    disabled: narrowEntries<DisabledEntry>(body.disabled, narrowDisabled),
+    replace: narrowEntries<ReplaceRuleEntry>(body.replace, narrowReplaceRule),
+    meta: narrowEntries<MetaOverride>(body.meta, narrowMetaOverride),
+    added: narrowEntries<AddedEntry>(body.added, narrowAdded),
+    removed: narrowEntries<RemovedEntry>(body.removed, narrowRemovedEntry),
+    audit: narrowEntries<AuditEntry>(body.audit, narrowAudit),
+    trash: narrowEntries<TrashEntry>(body.trash, narrowTrashEntry),
+  };
+}
+
+/**
+ * 站长写操作响应窄化（全量兜底）：2xx 表示变更已在服务端发生，
+ * 形状异常时 ok 恒为 true；deployTriggered 仅显式 true 为真，
+ * restoredObjects 仅数值时保留。
+ */
+export function narrowAdminMutation(body: unknown): AdminMutationResponse {
+  if (!isRecord(body)) return { ok: true, deployTriggered: false };
+  const restoredObjects =
+    typeof body.restoredObjects === "number" ? body.restoredObjects : undefined;
+  return {
+    ok: body.ok !== false,
+    deployTriggered: body.deployTriggered === true,
+    ...(restoredObjects === undefined ? {} : { restoredObjects }),
+  };
 }
 
 // ---------------------------------------------------------------------------

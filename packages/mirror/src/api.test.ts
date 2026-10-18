@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   API_ERROR_CODES,
   narrowAdd,
+  narrowAdminMutation,
+  narrowAdminOverview,
   narrowDelete,
   narrowFetchStatus,
   narrowMe,
@@ -275,6 +277,97 @@ describe("shared 端点窄化", () => {
     expect(narrowSharedRestore({}, "fallback")).toEqual({
       id: "fallback",
       restoredObjects: 0,
+      deployTriggered: false,
+    });
+  });
+});
+
+describe("narrowAdminOverview", () => {
+  it("形状完好时原样收下（counts 与全部条目数组）", () => {
+    const body = {
+      counts: { authorized: 1, disabled: 2, replace: 3, meta: 4, added: 5, removed: 6, trash: 7 },
+      authorized: [{ url: "u", dir_name: "d", author: "a", authorized_at: "t" }],
+      disabled: [{ url: "u", author: "a", disabled_at: "t", note: "n" }],
+      replace: [{ from: "f", to: "t", author: "a", updated_at: "u" }],
+      meta: [{ url: "u", name: "n", updated_at: "t" }],
+      added: [{ id: "i", url: "u", author: "a", role: "admin", added_at: "t" }],
+      removed: [
+        { url: "u", dir_name: "d", author: "a", role: "user", removed_at: "t", trash_prefix: "p" },
+      ],
+      audit: [{ at: "t", actor: "a", role: "user", action: "add", url: "u" }],
+      trash: [{ trash_prefix: "p", dir_name: "d", stamp: "s", uploaded: 1 }],
+    };
+    expect(narrowAdminOverview(body)).toEqual(body);
+  });
+
+  it("整体非对象返回 null（调用方按非法响应处理）", () => {
+    expect(narrowAdminOverview(null)).toBeNull();
+    expect(narrowAdminOverview("nope")).toBeNull();
+    expect(narrowAdminOverview([])).toBeNull();
+  });
+
+  it("字段级兑底：counts 缺失回落 0，数组缺失回落空", () => {
+    expect(narrowAdminOverview({})).toEqual({
+      counts: { authorized: 0, disabled: 0, replace: 0, meta: 0, added: 0, removed: 0, trash: 0 },
+      authorized: [],
+      disabled: [],
+      replace: [],
+      meta: [],
+      added: [],
+      removed: [],
+      audit: [],
+      trash: [],
+    });
+  });
+
+  it("缺必须字段的条目跳过，role 回落 user，可选字段非法时丢弃", () => {
+    const result = narrowAdminOverview({
+      authorized: [
+        { url: "ok", author: "a", authorized_at: "t", dir_name: "d" },
+        { url: "no-author", authorized_at: "t" },
+        { url: 42, author: "a", authorized_at: "t" },
+        "junk",
+      ],
+      added: [{ id: "i", url: "u", author: "a", role: "boss", added_at: "t" }],
+      audit: [
+        { at: "t", actor: "a", role: "user", action: "add" },
+        { at: "t", actor: "a", role: "user", action: "unknown_action" },
+        { actor: "a", action: "add" },
+      ],
+      trash: [{ trash_prefix: "p", dir_name: "d", stamp: "s", uploaded: "nan" }],
+    });
+    expect(result).not.toBeNull();
+    expect(result!.authorized).toEqual([
+      { url: "ok", author: "a", authorized_at: "t", dir_name: "d" },
+    ]);
+    expect(result!.added).toEqual([
+      { id: "i", url: "u", author: "a", role: "user", added_at: "t" },
+    ]);
+    expect(result!.audit).toEqual([{ at: "t", actor: "a", role: "user", action: "add" }]);
+    expect(result!.trash).toEqual([]);
+  });
+});
+
+describe("narrowAdminMutation", () => {
+  it("形状完好时原样收下（含 restoredObjects）", () => {
+    expect(narrowAdminMutation({ ok: true, deployTriggered: true })).toEqual({
+      ok: true,
+      deployTriggered: true,
+    });
+    expect(narrowAdminMutation({ ok: true, deployTriggered: false, restoredObjects: 3 })).toEqual({
+      ok: true,
+      deployTriggered: false,
+      restoredObjects: 3,
+    });
+  });
+
+  it("全量兑底：非对象 ok 恒为 true（2xx 表示变更已发生）", () => {
+    expect(narrowAdminMutation(null)).toEqual({ ok: true, deployTriggered: false });
+    expect(narrowAdminMutation({})).toEqual({ ok: true, deployTriggered: false });
+    expect(
+      narrowAdminMutation({ ok: false, deployTriggered: "yes", restoredObjects: "x" })
+    ).toEqual({
+      ok: false,
       deployTriggered: false,
     });
   });
