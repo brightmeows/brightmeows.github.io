@@ -57,11 +57,20 @@
 
   let { source, publish = {}, capabilities = {}, actions, management }: Props = $props();
 
+  // 等级参考的状态属主是本组件：LevelRefTable 自取数并经 bind 回写；
+  // 模型只需知道数据是否就绪（目录与编辑分区列表用），经输入 getter 注入。
+  let levelRefHasData = $state(false);
+  let levelRefLoadState = $state<"idle" | "loading" | "done" | "not-found" | "error">("idle");
+  const showLevelRefPane = $derived(
+    levelRefLoadState === "idle" || levelRefLoadState === "loading" || levelRefHasData
+  );
+
   // getter 传递：props 对象经闭包读取，模型内的 $derived 跟踪其响应式变化
   const model = createTableModel({
     source: () => source,
     publish: () => publish,
     capabilities: () => capabilities,
+    levelRefHasData: () => levelRefHasData,
   });
   const headerUrl = $derived(source.headerUrl);
   const saveAsShared = $derived(publish.saveAsShared ?? "none");
@@ -145,7 +154,7 @@
           ? [headerErrorPane]
           : [
               ...(model.courseGroups.length > 0 ? [coursePane] : []),
-              ...(model.showLevelRefPane ? [levelRefPane] : []),
+              ...(showLevelRefPane ? [levelRefPane] : []),
               ...(model.dataLoadState === "idle" || model.dataLoadState === "loading"
                 ? [dataLoadingPane]
                 : []),
@@ -389,8 +398,8 @@
   <div id="level-ref" class="scroll-mt-5">
     <LevelRefTable
       headerUrl={headerUrl ?? ""}
-      bind:hasData={model.levelRefHasData}
-      bind:loadState={model.levelRefLoadState}
+      bind:hasData={levelRefHasData}
+      bind:loadState={levelRefLoadState}
     />
   </div>
 {/snippet}
@@ -448,8 +457,8 @@
   <section id="level-ref" class="scroll-mt-24">
     <LevelRefTable
       headerUrl={headerUrl ?? ""}
-      bind:hasData={model.levelRefHasData}
-      bind:loadState={model.levelRefLoadState}
+      bind:hasData={levelRefHasData}
+      bind:loadState={levelRefLoadState}
     />
   </section>
 {/snippet}

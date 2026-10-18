@@ -18,26 +18,22 @@ import { withLocalDataUrl } from "@brightmeows/mirror/shared";
 import {
   buildSharedExportPackage,
   commitEditorSave,
-  decideNewTableDraft,
   planEditorSave,
   planSaveAsShared,
   type EditorNotice,
 } from "#lib/controllers/editor.js";
-import { fetchBmsHeader, fetchBmsTableData } from "#lib/data/api/bms-data.js";
-import {
-  deleteDraft,
-  loadDraft,
-  saveDraft,
-  takeDraftClaim,
-  writeDraftClaim,
-  type DraftWriteResult,
-} from "#lib/data/api/table-drafts.js";
+import { writeDraftClaim, deleteDraft } from "#lib/data/api/table-drafts.js";
 import { sharedNewSeed } from "#lib/data/store/shared-new.svelte.js";
+import {
+  createDraftLifecycle,
+  formatClock,
+  type DraftLifecycle,
+} from "#lib/data/table-model-drafts.svelte.js";
+import { createTableLoader } from "#lib/data/table-model-loader.svelte.js";
 import { m } from "#lib/paraglide/messages.js";
-import type { EditTocLevel, EditTocSection, ProgressCallback } from "#lib/types/bms-view.js";
+import type { EditTocLevel, EditTocSection } from "#lib/types/bms-view.js";
 import type { TocItem } from "#lib/types/ui.js";
 import { downloadJsonFile } from "#lib/utils/infra/download.js";
-import { resolveUrl } from "#lib/utils/infra/url.js";
 import { goto } from "$app/navigation";
 
 /** 来源：从哪里加载、草稿存哪。 */
@@ -75,20 +71,20 @@ export interface TablePageCapabilities {
   seed?: { name: string; symbol: string } | undefined;
 }
 
-type LoadPhase = "loading" | "loaded" | "error";
-type DraftStatus = "idle" | "saving" | "saved" | "unavailable" | "quota" | "error";
-
 /**
- * 难度表页面的页面模型：内存模型（header 字段、条目、段位）、两段式加载
- * （header 先行、data 随后、草稿探查殿后）、草稿生命周期（防抖落盘、恢复
- * 与放弃）、保存发布与导出。路由组件持有查看/编辑模式切换（pushState）与
- * 模板；本模型不触碰模式态。交互原语级的纯决策在 controllers/editor 与
- * @brightmeows/bms/editor（均有测试），这里是编排胶水（按既有口径不测）。
+ * 难度表页面的页面模型：内存模型（header 字段、条目、段位）、两段式加载、
+ * 草稿生命周期、保存发布与导出的编排。加载与草稿两个子域拆在同目录的
+ * table-model-loader / table-model-drafts（行为冻结拆分）；路由组件持有
+ * 查看/编辑模式切换（pushState）与模板；本模型不触碰模式态。交互原语级的
+ * 纯决策在 controllers/editor 与 @brightmeows/bms/editor（均有测试），
+ * 这里是编排胶水（按既有口径不测）。
  */
 export interface TableModelInput {
   source: () => TablePageSource;
   publish: () => TablePagePublish;
   capabilities: () => TablePageCapabilities;
+  /** 等级参考数据是否已加载（状态由页面的 LevelRefTable 回写）。 */
+  levelRefHasData?: (() => boolean) | undefined;
 }
 
 /** 难度表页内存模型工厂：两段式加载、草稿与保存发布的响应式编排（输入经 getter 保持响应式）。 */
@@ -106,6 +102,7 @@ export function createTableModel(input: TableModelInput) {
   const canWrite = $derived(Boolean(capabilities().canWrite ?? false));
   const createMode = $derived(capabilities().createMode ?? false);
   const seed = $derived(capabilities().seed);
+  const levelRefHasData = $derived(input.levelRefHasData?.() ?? false);
 
   // ---- 模型（查看态与编辑态共享） ----
   let name = $state("");
@@ -116,28 +113,12 @@ export function createTableModel(input: TableModelInput) {
   let extraHeader = $state<Record<string, unknown>>({});
   let courseModel = $state<CourseModel>(emptyCourseModel());
   let entries = $state<ChartData[]>([]);
+  let levelHints = $state<Record<string, string>>({});
 
-  // ---- 加载状态（header 与 data 两段，保持查看器的独立错误处理） ----
-  let headerLoadState = $state<LoadPhase>("loading");
-  let headerError = $state<string | null>(null);
-  let dataLoadState = $state<"idle" | "loading" | "loaded" | "error">("idle");
-  let dataError = $state<string | null>(null);
-  let dataSourceUrl = $state<string | null>(null);
-  let dataFetchUrl = $state<string | null>(null);
-  let loadPercent = $state(0);
-  let loadMessage = $state<string>(m["editor.loading"]());
-  let loadDetail = $state("");
-
-  // ---- 编辑与草稿状态 ----
-  let dirty = $state<boolean>(false);
+  // ---- 编辑与保存状态（草稿域状态在 createDraftLifecycle） ----
   let busy = $state(false);
-  let pendingDraft = $state<DraftPayload | null>(null);
-  let draftStatus = $state<DraftStatus>("idle");
-  let lastSavedAt = $state<string | null>(null);
   let baselineUpdatedAt = $state<string | undefined>(undefined);
   let notice = $state<EditorNotice | null>(null);
-  let levelHints = $state<Record<string, string>>({});
-  let draftChecked = $state(false);
 
   // ---- 条目多选等级筛选（目录复选框与条目表共用） ----
   let selectedLevels = $state<Set<string>>(new Set());
@@ -146,20 +127,12 @@ export function createTableModel(input: TableModelInput) {
     levelFilterFromSelection(selectedLevels, includeUnassigned)
   );
 
-  // ---- 等级参考（查看态与编辑态共用同一加载状态） ----
-  let levelRefHasData = $state<boolean>(false);
-  let levelRefLoadState = $state<"idle" | "loading" | "done" | "not-found" | "error">("idle");
-  const showLevelRefPane = $derived(
-    levelRefLoadState === "idle" || levelRefLoadState === "loading" || levelRefHasData
-  );
-
   // ---- 派生：查看态展示 ----
   const headerRecord = $derived(buildHeader());
   const groups = $derived(groupChartsByLevel(entries));
   const tableStats = $derived(computeTableStats(groups));
   const sortedDifficultyGroups = $derived(sortDifficultyGroups(groups, levels));
   const courseGroups = $derived(resolveCourses(headerRecord.course, entries));
-  const ready = $derived(headerLoadState === "loaded" && dataLoadState === "loaded");
   const canSave = $derived(onSave !== undefined && canWrite);
   const saveLabel = $derived(
     busy ? m["editor.saving"]() : createMode ? m["editor.create_shared"]() : m["editor.save"]()
@@ -246,7 +219,7 @@ export function createTableModel(input: TableModelInput) {
     return items;
   });
 
-  // ---- 模型与加载 ----
+  // ---- 模型装配 ----
   function applyHeaderState(header: Record<string, unknown>): void {
     const state = editorHeaderState(header);
     name = state.name;
@@ -267,129 +240,18 @@ export function createTableModel(input: TableModelInput) {
     );
   }
 
-  const progressCallback: ProgressCallback = (event) => {
-    loadPercent = event.percent;
-    loadMessage = event.message;
-    loadDetail = event.detail ?? "";
-  };
-
   function markDirty(): void {
-    dirty = true;
+    drafts.markEdited();
     notice = null;
   }
 
-  function applyDraftPayload(draft: DraftPayload): void {
+  /** 草稿内容套用到模型（草稿侧的落账在 createDraftLifecycle.restore）。 */
+  function adoptDraft(draft: DraftPayload): void {
     applyHeaderState(draft.header);
     entries = draft.data.map((item) => ({ ...item }));
     baselineUpdatedAt = draft.baselineUpdatedAt;
-    pendingDraft = null;
-    dirty = true;
-    draftStatus = "saved";
-    lastSavedAt = draft.savedAt;
     notice = null;
   }
-
-  async function loadHeader(): Promise<void> {
-    if (headerUrl === null) {
-      await loadNewTable();
-      return;
-    }
-    headerLoadState = "loading";
-    headerError = null;
-    loadPercent = 0;
-    loadMessage = m["editor.loading"]();
-    loadDetail = "";
-    if (baselineUpdatedAt === undefined && capabilities().initialBaselineUpdatedAt !== undefined) {
-      baselineUpdatedAt = capabilities().initialBaselineUpdatedAt;
-    }
-    try {
-      const header = await fetchBmsHeader(headerUrl, progressCallback);
-      applyHeaderState(header);
-      const dataUrl =
-        typeof header.data_url === "string" && header.data_url !== ""
-          ? header.data_url
-          : dataUrlFallback;
-      dataSourceUrl = dataUrl;
-      headerLoadState = "loaded";
-      if (dataUrl === null) {
-        dataError = m["table.data_url_missing"]();
-        dataLoadState = "error";
-        return;
-      }
-      void loadData(dataUrl, headerUrl);
-    } catch (error) {
-      headerError = error instanceof Error ? error.message : m["common.unknown_error"]();
-      headerLoadState = "error";
-      console.error("加载BMS难度表header失败:", error);
-    }
-  }
-
-  async function loadData(dataUrl: string, baseUrl: string | null): Promise<void> {
-    dataLoadState = "loading";
-    dataError = null;
-    dataFetchUrl = null;
-    entries = [];
-    loadPercent = 0;
-    loadMessage = m["table.loading_charts"]();
-    loadDetail = "";
-    try {
-      const result = await fetchBmsTableData(dataUrl, resolveUrl(baseUrl ?? ""), progressCallback);
-      entries = result.data;
-      dataFetchUrl = result.fetchUrl;
-      dataLoadState = "loaded";
-      void discoverDraft();
-    } catch (error) {
-      dataError = error instanceof Error ? error.message : m["common.unknown_error"]();
-      dataLoadState = "error";
-      console.error("加载BMS谱面数据失败:", error);
-    }
-  }
-
-  /** 新表（尚未创建的共享表）：种子、自有草稿与认领的三向决策。 */
-  async function loadNewTable(): Promise<void> {
-    headerLoadState = "loading";
-    if (seed !== undefined) {
-      name = seed.name;
-      symbol = seed.symbol;
-    }
-    const own = await loadDraft(draftKey);
-    const claim = takeDraftClaim();
-    const claimed = claim !== null ? await loadDraft(claim.sourceDraftKey) : null;
-    const decision = decideNewTableDraft(own, claim, claimed);
-    if (decision.action === "claim") {
-      applyDraftPayload(decision.draft);
-    } else if (decision.action === "pending") {
-      pendingDraft = decision.draft;
-    }
-    entries = [];
-    headerLoadState = "loaded";
-    dataLoadState = "loaded";
-  }
-
-  /** 加载完成后的草稿探查（只做一次，放弃修改后重置再查）。 */
-  async function discoverDraft(): Promise<void> {
-    if (draftChecked) return;
-    draftChecked = true;
-    pendingDraft = await loadDraft(draftKey);
-  }
-
-  function retryData(): void {
-    if (dataSourceUrl !== null) void loadData(dataSourceUrl, headerUrl);
-  }
-
-  function retryAll(): void {
-    void loadHeader();
-  }
-
-  // ---- 草稿自动落盘（防抖 1.2 秒；草稿未决时不写，避免覆盖待恢复内容） ----
-  $effect(() => {
-    if (!dirty || !ready || pendingDraft !== null) return;
-    const payload = buildDraftPayload();
-    const timer = setTimeout(() => {
-      void persistDraft(payload);
-    }, 1200);
-    return () => clearTimeout(timer);
-  });
 
   function buildDraftPayload(): DraftPayload {
     return {
@@ -400,76 +262,47 @@ export function createTableModel(input: TableModelInput) {
     };
   }
 
-  async function persistDraft(payload: DraftPayload): Promise<DraftWriteResult> {
-    draftStatus = "saving";
-    // Svelte 5 的 $state 是深层代理，IndexedDB 结构克隆不接受代理对象，先取静态快照
-    const result = await saveDraft(draftKey, $state.snapshot(payload));
-    if (result === "ok") {
-      draftStatus = "saved";
-      lastSavedAt = payload.savedAt;
-    } else {
-      draftStatus = result;
-    }
-    return result;
-  }
-
-  const draftGuardActive = $derived(
-    dirty && (draftStatus === "unavailable" || draftStatus === "quota" || draftStatus === "error")
-  );
-  const draftStatusText = $derived.by(() => {
-    switch (draftStatus) {
-      case "idle":
-        return "";
-      case "saving":
-        return m["editor.draft_saving"]();
-      case "saved":
-        return lastSavedAt === null
-          ? ""
-          : m["editor.draft_saved_at"]({ time: formatClock(lastSavedAt) });
-      case "unavailable":
-      case "quota":
-        return m["editor.draft_unavailable"]();
-      case "error":
-        return m["editor.draft_error"]();
-      default:
-        return "";
-    }
+  // ---- 子域：草稿生命周期与两段式加载（单向依赖：loader 引用 drafts） ----
+  const drafts: DraftLifecycle = createDraftLifecycle({
+    draftKey: () => draftKey,
+    isReady: () => ready,
+    capturePayload: buildDraftPayload,
+    adoptDraft,
+  });
+  const loader = createTableLoader({
+    headerUrl: () => headerUrl,
+    dataUrlFallback: () => dataUrlFallback,
+    seed: () => seed,
+    initBaseline: () => {
+      if (
+        baselineUpdatedAt === undefined &&
+        capabilities().initialBaselineUpdatedAt !== undefined
+      ) {
+        baselineUpdatedAt = capabilities().initialBaselineUpdatedAt;
+      }
+    },
+    applyHeaderState,
+    setSeedIdentity: (value) => {
+      name = value.name;
+      symbol = value.symbol;
+    },
+    setEntries: (charts) => {
+      entries = charts;
+    },
+    prepareNewTable: () => drafts.prepareNewTable(),
+    discoverDraft: () => drafts.discover(),
   });
 
-  // 草稿不可用时退回离页警告（草稿可用时无警告，防误关由草稿承担）。
-  $effect(() => {
-    if (!draftGuardActive) return;
-    const handler = (event: BeforeUnloadEvent): void => {
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  });
-
-  function restorePendingDraft(): void {
-    const draft = pendingDraft;
-    if (draft === null) return;
-    applyDraftPayload(draft);
-  }
-
-  async function discardPendingDraft(): Promise<void> {
-    await deleteDraft(draftKey);
-    pendingDraft = null;
-  }
+  // ---- 派生：加载就绪（header 与 data 双就绪；草稿防抖与门面共用） ----
+  const ready = $derived(loader.headerLoadState === "loaded" && loader.dataLoadState === "loaded");
 
   /** 放弃未保存修改：删草稿并回载远端（新表回到种子态）。 */
   async function discardEdits(): Promise<void> {
     if (!window.confirm(m["editor.discard_unsaved_confirm"]())) return;
-    await deleteDraft(draftKey);
-    dirty = false;
-    pendingDraft = null;
-    draftStatus = "idle";
-    lastSavedAt = null;
+    await drafts.resetAfterDiscard();
     notice = null;
-    draftChecked = false;
     levelHints = {};
-    await loadHeader();
+    await loader.loadHeader();
   }
 
   // ---- 保存与导出 ----
@@ -491,9 +324,7 @@ export function createTableModel(input: TableModelInput) {
     const outcome = await commitEditorSave({ plan, onSave, deleteDraft, draftKey });
     if (outcome.kind === "saved") {
       if (outcome.nextBaseline !== undefined) baselineUpdatedAt = outcome.nextBaseline;
-      dirty = false;
-      draftStatus = "idle";
-      lastSavedAt = null;
+      drafts.markSaved();
       notice = { kind: "ok", text: m["editor.saved"]({ count: outcome.count }) };
     } else {
       notice = { kind: "error", text: outcome.text };
@@ -519,7 +350,7 @@ export function createTableModel(input: TableModelInput) {
       exportAndOpen("ok");
       return;
     }
-    const draftResult = await persistDraft(buildDraftPayload());
+    const draftResult = await drafts.persist(buildDraftPayload());
     if (draftResult !== "ok") {
       // 草稿无法随行：退回导出加跳主站的手动路径
       exportAndOpen("warn");
@@ -574,11 +405,6 @@ export function createTableModel(input: TableModelInput) {
 
   function toggleUnassigned(checked: boolean): void {
     includeUnassigned = checked;
-  }
-
-  function formatClock(iso: string): string {
-    const date = new Date(iso);
-    return Number.isNaN(date.getTime()) ? iso : date.toLocaleTimeString();
   }
 
   return {
@@ -637,37 +463,37 @@ export function createTableModel(input: TableModelInput) {
     set levelHints(v: Record<string, string>) {
       levelHints = v;
     },
-    // 加载
+    // 加载（委托 loader）
     get headerLoadState() {
-      return headerLoadState;
+      return loader.headerLoadState;
     },
     get headerError() {
-      return headerError;
+      return loader.headerError;
     },
     get dataLoadState() {
-      return dataLoadState;
+      return loader.dataLoadState;
     },
     get dataError() {
-      return dataError;
+      return loader.dataError;
     },
     get dataFetchUrl() {
-      return dataFetchUrl;
+      return loader.dataFetchUrl;
     },
     get loadPercent() {
-      return loadPercent;
+      return loader.loadPercent;
     },
     get loadMessage() {
-      return loadMessage;
+      return loader.loadMessage;
     },
     get loadDetail() {
-      return loadDetail;
+      return loader.loadDetail;
     },
     get ready() {
       return ready;
     },
-    loadHeader,
-    retryData,
-    retryAll,
+    loadHeader: loader.loadHeader,
+    retryData: loader.retryData,
+    retryAll: loader.retryAll,
     // 派生展示
     get headerRecord() {
       return headerRecord;
@@ -687,18 +513,18 @@ export function createTableModel(input: TableModelInput) {
     get pageTitle() {
       return pageTitle;
     },
-    // 草稿
+    // 草稿（委托 drafts）
     get dirty() {
-      return dirty;
+      return drafts.dirty;
     },
     get busy() {
       return busy;
     },
     get pendingDraft() {
-      return pendingDraft;
+      return drafts.pendingDraft;
     },
     get draftStatusText() {
-      return draftStatusText;
+      return drafts.draftStatusText;
     },
     get notice() {
       return notice;
@@ -707,8 +533,8 @@ export function createTableModel(input: TableModelInput) {
       notice = v;
     },
     markDirty,
-    restorePendingDraft,
-    discardPendingDraft,
+    restorePendingDraft: drafts.restorePending,
+    discardPendingDraft: drafts.discardPending,
     discardEdits,
     // 保存与导出
     get canSave() {
@@ -738,22 +564,6 @@ export function createTableModel(input: TableModelInput) {
     },
     toggleLevel,
     toggleUnassigned,
-    // 等级参考
-    get levelRefHasData() {
-      return levelRefHasData;
-    },
-    set levelRefHasData(v: boolean) {
-      levelRefHasData = v;
-    },
-    get levelRefLoadState() {
-      return levelRefLoadState;
-    },
-    set levelRefLoadState(v: "idle" | "loading" | "done" | "not-found" | "error") {
-      levelRefLoadState = v;
-    },
-    get showLevelRefPane() {
-      return showLevelRefPane;
-    },
     // 工具
     formatClock,
   };
