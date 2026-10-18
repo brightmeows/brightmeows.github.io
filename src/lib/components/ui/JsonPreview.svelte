@@ -50,6 +50,7 @@
 
   import { popoverLayer } from "#lib/components/ui/popover-layer.js";
   import { m } from "#lib/paraglide/messages.js";
+  import { formatJsonPreview } from "#lib/utils/infra/json.js";
   import { writeToClipboard } from "#lib/utils/ui/clipboard.svelte.js";
 
   let open = $state(false);
@@ -65,32 +66,7 @@
   let copied = $state(false);
   let copiedTimer: ReturnType<typeof setTimeout> | undefined;
 
-  function safeStringify(input: unknown, space = 2): string {
-    const seen = new WeakSet<object>();
-    try {
-      return JSON.stringify(
-        input,
-        (_key, v): unknown => {
-          if (typeof v === "bigint") return v.toString();
-          if (typeof v === "object" && v !== null) {
-            const obj = v as object;
-            if (seen.has(obj)) return "[Circular]";
-            seen.add(obj);
-          }
-          return v;
-        },
-        space
-      );
-    } catch {
-      try {
-        return String(input);
-      } catch {
-        return "[Unserializable]";
-      }
-    }
-  }
-
-  let jsonText = $derived(safeStringify(value, 2));
+  let jsonText = $derived(formatJsonPreview(value));
 
   function cancelHide(): void {
     if (!hideTimer) return;

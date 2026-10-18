@@ -8,6 +8,8 @@
   import { btnGradientBlue, btnGradientOrange } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { JsonPreviewHandle } from "#lib/types/ui.js";
+  import { formatJsonPreview } from "#lib/utils/infra/json.js";
+  import { clipboardFieldFeedback } from "#lib/utils/ui/clipboard.svelte.js";
 
   interface Props {
     tables?: MirrorTableItem[];
@@ -25,6 +27,8 @@
   }: Props = $props();
 
   let totalCount = $derived(tables.length);
+  // 点击直拷的反馈：两个按钮各占一个字段，拷完短暂换成“已复制！”徽章
+  const cb = clipboardFieldFeedback();
   let selectedCount = $derived(Object.values(selectedMap).filter(Boolean).length);
   let allSelected = $derived(selectedCount === totalCount && totalCount > 0);
   let someSelected = $derived(selectedCount > 0 && selectedCount < totalCount);
@@ -91,35 +95,45 @@
       <div class="font-semibold whitespace-nowrap text-white">
         {m["common.selected_count"]({ selected: selectedCount, total: totalCount })}
       </div>
-      <div class="flex flex-nowrap gap-3">
-        <button
-          class={btnGradientBlue}
-          type="button"
-          use:jsonPreview={{
-            preview: mirrorPreview,
-            options: {
-              value: selectedMirrorArray,
-              label: m["selected.mirror_json"](),
-              maxHeightRem: 12,
-            },
-          }}
-        >
-          {m["selected.mirror_json"]()}
-        </button>
-        <button
-          class={btnGradientOrange}
-          type="button"
-          use:jsonPreview={{
-            preview: mirrorPreview,
-            options: {
-              value: selectedOriginArray,
-              label: m["selected.origin_json"](),
-              maxHeightRem: 12,
-            },
-          }}
-        >
-          {m["selected.origin_json"]()}
-        </button>
+      <div class="flex flex-nowrap items-center gap-3">
+        {#if cb.copiedField === "mirror"}
+          <span class="badge-copied">{m["common.copied_bang"]()}</span>
+        {:else}
+          <button
+            class={btnGradientBlue}
+            type="button"
+            onclick={() => void cb.copy("mirror", formatJsonPreview(selectedMirrorArray))}
+            use:jsonPreview={{
+              preview: mirrorPreview,
+              options: {
+                value: selectedMirrorArray,
+                label: m["selected.mirror_json"](),
+                maxHeightRem: 12,
+              },
+            }}
+          >
+            {m["selected.mirror_json"]()}
+          </button>
+        {/if}
+        {#if cb.copiedField === "origin"}
+          <span class="badge-copied">{m["common.copied_bang"]()}</span>
+        {:else}
+          <button
+            class={btnGradientOrange}
+            type="button"
+            onclick={() => void cb.copy("origin", formatJsonPreview(selectedOriginArray))}
+            use:jsonPreview={{
+              preview: mirrorPreview,
+              options: {
+                value: selectedOriginArray,
+                label: m["selected.origin_json"](),
+                maxHeightRem: 12,
+              },
+            }}
+          >
+            {m["selected.origin_json"]()}
+          </button>
+        {/if}
       </div>
     </div>
   </div>
