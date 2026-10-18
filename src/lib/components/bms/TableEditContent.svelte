@@ -6,6 +6,7 @@
     LevelFilter,
     TableImportResult,
   } from "@brightmeows/bms/editor";
+  import type { ChartData } from "@brightmeows/bms/format";
   import type { Snippet } from "svelte";
 
   import type { EditorNotice } from "#lib/controllers/editor.js";
@@ -24,7 +25,7 @@
     levels: string[];
     extraHeader: Record<string, unknown>;
     courseModel: CourseModel;
-    entries: Record<string, unknown>[];
+    entries: ChartData[];
     levelHints: Record<string, string>;
     // ---- 支持状态 ----
     busy: boolean;
@@ -96,7 +97,8 @@
   function handleImport(result: TableImportResult): void {
     if (result.header !== null) applyImportedHeader(result.header);
     if (result.data !== null) {
-      const imported = result.data.map((item) => ({ ...item }));
+      // 粘贴/文件/分叉的数据是未经校验的 JSON：入口处一次断言入模型类型
+      const imported = result.data.map((item) => ({ ...item }) as ChartData);
       entries = result.dataMode === "append" ? [...entries, ...imported] : imported;
     }
     const sourceLabel =
@@ -111,7 +113,7 @@
 
   function handleDropAdd(result: BmsDropResult): void {
     if (result.added.length > 0) {
-      entries = [...entries, ...result.added];
+      entries = [...entries, ...(result.added as ChartData[])];
       levelHints = { ...levelHints, ...result.hints };
     }
     onChange();
@@ -126,7 +128,7 @@
   }
 
   function handleEntryImport(result: EntryImportResult): void {
-    if (result.added.length > 0) entries = [...entries, ...result.added];
+    if (result.added.length > 0) entries = [...entries, ...(result.added as ChartData[])];
     onChange();
     onNotice({
       kind: result.added.length > 0 ? "ok" : "warn",

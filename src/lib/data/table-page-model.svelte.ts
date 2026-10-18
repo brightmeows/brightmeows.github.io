@@ -115,7 +115,7 @@ export function createTableModel(input: TableModelInput) {
   let levels = $state<string[]>([]);
   let extraHeader = $state<Record<string, unknown>>({});
   let courseModel = $state<CourseModel>(emptyCourseModel());
-  let entries = $state<Record<string, unknown>[]>([]);
+  let entries = $state<ChartData[]>([]);
 
   // ---- 加载状态（header 与 data 两段，保持查看器的独立错误处理） ----
   let headerLoadState = $state<LoadPhase>("loading");
@@ -155,11 +155,10 @@ export function createTableModel(input: TableModelInput) {
 
   // ---- 派生：查看态展示 ----
   const headerRecord = $derived(buildHeader());
-  const chartData = $derived(entries as unknown as ChartData[]);
-  const groups = $derived(groupChartsByLevel(chartData));
+  const groups = $derived(groupChartsByLevel(entries));
   const tableStats = $derived(computeTableStats(groups));
   const sortedDifficultyGroups = $derived(sortDifficultyGroups(groups, levels));
-  const courseGroups = $derived(resolveCourses(headerRecord.course, chartData));
+  const courseGroups = $derived(resolveCourses(headerRecord.course, entries));
   const ready = $derived(headerLoadState === "loaded" && dataLoadState === "loaded");
   const canSave = $derived(onSave !== undefined && canWrite);
   const saveLabel = $derived(
@@ -629,7 +628,7 @@ export function createTableModel(input: TableModelInput) {
     get entries() {
       return entries;
     },
-    set entries(v: Record<string, unknown>[]) {
+    set entries(v: ChartData[]) {
       entries = v;
     },
     get levelHints() {
