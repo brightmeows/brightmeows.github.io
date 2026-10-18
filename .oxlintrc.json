@@ -289,17 +289,23 @@
       "rules": { "complexity": ["error", 56] }
     },
     {
-      // tsgolint 对本文件 $derived 链（publish().onSave !== undefined &&
-      // canWrite 等）的类型视图把 boolean 收窄为 false 字面量，整条
-      // no-unnecessary-condition 误报；主链 svelte-check（TS6）对同行
+      // tsgolint 对本仓页面模型族 .svelte.ts 的 $derived 链（publish().onSave !==
+      // undefined && canWrite 等）的类型视图把 boolean 收窄为 false 字面量，
+      // 整条 no-unnecessary-condition 误报；主链 svelte-check（TS6）对同行
       // 0 错误，以主链为准。解除条件：tsgolint 修正 .svelte.ts 的
       // $derived 类型传播后收回为 error
-      "files": ["src/lib/data/table-page-model.svelte.ts"],
+      "files": [
+        "src/lib/data/table-page-model.svelte.ts",
+        "src/lib/data/table-model-drafts.svelte.ts"
+      ],
       "rules": { "typescript/no-unnecessary-condition": "off" }
     },
     {
+      // 2026-10 行为冻结拆分后实测：主模型持内存模型态、派生、保存发布与
+      // getter/setter 门面（约 120 行，显式 API 面）；加载与草稿已拆至
+      // table-model-loader / table-model-drafts，再拆需破门面形态
       "files": ["src/lib/data/table-page-model.svelte.ts"],
-      "rules": { "max-lines-per-function": ["error", 670] }
+      "rules": { "max-lines-per-function": ["error", 480] }
     },
     {
       "files": ["src/lib/components/ui/StarryBackground.svelte"],
