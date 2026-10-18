@@ -31,6 +31,7 @@ export async function writeFetchStatus(env: Env, status: StatusEntry): Promise<v
     .run();
 }
 
+/** 读单条抓取状态（前端轮询 handleStatus 的数据源）。 */
 export async function readFetchStatus(env: Env, id: string): Promise<StatusEntry | null> {
   const row = await env.MIRROR_DB.prepare(
     "SELECT id, url, state, message, updated_at FROM fetch_status WHERE id = ?"

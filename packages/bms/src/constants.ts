@@ -20,10 +20,12 @@ const TROPHY_EMOJIS: Record<string, string> = {
   bronzemedal: "🥉",
 };
 
+/** 约束标签翻译：已知缩写映射为展示标签，未知原样返回。 */
 export function formatConstraint(c: string): string {
   return CONSTRAINT_LABELS[c] ?? c;
 }
 
+/** 段位奖牌 emoji：未知名称回落通用奖牌。 */
 export function trophyEmoji(name: string): string {
   return TROPHY_EMOJIS[name] ?? "🏅";
 }

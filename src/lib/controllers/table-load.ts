@@ -15,14 +15,17 @@ import { m } from "#lib/paraglide/messages.js";
 
 // ---- 状态构造器 ----
 
+/** 等待态：表尚未开始加载。 */
 export function waitingState(tableId: string): TableLoadState {
   return { status: "waiting", tableId };
 }
 
+/** header 拉取中；表名先以 id 占位，拿到 header 后覆盖。 */
 export function loadingHeaderState(tableId: string, name: string): TableLoadState {
   return { status: "loading-header", tableId, name };
 }
 
+/** 数据段下载中：携带进度百分比与字节计数。 */
 export function loadingDataState(
   tableId: string,
   name: string,
@@ -33,14 +36,17 @@ export function loadingDataState(
   return { status: "loading-data", tableId, name, progress, bytesLoaded, bytesTotal };
 }
 
+/** 解析中：数据下载完成，分组与统计计算期。 */
 export function parsingState(tableId: string, name: string): TableLoadState {
   return { status: "parsing", tableId, name };
 }
 
+/** 完成态：分组与统计就绪，页面可渲染。 */
 export function doneState(tableId: string, name: string): TableLoadState {
   return { status: "done", tableId, name };
 }
 
+/** 失败态：携带翻译后的错误文案。 */
 export function errorState(tableId: string, name: string, errorMessage: string): TableLoadState {
   return { status: "error", tableId, name, errorMessage };
 }
@@ -57,9 +63,9 @@ export function tableDisplayName(state: TableLoadState | undefined, fallback: st
   return state !== undefined && "name" in state ? state.name : fallback;
 }
 
-/** 加载错误分类：取消静默返回，失败翻译消息（非 Error 回落通用文案）。 */
 export type LoadErrorKind = { kind: "aborted" } | { kind: "failed"; message: string };
 
+/** 加载错误分类：取消静默返回，失败翻译消息（非 Error 回落通用文案）。 */
 export function classifyLoadError(error: unknown): LoadErrorKind {
   if (error instanceof DOMException && error.name === "AbortError") {
     return { kind: "aborted" };
@@ -85,6 +91,7 @@ export interface EpochGuard {
   isCurrent(epoch: number): boolean;
 }
 
+/** 创建守卫实例：代际从 0 起，语义见 EpochGuard。 */
 export function createEpochGuard(): EpochGuard {
   let current = 0;
   return {

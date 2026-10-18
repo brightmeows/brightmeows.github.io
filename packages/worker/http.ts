@@ -33,6 +33,7 @@ export function failure(status: number, message: string, options?: FailureOption
   return json(body, status);
 }
 
+/** 读取 JSON 请求体：非 JSON content-type 或解析失败返回 null。 */
 export async function readJsonBody(request: Request): Promise<Record<string, unknown> | null> {
   const contentType = request.headers.get("content-type") ?? "";
   if (!contentType.includes("application/json")) {

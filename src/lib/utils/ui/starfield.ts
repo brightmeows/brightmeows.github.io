@@ -40,6 +40,7 @@ const METEOR_SPAWN_OFFSET = 20;
 /** 星星闪烁不透明度下限 */
 const STAR_OPACITY_MIN = 0.2;
 
+/** 生成星星：随机位置、漂移速度与闪烁相位。 */
 export function createStar(viewport: Viewport, rng: Rng = Math.random): StarState {
   return {
     x: rng() * viewport.width,
@@ -53,6 +54,7 @@ export function createStar(viewport: Viewport, rng: Rng = Math.random): StarStat
   };
 }
 
+/** 推进星星：位置漂移并 wrap 出界，透明度在上下限间往复闪烁。 */
 export function updateStar(star: StarState, viewport: Viewport, dt: number): void {
   star.x += star.speedX * dt;
   star.y += star.speedY * dt;
@@ -72,12 +74,14 @@ export function updateStar(star: StarState, viewport: Viewport, dt: number): voi
   }
 }
 
+/** 生成流星：初态即屏幕外入场点。 */
 export function createMeteor(viewport: Viewport, rng: Rng = Math.random): MeteorState {
   const meteor: MeteorState = { x: 0, y: 0, speedX: 0, speedY: 0, size: 0 };
   resetMeteor(meteor, viewport, rng);
   return meteor;
 }
 
+/** 从四边随机一侧的屏幕外重置流星入场状态。 */
 export function resetMeteor(meteor: MeteorState, viewport: Viewport, rng: Rng = Math.random): void {
   const side = Math.floor(rng() * 4);
 
@@ -139,6 +143,7 @@ export function starCountFor(
   );
 }
 
+/** 夹紧 DPR 到上限，控制高分屏下的渲染开销。 */
 export function clampDpr(dpr: number, maxDpr: number): number {
   return Math.min(dpr, maxDpr);
 }

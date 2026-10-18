@@ -133,6 +133,7 @@ export async function handleOverview(env: Env): Promise<Response> {
   });
 }
 
+/** 授权动作处理：把表加入授权名单（受保护）。 */
 export async function handleAuthorize(
   request: Request,
   env: Env,
@@ -169,6 +170,7 @@ export async function handleAuthorize(
   return json<AdminMutationResponse>({ ok: true, deployTriggered: await safeDeploy(env, now) });
 }
 
+/** 禁用动作处理：命中条目从清单隐藏，R2 数据保留。 */
 export async function handleDisable(
   request: Request,
   env: Env,
@@ -207,6 +209,7 @@ export async function handleDisable(
   return json<AdminMutationResponse>({ ok: true, deployTriggered: await safeDeploy(env, now) });
 }
 
+/** 替换动作处理：登记源 URL 到目标 URL 的改指规则。 */
 export async function handleReplace(
   request: Request,
   env: Env,
@@ -258,6 +261,7 @@ export async function handleReplace(
   return json<AdminMutationResponse>({ ok: true, deployTriggered: await safeDeploy(env, now) });
 }
 
+/** 元数据覆盖处理：写入名称、符号、标签等展示层覆盖。 */
 export async function handleMeta(
   request: Request,
   env: Env,

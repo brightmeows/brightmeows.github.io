@@ -12,6 +12,7 @@ interface BlogPostModule {
   metadata?: Partial<BlogPostMetadata>;
 }
 
+/** 博客正文页数据：按 slug 动态 import Markdown 模块，返回组件与元数据。 */
 export const load: PageLoad = async ({ params }) => {
   const slug = params.slug.replace(/\/$/, "");
 

@@ -91,6 +91,7 @@ export interface TableModelInput {
   capabilities: () => TablePageCapabilities;
 }
 
+/** 难度表页内存模型工厂：两段式加载、草稿与保存发布的响应式编排（输入经 getter 保持响应式）。 */
 export function createTableModel(input: TableModelInput) {
   const source = input.source;
   const publish = input.publish;

@@ -118,6 +118,7 @@ async function listRows(
   }
 }
 
+/** 读取全部添加请求（一个请求一行，按提交时间排序）。 */
 export async function listAdded(env: Env): Promise<AddedEntry[]> {
   return (await listRows(
     env,
@@ -127,6 +128,7 @@ export async function listAdded(env: Env): Promise<AddedEntry[]> {
   )) as AddedEntry[];
 }
 
+/** 读取抓取结果：表进入合成清单的依据。 */
 export async function listFetched(env: Env): Promise<FetchedEntry[]> {
   return (await listRows(
     env,
@@ -136,6 +138,7 @@ export async function listFetched(env: Env): Promise<FetchedEntry[]> {
   )) as FetchedEntry[];
 }
 
+/** 读取删除黑名单（可见性优先于清单，作者 30 天内可自助恢复）。 */
 export async function listRemoved(env: Env): Promise<RemovedEntry[]> {
   return (await listRows(
     env,
@@ -145,6 +148,7 @@ export async function listRemoved(env: Env): Promise<RemovedEntry[]> {
   )) as RemovedEntry[];
 }
 
+/** 读取禁用名单：命中条目从清单隐藏但保留在 R2。 */
 export async function listDisabled(env: Env): Promise<DisabledEntry[]> {
   return (await listRows(
     env,
@@ -154,6 +158,7 @@ export async function listDisabled(env: Env): Promise<DisabledEntry[]> {
   )) as DisabledEntry[];
 }
 
+/** 读取替换规则：合成清单时把源 URL 条目改指目标 URL。 */
 export async function listReplaceRules(env: Env): Promise<ReplaceRuleEntry[]> {
   return (await listRows(
     env,
@@ -163,6 +168,7 @@ export async function listReplaceRules(env: Env): Promise<ReplaceRuleEntry[]> {
   )) as ReplaceRuleEntry[];
 }
 
+/** 读取授权名单：受保护表集合，写保护由处理层执行。 */
 export async function listAuthorized(env: Env): Promise<AuthorizedEntry[]> {
   return (await listRows(
     env,
@@ -172,6 +178,7 @@ export async function listAuthorized(env: Env): Promise<AuthorizedEntry[]> {
   )) as AuthorizedEntry[];
 }
 
+/** 读取元数据覆盖：名称、符号、标签与序号的展示层改写。 */
 export async function listMetaOverrides(env: Env): Promise<MetaOverride[]> {
   return (await listRows(
     env,
@@ -235,6 +242,7 @@ export async function upsertRemoved(env: Env, entry: RemovedEntry): Promise<void
   ]);
 }
 
+/** 撤销删除：自助恢复时按目录名移出黑名单（R2 对象由 trash 模块还原）。 */
 export async function deleteRemovedByDirName(env: Env, dirName: string): Promise<void> {
   await env.MIRROR_DB.prepare("DELETE FROM removed WHERE dir_name = ?").bind(dirName).run();
 }
@@ -252,6 +260,7 @@ export async function upsertDisabled(env: Env, entry: DisabledEntry): Promise<vo
   ]);
 }
 
+/** 解除禁用：按 url 或目录名匹配移出禁用名单。 */
 export async function deleteDisabled(
   env: Env,
   match: { url: string; dirName?: string | undefined }
@@ -270,6 +279,7 @@ export async function upsertReplaceRule(env: Env, rule: ReplaceRuleEntry): Promi
     .run();
 }
 
+/** 删除替换规则：以源 URL 定位。 */
 export async function deleteReplaceRule(env: Env, from: string): Promise<void> {
   await env.MIRROR_DB.prepare("DELETE FROM replace_rules WHERE from_url = ?").bind(from).run();
 }
@@ -287,6 +297,7 @@ export async function upsertAuthorized(env: Env, entry: AuthorizedEntry): Promis
   ]);
 }
 
+/** 移出授权名单：取消保护，按 url 或目录名匹配。 */
 export async function deleteAuthorized(
   env: Env,
   match: { url: string; dirName?: string | undefined }
@@ -313,6 +324,7 @@ export async function upsertMetaOverride(env: Env, override: MetaOverride): Prom
     .run();
 }
 
+/** 删除元数据覆盖：该表展示回退到管线原值。 */
 export async function deleteMetaOverride(env: Env, url: string): Promise<void> {
   await env.MIRROR_DB.prepare("DELETE FROM meta_overrides WHERE url = ?").bind(url).run();
 }

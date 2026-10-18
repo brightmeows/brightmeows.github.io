@@ -353,6 +353,7 @@ export interface CompareContext {
   dirToUrl: ReadonlyMap<string, string>;
 }
 
+/** 比对新旧实现的两份产物工作区，逐文件归因差异。 */
 export async function compareWorkspaces(
   newRoot: string,
   rustRoot: string,

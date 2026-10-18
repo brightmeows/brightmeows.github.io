@@ -21,6 +21,7 @@ import { OAUTH_CALLBACK_PATH, OAUTH_STATE_COOKIE, PREVIEW_USER_AGENT, type Env }
 import { allowedOrigins, json } from "../http.ts";
 import { readOperationCount } from "../store/quota.ts";
 
+/** GET /api/me：当前登录态与今日剩余配额（未登录返回 null login）。 */
 export async function handleMe(request: Request, env: Env, now: Date): Promise<Response> {
   const session = await getSession(env, request, now);
   if (session === null) {

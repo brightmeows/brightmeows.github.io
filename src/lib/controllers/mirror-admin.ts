@@ -24,6 +24,7 @@ export interface MirrorAdminState {
   notice: { kind: "ok" | "error"; text: string } | null;
 }
 
+/** 管理折叠区的初始状态：未加载总览、无展开行、无提示。 */
 export function initialMirrorAdminState(): MirrorAdminState {
   return {
     busy: false,

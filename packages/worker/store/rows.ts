@@ -15,6 +15,7 @@ export function optionalText(value: unknown): string | undefined {
   return typeof value === "string" && value !== "" ? value : undefined;
 }
 
+/** 行值窄化：非字符串一律回落空串。 */
 export function text(value: unknown): string {
   return typeof value === "string" ? value : "";
 }

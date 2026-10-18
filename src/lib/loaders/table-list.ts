@@ -7,6 +7,7 @@ function resolveBase(baseDir?: string): string {
   return baseDir ?? join("static", "bms", "table");
 }
 
+/** 枚举自托管表目录名：仅收含 header.json 的目录。 */
 export function getBmsTables(baseDir?: string): string[] {
   const dir = resolveBase(baseDir);
   if (!existsSync(dir)) return [];
