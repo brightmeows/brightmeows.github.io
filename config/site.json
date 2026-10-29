@@ -24,6 +24,7 @@
     "base": "https://bms-table-mirror-r2.miyakomeow.site",
     "manifestObject": "tables/tables.json",
     "corsOrigins": [
+      "https://brightmeows.com",
       "https://miyakomeow.site",
       "https://github-pages.miyakomeow.site",
       "https://codeberg-pages.miyakomeow.site",
