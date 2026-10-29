@@ -14,7 +14,6 @@ import type { Env } from "../env.ts";
 import { failure, json, readJsonBody } from "../http.ts";
 import { invalidateMergedManifest } from "../manifest.ts";
 import { listAudit, writeAudit } from "../store/audit.ts";
-import { triggerDeploy } from "../store/deploy.ts";
 import { restoreTableFromTrash } from "../store/trash.ts";
 import {
   deleteAuthorized,
@@ -58,15 +57,6 @@ function normalizeBodyUrl(body: Record<string, unknown> | null): string | null {
     return new URL(raw).href;
   } catch {
     return null;
-  }
-}
-
-async function safeDeploy(env: Env, now: Date): Promise<boolean> {
-  try {
-    return await triggerDeploy(env, now);
-  } catch (error) {
-    console.warn("后台操作后触发部署失败", error);
-    return false;
   }
 }
 
@@ -167,7 +157,7 @@ export async function handleAuthorize(
     ...(dirName === undefined ? {} : { dir_name: dirName }),
   });
   invalidateMergedManifest();
-  return json<AdminMutationResponse>({ ok: true, deployTriggered: await safeDeploy(env, now) });
+  return json<AdminMutationResponse>({ ok: true });
 }
 
 /** 禁用动作处理：命中条目从清单隐藏，R2 数据保留。 */
@@ -206,7 +196,7 @@ export async function handleDisable(
     ...(dirName === undefined ? {} : { dir_name: dirName }),
   });
   invalidateMergedManifest();
-  return json<AdminMutationResponse>({ ok: true, deployTriggered: await safeDeploy(env, now) });
+  return json<AdminMutationResponse>({ ok: true });
 }
 
 /** 替换动作处理：登记源 URL 到目标 URL 的改指规则。 */
@@ -258,7 +248,7 @@ export async function handleReplace(
     detail: action === "add" ? `指向 ${toRaw ?? ""}` : "移除规则",
   });
   invalidateMergedManifest();
-  return json<AdminMutationResponse>({ ok: true, deployTriggered: await safeDeploy(env, now) });
+  return json<AdminMutationResponse>({ ok: true });
 }
 
 /** 元数据覆盖处理：写入名称、符号、标签等展示层覆盖。 */
@@ -307,7 +297,7 @@ export async function handleMeta(
     detail: clear ? "清除覆盖" : "更新覆盖",
   });
   invalidateMergedManifest();
-  return json<AdminMutationResponse>({ ok: true, deployTriggered: await safeDeploy(env, now) });
+  return json<AdminMutationResponse>({ ok: true });
 }
 
 /** 站长恢复：不受作者与恢复窗口限制（人工判断）。 */
@@ -342,6 +332,5 @@ export async function handleAdminRestore(
   return json<AdminMutationResponse>({
     ok: true,
     restoredObjects,
-    deployTriggered: await safeDeploy(env, now),
   });
 }

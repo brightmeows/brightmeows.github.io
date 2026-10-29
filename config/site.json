@@ -8,13 +8,13 @@
     },
     {
       "name": "github-pages",
-      "kind": "static",
+      "kind": "redirect",
       "siteBase": "https://github-pages.miyakomeow.site",
       "legacyHosts": ["brightmeows.github.io"]
     },
     {
       "name": "codeberg-pages",
-      "kind": "static",
+      "kind": "redirect",
       "siteBase": "https://codeberg-pages.miyakomeow.site",
       "legacyHosts": ["brightmeows.codeberg.page"],
       "pagesServer": "codeberg.page"
@@ -23,7 +23,6 @@
   "r2": {
     "base": "https://bms-table-mirror-r2.miyakomeow.site",
     "manifestObject": "tables/tables.json",
-    "baselineObject": "meta/last-notified.json",
     "corsOrigins": [
       "https://miyakomeow.site",
       "https://github-pages.miyakomeow.site",

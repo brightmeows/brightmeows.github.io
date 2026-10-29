@@ -18,7 +18,7 @@ import {
   sessionCookie,
 } from "../auth.ts";
 import { OAUTH_CALLBACK_PATH, OAUTH_STATE_COOKIE, PREVIEW_USER_AGENT, type Env } from "../env.ts";
-import { allowedOrigins, json } from "../http.ts";
+import { json } from "../http.ts";
 import { readOperationCount } from "../store/quota.ts";
 
 /** GET /api/me：当前登录态与今日剩余配额（未登录返回 null login）。 */
@@ -81,45 +81,30 @@ function decodeStatePayload(text: string): OAuthStatePayload | null {
 }
 
 /**
- * 校验登录回跳地址：接受主站内相对路径或白名单站点上的绝对 URL。
+ * 校验登录回跳地址：只接受站内相对路径。
  *
- * 相对路径落主站；绝对 URL 的 origin 必须精确命中白名单（静态宿主子域回发起页）。
- * 两者都拒绝协议相对（"//"）与反斜杠绕过（"/\\"，浏览器会把 `\\` 规范化为 `/`，
+ * 拒绝协议相对（"//"）与反斜杠绕过（"/\\"，浏览器会把 `\\` 规范化为 `/`，
  * 使其变成协议相对跳转），以及控制字符（防响应拆分）；其余一律回落默认落点。
  */
-export function safeReturnTo(
-  raw: string | null | undefined,
-  allowed: string[]
-): string | undefined {
+export function safeReturnTo(raw: string | null | undefined): string | undefined {
   if (raw === undefined || raw === null || raw === "") {
     return undefined;
   }
-  if (raw.startsWith("/")) {
-    if (raw.startsWith("//") || raw.startsWith("/\\")) {
-      return undefined;
-    }
-    // 控制字符匹配是刻意的：拦 CR/LF 等防 Location 头注入
-    // oxlint-disable-next-line no-control-regex
-    if (/[\u0000-\u001f\u007f]/u.test(raw)) {
-      return undefined;
-    }
-    return raw;
-  }
-  try {
-    const url = new URL(raw);
-    if (!allowed.includes(url.origin)) {
-      return undefined;
-    }
-    return url.toString();
-  } catch {
+  if (!raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) {
     return undefined;
   }
+  // 控制字符匹配是刻意的：拦 CR/LF 等防 Location 头注入
+  // oxlint-disable-next-line no-control-regex
+  if (/[\u0000-\u001f\u007f]/u.test(raw)) {
+    return undefined;
+  }
+  return raw;
 }
 
 /** 登录入口：生成 state、写 cookie（含发起页 returnTo）、302 到 GitHub 授权页。 */
 export function handleLogin(env: Env, url: URL): Response {
   const state = crypto.randomUUID();
-  const returnTo = safeReturnTo(url.searchParams.get("return_to"), allowedOrigins(env));
+  const returnTo = safeReturnTo(url.searchParams.get("return_to"));
   const authorize = new URL("https://github.com/login/oauth/authorize");
   authorize.searchParams.set("client_id", env.GITHUB_OAUTH_CLIENT_ID);
   authorize.searchParams.set("redirect_uri", `${url.origin}${OAUTH_CALLBACK_PATH}`);
@@ -264,17 +249,17 @@ export async function handleCallback(
     location: new URL(landing, url.origin).toString(),
     "cache-control": "no-store",
   });
-  headers.append("set-cookie", sessionCookie(env, token));
+  headers.append("set-cookie", sessionCookie(token));
   headers.append("set-cookie", clearStateCookie());
   return new Response(null, { status: 302, headers });
 }
 
 /** 登出：清会话 cookie 并跳回列表页。 */
-export function handleLogout(env: Env, url: URL): Response {
+export function handleLogout(url: URL): Response {
   const headers = new Headers({
     location: new URL(MIRROR_LIST_PATH, url.origin).toString(),
     "cache-control": "no-store",
   });
-  headers.append("set-cookie", clearSessionCookie(env));
+  headers.append("set-cookie", clearSessionCookie());
   return new Response(null, { status: 302, headers });
 }

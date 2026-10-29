@@ -1,14 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  diffTableList,
-  injectBmstableMeta,
-  projectTableList,
-  renderBmstableMetaTag,
-  serializeTableListProjection,
-  transformTableList,
-  type TableListProjection,
-} from "./manifest.ts";
+import { injectBmstableMeta, renderBmstableMetaTag, transformTableList } from "./manifest.ts";
 import type { MirrorTableItem } from "./types.ts";
 
 const SHELL =
@@ -94,81 +86,5 @@ describe("injectBmstableMeta", () => {
     expect(() =>
       injectBmstableMeta("<html><body>x</body></html>", "https://r2/a/header.json")
     ).toThrow(/head/);
-  });
-});
-
-describe("projectTableList", () => {
-  const base: MirrorTableItem = {
-    name: "表一",
-    symbol: "Γ",
-    url: "http://src.example/table.html",
-    dir_name: "[src.example] 表一",
-    tag1: "難易度表",
-    tag2: "通常",
-    tag_order: 1,
-  };
-
-  it("按 dir_name 排序，序列化结果稳定", () => {
-    const list: MirrorTableItem[] = [
-      { ...base, dir_name: "b", name: "B" },
-      { ...base, dir_name: "a", name: "A" },
-    ];
-    const s1 = serializeTableListProjection(list);
-    const s2 = serializeTableListProjection([...list].reverse());
-    expect(s1).toBe(s2);
-    const parsed = JSON.parse(s1) as TableListProjection[];
-    expect(parsed.map((item) => item.dir_name)).toEqual(["a", "b"]);
-  });
-
-  it("忽略 comment/date/state 与表内容更新时间", () => {
-    const before: MirrorTableItem[] = [{ ...base, comment: "旧", date: "2020-01-01", state: "" }];
-    const after: MirrorTableItem[] = [{ ...base, comment: "新", date: "2026-09-19", state: "1" }];
-    expect(serializeTableListProjection(after)).toBe(serializeTableListProjection(before));
-  });
-
-  it("能识别新增、删除与展示字段变化", () => {
-    const baseList = [base];
-    expect(
-      serializeTableListProjection([
-        ...baseList,
-        { ...base, name: "表二", dir_name: "[src.example] 表二" },
-      ])
-    ).not.toBe(serializeTableListProjection(baseList));
-    expect(serializeTableListProjection([])).not.toBe(serializeTableListProjection(baseList));
-    expect(serializeTableListProjection([{ ...base, name: "改名" }])).not.toBe(
-      serializeTableListProjection(baseList)
-    );
-  });
-
-  it("缺少 url_from 时回落到 url", () => {
-    const [projected] = projectTableList([base]);
-    expect(projected?.url_from).toBe("http://src.example/table.html");
-  });
-});
-
-describe("diffTableList", () => {
-  const base: MirrorTableItem = {
-    name: "表一",
-    symbol: "Γ",
-    url: "http://src.example/table.html",
-    dir_name: "[src.example] 表一",
-    tag1: "難易度表",
-    tag2: "通常",
-    tag_order: 1,
-    date: "2020-01-01",
-    comment: "旧",
-  };
-
-  it("无变动时三项皆空", () => {
-    const diff = diffTableList([base], [{ ...base, date: "2026-09-19", comment: "新" }]);
-    expect(diff).toEqual({ added: [], removed: [], updated: [] });
-  });
-
-  it("分别识别新增、删除与展示字段变化", () => {
-    expect(diffTableList([], [base]).added).toEqual(["[src.example] 表一"]);
-    expect(diffTableList([base], []).removed).toEqual(["[src.example] 表一"]);
-    expect(diffTableList([base], [{ ...base, symbol: "Δ" }]).updated).toEqual([
-      "[src.example] 表一",
-    ]);
   });
 });

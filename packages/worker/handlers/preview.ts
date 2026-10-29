@@ -10,7 +10,7 @@ import type { PreviewResponse } from "@brightmeows/mirror/api";
 
 import { getSession } from "../auth.ts";
 import { PREVIEW_MAX_BYTES, PREVIEW_TIMEOUT_MS, PREVIEW_USER_AGENT, type Env } from "../env.ts";
-import { allowedOrigins, checkAllowedOrigin, failure, json, readJsonBody } from "../http.ts";
+import { checkSameOrigin, failure, json, readJsonBody } from "../http.ts";
 
 async function fetchTextLimited(url: string): Promise<string> {
   const response = await fetch(url, {
@@ -79,7 +79,7 @@ export function extractHeaderUrl(text: string, pageUrl: string): string | null {
 
 /** 表源预览：登录用户提交 URL，轻量三步提取 header 提示供添加表单预填。 */
 export async function handlePreview(request: Request, env: Env, now: Date): Promise<Response> {
-  if (!checkAllowedOrigin(request, allowedOrigins(env))) {
+  if (!checkSameOrigin(request)) {
     return failure(403, "Origin check failed", { code: API_ERROR_CODES.originCheckFailed });
   }
   const session = await getSession(env, request, now);

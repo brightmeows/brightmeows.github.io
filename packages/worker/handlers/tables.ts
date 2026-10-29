@@ -23,10 +23,9 @@ import {
 import { getSession, type Session } from "../auth.ts";
 import { dispatchWorkflow } from "../dispatch.ts";
 import type { Env } from "../env.ts";
-import { allowedOrigins, checkAllowedOrigin, failure, json, readJsonBody } from "../http.ts";
+import { checkSameOrigin, failure, json, readJsonBody } from "../http.ts";
 import { invalidateMergedManifest, loadMergedManifest } from "../manifest.ts";
 import { writeAudit } from "../store/audit.ts";
-import { triggerDeploy } from "../store/deploy.ts";
 import { readFetchStatus, writeFetchStatus } from "../store/fetch-status.ts";
 import { RateLimitError, consumeOperation } from "../store/quota.ts";
 import { moveTableToTrash, restoreTableFromTrash } from "../store/trash.ts";
@@ -72,7 +71,7 @@ async function isRetryableAdd(env: Env, entry: AddedEntry, now: Date): Promise<b
 
 /** 添加表：登记添加请求并触发单表抓取工作流，返回的 id 供前端轮询。 */
 export async function handleAdd(request: Request, env: Env, now: Date): Promise<Response> {
-  if (!checkAllowedOrigin(request, allowedOrigins(env))) {
+  if (!checkSameOrigin(request)) {
     return failure(403, "Origin check failed", { code: API_ERROR_CODES.originCheckFailed });
   }
   const session = await getSession(env, request, now);
@@ -196,7 +195,7 @@ export async function handleAdd(request: Request, env: Env, now: Date): Promise<
 
 /** 删除表：写黑名单（可见性优先）并移对象入回收站，作者 30 天内可恢复。 */
 export async function handleDelete(request: Request, env: Env, now: Date): Promise<Response> {
-  if (!checkAllowedOrigin(request, allowedOrigins(env))) {
+  if (!checkSameOrigin(request)) {
     return failure(403, "Origin check failed", { code: API_ERROR_CODES.originCheckFailed });
   }
   const session = await getSession(env, request, now);
@@ -267,23 +266,16 @@ export async function handleDelete(request: Request, env: Env, now: Date): Promi
   });
   invalidateMergedManifest();
 
-  let deployTriggered = false;
-  try {
-    deployTriggered = await triggerDeploy(env, now);
-  } catch (error) {
-    console.warn("删除后触发部署失败", error);
-  }
   return json<DeleteResponse>({
     dirName: targetDir,
     trashPrefix,
     remaining: Math.max(0, DAILY_OPERATION_LIMIT - consumed),
-    deployTriggered,
   });
 }
 
 /** 自助恢复：30 天内按目录名从回收站还原并移出黑名单。 */
 export async function handleRestore(request: Request, env: Env, now: Date): Promise<Response> {
-  if (!checkAllowedOrigin(request, allowedOrigins(env))) {
+  if (!checkSameOrigin(request)) {
     return failure(403, "Origin check failed", { code: API_ERROR_CODES.originCheckFailed });
   }
   const session = await getSession(env, request, now);
@@ -335,17 +327,10 @@ export async function handleRestore(request: Request, env: Env, now: Date): Prom
   });
   invalidateMergedManifest();
 
-  let deployTriggered = false;
-  try {
-    deployTriggered = await triggerDeploy(env, now);
-  } catch (error) {
-    console.warn("恢复后触发部署失败", error);
-  }
   return json<RestoreResponse>({
     dirName: record.dir_name,
     restoredObjects,
     remaining: Math.max(0, DAILY_OPERATION_LIMIT - consumed),
-    deployTriggered,
   });
 }
 

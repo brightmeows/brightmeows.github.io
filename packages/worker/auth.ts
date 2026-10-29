@@ -172,12 +172,12 @@ export async function getSession(env: Env, request: Request, now: Date): Promise
   return verifySessionToken(env, token, now);
 }
 
-/** 生成带签名的会话 cookie；Domain 取自 vars，静态宿主子域与主站共享。 */
-export function sessionCookie(env: Env, token: string): string {
-  return `${SESSION_COOKIE}=${token}; Path=/; Domain=${env.COOKIE_DOMAIN}; HttpOnly; Secure; SameSite=Lax; Max-Age=${SESSION_MAX_AGE_SECONDS}`;
+/** 生成带签名的会话 cookie（host-only，只在主站生效）。 */
+export function sessionCookie(token: string): string {
+  return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${SESSION_MAX_AGE_SECONDS}`;
 }
 
-/** 登出用的过期 cookie：同名同域、Max-Age=0 立即失效。 */
-export function clearSessionCookie(env: Env): string {
-  return `${SESSION_COOKIE}=; Path=/; Domain=${env.COOKIE_DOMAIN}; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
+/** 登出用的过期 cookie：同名、Max-Age=0 立即失效。 */
+export function clearSessionCookie(): string {
+  return `${SESSION_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
 }

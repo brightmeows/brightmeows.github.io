@@ -30,9 +30,8 @@ import { TRASH_RETENTION_DAYS } from "@brightmeows/mirror/user-layer";
 
 import { getSession, type Session } from "../auth.ts";
 import type { Env } from "../env.ts";
-import { allowedOrigins, checkAllowedOrigin, failure, json, readJsonBody } from "../http.ts";
+import { checkSameOrigin, failure, json, readJsonBody } from "../http.ts";
 import { writeAudit, writeFoldedAudit } from "../store/audit.ts";
-import { triggerDeploy } from "../store/deploy.ts";
 import {
   countSharedFor,
   copySharedObjects,
@@ -63,7 +62,7 @@ function trashCutoffIso(now: Date): string {
 
 /** 统一的“先 Origin 后会话”检查；失败返回错误响应，成功返回会话。 */
 async function authorizeWrite(request: Request, env: Env, now: Date): Promise<Session | Response> {
-  if (!checkAllowedOrigin(request, allowedOrigins(env))) {
+  if (!checkSameOrigin(request)) {
     return failure(403, "Origin check failed", { code: API_ERROR_CODES.originCheckFailed });
   }
   const session = await getSession(env, request, now);
@@ -233,11 +232,6 @@ export async function handleSharedCreate(request: Request, env: Env, now: Date):
     dir_name: id,
   });
   invalidateSharedList();
-  try {
-    await triggerDeploy(env, now);
-  } catch {
-    console.warn("共享表创建后触发部署失败");
-  }
   return json<SharedCreateResponse>({ id, url: sharedTablePath(id), entries: row.entries });
 }
 
@@ -342,11 +336,6 @@ export async function handleSharedRename(request: Request, env: Env, now: Date):
     detail: `${oldId} -> ${newId}`,
   });
   invalidateSharedList();
-  try {
-    await triggerDeploy(env, now);
-  } catch {
-    console.warn("共享表改 id 后触发部署失败");
-  }
   return json<SharedRenameResponse>({ id: newId, url: sharedTablePath(newId) });
 }
 
@@ -387,13 +376,7 @@ export async function handleSharedDelete(request: Request, env: Env, now: Date):
     ...(row.author !== session.login ? { detail: `deleted by ${session.login}` } : {}),
   });
   invalidateSharedList();
-  let deployTriggered = false;
-  try {
-    deployTriggered = await triggerDeploy(env, now);
-  } catch {
-    console.warn("共享表删除后触发部署失败");
-  }
-  return json<SharedDeleteResponse>({ id, trashPrefix, objectsMoved, deployTriggered });
+  return json<SharedDeleteResponse>({ id, trashPrefix, objectsMoved });
 }
 
 /** 恢复：保留期与持有数双重检查；超 3 张拒绝。 */
@@ -443,13 +426,7 @@ export async function handleSharedRestore(
     dir_name: id,
   });
   invalidateSharedList();
-  let deployTriggered = false;
-  try {
-    deployTriggered = await triggerDeploy(env, now);
-  } catch {
-    console.warn("共享表恢复后触发部署失败");
-  }
-  return json<SharedRestoreResponse>({ id, restoredObjects, deployTriggered });
+  return json<SharedRestoreResponse>({ id, restoredObjects });
 }
 
 /** id 占用查询（新建前置屏用）：含保留期内回收站与曾用别名提示。 */

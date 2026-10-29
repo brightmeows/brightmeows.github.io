@@ -123,12 +123,6 @@ export const MIGRATION_STEPS: readonly (readonly string[])[] = [
       "updated_at TEXT NOT NULL",
       ")"
     ),
-    sql(
-      "CREATE TABLE IF NOT EXISTS deploy_state (",
-      "id INTEGER PRIMARY KEY CHECK (id = 1),",
-      "last_requested_at TEXT NOT NULL",
-      ")"
-    ),
   ],
   // 版本 2：R2 到 D1 的一次性迁移标记（迁移完成后本步与读取分支一并删除）
   [

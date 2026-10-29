@@ -196,19 +196,17 @@ export interface DeleteResponse {
   dirName: string;
   trashPrefix: string;
   remaining: number;
-  deployTriggered: boolean;
 }
 
 /** 删除结果全量兜底（dirName 回落到请求入参）。 */
 export function narrowDelete(body: unknown, fallbackDirName: string): DeleteResponse {
   if (!isRecord(body)) {
-    return { dirName: fallbackDirName, trashPrefix: "", remaining: 0, deployTriggered: false };
+    return { dirName: fallbackDirName, trashPrefix: "", remaining: 0 };
   }
   return {
     dirName: typeof body.dirName === "string" ? body.dirName : fallbackDirName,
     trashPrefix: typeof body.trashPrefix === "string" ? body.trashPrefix : "",
     remaining: typeof body.remaining === "number" ? body.remaining : 0,
-    deployTriggered: body.deployTriggered === true,
   };
 }
 
@@ -217,19 +215,17 @@ export interface RestoreResponse {
   dirName: string;
   restoredObjects: number;
   remaining: number;
-  deployTriggered: boolean;
 }
 
 /** 恢复结果全量兜底（dirName 回落到请求入参）。 */
 export function narrowRestore(body: unknown, fallbackDirName: string): RestoreResponse {
   if (!isRecord(body)) {
-    return { dirName: fallbackDirName, restoredObjects: 0, remaining: 0, deployTriggered: false };
+    return { dirName: fallbackDirName, restoredObjects: 0, remaining: 0 };
   }
   return {
     dirName: typeof body.dirName === "string" ? body.dirName : fallbackDirName,
     restoredObjects: typeof body.restoredObjects === "number" ? body.restoredObjects : 0,
     remaining: typeof body.remaining === "number" ? body.remaining : 0,
-    deployTriggered: body.deployTriggered === true,
   };
 }
 
@@ -326,7 +322,6 @@ export interface AdminOverviewResponse {
 /** 站长写操作的通用响应。 */
 export interface AdminMutationResponse {
   ok: boolean;
-  deployTriggered: boolean;
   restoredObjects?: number;
 }
 
@@ -538,16 +533,14 @@ export function narrowAdminOverview(body: unknown): AdminOverviewResponse | null
 
 /**
  * 站长写操作响应窄化（全量兜底）：2xx 表示变更已在服务端发生，
- * 形状异常时 ok 恒为 true；deployTriggered 仅显式 true 为真，
- * restoredObjects 仅数值时保留。
+ * 形状异常时 ok 恒为 true；restoredObjects 仅数值时保留。
  */
 export function narrowAdminMutation(body: unknown): AdminMutationResponse {
-  if (!isRecord(body)) return { ok: true, deployTriggered: false };
+  if (!isRecord(body)) return { ok: true };
   const restoredObjects =
     typeof body.restoredObjects === "number" ? body.restoredObjects : undefined;
   return {
     ok: body.ok !== false,
-    deployTriggered: body.deployTriggered === true,
     ...(restoredObjects === undefined ? {} : { restoredObjects }),
   };
 }
@@ -643,19 +636,17 @@ export interface SharedDeleteResponse {
   id: string;
   trashPrefix: string;
   objectsMoved: boolean;
-  deployTriggered: boolean;
 }
 
 /** 删除结果全量兜底（id 回落请求入参）。 */
 export function narrowSharedDelete(body: unknown, fallbackId: string): SharedDeleteResponse {
   if (!isRecord(body)) {
-    return { id: fallbackId, trashPrefix: "", objectsMoved: false, deployTriggered: false };
+    return { id: fallbackId, trashPrefix: "", objectsMoved: false };
   }
   return {
     id: typeof body.id === "string" ? body.id : fallbackId,
     trashPrefix: typeof body.trashPrefix === "string" ? body.trashPrefix : "",
     objectsMoved: body.objectsMoved === true,
-    deployTriggered: body.deployTriggered === true,
   };
 }
 
@@ -663,16 +654,14 @@ export function narrowSharedDelete(body: unknown, fallbackId: string): SharedDel
 export interface SharedRestoreResponse {
   id: string;
   restoredObjects: number;
-  deployTriggered: boolean;
 }
 
 /** 恢复结果全量兜底（id 回落请求入参）。 */
 export function narrowSharedRestore(body: unknown, fallbackId: string): SharedRestoreResponse {
-  if (!isRecord(body)) return { id: fallbackId, restoredObjects: 0, deployTriggered: false };
+  if (!isRecord(body)) return { id: fallbackId, restoredObjects: 0 };
   return {
     id: typeof body.id === "string" ? body.id : fallbackId,
     restoredObjects: typeof body.restoredObjects === "number" ? body.restoredObjects : 0,
-    deployTriggered: body.deployTriggered === true,
   };
 }
 

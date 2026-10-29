@@ -12,8 +12,7 @@ export type StringConverter = (input: string) => string;
  * - `loading`：进行中
  * - `ready`：成功，`data` 为结果
  * - `error`：失败，`message` 已按当前语言翻译
- * - `unavailable`：接口不可用（静态宿主上 `/api/*` 为 404），
- *   页面据此降级为“去主站”引导
+ * - `unavailable`：接口不可用（服务异常或非 JSON 404），页面据此降级为错误提示
  *
  * 不依赖 API 的资源（如同源清单、R2 索引）不会进入 `unavailable`——
  * 类型允许但不强制使用全部变体。页面级域状态机（如共享表编辑页的

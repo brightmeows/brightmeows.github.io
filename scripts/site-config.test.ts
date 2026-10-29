@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { findStaticTarget, readSiteConfig, parseSiteConfig } from "./site-config.ts";
+import { findRedirectTarget, readSiteConfig, parseSiteConfig } from "./site-config.ts";
 
 const valid = {
   origin: "https://miyakomeow.site",
@@ -12,7 +12,7 @@ const valid = {
     { name: "cloudflare", kind: "worker", hosts: ["miyakomeow.site", "www.miyakomeow.site"] },
     {
       name: "github-pages",
-      kind: "static",
+      kind: "redirect",
       siteBase: "https://github-pages.miyakomeow.site",
       legacyHosts: ["brightmeows.github.io"],
       pagesServer: "codeberg.page",
@@ -21,7 +21,6 @@ const valid = {
   r2: {
     base: "https://r2.example/",
     manifestObject: "tables/tables.json",
-    baselineObject: "meta/last-notified.json",
     corsOrigins: ["https://miyakomeow.site"],
   },
 };
@@ -32,7 +31,7 @@ describe("parseSiteConfig", () => {
     expect(config.origin).toBe("https://miyakomeow.site");
     expect(config.r2.base).toBe("https://r2.example");
     expect(config.targets).toHaveLength(2);
-    expect(findStaticTarget(config, "github-pages").pagesServer).toBe("codeberg.page");
+    expect(findRedirectTarget(config, "github-pages").pagesServer).toBe("codeberg.page");
   });
 
   it.each([
@@ -46,13 +45,13 @@ describe("parseSiteConfig", () => {
       /hosts/,
     ],
     [
-      "静态目标 siteBase 非法",
+      "跳转目标 siteBase 非法",
       {
         ...valid,
         targets: [
           {
             name: "gh",
-            kind: "static",
+            kind: "redirect",
             siteBase: "github-pages.miyakomeow.site",
             legacyHosts: ["brightmeows.github.io"],
           },
@@ -61,21 +60,23 @@ describe("parseSiteConfig", () => {
       /siteBase/,
     ],
     [
-      "静态目标缺 legacyHosts",
+      "跳转目标缺 legacyHosts",
       {
         ...valid,
-        targets: [{ name: "gh", kind: "static", siteBase: "https://github-pages.miyakomeow.site" }],
+        targets: [
+          { name: "gh", kind: "redirect", siteBase: "https://github-pages.miyakomeow.site" },
+        ],
       },
       /legacyHosts/,
     ],
     [
-      "静态目标 pagesServer 非法",
+      "跳转目标 pagesServer 非法",
       {
         ...valid,
         targets: [
           {
             name: "gh",
-            kind: "static",
+            kind: "redirect",
             siteBase: "https://github-pages.miyakomeow.site",
             legacyHosts: ["brightmeows.github.io"],
             pagesServer: "https://codeberg.page/x",
@@ -91,11 +92,6 @@ describe("parseSiteConfig", () => {
       { ...valid, r2: { ...valid.r2, manifestObject: "/tables/tables.json" } },
       /manifestObject/,
     ],
-    [
-      "baselineObject 以斜杠开头",
-      { ...valid, r2: { ...valid.r2, baselineObject: "/meta/x.json" } },
-      /baselineObject/,
-    ],
     ["corsOrigins 为空", { ...valid, r2: { ...valid.r2, corsOrigins: [] } }, /corsOrigins/],
     [
       "corsOrigins 含路径",
@@ -107,19 +103,19 @@ describe("parseSiteConfig", () => {
   });
 });
 
-describe("readSiteConfig / findStaticTarget", () => {
-  it("从磁盘读取并取静态目标", () => {
+describe("readSiteConfig / findRedirectTarget", () => {
+  it("从磁盘读取并取跳转目标", () => {
     const file = path.join(mkdtempSync(path.join(tmpdir(), "site-config-")), "site.json");
     writeFileSync(file, JSON.stringify(valid));
     const config = readSiteConfig(file);
-    expect(findStaticTarget(config, "github-pages").siteBase).toBe(
+    expect(findRedirectTarget(config, "github-pages").siteBase).toBe(
       "https://github-pages.miyakomeow.site"
     );
   });
 
-  it("目标不存在或不是静态宿主时报错", () => {
+  it("目标不存在或不是跳转目标时报错", () => {
     const config = parseSiteConfig(valid, "test");
-    expect(() => findStaticTarget(config, "nope")).toThrow(/没有目标/);
-    expect(() => findStaticTarget(config, "cloudflare")).toThrow(/不是静态宿主/);
+    expect(() => findRedirectTarget(config, "nope")).toThrow(/没有目标/);
+    expect(() => findRedirectTarget(config, "cloudflare")).toThrow(/不是跳转目标/);
   });
 });

@@ -6,18 +6,16 @@
  * 页面。取数经依赖注入收编——页面传真实现，单测传假实现，回退链的每条
  * 路径都是纯函数断言（见 shared-edit.test.ts）。
  *
- * 加载链语义（与 2026-10 之前的页面内实现逐分支一致）：
- * 1. 登录态不可用（静态宿主）：只依赖本站清单，命中即本地编辑，未命中 404；
- * 2. 未登录：清单命中即本地编辑，未命中引导登录（可能是待创建的新表）；
- * 3. 已登录：查 id 可用即为新表（带种子），已占用回落清单，仍未命中 404；
- * 4. 查 id 抛“接口不可用”：按静态宿主口径回落清单。
+ * 加载链语义：
+ * 1. 未登录：清单命中即本地编辑，未命中引导登录（可能是待创建的新表）；
+ * 2. 已登录：查 id 可用即为新表（带种子），已占用回落清单，仍未命中 404；
+ * 3. 接口异常：进入错误态，不再回落到静态宿主的本地编辑。
  */
 
 import type { SharedTableItem } from "@brightmeows/mirror/shared";
 import { validateSharedId } from "@brightmeows/mirror/shared";
 import { sharedTablePath } from "@brightmeows/mirror/urls";
 
-import { ApiUnavailableError } from "#lib/data/api/http.js";
 import type {
   SharedCreateResult,
   SharedPayloadBody,
@@ -25,9 +23,7 @@ import type {
 } from "#lib/data/api/shared-api.js";
 import { m } from "#lib/paraglide/messages.js";
 
-/** 页面阶段：域状态机（login/notfound 是域结果，不并入 AsyncState；
- *  接口不可用不单独设相——四条路径都回落到清单或错误，原实现的
- *  “unavailable” 枚举成员从未被赋值，已随本控制器移除）。 */
+/** 页面阶段：域状态机（login/notfound 是域结果，不并入 AsyncState）。 */
 type SharedEditPhase = "loading" | "login" | "notfound" | "error" | "ready";
 
 /** 编辑页状态：页面以整体替换的方式更新（控制器返回新对象）。 */
@@ -60,7 +56,6 @@ export function initialSharedEditState(): SharedEditState {
 export interface SharedEditDeps {
   auth: {
     ensureLoaded(): Promise<void>;
-    unavailable(): boolean;
     login(): string | null;
   };
   /** 在共享清单里找表；cacheBust 穿透 60 秒边缘缓存。 */
@@ -97,18 +92,9 @@ export async function loadSharedEdit(
   const state = initialSharedEditState();
   await deps.auth.ensureLoaded();
 
-  // 1. 接口不可用（静态宿主）：只依赖本站共享清单做本地编辑
-  if (deps.auth.unavailable()) {
-    try {
-      return readyFromList(state, await deps.findInList(false));
-    } catch (error) {
-      return errorState(state, error);
-    }
-  }
-
   try {
     const login = deps.auth.login();
-    // 2. 未登录：清单命中即本地编辑；未命中可能是待创建的新表，引导登录
+    // 1. 未登录：清单命中即本地编辑；未命中可能是待创建的新表，引导登录
     if (login === null) {
       const found = await deps.findInList(false);
       if (found === null) {
@@ -116,21 +102,13 @@ export async function loadSharedEdit(
       }
       return { ...state, item: found, baseline: found.updated_at, phase: "ready" };
     }
-    // 3. 已登录：id 可用即为新表；已占用回落清单
+    // 2. 已登录：id 可用即为新表；已占用回落清单
     const check = await deps.checkId(tableId);
     if (check.available) {
       return { ...state, isNew: true, seed: deps.takeSeed(), phase: "ready" };
     }
     return readyFromList(state, await deps.findInList(false));
   } catch (error) {
-    // 4. 查 id 抛“接口不可用”：按静态宿主口径回落清单
-    if (error instanceof ApiUnavailableError) {
-      try {
-        return readyFromList(state, await deps.findInList(false));
-      } catch (fallbackError) {
-        return errorState(state, fallbackError);
-      }
-    }
     return errorState(state, error);
   }
 }

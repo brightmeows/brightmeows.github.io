@@ -8,11 +8,9 @@ import remarkGfm from "remark-gfm";
 import { defineConfig } from "vite";
 
 // 构建期语言注入：dev 默认 zh-cn（编辑现场），生产默认 en（baseLocale）；
-// 多语构建由 PUBLIC_SITE_LOCALE 逐 flavor 指定。静态目标（PUBLIC_SITE_KIND=static）
-// 只注入 __STATIC_TARGET__（隐藏切换器），语言仍由 __SITE_LOCALE__ 决定。
+// 多语构建由 PUBLIC_SITE_LOCALE 逐 flavor 指定。
 const siteLocale =
   process.env.PUBLIC_SITE_LOCALE ?? (process.env.NODE_ENV === "development" ? "zh-cn" : "en");
-const staticTarget = process.env.PUBLIC_SITE_KIND === "static";
 
 // 应用版本：多语构建由 scripts/build-site.ts 生成一次并经 BUILD_VERSION 注入，
 // 四个 flavor 共用同一个值——各语言树 HTML 内嵌的 version 与合并后的
@@ -50,7 +48,6 @@ export default defineConfig({
   },
   define: {
     __SITE_LOCALE__: JSON.stringify(siteLocale),
-    __STATIC_TARGET__: JSON.stringify(staticTarget),
   },
   plugins: [
     tailwindcss(),

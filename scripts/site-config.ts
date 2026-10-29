@@ -10,13 +10,13 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-/** 静态宿主目标：构建期用 `--target=<name>` 生成镜像页与该目标的 tables.json。 */
-export interface StaticTarget {
+/** 跳转宿主目标：构建期用 `--target=<name>` 生成跳转壳与域配置提交物。 */
+export interface RedirectTarget {
   name: string;
-  kind: "static";
-  /** 自定义子域（`<name>.<主站 host>`），API 会话与 CORS 白名单都以此为准。 */
+  kind: "redirect";
+  /** 自定义子域（`<name>.<主站 host>`），跳转壳的部署目标。 */
   siteBase: string;
-  /** 平台默认域（如 *.github.io）；浏览器访问会被前端兜底跳转到 siteBase。 */
+  /** 平台默认域（如 *.github.io）；跳转壳同时覆盖这些入口。 */
   legacyHosts: string[];
   /** git-pages 服务的 TLS 主机名（Codeberg）：自定义域证书就绪前上传时的连接用。 */
   pagesServer?: string;
@@ -29,7 +29,7 @@ export interface WorkerTarget {
   hosts: string[];
 }
 
-export type SiteTarget = StaticTarget | WorkerTarget;
+export type SiteTarget = RedirectTarget | WorkerTarget;
 
 export interface SiteConfig {
   origin: string;
@@ -37,8 +37,6 @@ export interface SiteConfig {
   r2: {
     base: string;
     manifestObject: string;
-    /** 上次通知下游重建时的清单对象键（列表变动的判定基线）。 */
-    baselineObject: string;
     corsOrigins: string[];
   };
 }
@@ -87,13 +85,13 @@ function parseTarget(value: unknown, index: number): SiteTarget {
   }
   const record = value as Record<string, unknown>;
   const name = requireString(record.name, `${where}.name`);
-  if (record.kind === "static") {
+  if (record.kind === "redirect") {
     if (!Array.isArray(record.legacyHosts) || record.legacyHosts.length === 0) {
       throw new Error(`${where}.legacyHosts 必须是非空数组`);
     }
     return {
       name,
-      kind: "static",
+      kind: "redirect",
       siteBase: requireOrigin(record.siteBase, `${where}.siteBase`),
       legacyHosts: record.legacyHosts.map((host, i) =>
         requireHost(host, `${where}.legacyHosts[${i}]`)
@@ -113,7 +111,7 @@ function parseTarget(value: unknown, index: number): SiteTarget {
       hosts: record.hosts.map((host, i) => requireString(host, `${where}.hosts[${i}]`)),
     };
   }
-  throw new Error(`${where}.kind 只能是 "static" 或 "worker"`);
+  throw new Error(`${where}.kind 只能是 "redirect" 或 "worker"`);
 }
 
 /** 解析并校验配置对象；任何缺失或非法字段都会抛出，不做静默兜底。 */
@@ -139,10 +137,6 @@ export function parseSiteConfig(value: unknown, source = CONFIG_PATH): SiteConfi
   if (manifestObject.startsWith("/")) {
     throw new Error(`r2.manifestObject 不应以斜杠开头：${manifestObject}`);
   }
-  const baselineObject = requireString(r2Record.baselineObject, "r2.baselineObject");
-  if (baselineObject.startsWith("/")) {
-    throw new Error(`r2.baselineObject 不应以斜杠开头：${baselineObject}`);
-  }
   if (!Array.isArray(r2Record.corsOrigins) || r2Record.corsOrigins.length === 0) {
     throw new Error(`r2.corsOrigins 必须是非空数组：${source}`);
   }
@@ -152,7 +146,6 @@ export function parseSiteConfig(value: unknown, source = CONFIG_PATH): SiteConfi
     r2: {
       base: requireHttpUrl(r2Record.base, "r2.base").replace(/\/+$/, ""),
       manifestObject,
-      baselineObject,
       corsOrigins: r2Record.corsOrigins.map((origin, i) =>
         requireOrigin(origin, `r2.corsOrigins[${i}]`)
       ),
@@ -165,15 +158,15 @@ export function readSiteConfig(configPath: string = CONFIG_PATH): SiteConfig {
   return parseSiteConfig(JSON.parse(readFileSync(configPath, "utf8")));
 }
 
-/** 按名称取静态目标；不存在时报错（生成脚本的 --target 用）。 */
-export function findStaticTarget(config: SiteConfig, name: string): StaticTarget {
+/** 按名称取跳转目标；不存在时报错（生成脚本的 --target 用）。 */
+export function findRedirectTarget(config: SiteConfig, name: string): RedirectTarget {
   const target = config.targets.find((item) => item.name === name);
   if (!target) {
     const names = config.targets.map((item) => item.name).join("、");
     throw new Error(`配置里没有目标 ${name}（可选：${names}）`);
   }
-  if (target.kind !== "static") {
-    throw new Error(`目标 ${name} 不是静态宿主（kind=${target.kind}）`);
+  if (target.kind !== "redirect") {
+    throw new Error(`目标 ${name} 不是跳转目标（kind=${target.kind}）`);
   }
   return target;
 }

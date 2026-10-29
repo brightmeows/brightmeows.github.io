@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  buildSharedExportPackage,
   commitEditorSave,
   decideLocalSaveGate,
   decideNewTableDraft,
@@ -195,26 +194,17 @@ describe("planEditorSave 与 commitEditorSave", () => {
   });
 });
 
-describe("planSaveAsShared 与导出包", () => {
+describe("planSaveAsShared", () => {
   const header = { name: "表名", symbol: "SY" };
   const entries = [{ md5: "a", level: 1 }];
 
   it("载荷非法返回 invalid 通知", () => {
-    const plan = planSaveAsShared({ name: "" }, [], "bridge");
+    const plan = planSaveAsShared({ name: "" }, []);
     if (plan.kind !== "invalid") throw new Error("want invalid");
     expect(plan.notice.kind).toBe("error");
   });
 
-  it("bridge 模式合法载荷走导出；same-origin 走认领", () => {
-    expect(planSaveAsShared(header, entries, "bridge")).toEqual({ kind: "export" });
-    expect(planSaveAsShared(header, entries, "same-origin")).toEqual({ kind: "claim" });
-  });
-
-  it("导出包头经过 withLocalDataUrl（data_url 为站内路径）", () => {
-    const pkg = buildSharedExportPackage(header, entries) as {
-      header: Record<string, unknown>;
-    };
-    expect(typeof pkg.header.data_url).toBe("string");
-    expect(pkg.header.name).toBe("表名");
+  it("合法载荷走认领", () => {
+    expect(planSaveAsShared(header, entries)).toEqual({ kind: "claim" });
   });
 });

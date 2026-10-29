@@ -27,43 +27,11 @@ import {
   handleRestore,
   handleStatus,
 } from "./handlers/tables.ts";
-import { allowedOrigins, checkAllowedOrigin, failure } from "./http.ts";
+import { checkSameOrigin, failure } from "./http.ts";
 
-/** 给白名单内 Origin 的响应补 CORS 头；同源请求（无 Origin 头）原样返回。 */
-function withCors(request: Request, env: Env, response: Response): Response {
-  const origin = request.headers.get("origin");
-  if (origin === null || !allowedOrigins(env).includes(origin)) {
-    return response;
-  }
-  const headers = new Headers(response.headers);
-  headers.set("access-control-allow-origin", origin);
-  headers.set("access-control-allow-credentials", "true");
-  headers.append("vary", "Origin");
-  return new Response(response.body, { status: response.status, headers });
-}
-
-/** 分发 `/api/*` 请求；未匹配的路径返回 404。白名单内 Origin 的预检在此响应。 */
+/** 分发 `/api/*` 请求；未匹配的路径返回 404。API 只接受同源请求。 */
 export async function handleApi(request: Request, env: Env, url: URL): Promise<Response> {
-  if (request.method === "OPTIONS") {
-    const origin = request.headers.get("origin");
-    if (origin === null || !allowedOrigins(env).includes(origin)) {
-      return failure(403, "Origin not in the allowlist", {
-        code: API_ERROR_CODES.originNotAllowed,
-      });
-    }
-    return new Response(null, {
-      status: 204,
-      headers: {
-        "access-control-allow-origin": origin,
-        "access-control-allow-credentials": "true",
-        "access-control-allow-methods": "GET, POST",
-        "access-control-allow-headers": "content-type",
-        "access-control-max-age": "86400",
-        vary: "Origin",
-      },
-    });
-  }
-  return withCors(request, env, await routeApi(request, env, url));
+  return routeApi(request, env, url);
 }
 
 /** 路由表主体：路径与方法分派。 */
@@ -83,10 +51,10 @@ async function routeApi(request: Request, env: Env, url: URL): Promise<Response>
     return handleCallback(env, request, url, now);
   }
   if (path === "/api/auth/logout" && request.method === "POST") {
-    if (!checkAllowedOrigin(request, allowedOrigins(env))) {
+    if (!checkSameOrigin(request)) {
       return failure(403, "Origin check failed", { code: API_ERROR_CODES.originCheckFailed });
     }
-    return handleLogout(env, url);
+    return handleLogout(url);
   }
   if (path === "/api/tables/preview" && request.method === "POST") {
     return handlePreview(request, env, now);

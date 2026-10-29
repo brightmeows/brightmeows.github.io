@@ -1,5 +1,5 @@
 import type { CurrentUser } from "../api/mirror-user-api";
-import { ApiUnavailableError, fetchCurrentUser, submitLogout } from "../api/mirror-user-api";
+import { fetchCurrentUser, submitLogout } from "../api/mirror-user-api";
 
 /** 登录态拉取状态。 */
 export type AuthStatus =
@@ -8,9 +8,7 @@ export type AuthStatus =
   /** 拉取中 */
   | "loading"
   /** 已就绪（user 为 null 即未登录） */
-  | "ready"
-  /** 接口不可用（静态宿主上 /api/* 为 404） */
-  | "unavailable";
+  | "ready";
 
 /**
  * 镜像用户登录态的共享 store（Svelte 5 runes）。
@@ -68,15 +66,11 @@ class AuthStore {
     try {
       this.user = await fetchCurrentUser();
       this.status = "ready";
-    } catch (error) {
-      if (error instanceof ApiUnavailableError) {
-        this.status = "unavailable";
-      } else {
-        // 其他失败（网络抖动等）按未登录呈现，不阻塞页面；
-        // 用户再点登录会重新走 OAuth，会话若仍在则无感恢复。
-        this.user = null;
-        this.status = "ready";
-      }
+    } catch {
+      // 失败（网络抖动等）按未登录呈现，不阻塞页面；
+      // 用户再点登录会重新走 OAuth，会话若仍在则无感恢复。
+      this.user = null;
+      this.status = "ready";
     }
   }
 }

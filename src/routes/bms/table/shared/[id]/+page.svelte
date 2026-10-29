@@ -10,7 +10,6 @@
   import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
   import { r2SharedDataUrl, r2SharedHeaderUrl } from "#lib/constants/r2.js";
-  import { SITE_ORIGIN, apiBase, isStaticHost } from "#lib/constants/site.js";
   import { btnBar, btnGhostMd, btnPrimary, inputEditorBase } from "#lib/constants/ui-classes.js";
   import {
     deleteSharedTable,
@@ -53,7 +52,6 @@
   );
 
   let s = $state<SharedEditState | null>(null);
-  let bridge = $state(false);
   let loginHref = $state("/api/auth/login");
   let newIdInput = $state("");
   let busy = $state(false);
@@ -71,7 +69,6 @@
     return {
       auth: {
         ensureLoaded: () => auth.ensureLoaded(),
-        unavailable: () => auth.status === "unavailable",
         login: () => auth.user?.login ?? null,
       },
       findInList: async (cacheBust: boolean): Promise<SharedTableItem | null> => {
@@ -182,9 +179,8 @@
       isEdit = new URLSearchParams(window.location.search).has("edit");
     };
     window.addEventListener("popstate", syncMode);
-    bridge = isStaticHost();
     const returnTo = window.location.pathname;
-    loginHref = `${apiBase()}/api/auth/login?return_to=${encodeURIComponent(returnTo)}`;
+    loginHref = `/api/auth/login?return_to=${encodeURIComponent(returnTo)}`;
     void load();
     return () => window.removeEventListener("popstate", syncMode);
   });
@@ -199,7 +195,7 @@
   </div>
 {:else if isEdit && s === null}
   <PageShell panes={[loadingPane]} />
-{:else if isEdit && s !== null && (s.phase === "login" || s.phase === "notfound" || s.phase === "error" || (bridge && s.isNew))}
+{:else if isEdit && s !== null && (s.phase === "login" || s.phase === "notfound" || s.phase === "error")}
   <PageShell panes={[messagePane]} />
 {:else}
   <BmsTablePage
@@ -209,10 +205,9 @@
       draftKey: draftStorageKey("shared", tableId),
     }}
     publish={{
-      onSave: bridge || s === null ? undefined : handleSave,
-      conflictCheck: bridge ? undefined : conflictCheck,
-      saveAsShared: isNew ? "none" : bridge ? "bridge" : "same-origin",
-      siteOrigin: SITE_ORIGIN,
+      onSave: s === null ? undefined : handleSave,
+      conflictCheck,
+      saveAsShared: isNew ? "none" : "same-origin",
     }}
     capabilities={{
       mode: "shared",
@@ -321,14 +316,6 @@
         <button class="{btnGhostMd} mt-3" type="button" onclick={() => void load()}>
           {m["common.reload"]()}
         </button>
-      {:else}
-        <p class="text-[1rem] text-white-75">{m["editor.bridge_new_hint"]()}</p>
-        <a
-          class="link-accent mt-3 inline-block"
-          href={`${SITE_ORIGIN}/bms/table/shared/new/`}
-          target="_blank"
-          rel="noopener noreferrer">{m["editor.bridge_new_link"]()}</a
-        >
       {/if}
     </div>
   </GlassPanel>

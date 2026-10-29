@@ -127,7 +127,7 @@ export function writeDraftClaim(claim: DraftClaim): void {
   try {
     sessionStorage.setItem(CLAIM_STORAGE_KEY, JSON.stringify(claim));
   } catch {
-    // 隐私模式或存储禁用：认领失败不阻断（静态宿主桥接与手动导入仍可用）
+    // 隐私模式或存储禁用：认领失败不阻断（手动导入仍可用）
   }
 }
 

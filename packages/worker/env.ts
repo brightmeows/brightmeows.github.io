@@ -2,9 +2,9 @@
  * Worker 运行时环境与全局常量。
  *
  * 绑定与部署期变量在 wrangler.jsonc（ASSETS、MIRROR_BUCKET、MIRROR_DB 与 R2_BASE、
- * R2_MANIFEST_OBJECT），密钥经
- * `wrangler secret put` 注入：GitHub App 的用户授权凭据与私钥（登录与触发
- * 工作流共用同一个 App）、会话签名密钥，以及供 Actions 调内部接口的共享 token。
+ * R2_MANIFEST_OBJECT），密钥经 `wrangler secret put` 注入：GitHub App 的用户授权
+ * 凭据与私钥（登录与单表抓取工作流共用同一个 App）、会话签名密钥，以及供 Actions
+ * 调内部接口的共享 token。
  */
 
 /** Workers 运行时绑定与 secrets。 */
@@ -18,16 +18,12 @@ export interface Env {
   R2_BASE: string;
   /** 清单对象键：config/site.json 的 r2.manifestObject，经 vars 注入。 */
   R2_MANIFEST_OBJECT: string;
-  /** 跨源 API 的 Origin 白名单（逗号分隔）：站点三域与本地 dev，经 vars 注入。 */
-  SITE_ORIGINS: string;
-  /** 会话 cookie 的 Domain 属性：静态宿主子域与主站共享会话（同站，Lax 保留）。 */
-  COOKIE_DOMAIN: string;
   /** GitHub App 的用户授权凭据（登录用；App 与 OAuth App 共用同一套 OAuth 流程）。 */
   GITHUB_OAUTH_CLIENT_ID: string;
   GITHUB_OAUTH_CLIENT_SECRET: string;
   /** 会话 cookie 的 HMAC 签名密钥（任意长随机串）。 */
   SESSION_SECRET: string;
-  /** GitHub App 的 App ID、私钥（PEM 文本）与安装 ID：用于签发 installation token。 */
+  /** GitHub App 的 App ID、私钥（PEM 文本）与安装 ID：用于触发单表抓取工作流。 */
   GITHUB_APP_ID: string;
   GITHUB_APP_PRIVATE_KEY: string;
   GITHUB_APP_INSTALLATION_ID: string;

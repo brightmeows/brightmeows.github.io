@@ -1,5 +1,5 @@
 /**
- * 打印某个静态目标的相关地址，供工作流把域名从 YAML 里彻底移出。
+ * 打印某个跳转目标的相关地址，供工作流把域名从 YAML 里彻底移出。
  *
  * 用法：
  *   node scripts/site-target.ts --target=codeberg-pages               # 站点基址（带尾斜杠）
@@ -12,17 +12,17 @@
 
 import { pathToFileURL } from "node:url";
 
-import { findStaticTarget, readSiteConfig, CONFIG_PATH } from "./site-config.ts";
+import { findRedirectTarget, readSiteConfig, CONFIG_PATH } from "./site-config.ts";
 
-/** 静态目标的站点基址（尾部补斜杠）。 */
+/** 跳转目标的站点基址（尾部补斜杠）。 */
 export function resolveSiteBase(targetName: string): string {
-  const target = findStaticTarget(readSiteConfig(CONFIG_PATH), targetName);
+  const target = findRedirectTarget(readSiteConfig(CONFIG_PATH), targetName);
   return `${target.siteBase.replace(/\/+$/, "")}/`;
 }
 
 /** 平台原域（legacyHosts 的第一项）的完整 URL。 */
 export function resolveLegacyBase(targetName: string): string {
-  const target = findStaticTarget(readSiteConfig(CONFIG_PATH), targetName);
+  const target = findRedirectTarget(readSiteConfig(CONFIG_PATH), targetName);
   const host = target.legacyHosts[0];
   if (host === undefined) {
     throw new Error(`目标 ${targetName} 没有 legacyHosts，无法取平台原域`);
@@ -32,7 +32,7 @@ export function resolveLegacyBase(targetName: string): string {
 
 /** git-pages 服务的 TLS 主机名（未配置时报错，不静默回退）。 */
 export function resolvePagesServer(targetName: string): string {
-  const target = findStaticTarget(readSiteConfig(CONFIG_PATH), targetName);
+  const target = findRedirectTarget(readSiteConfig(CONFIG_PATH), targetName);
   if (target.pagesServer === undefined) {
     throw new Error(`目标 ${targetName} 未配置 pagesServer（git-pages 上传需要它）`);
   }
@@ -43,7 +43,7 @@ function main(argv: string[]): void {
   const arg = argv.find((value) => value.startsWith("--target="));
   if (!arg) {
     throw new Error(
-      "用法：node scripts/site-target.ts --target=<静态目标名> [--legacy-base|--server]"
+      "用法：node scripts/site-target.ts --target=<跳转目标名> [--legacy-base|--server]"
     );
   }
   const targetName = arg.slice("--target=".length);

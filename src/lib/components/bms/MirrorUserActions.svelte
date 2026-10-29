@@ -2,7 +2,6 @@
   import { onMount } from "svelte";
 
   import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
-  import { SITE_ORIGIN } from "#lib/constants/site.js";
   import { btnGhostXs } from "#lib/constants/ui-classes.js";
   import {
     fetchFetchStatus,
@@ -36,7 +35,6 @@
   let restoring = $state<string | null>(null);
 
   // 登录态在共享 store（顶栏同源）；回收站列表随首次就绪的登录态加载
-  const unavailable = $derived(auth.status === "unavailable");
   const user = $derived(auth.user);
 
   let removedLoaded = $state(false);
@@ -159,17 +157,7 @@
   }
 </script>
 
-{#if unavailable}
-  <GlassPanel class="mt-4 text-[0.95rem] text-white-75">
-    {m["mirror.api_unavailable_before"]()}
-    <a
-      class="link-accent"
-      href={`${SITE_ORIGIN}/bms/table/mirror/`}
-      target="_blank"
-      rel="noopener noreferrer">{m["mirror.api_unavailable_link"]()}</a
-    >{m["mirror.api_unavailable_after"]()}
-  </GlassPanel>
-{:else if auth.status === "ready"}
+{#if auth.status === "ready"}
   <GlassPanel class="mt-4">
     <div class="text-[0.9rem] text-white-60">
       {m["shared.cross_before"]()}
