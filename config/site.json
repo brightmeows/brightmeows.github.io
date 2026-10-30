@@ -4,7 +4,14 @@
     {
       "name": "cloudflare",
       "kind": "worker",
-      "hosts": ["brightmeows.com"]
+      "hosts": [
+        "brightmeows.com",
+        "www.brightmeows.com",
+        "brightmeows.cn",
+        "www.brightmeows.cn",
+        "github-pages.miyakomeow.site",
+        "codeberg-pages.miyakomeow.site"
+      ]
     },
     {
       "name": "github-pages",

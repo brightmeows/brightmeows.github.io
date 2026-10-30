@@ -37,7 +37,14 @@
     "R2_BASE": "https://bms-table-mirror-r2.brightmeows.com",
     "R2_MANIFEST_OBJECT": "tables/tables.json",
   },
-  "routes": [{ "pattern": "brightmeows.com", "custom_domain": true }],
+  "routes": [
+    { "pattern": "brightmeows.com", "custom_domain": true },
+    { "pattern": "www.brightmeows.com", "custom_domain": true },
+    { "pattern": "brightmeows.cn", "custom_domain": true },
+    { "pattern": "www.brightmeows.cn", "custom_domain": true },
+    { "pattern": "github-pages.miyakomeow.site", "custom_domain": true },
+    { "pattern": "codeberg-pages.miyakomeow.site", "custom_domain": true },
+  ],
   // 定时任务：每天 UTC 18:30（北京时间 02:30）把用户层导出成 R2 快照，
   // 保留最近 14 份（见 packages/worker/backup.ts）。免费账户可建 5 个 cron trigger。
   "triggers": {
