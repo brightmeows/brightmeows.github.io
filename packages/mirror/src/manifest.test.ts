@@ -11,11 +11,11 @@ describe("transformTableList", () => {
     const list: MirrorTableItem[] = [
       { name: "表一", url: "http://example.com/table.html", dir_name: "[example.com] 表一" },
     ];
-    const result = transformTableList(list, "https://miyakomeow.site");
+    const result = transformTableList(list, "https://brightmeows.com");
     expect(result).toHaveLength(1);
     expect(result[0]?.url_from).toBe("http://example.com/table.html");
     expect(result[0]?.url).toBe(
-      "https://miyakomeow.site/bms/table/mirror/%5Bexample.com%5D%20%E8%A1%A8%E4%B8%80/"
+      "https://brightmeows.com/bms/table/mirror/%5Bexample.com%5D%20%E8%A1%A8%E4%B8%80/"
     );
     expect(result[0]?.dir_name).toBe("[example.com] 表一");
   });

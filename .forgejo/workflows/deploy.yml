@@ -5,6 +5,12 @@
 name: Deploy to Codeberg Pages
 on:
   workflow_dispatch:
+    inputs:
+      scheme:
+        description: "自定义域首次部署用 http 签证书，成功后再用 https"
+        type: choice
+        options: [http, https]
+        default: http
   push:
     branches: "main"
   schedule:
@@ -20,6 +26,8 @@ jobs:
   build_and_deploy:
     runs-on: codeberg-small-lazy
     timeout-minutes: 20
+    env:
+      SITE_SCHEME: ${{ inputs.scheme || 'http' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -45,7 +53,7 @@ jobs:
         # 跳转壳）；server 是 git-pages 服务主机名（自定义域证书就绪前上传时
         # 的 TLS 连接用）。域名一律从配置派生，不写进工作流。
         run: |
-          echo "SITE_BASE=$(node scripts/site-target.ts --target=codeberg-pages)" >> "$GITHUB_ENV"
+          echo "SITE_BASE=$(node scripts/site-target.ts --target=codeberg-pages --scheme=$SITE_SCHEME)" >> "$GITHUB_ENV"
           echo "LEGACY_BASE=$(node scripts/site-target.ts --target=codeberg-pages --legacy-base)" >> "$GITHUB_ENV"
           echo "PAGES_SERVER=$(node scripts/site-target.ts --target=codeberg-pages --server)" >> "$GITHUB_ENV"
       - name: Deploy to Codeberg Pages (custom domain)

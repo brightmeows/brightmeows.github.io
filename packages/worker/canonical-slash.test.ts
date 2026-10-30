@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { canonicalSlashRedirect } from "./canonical-slash";
 
-const ORIGIN = "https://miyakomeow.site";
+const ORIGIN = "https://brightmeows.com";
 const ROOT = "/bms/table/mirror/";
 
 function locationOf(path: string): string | null {

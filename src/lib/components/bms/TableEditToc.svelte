@@ -50,7 +50,7 @@
 </script>
 
 <FloatingPanel
-  sessionKey="miyakomeow_table_edit_toc_seen"
+  sessionKey="brightmeows_table_edit_toc_seen"
   initiallyOpen={false}
   position="top-right"
   size="medium"

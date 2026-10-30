@@ -14,10 +14,10 @@ import { pathToFileURL } from "node:url";
 
 import { findRedirectTarget, readSiteConfig, CONFIG_PATH } from "./site-config.ts";
 
-/** 跳转目标的站点基址（尾部补斜杠）。 */
-export function resolveSiteBase(targetName: string): string {
+/** 跳转目标的站点基址（尾部补斜杠）；`scheme` 仅用于自定义域首次签证书。 */
+export function resolveSiteBase(targetName: string, scheme: "http" | "https" = "https"): string {
   const target = findRedirectTarget(readSiteConfig(CONFIG_PATH), targetName);
-  return `${target.siteBase.replace(/\/+$/, "")}/`;
+  return `${target.siteBase.replace(/^https:/, `${scheme}:`).replace(/\/+$/, "")}/`;
 }
 
 /** 平台原域（legacyHosts 的第一项）的完整 URL。 */
@@ -47,11 +47,16 @@ function main(argv: string[]): void {
     );
   }
   const targetName = arg.slice("--target=".length);
+  const schemeArg = argv.find((value) => value.startsWith("--scheme="))?.slice("--scheme=".length);
+  if (schemeArg !== undefined && schemeArg !== "http" && schemeArg !== "https") {
+    throw new Error(`--scheme 只能是 http 或 https，实际是 ${schemeArg}`);
+  }
+  const scheme = schemeArg ?? "https";
   const value = argv.includes("--server")
     ? resolvePagesServer(targetName)
     : argv.includes("--legacy-base")
       ? resolveLegacyBase(targetName)
-      : resolveSiteBase(targetName);
+      : resolveSiteBase(targetName, scheme);
   process.stdout.write(value);
 }
 

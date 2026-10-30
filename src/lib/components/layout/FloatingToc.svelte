@@ -221,7 +221,7 @@
 
 {#if flatItems.length > 0}
   <FloatingPanel
-    sessionKey="miyakomeow_floating_toc_seen"
+    sessionKey="brightmeows_floating_toc_seen"
     initiallyOpen={false}
     position="top-right"
     size="medium"
