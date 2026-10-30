@@ -128,7 +128,7 @@ async function getInstallationToken(env: Env, now: Date = new Date()): Promise<s
       headers: {
         authorization: `Bearer ${jwt}`,
         accept: "application/vnd.github+json",
-        "user-agent": "miyakomeow-site-worker",
+        "user-agent": "brightmeows-site-worker",
       },
     }
   );
@@ -161,7 +161,7 @@ export async function dispatchWorkflow(
         authorization: `Bearer ${token}`,
         accept: "application/vnd.github+json",
         "content-type": "application/json",
-        "user-agent": "miyakomeow-site-worker",
+        "user-agent": "brightmeows-site-worker",
       },
       body: JSON.stringify({ ref: "main", inputs }),
     }

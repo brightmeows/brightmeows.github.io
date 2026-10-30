@@ -1,27 +1,34 @@
 {
-  "origin": "https://miyakomeow.site",
+  "origin": "https://brightmeows.com",
   "targets": [
     {
       "name": "cloudflare",
       "kind": "worker",
-      "hosts": ["miyakomeow.site", "www.miyakomeow.site"]
+      "hosts": [
+        "brightmeows.com",
+        "www.brightmeows.com",
+        "brightmeows.cn",
+        "www.brightmeows.cn",
+        "github-pages.miyakomeow.site",
+        "codeberg-pages.miyakomeow.site"
+      ]
     },
     {
       "name": "github-pages",
       "kind": "redirect",
-      "siteBase": "https://github-pages.miyakomeow.site",
+      "siteBase": "https://github-pages.brightmeows.com",
       "legacyHosts": ["brightmeows.github.io"]
     },
     {
       "name": "codeberg-pages",
       "kind": "redirect",
-      "siteBase": "https://codeberg-pages.miyakomeow.site",
+      "siteBase": "https://codeberg-pages.brightmeows.com",
       "legacyHosts": ["brightmeows.codeberg.page"],
       "pagesServer": "codeberg.page"
     }
   ],
   "r2": {
-    "base": "https://bms-table-mirror-r2.miyakomeow.site",
+    "base": "https://bms-table-mirror-r2.brightmeows.com",
     "manifestObject": "tables/tables.json",
     "corsOrigins": [
       "https://brightmeows.com",

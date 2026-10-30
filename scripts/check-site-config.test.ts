@@ -17,19 +17,19 @@ import { parseSiteConfig } from "./site-config.ts";
 
 const config = parseSiteConfig(
   {
-    origin: "https://miyakomeow.site",
+    origin: "https://brightmeows.com",
     targets: [
-      { name: "cloudflare", kind: "worker", hosts: ["miyakomeow.site", "www.miyakomeow.site"] },
+      { name: "cloudflare", kind: "worker", hosts: ["brightmeows.com", "www.brightmeows.com"] },
       {
         name: "github-pages",
         kind: "redirect",
-        siteBase: "https://github-pages.miyakomeow.site",
+        siteBase: "https://github-pages.brightmeows.com",
         legacyHosts: ["brightmeows.github.io"],
       },
       {
         name: "codeberg-pages",
         kind: "redirect",
-        siteBase: "https://codeberg-pages.miyakomeow.site",
+        siteBase: "https://codeberg-pages.brightmeows.com",
         legacyHosts: ["brightmeows.codeberg.page"],
       },
     ],
@@ -37,9 +37,9 @@ const config = parseSiteConfig(
       base: "https://r2.example",
       manifestObject: "tables/tables.json",
       corsOrigins: [
-        "https://miyakomeow.site",
-        "https://github-pages.miyakomeow.site",
-        "https://codeberg-pages.miyakomeow.site",
+        "https://brightmeows.com",
+        "https://github-pages.brightmeows.com",
+        "https://codeberg-pages.brightmeows.com",
         "https://brightmeows.github.io",
         "https://brightmeows.codeberg.page",
         "http://localhost:5173",
@@ -62,14 +62,14 @@ describe("wranglerRouteHosts", () => {
     const text = `{
       // 注释里有 "pattern" 字样也应被忽略吗？不，这里只取 pattern 键
       "routes": [
-        { "pattern": "miyakomeow.site", "custom_domain": true },
-        { "pattern": "www.miyakomeow.site", "custom_domain": true },
+        { "pattern": "brightmeows.com", "custom_domain": true },
+        { "pattern": "www.brightmeows.com", "custom_domain": true },
         { "pattern": "old.example/*" },
       ],
     }`;
     expect(wranglerRouteHosts(text)).toEqual([
-      "miyakomeow.site",
-      "www.miyakomeow.site",
+      "brightmeows.com",
+      "www.brightmeows.com",
       "old.example",
     ]);
   });
@@ -87,11 +87,11 @@ describe("targetFlagIssues", () => {
 
 describe("routeHostIssues", () => {
   it("routes 主机都在 worker.hosts 里时通过", () => {
-    expect(routeHostIssues(["miyakomeow.site", "www.miyakomeow.site"], config)).toEqual([]);
+    expect(routeHostIssues(["brightmeows.com", "www.brightmeows.com"], config)).toEqual([]);
   });
 
   it("出现额外主机时报错", () => {
-    expect(routeHostIssues(["miyakomeow.site", "evil.example"], config)).toEqual([
+    expect(routeHostIssues(["brightmeows.com", "evil.example"], config)).toEqual([
       expect.stringContaining("evil.example"),
     ]);
   });
@@ -103,11 +103,11 @@ describe("hardcodedDomainIssues / findDomainsInText", () => {
       [
         "brightmeows.codeberg.page",
         "brightmeows.github.io",
-        "codeberg-pages.miyakomeow.site",
-        "github-pages.miyakomeow.site",
-        "miyakomeow.site",
+        "codeberg-pages.brightmeows.com",
+        "github-pages.brightmeows.com",
+        "brightmeows.com",
         "r2.example",
-        "www.miyakomeow.site",
+        "www.brightmeows.com",
       ].sort()
     );
   });
@@ -115,7 +115,7 @@ describe("hardcodedDomainIssues / findDomainsInText", () => {
   it("工作流里出现域名即报错，注释里的也不算白名单", () => {
     const files = [
       { path: "a.yml", text: "run: node x.ts --target=github-pages" },
-      { path: "b.yml", text: "run: curl https://miyakomeow.site/" },
+      { path: "b.yml", text: "run: curl https://brightmeows.com/" },
     ];
     expect(hardcodedDomainIssues(files, config)).toEqual([expect.stringContaining("b.yml")]);
     expect(findDomainsInText("https://r2.example/x", collectDomains(config))).toEqual([
@@ -240,11 +240,11 @@ describe("redirectSiteBaseIssues", () => {
       {
         ...JSON.parse(JSON.stringify(config)),
         targets: [
-          { name: "cloudflare", kind: "worker", hosts: ["miyakomeow.site"] },
+          { name: "cloudflare", kind: "worker", hosts: ["brightmeows.com"] },
           {
             name: "github-pages",
             kind: "redirect",
-            siteBase: "https://wrong.miyakomeow.site",
+            siteBase: "https://wrong.brightmeows.com",
             legacyHosts: ["brightmeows.github.io"],
           },
         ],

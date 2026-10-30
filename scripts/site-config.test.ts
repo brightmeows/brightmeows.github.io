@@ -7,13 +7,13 @@ import { describe, expect, it } from "vitest";
 import { findRedirectTarget, readSiteConfig, parseSiteConfig } from "./site-config.ts";
 
 const valid = {
-  origin: "https://miyakomeow.site",
+  origin: "https://brightmeows.com",
   targets: [
-    { name: "cloudflare", kind: "worker", hosts: ["miyakomeow.site", "www.miyakomeow.site"] },
+    { name: "cloudflare", kind: "worker", hosts: ["brightmeows.com", "www.brightmeows.com"] },
     {
       name: "github-pages",
       kind: "redirect",
-      siteBase: "https://github-pages.miyakomeow.site",
+      siteBase: "https://github-pages.brightmeows.com",
       legacyHosts: ["brightmeows.github.io"],
       pagesServer: "codeberg.page",
     },
@@ -21,14 +21,14 @@ const valid = {
   r2: {
     base: "https://r2.example/",
     manifestObject: "tables/tables.json",
-    corsOrigins: ["https://miyakomeow.site"],
+    corsOrigins: ["https://brightmeows.com"],
   },
 };
 
 describe("parseSiteConfig", () => {
   it("解析合法配置并去掉 r2.base 尾部斜杠", () => {
     const config = parseSiteConfig(valid, "test");
-    expect(config.origin).toBe("https://miyakomeow.site");
+    expect(config.origin).toBe("https://brightmeows.com");
     expect(config.r2.base).toBe("https://r2.example");
     expect(config.targets).toHaveLength(2);
     expect(findRedirectTarget(config, "github-pages").pagesServer).toBe("codeberg.page");
@@ -36,7 +36,7 @@ describe("parseSiteConfig", () => {
 
   it.each([
     ["origin 缺失", { ...valid, origin: undefined }, /origin/],
-    ["origin 带路径", { ...valid, origin: "https://miyakomeow.site/x" }, /纯来源/],
+    ["origin 带路径", { ...valid, origin: "https://brightmeows.com/x" }, /纯来源/],
     ["targets 为空", { ...valid, targets: [] }, /targets/],
     ["target 名重复", { ...valid, targets: [valid.targets[1], valid.targets[1]] }, /唯一/],
     [
@@ -52,7 +52,7 @@ describe("parseSiteConfig", () => {
           {
             name: "gh",
             kind: "redirect",
-            siteBase: "github-pages.miyakomeow.site",
+            siteBase: "github-pages.brightmeows.com",
             legacyHosts: ["brightmeows.github.io"],
           },
         ],
@@ -64,7 +64,7 @@ describe("parseSiteConfig", () => {
       {
         ...valid,
         targets: [
-          { name: "gh", kind: "redirect", siteBase: "https://github-pages.miyakomeow.site" },
+          { name: "gh", kind: "redirect", siteBase: "https://github-pages.brightmeows.com" },
         ],
       },
       /legacyHosts/,
@@ -77,7 +77,7 @@ describe("parseSiteConfig", () => {
           {
             name: "gh",
             kind: "redirect",
-            siteBase: "https://github-pages.miyakomeow.site",
+            siteBase: "https://github-pages.brightmeows.com",
             legacyHosts: ["brightmeows.github.io"],
             pagesServer: "https://codeberg.page/x",
           },
@@ -109,7 +109,7 @@ describe("readSiteConfig / findRedirectTarget", () => {
     writeFileSync(file, JSON.stringify(valid));
     const config = readSiteConfig(file);
     expect(findRedirectTarget(config, "github-pages").siteBase).toBe(
-      "https://github-pages.miyakomeow.site"
+      "https://github-pages.brightmeows.com"
     );
   });
 

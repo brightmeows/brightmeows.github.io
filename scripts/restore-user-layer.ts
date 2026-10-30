@@ -3,7 +3,7 @@
  *
  * 备份对象是 R2 上的 `backup/user-layer-YYYY-MM-DD.json`（见 packages/worker/backup.ts）。
  * 本脚本读取其中的 layer 段、逐条校验后输出 INSERT OR REPLACE 语句，交由
- * `wrangler d1 execute miyakomeow-user --remote --file=<sql>` 执行——生成与执行
+ * `wrangler d1 execute brightmeows-user --remote --file=<sql>` 执行——生成与执行
  * 分离：恢复是人工决策，先 review SQL 再导入。快照里的审计段只作存档，不在
  * 这里导入（它会持续增长，且恢复语义上不需要回到某个时刻的审计）。
  *
