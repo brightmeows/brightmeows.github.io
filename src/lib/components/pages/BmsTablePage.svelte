@@ -247,9 +247,7 @@
               disabled={model.busy}
               onclick={() => void model.saveAsSharedNow()}
             >
-              {saveAsShared === "bridge"
-                ? m["editor.bridge_button"]()
-                : m["editor.save_as_shared"]()}
+              {m["editor.save_as_shared"]()}
             </button>
           {/if}
         {:else}
@@ -433,7 +431,6 @@
       bind:levelHints={model.levelHints}
       busy={model.busy}
       levelFilter={model.levelFilter}
-      bridge={saveAsShared === "bridge"}
       localOnly={sharedMode && !capabilities.canWrite}
       onChange={model.markDirty}
       onNotice={(value: EditorNotice | null) => (model.notice = value)}

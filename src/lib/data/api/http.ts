@@ -1,22 +1,21 @@
-import { apiBase } from "#lib/constants/site.js";
 import { m } from "#lib/paraglide/messages.js";
 import type { AsyncState } from "#lib/types/common.js";
 import { messageInputs, translateMessage } from "#lib/utils/i18n/i18n.js";
 
 /**
- * 站点侧 API 传输层的单份实现：跨源基址、凭据携带与错误封套翻译。
+ * 站点侧 API 传输层的单份实现：同源请求、凭据携带与错误封套翻译。
  *
  * 端点函数在 mirror-user-api / mirror-admin-api / shared-api 三个模块；
  * 端点的形状与窄化在 `@brightmeows/mirror/api`（契约单一来源）。
  *
- * 接口只存在于主站 Worker（Cloudflare）；静态宿主（GitHub / Codeberg Pages）
- * 上所有 `/api/*` 请求返回 404，调用方据此把界面切换为只读并引导到主站。
+ * 接口只存在于主站 Worker（Cloudflare）；静态宿主已退化为跳转壳，不再承载
+ * 应用，因此这里不再有跨源基址与静态宿主降级分支。
  */
 
-/** 接口不可用（静态宿主或服务异常）。 */
+/** 接口不可用（服务异常或非 JSON 404）。 */
 export class ApiUnavailableError extends Error {}
 
-/** AsyncState 的失败两态：错误已翻译，不可用对应静态宿主降级。 */
+/** AsyncState 的失败两态：错误已翻译，不可用对应接口异常。 */
 export type AsyncFailure = Extract<AsyncState<unknown>, { phase: "error" | "unavailable" }>;
 
 /** 把接口调用的异常集中分流为 AsyncState 失败态，代替各页手写 instanceof 分支。 */
@@ -36,11 +35,10 @@ export async function requestJson<T>(path: string, init?: RequestInit): Promise<
   if (!headers.has("content-type")) {
     headers.set("content-type", "application/json");
   }
-  // 静态宿主子域上 API 在主站：带基址跨源调用，include 携带同站会话 cookie
-  const response = await fetch(`${apiBase()}${path}`, {
+  const response = await fetch(path, {
     ...init,
     headers,
-    credentials: "include",
+    credentials: "same-origin",
   });
   if (!response.ok) {
     let message: string = m["common.request_failed"]({ status: response.status });
@@ -60,8 +58,8 @@ export async function requestJson<T>(path: string, init?: RequestInit): Promise<
     } catch {
       // 非 JSON 响应：沿用状态码文案
     }
-    // 404 仅在“非 JSON 错误封套”时按接口不可用处理（静态宿主的 /api/* 全为
-    // HTML 404）；主站 API 的业务 404 带封套，属于普通错误
+    // 404 仅在“非 JSON 错误封套”时按接口不可用处理；主站 API 的业务 404
+    // 带封套，属于普通错误
     if (response.status === 404 && !envelope) {
       throw new ApiUnavailableError(message);
     }

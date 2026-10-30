@@ -7,9 +7,7 @@
   import SharedTrashPanel from "#lib/components/bms/SharedTrashPanel.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import Checkbox from "#lib/components/ui/Checkbox.svelte";
-  import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
-  import { SITE_ORIGIN } from "#lib/constants/site.js";
   import { btnPrimaryLink } from "#lib/constants/ui-classes.js";
   import { loadSharedTables, submitSharedDelete } from "#lib/data/api/shared-api.js";
   import { auth } from "#lib/data/store/auth-store.svelte.js";
@@ -33,7 +31,6 @@
   let actionNotice = $state<{ kind: "ok" | "error"; text: string } | null>(null);
   let trashPanel = $state<{ refresh: () => Promise<void> } | undefined>(undefined);
 
-  const unavailable = $derived(auth.status === "unavailable");
   const login = $derived(auth.user?.login ?? null);
   const isAdmin = $derived(auth.status === "ready" && auth.user?.role === "admin");
 
@@ -105,18 +102,6 @@
       >
         {actionNotice.text}
       </div>
-    {/if}
-
-    {#if unavailable}
-      <GlassPanel class="text-[0.95rem] text-white-75">
-        {m["mirror.api_unavailable_before"]()}
-        <a
-          class="link-accent"
-          href={`${SITE_ORIGIN}/bms/table/shared/`}
-          target="_blank"
-          rel="noopener noreferrer">{m["mirror.api_unavailable_link"]()}</a
-        >{m["mirror.api_unavailable_after"]()}
-      </GlassPanel>
     {/if}
 
     <div class="flex flex-wrap items-center justify-center gap-3">

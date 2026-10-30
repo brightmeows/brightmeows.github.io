@@ -15,8 +15,7 @@ import type { MirrorMetaFields } from "#lib/types/bms-view.js";
  *
  * 形状与窄化来自 `@brightmeows/mirror/api`（2026-10 起 admin 端点与其他
  * 端点同规窄化）；传输层在 `./http`。
- * 接口只存在于主站 Worker；静态宿主上 `/api/*` 返回 404，
- * 调用方据 `ApiUnavailableError` 降级。
+ * 接口只存在于主站 Worker；静态宿主已退化为跳转壳。
  */
 
 export type TrashEntry = ContractTrashEntry;

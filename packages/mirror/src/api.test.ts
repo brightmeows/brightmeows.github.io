@@ -117,32 +117,33 @@ describe("narrowAdd", () => {
 
 describe("narrowDelete / narrowRestore", () => {
   it("删除：字段齐备原样收下，缺失兜底（dirName 回落请求值）", () => {
-    expect(
-      narrowDelete({ dirName: "d", trashPrefix: "t", remaining: 1, deployTriggered: true }, "f")
-    ).toEqual({ dirName: "d", trashPrefix: "t", remaining: 1, deployTriggered: true });
+    expect(narrowDelete({ dirName: "d", trashPrefix: "t", remaining: 1 }, "f")).toEqual({
+      dirName: "d",
+      trashPrefix: "t",
+      remaining: 1,
+    });
     expect(narrowDelete({ trashPrefix: "t" }, "fallback")).toEqual({
       dirName: "fallback",
       trashPrefix: "t",
       remaining: 0,
-      deployTriggered: false,
     });
     expect(narrowDelete("x", "fallback")).toEqual({
       dirName: "fallback",
       trashPrefix: "",
       remaining: 0,
-      deployTriggered: false,
     });
   });
 
   it("恢复：字段齐备原样收下，缺失兜底", () => {
-    expect(
-      narrowRestore({ dirName: "d", restoredObjects: 3, remaining: 1, deployTriggered: false }, "f")
-    ).toEqual({ dirName: "d", restoredObjects: 3, remaining: 1, deployTriggered: false });
+    expect(narrowRestore({ dirName: "d", restoredObjects: 3, remaining: 1 }, "f")).toEqual({
+      dirName: "d",
+      restoredObjects: 3,
+      remaining: 1,
+    });
     expect(narrowRestore(null, "fallback")).toEqual({
       dirName: "fallback",
       restoredObjects: 0,
       remaining: 0,
-      deployTriggered: false,
     });
   });
 });
@@ -259,25 +260,23 @@ describe("shared 端点窄化", () => {
   });
 
   it("删除与恢复：id 回落请求值，其余兜底", () => {
-    expect(
-      narrowSharedDelete(
-        { id: "i", trashPrefix: "t", objectsMoved: true, deployTriggered: true },
-        "f"
-      )
-    ).toEqual({ id: "i", trashPrefix: "t", objectsMoved: true, deployTriggered: true });
+    expect(narrowSharedDelete({ id: "i", trashPrefix: "t", objectsMoved: true }, "f")).toEqual({
+      id: "i",
+      trashPrefix: "t",
+      objectsMoved: true,
+    });
     expect(narrowSharedDelete(null, "fallback")).toEqual({
       id: "fallback",
       trashPrefix: "",
       objectsMoved: false,
-      deployTriggered: false,
     });
-    expect(
-      narrowSharedRestore({ id: "i", restoredObjects: 4, deployTriggered: false }, "f")
-    ).toEqual({ id: "i", restoredObjects: 4, deployTriggered: false });
+    expect(narrowSharedRestore({ id: "i", restoredObjects: 4 }, "f")).toEqual({
+      id: "i",
+      restoredObjects: 4,
+    });
     expect(narrowSharedRestore({}, "fallback")).toEqual({
       id: "fallback",
       restoredObjects: 0,
-      deployTriggered: false,
     });
   });
 });
@@ -350,25 +349,18 @@ describe("narrowAdminOverview", () => {
 
 describe("narrowAdminMutation", () => {
   it("形状完好时原样收下（含 restoredObjects）", () => {
-    expect(narrowAdminMutation({ ok: true, deployTriggered: true })).toEqual({
+    expect(narrowAdminMutation({ ok: true })).toEqual({ ok: true });
+    expect(narrowAdminMutation({ ok: true, restoredObjects: 3 })).toEqual({
       ok: true,
-      deployTriggered: true,
-    });
-    expect(narrowAdminMutation({ ok: true, deployTriggered: false, restoredObjects: 3 })).toEqual({
-      ok: true,
-      deployTriggered: false,
       restoredObjects: 3,
     });
   });
 
   it("全量兑底：非对象 ok 恒为 true（2xx 表示变更已发生）", () => {
-    expect(narrowAdminMutation(null)).toEqual({ ok: true, deployTriggered: false });
-    expect(narrowAdminMutation({})).toEqual({ ok: true, deployTriggered: false });
-    expect(
-      narrowAdminMutation({ ok: false, deployTriggered: "yes", restoredObjects: "x" })
-    ).toEqual({
+    expect(narrowAdminMutation(null)).toEqual({ ok: true });
+    expect(narrowAdminMutation({})).toEqual({ ok: true });
+    expect(narrowAdminMutation({ ok: false, restoredObjects: "x" })).toEqual({
       ok: false,
-      deployTriggered: false,
     });
   });
 });

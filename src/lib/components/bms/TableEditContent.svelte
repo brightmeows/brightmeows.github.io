@@ -31,8 +31,6 @@
     busy: boolean;
     /** 目录复选框的多选等级筛选（页面持有）。 */
     levelFilter: LevelFilter;
-    /** 静态宿主：内容顶部展示桥接提示。 */
-    bridge: boolean;
     /** 他人的共享表本地编辑：提示保存与改名仅作者可用。 */
     localOnly: boolean;
     // ---- 回调 ----
@@ -70,7 +68,6 @@
     levelHints = $bindable({}),
     busy,
     levelFilter,
-    bridge,
     localOnly,
     onChange,
     onNotice,
@@ -144,12 +141,6 @@
 <div class="flex flex-col gap-6">
   {#if banner}
     {@render banner()}
-  {:else if bridge}
-    <div
-      class="rounded-lg border border-[#64b5f6]/40 bg-[#64b5f6]/10 px-3 py-2 text-[0.9rem] text-[#90caf9]"
-    >
-      {m["editor.bridge_hint"]()}
-    </div>
   {:else if localOnly}
     <div
       class="rounded-lg border border-white-15 bg-black-20 px-3 py-2 text-[0.9rem] text-white-65"

@@ -16,7 +16,6 @@ import { computeTableStats, groupChartsByLevel, resolveCourses } from "@brightme
 import { withLocalDataUrl } from "@brightmeows/mirror/shared";
 
 import {
-  buildSharedExportPackage,
   commitEditorSave,
   planEditorSave,
   planSaveAsShared,
@@ -52,10 +51,8 @@ export interface TablePagePublish {
   onSave?: ((payload: TableEditPayload) => Promise<string | undefined>) | undefined;
   /** 保存前取当前线上 updated_at（共享表并发检查）。 */
   conflictCheck?: (() => Promise<string | undefined>) | undefined;
-  /** 另存为共享表：同源走草稿认领，bridge 走导出加跳主站，none 隐藏入口。 */
-  saveAsShared?: "same-origin" | "bridge" | "none" | undefined;
-  /** 主站地址（bridge 跳转用）。 */
-  siteOrigin?: string | undefined;
+  /** 另存为共享表：同源走草稿认领，none 隐藏入口。 */
+  saveAsShared?: "same-origin" | "none" | undefined;
 }
 
 /** 能力与初始态：写权限、创建态、并发基线与新表种子。 */
@@ -98,7 +95,6 @@ export function createTableModel(input: TableModelInput) {
   const onSave = $derived(publish().onSave);
   const conflictCheck = $derived(publish().conflictCheck);
   const saveAsShared = $derived(publish().saveAsShared ?? "none");
-  const siteOrigin = $derived(publish().siteOrigin);
   const canWrite = $derived(Boolean(capabilities().canWrite ?? false));
   const createMode = $derived(capabilities().createMode ?? false);
   const seed = $derived(capabilities().seed);
@@ -332,28 +328,16 @@ export function createTableModel(input: TableModelInput) {
     busy = false;
   }
 
-  /** 桥接导出：下载合并包加开主站新建页（bridge 模式与草稿失败回退共用）。 */
-  function exportAndOpen(kind: "ok" | "warn"): void {
-    downloadJsonFile("table-package.json", buildSharedExportPackage(buildHeader(), entries));
-    window.open(`${siteOrigin ?? ""}/bms/table/shared/new/`, "_blank", "noopener");
-    notice = { kind, text: m["editor.bridge_opened"]() };
-  }
-
   async function saveAsSharedNow(): Promise<void> {
     if (saveAsShared === "none") return;
-    const plan = planSaveAsShared(buildHeader(), entries, saveAsShared);
+    const plan = planSaveAsShared(buildHeader(), entries);
     if (plan.kind === "invalid") {
       notice = plan.notice;
       return;
     }
-    if (plan.kind === "export") {
-      exportAndOpen("ok");
-      return;
-    }
     const draftResult = await drafts.persist(buildDraftPayload());
     if (draftResult !== "ok") {
-      // 草稿无法随行：退回导出加跳主站的手动路径
-      exportAndOpen("warn");
+      notice = { kind: "error", text: m["editor.draft_unavailable"]() };
       return;
     }
     writeDraftClaim({ sourceDraftKey: draftKey, at: new Date().toISOString() });

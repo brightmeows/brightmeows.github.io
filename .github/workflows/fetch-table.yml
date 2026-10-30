@@ -2,13 +2,11 @@ name: Fetch Table
 
 # 单表抓取：用户提交添加后由 Worker 触发（workflow_dispatch），也可手动 dispatch
 # 演练。产物经 rclone 写入 R2 的 tables/<dir_name>/；抓取结果与状态经站点 Worker
-# 的内部接口写进 D1（不再落 R2 对象）。成功后触发一次站点部署，让新表在静态
-# 宿主上尽快可见。
+# 的内部接口写进 D1（不再落 R2 对象）。主站运行时读 R2/D1，不需要再触发部署。
 #
 # 需要的 Secrets（本仓库 Settings > Secrets and variables > Actions）：
 #   R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY / R2_ENDPOINT / R2_BUCKET — 与 update-tables 相同
 #   INTERNAL_API_TOKEN — 站点 Worker 的内部接口共享 token（与 Worker secret 同名同值）
-#   APP_ID / APP_PRIVATE_KEY — GitHub App 的 App ID 与私钥（换 installation token 触发 deploy）
 on:
   workflow_dispatch:
     inputs:
@@ -77,38 +75,3 @@ jobs:
             ./rclone copy "out/tables/$dir" "r2:${{ secrets.R2_BUCKET }}/tables/$dir" --transfers 4
           fi
           rm -f rclone
-
-      - name: Read fetch result
-        id: result
-        run: echo "state=$(jq -r .state out/result.json)" >> "$GITHUB_OUTPUT"
-
-      - name: Check app credentials
-        # 未配置 App 凭据时给出明确提示并跳过部署触发：抓取与上传此时已经完成，
-        # 不该因为缺配置把整轮标红（站点由 6 小时的 schedule 部署兜底）
-        if: steps.result.outputs.state == 'done'
-        id: creds
-        env:
-          APP_ID: ${{ secrets.APP_ID }}
-          APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
-        run: |
-          if [ -z "$APP_ID" ] || [ -z "$APP_PRIVATE_KEY" ]; then
-            echo "::warning::未配置 APP_ID 或 APP_PRIVATE_KEY，跳过部署触发；表数据已上传，站点会在下一轮 schedule 或手动部署时更新"
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Generate app token
-        # 用 GitHub App 换短时 installation token：没有长期令牌的过期与轮换问题
-        if: steps.result.outputs.state == 'done' && steps.creds.outputs.skip != 'true'
-        id: app-token
-        uses: actions/create-github-app-token@v3
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-
-      - name: Trigger site deploy
-        if: steps.result.outputs.state == 'done' && steps.creds.outputs.skip != 'true'
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: gh workflow run deploy.yml --ref main

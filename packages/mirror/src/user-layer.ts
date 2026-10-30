@@ -17,9 +17,6 @@ import type { MirrorTableItem } from "./types.ts";
 /** 每账号每日增删操作上限。 */
 export const DAILY_OPERATION_LIMIT = 10;
 
-/** 部署触发的节流窗口（毫秒）。 */
-export const DEPLOY_THROTTLE_MS = 10 * 60 * 1000;
-
 /**
  * 回收站保留天数：删除满该天数后由管线清理（update-tables 工作流的
  * `rclone delete --min-age 720h`），自助恢复窗口与此一致。改这里要同步工作流。
@@ -137,11 +134,6 @@ export interface AuditEntry {
   detail?: string | undefined;
   /** 折叠计数：保存类审计同表同日只留一行，次数累加在此（首行默认 1）。 */
   count?: number | undefined;
-}
-
-/** 部署触发节流状态。 */
-export interface DeployState {
-  last_requested_at: string;
 }
 
 /** 合并输入的用户层聚合。 */
@@ -483,18 +475,6 @@ export function serializeUserRecord(value: unknown): string {
 /** UTC 日期戳（`YYYY-MM-DD`），限次计数按 UTC 日划分。 */
 export function utcDateStamp(now: Date): string {
   return now.toISOString().slice(0, 10);
-}
-
-/** 是否允许在节流窗口外触发部署。 */
-export function shouldTriggerDeploy(
-  lastRequestedAt: string | null,
-  now: Date,
-  windowMs: number = DEPLOY_THROTTLE_MS
-): boolean {
-  if (lastRequestedAt === null) return true;
-  const last = Date.parse(lastRequestedAt);
-  if (Number.isNaN(last)) return true;
-  return now.getTime() - last >= windowMs;
 }
 
 /** 剩余可用操作次数，至少为 0。 */

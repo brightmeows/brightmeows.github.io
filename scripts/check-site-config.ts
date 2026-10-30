@@ -2,21 +2,17 @@
  * 离线一致性校验：把“不能 import 配置”的消费者钉在 `config/site.json` 上。
  *
  * 七条断言，每条都是纯函数（输入为文本），便于单测：
- * 1. 工作流里的 `--target=<名>` 必须存在于配置且是静态目标
+ * 1. 工作流里的 `--target=<名>` 必须存在于配置且是跳转目标
  * 2. `wrangler.jsonc` 的 routes 主机必须 ⊆ cloudflare 目标的 hosts
  * 3. 工作流文件里不得出现配置中的任何域名（域名一律由 `--target` 解析）
- * 4. `r2.corsOrigins` 必须覆盖 `origin` 与所有静态目标的 `siteBase`
- * 5. update-tables 写出的基线文件名必须等于 `r2.baselineObject` 的 basename
- *    （rclone copy 保留本地文件名，名字不一致会把对象写到错的键上）
- * 6. `.nvmrc` 存在，`package.json` 的 `devEngines.packageManager` 声明 pnpm 版本范围，
+ * 4. `r2.corsOrigins` 必须覆盖 `origin`（跳转目标不再直接读 R2）
+ * 5. `.nvmrc` 存在，`package.json` 的 `devEngines.packageManager` 声明 pnpm 版本范围，
  *    且工作流不显式传 pnpm 版本；node 版本通过文件读取（不能读文件的平台允许写
  *    字面量，但必须与 `.nvmrc` 相同）
- * 7. `wrangler.jsonc` 的 `vars` 与 `r2.base`/`r2.manifestObject` 一致，且不引入
- *    配置之外的键（Worker 从 env 读这两个值，这里是它们的守门）；
- *    另校验派生键 `SITE_ORIGINS`（跨源 API 的 Origin 白名单，必须覆盖站点三域）
- *    与 `COOKIE_DOMAIN`（等于 `.` 加主站 host，静态宿主子域共享会话）
- * 8. 静态目标的 `siteBase` 主机必须是 `<name>.<主站 host>`：子域名与 target 名
- *    对齐是机械规则，断言守住“名字即事实”（会话 cookie 与 CORS 白名单都依赖它）
+ * 6. `wrangler.jsonc` 的 `vars` 与 `r2.base`/`r2.manifestObject` 一致，且不引入
+ *    配置之外的键（Worker 从 env 读这两个值，这里是它们的守门）
+ * 7. 跳转目标的 `siteBase` 主机必须是 `<name>.<主站 host>`：子域名与 target 名
+ *    对齐是机械规则，断言守住“名字即事实”
  *
  * 纯读、不联网、毫秒级，进 pre-commit 与 CI。用法：`node scripts/check-site-config.ts`
  */
@@ -67,16 +63,16 @@ export function findDomainsInText(text: string, domains: string[]): string[] {
   return hits;
 }
 
-/** 断言 1：`--target=` 必须指向配置里存在的静态目标。 */
+/** 断言 1：`--target=` 必须指向配置里存在的跳转目标。 */
 export function targetFlagIssues(flags: string[], config: SiteConfig): string[] {
-  const staticNames = new Set(
-    config.targets.filter((target) => target.kind === "static").map((target) => target.name)
+  const redirectNames = new Set(
+    config.targets.filter((target) => target.kind === "redirect").map((target) => target.name)
   );
   return flags
-    .filter((flag) => !staticNames.has(flag))
+    .filter((flag) => !redirectNames.has(flag))
     .map(
       (flag) =>
-        `工作流里的 --target=${flag} 不是配置中的静态目标（可选：${[...staticNames].join("、")}）`
+        `工作流里的 --target=${flag} 不是配置中的跳转目标（可选：${[...redirectNames].join("、")}）`
     );
 }
 
@@ -105,41 +101,16 @@ export function hardcodedDomainIssues(
   return issues;
 }
 
-/** 断言 4：corsOrigins 覆盖 origin 与所有静态目标的 siteBase。 */
+/** 断言 4：corsOrigins 覆盖 origin。 */
 export function corsCoverageIssues(config: SiteConfig): string[] {
-  const required = [
-    config.origin,
-    ...config.targets.filter((target) => target.kind === "static").map((target) => target.siteBase),
-  ];
+  const required = [config.origin];
   const origins = new Set(config.r2.corsOrigins);
   return required
     .filter((origin) => !origins.has(origin))
     .map((origin) => `r2.corsOrigins 缺少 ${origin}：该来源无法从浏览器读取 R2 数据`);
 }
 
-/**
- * 断言 5：基线文件名与配置的对象键 basename 一致。
- * rclone copy 保留本地文件名，若工作流写出的名字与 `r2.baselineObject` 不符，
- * 对象会被写到另一个键上，下次读取仍视为“首次运行”而重复触发下游重建。
- */
-export function baselineFileNameIssues(args: {
-  config: SiteConfig;
-  updateTablesText: string;
-}): string[] {
-  // 文件名限定为字词、点与横线：工作流里该参数常出现在 $(...) 命令替换中
-  const match = /--out=\.\/([\w.-]+)/u.exec(args.updateTablesText);
-  if (match?.[1] === undefined) {
-    return ["update-tables.yml 里找不到 --out=./<基线文件名>"];
-  }
-  const expected = path.posix.basename(args.config.r2.baselineObject);
-  return match[1] === expected
-    ? []
-    : [
-        `update-tables.yml 写出的基线文件名 ${match[1]} 与 r2.baselineObject 的 basename 不一致（应为 ${expected}）`,
-      ];
-}
-
-/** 断言 6：版本来源唯一（`.nvmrc` + `devEngines.packageManager`）。 */
+/** 断言 5：版本来源唯一（`.nvmrc` + `devEngines.packageManager`）。 */
 export function versionSourceIssues(args: {
   nvmrc: string | null;
   packageJson: unknown;
@@ -203,13 +174,11 @@ export function versionSourceIssues(args: {
 }
 
 /**
- * 断言 7：`wrangler.jsonc` 的 `vars` 与配置的 r2 字段一致，且键集受控。
+ * 断言 6：`wrangler.jsonc` 的 `vars` 与配置的 r2 字段一致，且键集受控。
  *
  * Worker 不再 import `config/site.json`（改从 env 读 `R2_BASE` 与 `R2_MANIFEST_OBJECT`），
  * 这两个值的一致性只能靠断言守：值要一致，键集也不得超出配置管理的范围。
  *
- * 派生键：`SITE_ORIGINS`（逗号分隔 Origin 白名单，必须覆盖主站与全部静态子域，
- * 允许额外的本地 dev 端口）与 `COOKIE_DOMAIN`（必须等于 `.` 加主站 host）。
  */
 export function wranglerVarsIssues(args: { config: SiteConfig; wranglerText: string }): string[] {
   const match = /"vars"\s*:\s*\{([^}]*)\}/u.exec(args.wranglerText);
@@ -234,47 +203,8 @@ export function wranglerVarsIssues(args: { config: SiteConfig; wranglerText: str
     }
   }
 
-  const siteOrigins = entries.get("SITE_ORIGINS");
-  if (siteOrigins === undefined) {
-    issues.push("wrangler.jsonc 的 vars 缺少 SITE_ORIGINS（跨源 API 的 Origin 白名单）");
-  } else {
-    const items = siteOrigins
-      .split(",")
-      .map((item) => item.trim())
-      .filter((item) => item !== "");
-    const allowed = new Set([
-      args.config.origin,
-      ...args.config.targets
-        .filter((target) => target.kind === "static")
-        .map((target) => target.siteBase),
-    ]);
-    const seen = new Set<string>();
-    for (const item of items) {
-      try {
-        seen.add(new URL(item).origin);
-      } catch {
-        issues.push(`wrangler.jsonc 的 vars.SITE_ORIGINS 含非法 origin：${item}`);
-      }
-    }
-    for (const origin of allowed) {
-      if (!seen.has(origin)) {
-        issues.push(`wrangler.jsonc 的 vars.SITE_ORIGINS 缺少站点来源 ${origin}`);
-      }
-    }
-  }
-
-  const cookieDomain = entries.get("COOKIE_DOMAIN");
-  const expectedCookieDomain = `.${new URL(args.config.origin).host}`;
-  if (cookieDomain === undefined) {
-    issues.push("wrangler.jsonc 的 vars 缺少 COOKIE_DOMAIN（静态宿主子域共享会话）");
-  } else if (cookieDomain !== expectedCookieDomain) {
-    issues.push(
-      `wrangler.jsonc 的 vars.COOKIE_DOMAIN 应为 ${expectedCookieDomain}，实际是 ${cookieDomain}`
-    );
-  }
-
   for (const key of entries.keys()) {
-    if (!["R2_BASE", "R2_MANIFEST_OBJECT", "SITE_ORIGINS", "COOKIE_DOMAIN"].includes(key)) {
+    if (!["R2_BASE", "R2_MANIFEST_OBJECT"].includes(key)) {
       issues.push(`wrangler.jsonc 的 vars 出现未受配置管理的键 ${key}`);
     }
   }
@@ -282,25 +212,25 @@ export function wranglerVarsIssues(args: { config: SiteConfig; wranglerText: str
 }
 
 /**
- * 断言 8：静态目标的 siteBase 主机必须是 `<name>.<主站 host>`。
+ * 断言 7：跳转目标的 siteBase 主机必须是 `<name>.<主站 host>`。
  *
  * 子域名与 target 名对齐是机械规则：名字即事实，Worker 的 Origin 白名单、
  * 会话 cookie 的 Domain、CORS 配置都依赖这条规则的可推导性。
  */
-export function staticSiteBaseIssues(config: SiteConfig): string[] {
+export function redirectSiteBaseIssues(config: SiteConfig): string[] {
   const mainHost = new URL(config.origin).host;
   return config.targets
-    .filter((target) => target.kind === "static")
+    .filter((target) => target.kind === "redirect")
     .map((target) => {
       const expectedHost = `${target.name}.${mainHost}`;
       return new URL(target.siteBase).host === expectedHost
         ? null
-        : `静态目标 ${target.name} 的 siteBase 主机应为 ${expectedHost}（与 target 名对齐），实际是 ${new URL(target.siteBase).host}`;
+        : `跳转目标 ${target.name} 的 siteBase 主机应为 ${expectedHost}（与 target 名对齐），实际是 ${new URL(target.siteBase).host}`;
     })
     .filter((issue): issue is string => issue !== null);
 }
 
-/** 配置里出现过的全部域名（用于断言 3 的扫描列表；含静态目标的原域与 git-pages 服务主机）。 */
+/** 配置里出现过的全部域名（用于断言 3 的扫描列表；含跳转目标的原域与 git-pages 服务主机）。 */
 export function collectDomains(config: SiteConfig): string[] {
   const hostOf = (url: string): string => new URL(url).host;
   return [
@@ -308,7 +238,7 @@ export function collectDomains(config: SiteConfig): string[] {
       hostOf(config.origin),
       hostOf(config.r2.base),
       ...config.targets.flatMap((target) =>
-        target.kind === "static"
+        target.kind === "redirect"
           ? [
               hostOf(target.siteBase),
               ...target.legacyHosts,
@@ -354,13 +284,9 @@ function main(): void {
     ...targetFlagIssues(collectTargetFlags(allWorkflowText), config),
     ...routeHostIssues(wranglerRouteHosts(wranglerText), config),
     ...wranglerVarsIssues({ config, wranglerText }),
-    ...staticSiteBaseIssues(config),
+    ...redirectSiteBaseIssues(config),
     ...hardcodedDomainIssues(workflowFiles, config),
     ...corsCoverageIssues(config),
-    ...baselineFileNameIssues({
-      config,
-      updateTablesText: read(repoRoot, path.join(".github", "workflows", "update-tables.yml")),
-    }),
     ...versionSourceIssues({
       nvmrc: existsSync(nvmrcPath) ? readFileSync(nvmrcPath, "utf8") : null,
       packageJson: readJson(repoRoot, "package.json"),

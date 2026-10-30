@@ -1,13 +1,11 @@
-# 站点部署：三个目标，按目标分区。
+# 站点部署：主站加两个跳转宿主。
 #
-# - Cloudflare Workers（主站）：静态资源 + Worker，镜像表页面与
-#   tables.json 由 Worker 运行时生成，因此 Cloudflare 侧**不**需要构建期产出的
-#   镜像页；镜像页只写进 build-static/（静态宿主产物），与主站的 build/
-#   （en 根 + _i18n/zh-cn 双语树）天然隔离。
-# - GitHub Pages（静态镜像目标之一）：构建期生成静态镜像页与站点清单后发布
-#   build-static/（静态单语 flavor，隐藏语言切换器）。
-# - Codeberg Pages（静态镜像目标之二）：由 .forgejo/workflows/deploy.yml
-#   在 Codeberg 侧跑同样的“构建 + 生成”流程。
+# - Cloudflare Workers（主站）：静态资源 + Worker，镜像表页面与 tables.json
+#   全部由 Worker 运行时生成。
+# - GitHub Pages：只发布跳转壳；自定义域由 Cloudflare 代理发 301，平台默认域
+#   走客户端跳转。
+# - Codeberg Pages：只发布 `_redirects` 跳转壳；自定义域与平台默认域都由
+#   Codeberg 服务端发 301。
 #
 # 检查（lint/check/test）不在这里重复：main 的提交由 PR 必过门槛与 push 触发的
 # CI 覆盖，唯一绕过 PR 的路径（deploy key 直推快照）只改数据。
@@ -18,7 +16,7 @@ on:
     branches: "main"
   schedule:
     # 6 小时兜底重建：GITHUB_TOKEN 类合并提交（dependabot auto-merge）不触发
-    # push 工作流，也兜住“清单快照在两次代码提交之间更新”的情况
+    # push 工作流
     - cron: "20 */6 * * *"
 
 # 部署串行：排队执行让最后一次触发的运行最后部署，避免旧提交覆盖新版本
@@ -47,15 +45,13 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      - name: Generate static mirror and shared pages
-        # 从主站拉取已合成清单（含用户增删与保护标记）后生成静态镜像页与站点清单；
-        # 写入 build-static/（静态宿主产物），失败即整步失败，避免用缺页产物
-        # 覆盖上一版仍可用的 GitHub Pages 站点
-        run: node scripts/gen-static-mirror-pages.ts --target=github-pages
+      - name: Generate static redirect shell
+        # 不再拉主站清单：只生成 GitHub Pages 的跳转壳与 CNAME
+        run: node scripts/gen-static-redirects.ts --target=github-pages
       - name: Upload Artifacts
         uses: actions/upload-pages-artifact@v5
         with:
-          # 静态宿主发单语产物（scripts/build-site.ts 的 static flavor）
+          # 跳转壳产物
           path: "build-static/"
   deploy:
     needs: build_site

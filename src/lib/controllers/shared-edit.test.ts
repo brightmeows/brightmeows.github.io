@@ -13,7 +13,6 @@ import {
   type SharedEditDeps,
 } from "./shared-edit";
 
-import { ApiUnavailableError } from "#lib/data/api/http.js";
 import { m } from "#lib/paraglide/messages.js";
 
 /**
@@ -35,7 +34,6 @@ function item(id: string, author = "alice"): SharedTableItem {
 }
 
 interface DepsOverrides {
-  unavailable?: boolean;
   login?: string | null;
   found?: SharedTableItem | null;
   listError?: Error;
@@ -50,7 +48,6 @@ function makeDeps(overrides: DepsOverrides = {}): SharedEditDeps {
   return {
     auth: {
       ensureLoaded: () => Promise.resolve(),
-      unavailable: () => overrides.unavailable === true,
       login: () => (overrides.login === undefined ? null : overrides.login),
     },
     findInList: () => {
@@ -78,40 +75,18 @@ function makeDeps(overrides: DepsOverrides = {}): SharedEditDeps {
 }
 
 describe("loadSharedEdit 回退链", () => {
-  it("1. 接口不可用：清单命中即就绪（本地编辑）", async () => {
-    const state = await loadSharedEdit(makeDeps({ unavailable: true, found: item("t") }), "t");
-    expect(state.phase).toBe("ready");
-    expect(state.item?.id).toBe("t");
-    expect(state.baseline).toBe("2026-02-01T00:00:00Z");
-    expect(state.isNew).toBe(false);
-  });
-
-  it("1. 接口不可用：清单未命中返回 notfound", async () => {
-    const state = await loadSharedEdit(makeDeps({ unavailable: true, found: null }), "t");
-    expect(state.phase).toBe("notfound");
-  });
-
-  it("1. 接口不可用：清单读取失败返回 error 且带消息", async () => {
-    const state = await loadSharedEdit(
-      makeDeps({ unavailable: true, listError: new Error("boom") }),
-      "t"
-    );
-    expect(state.phase).toBe("error");
-    expect(state.loadError).toBe("boom");
-  });
-
-  it("2. 未登录：清单命中即就绪", async () => {
+  it("1. 未登录：清单命中即就绪", async () => {
     const state = await loadSharedEdit(makeDeps({ login: null, found: item("t") }), "t");
     expect(state.phase).toBe("ready");
     expect(state.item?.id).toBe("t");
   });
 
-  it("2. 未登录：清单未命中引导登录（可能是待创建的新表）", async () => {
+  it("1. 未登录：清单未命中引导登录（可能是待创建的新表）", async () => {
     const state = await loadSharedEdit(makeDeps({ login: null, found: null }), "t");
     expect(state.phase).toBe("login");
   });
 
-  it("3. 已登录：id 可用即为新表，带种子、无清单条目", async () => {
+  it("2. 已登录：id 可用即为新表，带种子、无清单条目", async () => {
     const seed = { name: "n", symbol: "s" };
     const state = await loadSharedEdit(
       makeDeps({ login: "alice", checkAvailable: true, seed }),
@@ -123,7 +98,7 @@ describe("loadSharedEdit 回退链", () => {
     expect(state.seed).toEqual(seed);
   });
 
-  it("3. 已登录：id 已占用回落清单，命中即就绪", async () => {
+  it("2. 已登录：id 已占用回落清单，命中即就绪", async () => {
     const state = await loadSharedEdit(
       makeDeps({ login: "alice", checkAvailable: false, found: item("t", "bob") }),
       "t"
@@ -133,7 +108,7 @@ describe("loadSharedEdit 回退链", () => {
     expect(state.item?.author).toBe("bob");
   });
 
-  it("3. 已登录：id 已占用且清单未命中返回 notfound", async () => {
+  it("2. 已登录：id 已占用且清单未命中返回 notfound", async () => {
     const state = await loadSharedEdit(
       makeDeps({ login: "alice", checkAvailable: false, found: null }),
       "t"
@@ -141,41 +116,7 @@ describe("loadSharedEdit 回退链", () => {
     expect(state.phase).toBe("notfound");
   });
 
-  it("4. 查 id 抛接口不可用：回落清单，命中即就绪", async () => {
-    const state = await loadSharedEdit(
-      makeDeps({
-        login: "alice",
-        checkError: new ApiUnavailableError("404"),
-        found: item("t"),
-      }),
-      "t"
-    );
-    expect(state.phase).toBe("ready");
-    expect(state.item?.id).toBe("t");
-  });
-
-  it("4. 查 id 抛接口不可用：清单也未命中返回 notfound", async () => {
-    const state = await loadSharedEdit(
-      makeDeps({ login: "alice", checkError: new ApiUnavailableError("404"), found: null }),
-      "t"
-    );
-    expect(state.phase).toBe("notfound");
-  });
-
-  it("4. 查 id 抛接口不可用：清单读取也失败返回 error", async () => {
-    const state = await loadSharedEdit(
-      makeDeps({
-        login: "alice",
-        checkError: new ApiUnavailableError("404"),
-        listError: new Error("list down"),
-      }),
-      "t"
-    );
-    expect(state.phase).toBe("error");
-    expect(state.loadError).toBe("list down");
-  });
-
-  it("查 id 抛普通错误：不回落清单，直接 error", async () => {
+  it("2. 查 id 抛错：直接 error", async () => {
     const state = await loadSharedEdit(
       makeDeps({ login: "alice", checkError: new Error("bad request"), found: item("t") }),
       "t"

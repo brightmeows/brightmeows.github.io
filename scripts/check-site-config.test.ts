@@ -1,14 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  baselineFileNameIssues,
   collectDomains,
   collectTargetFlags,
   corsCoverageIssues,
   findDomainsInText,
   hardcodedDomainIssues,
+  redirectSiteBaseIssues,
   routeHostIssues,
-  staticSiteBaseIssues,
   targetFlagIssues,
   versionSourceIssues,
   wranglerRouteHosts,
@@ -23,13 +22,13 @@ const config = parseSiteConfig(
       { name: "cloudflare", kind: "worker", hosts: ["miyakomeow.site", "www.miyakomeow.site"] },
       {
         name: "github-pages",
-        kind: "static",
+        kind: "redirect",
         siteBase: "https://github-pages.miyakomeow.site",
         legacyHosts: ["brightmeows.github.io"],
       },
       {
         name: "codeberg-pages",
-        kind: "static",
+        kind: "redirect",
         siteBase: "https://codeberg-pages.miyakomeow.site",
         legacyHosts: ["brightmeows.codeberg.page"],
       },
@@ -37,7 +36,6 @@ const config = parseSiteConfig(
     r2: {
       base: "https://r2.example",
       manifestObject: "tables/tables.json",
-      baselineObject: "meta/last-notified.json",
       corsOrigins: [
         "https://miyakomeow.site",
         "https://github-pages.miyakomeow.site",
@@ -126,41 +124,17 @@ describe("hardcodedDomainIssues / findDomainsInText", () => {
   });
 });
 
-describe("baselineFileNameIssues", () => {
-  it("文件名与配置的 basename 一致时通过", () => {
-    expect(
-      baselineFileNameIssues({
-        config,
-        updateTablesText:
-          "changed=$(node scripts/detect-mirror-change.ts --out=./last-notified.json)",
-      })
-    ).toEqual([]);
-  });
-
-  it("文件名不一致时报错", () => {
-    const issues = baselineFileNameIssues({ config, updateTablesText: "--out=./baseline.json" });
-    expect(issues).toHaveLength(1);
-    expect(issues.join()).toContain("last-notified.json");
-  });
-
-  it("找不到 --out 时报错", () => {
-    expect(baselineFileNameIssues({ config, updateTablesText: "echo hi" })).toEqual([
-      expect.stringContaining("找不到"),
-    ]);
-  });
-});
-
 describe("corsCoverageIssues", () => {
-  it("覆盖齐全时通过", () => {
+  it("覆盖 origin 时通过", () => {
     expect(corsCoverageIssues(config)).toEqual([]);
   });
 
-  it("缺静态目标来源时报错", () => {
+  it("缺 origin 时报错", () => {
     const partial = parseSiteConfig(
-      { ...config, r2: { ...config.r2, corsOrigins: ["https://miyakomeow.site"] } },
+      { ...config, r2: { ...config.r2, corsOrigins: ["https://other.example"] } },
       "test"
     );
-    expect(corsCoverageIssues(partial)).toHaveLength(2);
+    expect(corsCoverageIssues(partial)).toHaveLength(1);
   });
 });
 
@@ -227,8 +201,6 @@ describe("wranglerVarsIssues", () => {
     "vars": {
       "R2_BASE": "https://r2.example",
       "R2_MANIFEST_OBJECT": "tables/tables.json",
-      "SITE_ORIGINS": "https://miyakomeow.site,https://github-pages.miyakomeow.site,https://codeberg-pages.miyakomeow.site,http://localhost:8787",
-      "COOKIE_DOMAIN": ".miyakomeow.site",
     },
   }`;
 
@@ -237,39 +209,15 @@ describe("wranglerVarsIssues", () => {
   });
 
   it("值不一致与缺少键时报错", () => {
-    const bad = `{ "vars": { "R2_BASE": "https://evil.example", "SITE_ORIGINS": "https://miyakomeow.site,https://github-pages.miyakomeow.site,https://codeberg-pages.miyakomeow.site", "COOKIE_DOMAIN": ".miyakomeow.site" } }`;
+    const bad = `{ "vars": { "R2_BASE": "https://evil.example" } }`;
     const issues = wranglerVarsIssues({ config, wranglerText: bad });
     expect(issues).toHaveLength(2);
     expect(issues.join()).toContain("R2_MANIFEST_OBJECT");
     expect(issues.join()).toContain("不一致");
   });
 
-  it("SITE_ORIGINS 缺少站点来源时报错", () => {
-    const partial = `{ "vars": {
-      "R2_BASE": "https://r2.example",
-      "R2_MANIFEST_OBJECT": "tables/tables.json",
-      "SITE_ORIGINS": "https://miyakomeow.site",
-      "COOKIE_DOMAIN": ".miyakomeow.site",
-    } }`;
-    const issues = wranglerVarsIssues({ config, wranglerText: partial });
-    expect(issues).toHaveLength(2);
-    expect(issues.join()).toContain("github-pages.miyakomeow.site");
-    expect(issues.join()).toContain("codeberg-pages.miyakomeow.site");
-  });
-
-  it("COOKIE_DOMAIN 与主站 host 不一致时报错", () => {
-    const wrongDomain = `{ "vars": {
-      "R2_BASE": "https://r2.example",
-      "R2_MANIFEST_OBJECT": "tables/tables.json",
-      "SITE_ORIGINS": "https://miyakomeow.site,https://github-pages.miyakomeow.site,https://codeberg-pages.miyakomeow.site",
-      "COOKIE_DOMAIN": ".evil.site",
-    } }`;
-    const issues = wranglerVarsIssues({ config, wranglerText: wrongDomain });
-    expect(issues).toEqual([expect.stringContaining("COOKIE_DOMAIN")]);
-  });
-
   it("出现未受配置管理的键时报错", () => {
-    const extra = `{ "vars": { "R2_BASE": "https://r2.example", "R2_MANIFEST_OBJECT": "tables/tables.json", "SITE_ORIGINS": "https://miyakomeow.site,https://github-pages.miyakomeow.site,https://codeberg-pages.miyakomeow.site", "COOKIE_DOMAIN": ".miyakomeow.site", "SURPRISE": "x" } }`;
+    const extra = `{ "vars": { "R2_BASE": "https://r2.example", "R2_MANIFEST_OBJECT": "tables/tables.json", "SURPRISE": "x" } }`;
     expect(wranglerVarsIssues({ config, wranglerText: extra })).toEqual([
       expect.stringContaining("SURPRISE"),
     ]);
@@ -282,9 +230,9 @@ describe("wranglerVarsIssues", () => {
   });
 });
 
-describe("staticSiteBaseIssues", () => {
+describe("redirectSiteBaseIssues", () => {
   it("siteBase 与 target 名对齐时通过", () => {
-    expect(staticSiteBaseIssues(config)).toEqual([]);
+    expect(redirectSiteBaseIssues(config)).toEqual([]);
   });
 
   it("子域与 target 名不对齐时报错", () => {
@@ -295,7 +243,7 @@ describe("staticSiteBaseIssues", () => {
           { name: "cloudflare", kind: "worker", hosts: ["miyakomeow.site"] },
           {
             name: "github-pages",
-            kind: "static",
+            kind: "redirect",
             siteBase: "https://wrong.miyakomeow.site",
             legacyHosts: ["brightmeows.github.io"],
           },
@@ -303,6 +251,6 @@ describe("staticSiteBaseIssues", () => {
       },
       "test"
     );
-    expect(staticSiteBaseIssues(misaligned)).toEqual([expect.stringContaining("github-pages")]);
+    expect(redirectSiteBaseIssues(misaligned)).toEqual([expect.stringContaining("github-pages")]);
   });
 });

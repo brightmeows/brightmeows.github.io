@@ -2,7 +2,6 @@
   import { onMount } from "svelte";
 
   import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
-  import { SITE_ORIGIN } from "#lib/constants/site.js";
   import { btnGhostXs } from "#lib/constants/ui-classes.js";
   import {
     fetchSharedRemoved,
@@ -23,7 +22,6 @@
 
   let { onchanged }: Props = $props();
 
-  const unavailable = $derived(auth.status === "unavailable");
   const user = $derived(auth.user);
 
   let open = $state(false);
@@ -81,17 +79,7 @@
   });
 </script>
 
-{#if unavailable}
-  <GlassPanel class="mt-4 text-[0.95rem] text-white-75">
-    {m["mirror.api_unavailable_before"]()}
-    <a
-      class="link-accent"
-      href={`${SITE_ORIGIN}/bms/table/shared/`}
-      target="_blank"
-      rel="noopener noreferrer">{m["mirror.api_unavailable_link"]()}</a
-    >{m["mirror.api_unavailable_after"]()}
-  </GlassPanel>
-{:else if auth.status === "ready" && user !== null}
+{#if auth.status === "ready" && user !== null}
   <GlassPanel class="mt-4">
     <div class="flex flex-col gap-3">
       <div class="flex justify-end">

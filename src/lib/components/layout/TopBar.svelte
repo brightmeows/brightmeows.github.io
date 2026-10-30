@@ -6,7 +6,6 @@
   import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
   import { popoverLayer } from "#lib/components/ui/popover-layer.js";
   import { topLevelNav, type NavDropdown, type NavItem } from "#lib/constants/nav.js";
-  import { apiBase, SITE_ORIGIN } from "#lib/constants/site.js";
   import { auth } from "#lib/data/store/auth-store.svelte.js";
   import { theme } from "#lib/data/store/theme-store.svelte.js";
   import { m } from "#lib/paraglide/messages.js";
@@ -138,13 +137,10 @@
     { value: "dark", label: () => m["topbar.theme_dark"]() },
     { value: "system", label: () => m["topbar.theme_system"]() },
   ];
-  // 登录发起地址：静态宿主子域上 API 在主站，return_to 用绝对 URL 回到发起页。
-  // prerender 与水合首帧用相对路径兜底，水合后由 effect 按环境修正。
+  // 登录发起地址：同源 API，return_to 用站内路径回到发起页。
   let loginHref = $state("/api/auth/login");
   $effect(() => {
-    const base = apiBase();
-    const returnTo = base === "" ? page.url.pathname : `${location.origin}${page.url.pathname}`;
-    loginHref = `${base}/api/auth/login?return_to=${encodeURIComponent(returnTo)}`;
+    loginHref = `/api/auth/login?return_to=${encodeURIComponent(page.url.pathname)}`;
   });
 
   function isActive(href: string): boolean {
@@ -386,15 +382,7 @@
       <!-- 右区（从右往左）：语言、主题切换，登录状态 -->
       <div class="ml-auto flex shrink-0 items-center gap-1.5">
         <div class="relative">
-          {#if auth.status === "unavailable"}
-            <a
-              href={SITE_ORIGIN}
-              class="{linkBase} block text-white-85 hover:bg-white-10 hover:text-white"
-              title={m["topbar.static_hint_title"]()}
-            >
-              {m["topbar.go_main_site"]()}
-            </a>
-          {:else if auth.status === "ready" && auth.user === null}
+          {#if auth.status === "ready" && auth.user === null}
             <a href={loginHref} class="{linkBase} block bg-white-15 text-white hover:bg-white-25">
               {m["topbar.login"]()}
             </a>
@@ -515,60 +503,58 @@
             </div>
           {/if}
         </div>
-        {#if !__STATIC_TARGET__}
-          <div class="relative">
-            <button
-              type="button"
-              class="flex size-9 cursor-pointer items-center justify-center rounded-full text-white-60 transition-colors hover:bg-white-10 hover:text-white"
-              title={m["topbar.language"]()}
-              aria-label={m["topbar.language"]()}
-              aria-expanded={panels.isOpen("language")}
-              onclick={(event) => togglePanel("language", "right", event)}
+        <div class="relative">
+          <button
+            type="button"
+            class="flex size-9 cursor-pointer items-center justify-center rounded-full text-white-60 transition-colors hover:bg-white-10 hover:text-white"
+            title={m["topbar.language"]()}
+            aria-label={m["topbar.language"]()}
+            aria-expanded={panels.isOpen("language")}
+            onclick={(event) => togglePanel("language", "right", event)}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              class="size-5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                class="size-5"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                aria-hidden="true"
-              >
-                <circle cx="12" cy="12" r="9" />
-                <path
-                  d="M3 12h18M12 3c2.5 2.6 3.9 5.7 3.9 9s-1.4 6.4-3.9 9c-2.5-2.6-3.9-5.7-3.9-9s1.4-6.4 3.9-9z"
-                />
-              </svg>
-            </button>
+              <circle cx="12" cy="12" r="9" />
+              <path
+                d="M3 12h18M12 3c2.5 2.6 3.9 5.7 3.9 9s-1.4 6.4-3.9 9c-2.5-2.6-3.9-5.7-3.9-9s1.4-6.4 3.9-9z"
+              />
+            </svg>
+          </button>
 
-            {#if panels.isOpen("language")}
-              <div
-                use:popoverLayer
-                class="fixed w-40"
-                style={panelPosition ? panelPositionStyle(panelPosition) : ""}
-              >
-                <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
-                  {#each languages as language (language.code)}
-                    {@const active = getLocale() === language.code}
-                    <button
-                      type="button"
-                      class="{menuItemClass} flex w-full items-center justify-between {active
-                        ? 'font-semibold text-white'
-                        : ''}"
-                      lang={language.code}
-                      aria-current={active ? "true" : undefined}
-                      onclick={() => {
-                        if (!active) setLocale(language.code);
-                      }}
-                    >
-                      {language.label()}
-                    </button>
-                  {/each}
-                </GlassPanel>
-              </div>
-            {/if}
-          </div>
-        {/if}
+          {#if panels.isOpen("language")}
+            <div
+              use:popoverLayer
+              class="fixed w-40"
+              style={panelPosition ? panelPositionStyle(panelPosition) : ""}
+            >
+              <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
+                {#each languages as language (language.code)}
+                  {@const active = getLocale() === language.code}
+                  <button
+                    type="button"
+                    class="{menuItemClass} flex w-full items-center justify-between {active
+                      ? 'font-semibold text-white'
+                      : ''}"
+                    lang={language.code}
+                    aria-current={active ? "true" : undefined}
+                    onclick={() => {
+                      if (!active) setLocale(language.code);
+                    }}
+                  >
+                    {language.label()}
+                  </button>
+                {/each}
+              </GlassPanel>
+            </div>
+          {/if}
+        </div>
       </div>
     </div>
   </GlassPanel>

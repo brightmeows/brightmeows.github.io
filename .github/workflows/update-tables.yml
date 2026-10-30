@@ -24,7 +24,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # 默认流水线：抓取、与 R2 双向同步、判定列表变动并按需触发下游重建。
+  # 默认流水线：抓取与 R2 双向同步；站点运行时读 R2/D1，不触发重建。
   update:
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.parity != true }}
     runs-on: ubuntu-latest
@@ -32,12 +32,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # 本工作流做三件事：
-      # 1. “抓取 + R2 双向同步”（镜像表页面与 tables.json 由 Worker 运行时应答）
-      # 2. 判定列表是否变动（投影口径，见 src/lib/mirror/manifest.ts）：基线对象
-      #    也在 R2（meta/last-notified.json），仓库不参与，不产生任何 git 提交。
-      # 3. 变动时用 App token 触发 deploy 与 mirror，重建两个静态宿主；主站是运行时
-      #    生成，不需要重建。表内容与上游元数据变化不触发。
+      # 本工作流只做一件事：抓取 + R2 双向同步。镜像表页面与 tables.json
+      # 由 Worker 运行时应答，静态宿主已退化为跳转壳，不再需要按列表变动重建。
       #
       # 抓取逻辑在 scripts/fetch-tables.ts（scripts/pipeline/），与站点同仓演进。
       #
@@ -47,7 +43,6 @@ jobs:
       #   R2_ENDPOINT           — Cloudflare Dashboard > R2 > 存储桶 > S3 API > 端点
       #   R2_BUCKET             — Cloudflare Dashboard > R2 > 存储桶名称
       #   INTERNAL_API_TOKEN    — 站点 Worker 的内部接口共享 token（与 Worker secret 同名同值）
-      #   APP_ID / APP_PRIVATE_KEY — GitHub App（触发 deploy 与 mirror）
       - uses: pnpm/action-setup@v6
 
       - uses: actions/setup-node@v7
@@ -62,7 +57,6 @@ jobs:
         uses: ./.github/actions/install-rclone
 
       - name: Run
-        id: pipeline
         env:
           RCLONE_CONFIG_R2_TYPE: s3
           RCLONE_CONFIG_R2_PROVIDER: Cloudflare
@@ -96,39 +90,7 @@ jobs:
           ./rclone delete r2:${{ secrets.R2_BUCKET }}/trash --min-age 720h \
             || echo "trash 无过期对象（或目录暂不存在），跳过"
 
-          echo "=== Detect manifest change ==="
-          # 基线对象在 R2 的 meta/ 前缀（不在上面的同步白名单内），仓库不参与
-          # --out 的文件名必须等于配置里 r2.baselineObject 的 basename（有断言守着）：
-          # rclone copy 保留本地文件名，名字不一致会把对象写到错的键上
-          changed=$(node scripts/detect-mirror-change.ts --out=./last-notified.json)
-          if [ "$changed" = "true" ]; then
-            # 桶级凭据没有 HeadBucket 权限：目标带子目录时 rclone 会先检查桶并试图
-            # 创建它（403），加此旗标跳过检查（桶必然已存在）
-            ./rclone copy ./last-notified.json "r2:${{ secrets.R2_BUCKET }}/meta/" \
-              --transfers 1 --s3-no-check-bucket
-            rm -f ./last-notified.json
-          fi
-          echo "changed=$changed" >> "$GITHUB_OUTPUT"
           rm -f rclone
-
-      - name: Generate app token
-        # 用 GitHub App 换短时 installation token 触发下游，不使用长期令牌
-        if: steps.pipeline.outputs.changed == 'true'
-        id: app-token
-        uses: actions/create-github-app-token@v3
-        with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
-
-      - name: Trigger static hosts rebuild
-        # 主站是运行时生成，只有两个静态宿主需要重建
-        if: steps.pipeline.outputs.changed == 'true'
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-        run: |
-          echo "列表变动，触发静态宿主重建"
-          gh workflow run deploy.yml --ref main
-          gh workflow run mirror.yml --ref main
 
   # 手动对拍：用公开 R2 基线与固定版本的旧二进制（bms-table-fetch release）
   # 跑两条实现并逐对象比对产物，不写 R2、不影响站点数据。

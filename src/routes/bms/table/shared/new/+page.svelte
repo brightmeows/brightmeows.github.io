@@ -6,7 +6,6 @@
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
-  import { apiBase, SITE_ORIGIN } from "#lib/constants/site.js";
   import { btnPrimary, inputPanel } from "#lib/constants/ui-classes.js";
   import { fetchSharedCheckId } from "#lib/data/api/shared-api.js";
   import { auth } from "#lib/data/store/auth-store.svelte.js";
@@ -50,7 +49,6 @@
     }
   }
 
-  const unavailable = $derived(auth.status === "unavailable");
   const loggedIn = $derived(auth.status === "ready" && auth.user !== null);
   const preview = $derived(sharedIdPreview(canonicalId, origin));
 
@@ -63,7 +61,7 @@
     symbol = seed.symbol;
     void auth.ensureLoaded();
     const returnTo = `${window.location.pathname}`;
-    loginHref = `${apiBase()}/api/auth/login?return_to=${encodeURIComponent(returnTo)}`;
+    loginHref = `/api/auth/login?return_to=${encodeURIComponent(returnTo)}`;
   });
 
   // 输入停顿 500ms 后查重：登录前不发请求（登录引导由页面承担）
@@ -124,16 +122,6 @@
         message={m["shared.checking_auth"]()}
         title={m["shared.new_title"]()}
       />
-    {:else if unavailable}
-      <div class="text-[0.95rem] text-white-75">
-        {m["mirror.api_unavailable_before"]()}
-        <a
-          class="link-accent"
-          href={`${SITE_ORIGIN}/bms/table/shared/new/`}
-          target="_blank"
-          rel="noopener noreferrer">{m["mirror.api_unavailable_link"]()}</a
-        >{m["mirror.api_unavailable_after"]()}
-      </div>
     {:else if !loggedIn}
       <div class="flex flex-col items-center gap-4 py-4 text-center">
         <p class="text-[1rem] text-white-75">{m["shared.login_required"]()}</p>

@@ -10,7 +10,6 @@ import {
   parseFetchedEntry,
   remainingOperations,
   serializeUserRecord,
-  shouldTriggerDeploy,
   utcDateStamp,
   type AddedEntry,
   type AuthorizedEntry,
@@ -292,13 +291,5 @@ describe("限次与节流", () => {
   it("剩余次数不为负", () => {
     expect(remainingOperations(0)).toBe(DAILY_OPERATION_LIMIT);
     expect(remainingOperations(DAILY_OPERATION_LIMIT + 5)).toBe(0);
-  });
-
-  it("首次触发、窗口内抑制、窗口外放行", () => {
-    const now = new Date("2026-09-21T00:10:00.000Z");
-    expect(shouldTriggerDeploy(null, now)).toBe(true);
-    expect(shouldTriggerDeploy("2026-09-21T00:05:00.000Z", now)).toBe(false);
-    expect(shouldTriggerDeploy("2026-09-20T23:59:00.000Z", now)).toBe(true);
-    expect(shouldTriggerDeploy("not a date", now)).toBe(true);
   });
 });

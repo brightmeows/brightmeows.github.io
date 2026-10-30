@@ -8,14 +8,10 @@
  */
 
 import type { DraftPayload, TableEditPayload } from "@brightmeows/bms/editor";
-import {
-  buildCombinedPackage,
-  countUnassigned,
-  shouldWarnOverwrite,
-} from "@brightmeows/bms/editor";
+import { countUnassigned, shouldWarnOverwrite } from "@brightmeows/bms/editor";
 import { sharedPayloadMessage, type SharedPayloadMessage } from "@brightmeows/bms/shared";
 import type { SharedPayloadError } from "@brightmeows/mirror/shared";
-import { checkSharedPayload, withLocalDataUrl } from "@brightmeows/mirror/shared";
+import { checkSharedPayload } from "@brightmeows/mirror/shared";
 
 import { m } from "#lib/paraglide/messages.js";
 import { translateMessage } from "#lib/utils/i18n/i18n.js";
@@ -147,16 +143,13 @@ export async function commitEditorSave(deps: {
 
 export type SaveAsSharedPlan =
   | { kind: "invalid"; notice: EditorNotice }
-  /** 桥接：导出合并包加开主站新建页。 */
-  | { kind: "export" }
-  /** 同源且载荷合法：走草稿随行认领（草稿写失败时页面退回导出路径）。 */
+  /** 载荷合法：走草稿随行认领。 */
   | { kind: "claim" };
 
-/** 另存共享的前置决策：载荷校验与模式分叉。 */
+/** 另存共享的前置决策：载荷校验。 */
 export function planSaveAsShared(
   header: Record<string, unknown>,
-  entries: Record<string, unknown>[],
-  mode: "bridge" | "same-origin"
+  entries: Record<string, unknown>[]
 ): SaveAsSharedPlan {
   const check = checkSharedPayload(header, entries);
   if (!check.ok) {
@@ -165,13 +158,5 @@ export function planSaveAsShared(
       notice: { kind: "error", text: payloadNoticeText(check.error) },
     };
   }
-  return mode === "bridge" ? { kind: "export" } : { kind: "claim" };
-}
-
-/** 导出合并包的包体构造（桥接与草稿失败回退共用）。 */
-export function buildSharedExportPackage(
-  header: Record<string, unknown>,
-  entries: Record<string, unknown>[]
-): Record<string, unknown> {
-  return buildCombinedPackage(withLocalDataUrl(header), entries);
+  return { kind: "claim" };
 }

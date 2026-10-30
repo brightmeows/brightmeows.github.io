@@ -24,8 +24,7 @@ import { m } from "#lib/paraglide/messages.js";
  * 共享表接口的客户端封装（与 mirror-user-api 同构：契约在
  * `@brightmeows/mirror/api`，传输层在 `./http`）。
  *
- * 接口只存在于主站 Worker；静态宿主（GitHub / Codeberg Pages）上全部 404，
- * 调用方据此把界面切换为“去主站操作”的引导（复用 ApiUnavailableError 分支）。
+ * 接口只存在于主站 Worker；静态宿主已退化为跳转壳，不再承载应用。
  * 写操作不消耗每日配额，防线是每人 3 张持有上限。
  */
 
