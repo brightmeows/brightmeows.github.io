@@ -7,7 +7,7 @@
  * 链接会静默退化；beatoraja 等原生客户端不会给出可定位的错误。
  *
  * 需要环境变量：`CLOUDFLARE_RULES_TOKEN`，权限为
- * `Zone > Single Redirect > Read` 与 `Zone > Zone > Read`，scoped 到三个 zone。
+ * `Zone > Dynamic URL Redirects > Read` 与 `Zone > Zone > Read`，scoped 到三个 zone。
  *
  * 用法：`node scripts/check-redirect-rules.ts`
  * 退出码：0 一致；1 不一致或读取失败。凭据缺失按失败处理，不静默跳过。

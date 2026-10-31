@@ -37,6 +37,7 @@ const MIYAKO_ZONE: RedirectZone = {
 function liveRule(rule: RedirectRule, overrides: Partial<LiveRule> = {}): LiveRule {
   return {
     ref: rule.ref,
+    description: rule.description,
     expression: rule.expression,
     action: rule.action,
     enabled: true,
@@ -135,6 +136,7 @@ describe("buildRedirectRule", () => {
   it("目标固定为主站 origin 加原路径，301 并保留 query", () => {
     const rule = buildRedirectRule(COM_ZONE, "https://brightmeows.com/");
     expect(rule.ref).toBe(COM_ZONE.ruleRef);
+    expect(rule.description).toBe(COM_ZONE.ruleRef);
     expect(rule.action_parameters.from_value.target_url.expression).toBe(
       'concat("https://brightmeows.com", http.request.uri.path)'
     );
@@ -150,6 +152,7 @@ describe("normalizeLiveRules", () => {
       rules: [
         {
           ref: rule.ref,
+          description: rule.description,
           expression: rule.expression,
           action: rule.action,
           enabled: true,
@@ -159,6 +162,7 @@ describe("normalizeLiveRules", () => {
     };
     const [live] = normalizeLiveRules(payload);
     expect(live?.ref).toBe(rule.ref);
+    expect(live?.description).toBe(rule.description);
     expect(live?.statusCode).toBe(301);
     expect(live?.preserveQueryString).toBe(true);
   });
@@ -185,7 +189,7 @@ describe("checkZoneRules", () => {
 
   it("托管规则不在第一位", () => {
     const issues = checkZoneRules(COM_ZONE, origin, [
-      liveRule(expected, { ref: "other-rule" }),
+      liveRule(expected, { ref: "other-rule", description: "other-rule" }),
       liveRule(expected),
     ]);
     expect(issues).toContain(
@@ -218,9 +222,16 @@ describe("checkZoneRules", () => {
   it("多余托管规则与禁用规则都会被报出", () => {
     const issues = checkZoneRules(COM_ZONE, origin, [
       liveRule(expected, { enabled: false }),
-      liveRule(expected, { ref: "legacy-redirect-old" }),
+      liveRule(expected, { ref: "legacy-redirect-old", description: "legacy-redirect-old" }),
     ]);
     expect(issues).toContain("托管规则未启用（enabled 不为 true）");
     expect(issues.some((issue) => issue.startsWith("存在多余的托管规则"))).toBe(true);
+  });
+
+  it("控制台创建的规则用 description 识别", () => {
+    const issues = checkZoneRules(COM_ZONE, origin, [
+      liveRule(expected, { ref: "dashboard-generated-ref" }),
+    ]);
+    expect(issues).toEqual([]);
   });
 });

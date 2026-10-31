@@ -61,6 +61,7 @@ export interface RedirectRule {
 /** 从 Cloudflare API 响应里归一化出来的规则字段。 */
 export interface LiveRule {
   ref: string | undefined;
+  description: string | undefined;
   expression: string | undefined;
   action: string | undefined;
   enabled: boolean | undefined;
@@ -186,7 +187,7 @@ export function buildRedirectRule(zone: RedirectZone, targetOrigin: string): Red
   return {
     ref: zone.ruleRef,
     expression: buildRuleExpression(zone),
-    description: `Legacy host 301 to ${target}`,
+    description: zone.ruleRef,
     action: "redirect",
     action_parameters: {
       from_value: {
@@ -210,6 +211,7 @@ export function normalizeLiveRule(value: unknown): LiveRule | null {
   const targetUrl = isRecord(fromValue.target_url) ? fromValue.target_url : {};
   return {
     ref: readString(value, "ref"),
+    description: readString(value, "description"),
     expression: readString(value, "expression"),
     action: readString(value, "action"),
     enabled: readBoolean(value, "enabled"),
@@ -233,8 +235,9 @@ export function normalizeLiveRules(payload: unknown): LiveRule[] {
 /**
  * 比对单个 zone 的线上规则与期望。
  *
- * 托管规则必须在第一位；表达式、301、query 保留、动态 target 与 enabled 都要
- * 一致；多余或缺失的托管规则也报出来。
+ * 托管规则按 ref 或规则名（description）识别，方便控制台创建；规则必须在第一
+ * 位，表达式、301、query 保留、动态 target 与 enabled 都要一致；多余或缺失的
+ * 托管规则也报出来。
  */
 export function checkZoneRules(
   zone: RedirectZone,
@@ -243,19 +246,24 @@ export function checkZoneRules(
 ): string[] {
   const expected = buildRedirectRule(zone, targetOrigin);
   const issues: string[] = [];
-  const managed = liveRules.filter((rule) => rule.ref?.startsWith(MANAGED_REDIRECT_REF_PREFIX));
-  const matching = managed.filter((rule) => rule.ref === expected.ref);
+  const isManaged = (rule: LiveRule): boolean =>
+    rule.ref?.startsWith(MANAGED_REDIRECT_REF_PREFIX) === true ||
+    rule.description?.startsWith(MANAGED_REDIRECT_REF_PREFIX) === true;
+  const matchesExpected = (rule: LiveRule): boolean =>
+    rule.ref === expected.ref || rule.description === expected.description;
+  const managed = liveRules.filter(isManaged);
+  const matching = managed.filter(matchesExpected);
   if (matching.length === 0) {
     issues.push(`缺少托管规则 ${expected.ref}`);
   }
   if (matching.length > 1) {
     issues.push(`托管规则 ${expected.ref} 出现 ${matching.length} 次`);
   }
-  const index = liveRules.findIndex((rule) => rule.ref === expected.ref);
+  const index = liveRules.findIndex(matchesExpected);
   if (index > 0) {
     issues.push(`托管规则 ${expected.ref} 不在第一位（前面有 ${index} 条规则）`);
   }
-  const extra = managed.filter((rule) => rule.ref !== expected.ref);
+  const extra = managed.filter((rule) => !matchesExpected(rule));
   if (extra.length > 0) {
     issues.push(`存在多余的托管规则：${extra.map((rule) => rule.ref ?? "(无 ref)").join("、")}`);
   }
