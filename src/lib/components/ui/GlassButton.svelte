@@ -60,6 +60,7 @@
     {href}
     {target}
     {rel}
+    {onclick}
     class="{sharedClasses} cursor-pointer {sizeConfig[size]} {hoverLift
       ? 'hover:-translate-y-0.5'
       : ''} {clickShrink ? 'active:translate-y-0 active:scale-95' : ''} {className}"
