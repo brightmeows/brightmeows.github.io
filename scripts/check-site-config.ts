@@ -251,7 +251,7 @@ export function collectDomains(config: SiteConfig): string[] {
 }
 
 function listWorkflowFiles(repoRoot: string): string[] {
-  const dirs = [path.join(".github", "workflows"), path.join(".forgejo", "workflows")];
+  const dirs = [path.join(".github", "workflows")];
   return dirs.flatMap((dir) => {
     const absolute = path.join(repoRoot, dir);
     if (!existsSync(absolute)) return [];

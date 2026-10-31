@@ -5,7 +5,6 @@
 ## Commands
 
 - `pnpm build` — 多语构建入口（`scripts/build-site.ts`）：en、zh-cn、ja 三个主站 flavor 各跑一遍（各自经 `BUILD_OUT` 落临时目录），组装出 `build/`（en 根 + `_i18n/zh-cn`、`_i18n/ja` 内部树，`_app` 多语 chunk 合并到共享根、三个 flavor 由 `BUILD_VERSION` 注入同一个应用版本（各树 HTML 内嵌 version 与 `_app/version.json` 一致）、各语言树 `html lang` 改写）；`pnpm build:flavor` 跑单遍
-- `node scripts/gen-static-redirects.ts --target=<目标名>` — 生成 Codeberg 跳转宿主的 `_redirects` 与 `index.html` 兜底壳；域名从配置解析，不访问网络；默认写入 `build-static/`，`--build-dir` 可覆盖
 - `node scripts/fetch-tables.ts` — 本地跑数据管线（基线经 rclone 同步自 R2，用户层经站点 Worker 的内部接口读取，需要 `INTERNAL_API_TOKEN`；写 `tables/`、`indexes/`、`warnings.log`；产物已 gitignore）
 - `node scripts/fetch-table-once.ts --url=<表源> --request-id=<id> --out-dir=./out` — 单表抓取（复用管线抓取与命名逻辑）：数据目录供 `fetch-table` 工作流上传到 R2，抓取结果与状态经内部接口写进 D1
 - `pnpm test:parity` — 手动新旧实现对拍（用公开 R2 基线与归档工具 v0.4.2 的二进制，逐对象比对产物；`PARITY_LIMIT` 可只对拍前 N 张表）
@@ -19,13 +18,13 @@
 - `scripts/check-i18n-coverage.ts` — i18n 覆盖校验（六条断言：三语 key 对称、占位符一致、源码引用与 Worker 错误码常量表（`@brightmeows/mirror/api` 的 `API_ERROR_CODES` 全部值）存在于 messages、Worker 源码里的 `code:` 字面量视为漂移、死 key、src 残留中日韩字符（注释/console/测试/AGENTS/领域术语按豁免清单）、en 值漏翻（语言自称键豁免））。`pnpm check:i18n` 调用它，pre-commit 与 CI 都跑；豁免口径见脚本头注。
 - `scripts/check-jsdoc.ts` — 导出函数 JSDoc 覆盖校验：`export function` 与 `export const` 箭头/函数表达式必须有 `/** */` 且去掉 tag 行后有非空描述。范围 `src/`、`packages/`、`scripts/` 的非测试 `.ts`（`.svelte` 组件脚本与 `*.test.ts` 豁免，`.d.ts` 与 paraglide 生成物不参与）。`pnpm check:jsdoc` 调用它，pre-commit 与 CI 都跑；判定逻辑拆纯函数由相邻单测锁定。2026-10 查证时 oxlint 原生未实现 `jsdoc/require-jsdoc`（上游 tracking issue 里仍在 TODO）、JS 插件机制承载 eslint-plugin-jsdoc 仍为 alpha 且无兼容实测记录，故自造；oxlint 原生实现该规则后退役换规则。
 - `scripts/check-r2-cors.ts` — 只读比对桶 CORS policy 与配置（需 `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID`/`R2_BUCKET`）；不在日常 CI 跑，由 `config-drift.yml` 在配置变更的 PR 与手动触发时调用。
-- `scripts/site-config.ts` / `scripts/site-target.ts` — 读取并校验 `config/site.json`、打印某跳转目标的站点基址、平台原域与 git-pages 服务主机名（`--legacy-base` / `--server` / `--scheme=http|https`；供工作流把域名从 YAML 里移出）。
+- `scripts/site-config.ts` — 读取并校验 `config/site.json`（站点与部署配置的单一来源，脚本与校验共用）。
 
 ## 反直觉决策
 
 以下行为在代码中看似错误/死代码/遗漏，但均为故意。
 
-- **列表变动不再触发部署** — 主站运行时读 R2 清单与 D1 用户层，静态宿主只发固定跳转壳；`update-tables` 抓取并双向同步 R2 后即可结束，不再比对基线、不推 `meta/last-notified.json`、不用 App token 触发 `deploy`/`mirror`。单表抓取仍由 Worker 派发 `fetch-table.yml`；抓取完成后也不需要部署。
+- **列表变动不再触发部署** — 主站运行时读 R2 清单与 D1 用户层，静态跳转宿主已退役；`update-tables` 抓取并双向同步 R2 后即可结束，不再比对基线、不推 `meta/last-notified.json`、不用 App token 触发 `deploy`。单表抓取仍由 Worker 派发 `fetch-table.yml`；抓取完成后也不需要部署。
 - **单表抓取是独立工作流（`fetch-table`）** — 用户提交添加后由 Worker 触发，也可手动 dispatch 演练：复用管线的 `fetchTable` 与命名逻辑（`scripts/fetch-table-once.ts`）：`tables/<dir_name>/` 数据写到 `out/` 后经 rclone 上传，抓取结果与状态则经 `POST /api/internal/fetch-result` 写进 D1；**失败只写 failed 状态、不产出数据目录**（半成品目录会被管线当作基线）。抓取脚本退出码恒为 0（除参数错误），结果由 `out/result.json` 表达，前端轮询 `/api/tables/status/<id>` 据此结束。主站运行时读取 R2/D1，抓取完成后不再触发部署。输入经 env 传入、不直接插值进 shell 命令。
 - **旧配置迁移已完成（2026-09）** — 存档的旧 toml（`scripts/pipeline/fixtures/legacy-table.toml`）已通过一次性脚本转成用户层记录（added 10、禁用 1、替换 2、元数据覆盖 10、空名单），脚本与 `migrate-config` 工作流已在完成后删除。fixture 与 `legacy-config.ts` 保留：对拍（`parity`）仍靠它们驱动旧二进制（它固定找 `config/table.toml`，`prepareBaseline` 会拷过去）。用户层随后在 2026-09 从 R2 对象迁到 D1：迁移由 Worker 首个请求自动完成（幂等、`batch` 原子），完成后 R2 的 `user/` 前缀对象经一次性端点清空；自动迁移分支与清理端点已在随后删除（需要重跑时从 git 历史取回）。
 - **难度表数据管线在本仓 Actions 中运行** — `.github/workflows/update-tables.yml` 每 6 小时（或 `scripts/fetch-tables.ts`、`scripts/pipeline/**` 变更时，以及手动 dispatch）跑 `scripts/fetch-tables.ts`（实现位于 `scripts/pipeline/`，与站点同仓演进），经 rclone 与 Cloudflare R2 双向同步：先拉取 R2 基线保留增量，跑完抓取再推回。输出 `tables/`、`indexes/`、`warnings.log`（均 gitignored，仅存在于 CI 工作区与 R2）。活跃表集合 = R2 基线（`info.json`）叠加**用户层**：站长与访客的添加、删除、禁用、替换、授权记录存于 D1（Worker 与单表抓取工作流经内部接口维护，管线经同一接口读取，需要 `INTERNAL_API_TOKEN`），列表源机制与旧 toml 配置已退役删除：旧配置存档在 `scripts/pipeline/fixtures/legacy-table.toml`，只供对拍与一次性迁移（`migrate-config` 工作流）使用。运行时依赖 `parse5` 与 `smol-toml`（devDependencies，因此工作流有 pnpm install 步骤）。R2 凭据以 Actions secrets 注入（`R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY`/`R2_ENDPOINT`/`R2_BUCKET`）。该管线原为独立的 Codeberg 壳子仓库 bms-table-mirror-r2，2026-09 迁入本仓并归档原仓；抓取工具 bms-table-fetch 同期在本仓重写后归档（release 资产保留，仅作对拍参照）。仓库不参与常态更新；列表变动只影响运行时读取，不再触发部署。
