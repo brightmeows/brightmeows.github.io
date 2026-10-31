@@ -119,12 +119,13 @@
     }, HOVER_OPEN_DELAY);
   }
 
-  // 关闭计时器不绑定具体面板：指针离开触发按钮或面板后，若在缓冲期内没有
-  // 进入下一个触发按钮或面板，就关掉当前展开的那个。
+  // 关闭计时器不绑定具体面板：悬停展开的面板在指针离开后收起；点击钉住的
+  // 面板保持打开，等再次点击、外点或 Escape。
   function scheduleHoverClose(): void {
     clearHoverTimers();
     hoverCloseTimer = window.setTimeout(() => {
       hoverCloseTimer = null;
+      if (panelOpenedBy === "click") return;
       closePanels();
     }, HOVER_CLOSE_DELAY);
   }
