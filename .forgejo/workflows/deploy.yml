@@ -7,10 +7,11 @@ on:
   workflow_dispatch:
     inputs:
       scheme:
+        # 证书已于 2026-10-31 签发；仅在需要重签证书时手动选 http
         description: "自定义域首次部署用 http 签证书，成功后再用 https"
         type: choice
         options: [http, https]
-        default: http
+        default: https
   push:
     branches: "main"
   schedule:
@@ -27,7 +28,8 @@ jobs:
     runs-on: codeberg-small-lazy
     timeout-minutes: 20
     env:
-      SITE_SCHEME: ${{ inputs.scheme || 'http' }}
+      # schedule/push 兜底构建默认 https；首次签证书或重签时手动 dispatch http
+      SITE_SCHEME: ${{ inputs.scheme || 'https' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
