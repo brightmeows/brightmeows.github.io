@@ -1,8 +1,8 @@
 # 站点部署：主站（Cloudflare Workers）。
 #
 # 静态资源 + Worker，镜像表页面与 tables.json 全部由 Worker 运行时生成；
-# 跳转宿主只剩 Codeberg（.forgejo/workflows/deploy.yml 发布 `_redirects`
-# 壳），其余旧域与 www 由 Worker 自定义域 + host-redirects.ts 发 301。
+# 静态跳转宿主已全部退役，旧域与 www 由 Worker 自定义域 + host-redirects.ts
+# 发 301。
 #
 # 检查（lint/check/test）不在这里重复：main 的提交由 PR 必过门槛与 push 触发的
 # CI 覆盖。
