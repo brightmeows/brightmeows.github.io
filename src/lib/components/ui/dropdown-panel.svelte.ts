@@ -1,7 +1,8 @@
 /**
  * 顶栏下拉面板的交互原语：互斥展开、Escape 关闭并把焦点送回触发按钮、
- * root 外的 pointerdown 关闭。供 TopBar 的六个面板（头像卡、导航下拉、
- * 窄屏菜单、用户菜单、主题、语言）共用；互斥状态转移是纯函数
+ * root 外的 pointerdown 关闭。供 TopBar 的面板（Home 资料卡、导航下拉、
+ * 窄屏菜单、用户菜单、主题、语言）共用；悬停意图的定时器在 TopBar 里，
+ * 不在本原语内。互斥状态转移是纯函数
  * （reducePanelState，见 dropdown-panel-state.ts），由相邻测试锁定语义。
  */
 

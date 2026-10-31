@@ -133,7 +133,6 @@
 </svelte:head>
 
 <PageShell
-  currentLabel={model.pageTitle}
   tocItems={isEdit ? [] : model.tocItems}
   panes={[
     titlePane,
