@@ -42,6 +42,7 @@
     { "pattern": "www.brightmeows.com", "custom_domain": true },
     { "pattern": "brightmeows.cn", "custom_domain": true },
     { "pattern": "www.brightmeows.cn", "custom_domain": true },
+    { "pattern": "github-pages.brightmeows.com", "custom_domain": true },
     { "pattern": "github-pages.miyakomeow.site", "custom_domain": true },
     { "pattern": "codeberg-pages.miyakomeow.site", "custom_domain": true },
     { "pattern": "miyakomeow.site", "custom_domain": true },

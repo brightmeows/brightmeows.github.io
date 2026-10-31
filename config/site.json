@@ -9,17 +9,12 @@
         "www.brightmeows.com",
         "brightmeows.cn",
         "www.brightmeows.cn",
+        "github-pages.brightmeows.com",
         "github-pages.miyakomeow.site",
         "codeberg-pages.miyakomeow.site",
         "miyakomeow.site",
         "www.miyakomeow.site"
       ]
-    },
-    {
-      "name": "github-pages",
-      "kind": "redirect",
-      "siteBase": "https://github-pages.brightmeows.com",
-      "legacyHosts": ["brightmeows.github.io"]
     },
     {
       "name": "codeberg-pages",

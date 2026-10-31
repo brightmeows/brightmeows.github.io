@@ -1,12 +1,11 @@
 /**
- * 构建期为跳转宿主（GitHub Pages / Codeberg Pages）生成跳转壳。
+ * 构建期为 Codeberg 跳转宿主生成跳转壳。
  *
- * 两个静态宿主不再提供镜像页：GitHub Pages 发一个带 meta refresh 与 JS 的
- * 客户端跳转壳（平台默认域只能用客户端跳转），Codeberg Pages 发 `_redirects`
- * 让服务端发真 301。域名全部来自 `config/site.json`，工作流里不出现域名。
+ * Codeberg Pages 发 `_redirects` 让服务端对自定义域与平台默认域发真 301，
+ * 另发一个带 meta refresh 与 JS 的客户端跳转壳（index.html）兜底。域名全部
+ * 来自 `config/site.json`，工作流里不出现域名。
  *
  * 用法：
- *   node scripts/gen-static-redirects.ts --target=github-pages
  *   node scripts/gen-static-redirects.ts --target=codeberg-pages
  *
  * 产物写入 `build-static/`（与 `pnpm build` 的 `build/` 隔离），不访问网络。
@@ -72,23 +71,18 @@ function main(argv: string[]): void {
   const target = findRedirectTarget(config, options.target);
   const origin = config.origin.replace(/\/+$/, "");
   const host = new URL(target.siteBase).host;
-  const codeberg = target.pagesServer !== undefined;
+  if (target.pagesServer === undefined) {
+    throw new Error(`目标 ${options.target} 不是 git-pages 跳转宿主（缺 pagesServer）`);
+  }
 
   rmSync(options.buildDir, { recursive: true, force: true });
   mkdirSync(options.buildDir, { recursive: true });
 
-  if (codeberg) {
-    writeFileSync(
-      path.join(options.buildDir, "_redirects"),
-      codebergRedirects([host, ...target.legacyHosts], origin)
-    );
-    writeFileSync(path.join(options.buildDir, "index.html"), shellHtml(origin));
-  } else {
-    writeFileSync(path.join(options.buildDir, "CNAME"), `${host}\n`);
-    writeFileSync(path.join(options.buildDir, "index.html"), shellHtml(origin));
-    writeFileSync(path.join(options.buildDir, "404.html"), shellHtml(origin));
-    writeFileSync(path.join(options.buildDir, "robots.txt"), "User-agent: *\nDisallow: /\n");
-  }
+  writeFileSync(
+    path.join(options.buildDir, "_redirects"),
+    codebergRedirects([host, ...target.legacyHosts], origin)
+  );
+  writeFileSync(path.join(options.buildDir, "index.html"), shellHtml(origin));
 
   console.log(`跳转目标：${options.target}（${host}）`);
   console.log(`跳转目标地址：${origin}`);

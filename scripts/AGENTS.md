@@ -5,7 +5,7 @@
 ## Commands
 
 - `pnpm build` — 多语构建入口（`scripts/build-site.ts`）：en、zh-cn、ja 三个主站 flavor 各跑一遍（各自经 `BUILD_OUT` 落临时目录），组装出 `build/`（en 根 + `_i18n/zh-cn`、`_i18n/ja` 内部树，`_app` 多语 chunk 合并到共享根、三个 flavor 由 `BUILD_VERSION` 注入同一个应用版本（各树 HTML 内嵌 version 与 `_app/version.json` 一致）、各语言树 `html lang` 改写）；`pnpm build:flavor` 跑单遍
-- `node scripts/gen-static-redirects.ts --target=<目标名>` — 生成跳转宿主的 `index.html`/`404.html`/`CNAME`（GitHub）或 `_redirects`（Codeberg）；域名从配置解析，不访问网络；默认写入 `build-static/`，`--build-dir` 可覆盖
+- `node scripts/gen-static-redirects.ts --target=<目标名>` — 生成 Codeberg 跳转宿主的 `_redirects` 与 `index.html` 兜底壳；域名从配置解析，不访问网络；默认写入 `build-static/`，`--build-dir` 可覆盖
 - `node scripts/fetch-tables.ts` — 本地跑数据管线（基线经 rclone 同步自 R2，用户层经站点 Worker 的内部接口读取，需要 `INTERNAL_API_TOKEN`；写 `tables/`、`indexes/`、`warnings.log`；产物已 gitignore）
 - `node scripts/fetch-table-once.ts --url=<表源> --request-id=<id> --out-dir=./out` — 单表抓取（复用管线抓取与命名逻辑）：数据目录供 `fetch-table` 工作流上传到 R2，抓取结果与状态经内部接口写进 D1
 - `pnpm test:parity` — 手动新旧实现对拍（用公开 R2 基线与归档工具 v0.4.2 的二进制，逐对象比对产物；`PARITY_LIMIT` 可只对拍前 N 张表）

@@ -1,14 +1,11 @@
-# 站点部署：主站加两个跳转宿主。
+# 站点部署：主站（Cloudflare Workers）。
 #
-# - Cloudflare Workers（主站）：静态资源 + Worker，镜像表页面与 tables.json
-#   全部由 Worker 运行时生成。
-# - GitHub Pages：只发布跳转壳；自定义域由 Cloudflare 代理发 301，平台默认域
-#   走客户端跳转。
-# - Codeberg Pages：只发布 `_redirects` 跳转壳；自定义域与平台默认域都由
-#   Codeberg 服务端发 301。
+# 静态资源 + Worker，镜像表页面与 tables.json 全部由 Worker 运行时生成；
+# 跳转宿主只剩 Codeberg（.forgejo/workflows/deploy.yml 发布 `_redirects`
+# 壳），其余旧域与 www 由 Worker 自定义域 + host-redirects.ts 发 301。
 #
 # 检查（lint/check/test）不在这里重复：main 的提交由 PR 必过门槛与 push 触发的
-# CI 覆盖，唯一绕过 PR 的路径（deploy key 直推快照）只改数据。
+# CI 覆盖。
 name: Deploy Site
 on:
   workflow_dispatch:
@@ -25,7 +22,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build_site:
+  deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -45,25 +42,3 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-      - name: Generate static redirect shell
-        # 不再拉主站清单：只生成 GitHub Pages 的跳转壳与 CNAME
-        run: node scripts/gen-static-redirects.ts --target=github-pages
-      - name: Upload Artifacts
-        uses: actions/upload-pages-artifact@v5
-        with:
-          # 跳转壳产物
-          path: "build-static/"
-  deploy:
-    needs: build_site
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy
-        id: deployment
-        uses: actions/deploy-pages@v5
