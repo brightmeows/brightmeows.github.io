@@ -4,7 +4,7 @@
 
 ## 文档地图
 
-- `src/AGENTS.md` — 站点域：SvelteKit 应用、Markdown 管线（SvelTeX）、博客、组件与数据层。
+- `src/AGENTS.md` — 站点域：SvelteKit 应用、Markdown 管线（SvelTeX）、内容系统（博客与杂记）、组件与数据层。
 - `packages/mirror/AGENTS.md` — 镜像表内核：URL 构造、清单变换、用户层类型与镜像数据纪律。
 - `packages/bms/AGENTS.md` — BMS 表内容域：格式模型、文件解码、图表视图变换、编辑器纯逻辑与段位。
 - `packages/worker/AGENTS.md` — Cloudflare Worker：镜像路由、写接口、D1、部署与 Cloudflare 外部状态。
@@ -66,7 +66,7 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`�
 - **`lint` 带 `--deny-warnings` 与 `--report-unused-disable-directives`** — warn 同样导致失败；失效的 disable 指令会被检出。
 - **`check` 带 `--fail-on-warnings`** — Svelte 编译器与 a11y 警告按错误处理。
 - **架构边界由 `no-restricted-imports` 强制** — `$lib/loaders`（构建期 Node 层）只能从 `*.server.ts` 导入，客户端代码引用会在 lint 阶段失败；`src/lib/controllers/**`（页面编排层）禁导入组件、`.svelte` 与 Svelte 运行时（overrides 按目录限定，探针实测生效）。新增构建时数据入口或编排模块时走这两条边界。
-- **blog frontmatter 在构建期校验** — `validateFrontmatter` 校验 title/date/order/slug/description/tags，非法值直接让 `pnpm build` 失败。不要降级为警告或静默回退，坏数据会在页面上悄悄变形。
+- **内容 frontmatter 在构建期校验** — `validateFrontmatter` 校验 title/date/order/slug/description/tags，非法值直接让 `pnpm build` 失败。不要降级为警告或静默回退，坏数据会在页面上悄悄变形。
 
 ## 架构边界
 
@@ -78,7 +78,7 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`�
 
 ```text
 构建期（pnpm build，三遍 flavor 组装多语产物）
-  git：content/posts/*.md ──loaders──> SSG 内容页
+  git：content/posts/<分类>/*.md ──loaders──> SSG /blog 与 /notes
   git：static/bms/table/<自托管>/   ──> 自托管表页与 header/data
 
 
@@ -95,14 +95,14 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`�
   列表变动只影响运行时读取，不再触发部署；单表抓取由 Worker 派发 fetch-table
 ```
 
-权威源：R2（表数据与清单）、D1（用户层与共享表元数据）、git（博客与自托管表）、
+权威源：R2（表数据与清单）、D1（用户层与共享表元数据）、git（内容与自托管表）、
 `config/site.json`（部署配置）；仓库里没有派生数据。
 
 ## 技术栈
 
 - Svelte 5（runes：`$state`、`$derived`、`$effect`）
 - Tailwind CSS v4（`@import "tailwindcss"`，无 `tailwind.config.*`）
-- SvelTeX 0.5（Markdown 预处理器：unified 后端 + remark-gfm + katex + shiki）（博客文章用 `.md`）
+- SvelTeX 0.5（Markdown 预处理器：unified 后端 + remark-gfm + katex + shiki）（内容文章用 `.md`）
 - TypeScript 6（`rewriteRelativeImportExtensions: true`）
 - tsconfig 已开启 `noUncheckedIndexedAccess` 与 `exactOptionalPropertyTypes`（2026-09）—— 两者分别修复 45 处与 27 处真实未定义状态问题后开启。批量修法：`exactOptionalPropertyTypes` 要求给类型定义的可选属性显式写 `| undefined`（项目里确实存在“显式传 undefined”的语义，如调用方把 `string | undefined` 直接放进字面量）；`noUncheckedIndexedAccess` 优先真修（用 `entries()` 遍历消除索引访问、用解构加逐项检查替代 `some` 加 `as` 断言），确证安全处（循环内已保证边界、测试里已有前置断言）用 `!`。开启后 oxlint 的 `prefer-nullish-coalescing` 会多报几处，属预期。
 - Vitest 5（纯函数单测，Node 环境）
@@ -114,7 +114,7 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`�
 以下升级经评估后刻意挂起，勿随批升级，各等触发条件；有 dependabot 击穿风险的条目在 `.github/dependabot.yml` 用 ignore 机械挡住（2026-10-06 katex 曾被自动升穿无兜底的挂起项，见下）。
 
 - **typescript 6 到 7** — Kit 3 已迁移（3.0.1），TS7 双装在 2026-10-07 实测未达可用：双装本身可装（`typescript@~6` 主 + `@typescript/native@npm:typescript@7` 别名，svelte-check 给出的官方方案），但 svelte-check 4.7.6 的 `--tsgo` 模式对本仓的 `.svelte` module script 具名导出（`JsonPreview` 的 `jsonPreview`、`TableEditContentProps` 等）与组件句柄类型解析不工作（13 个 tsgo 特有类型错误，TS6 下为零）。触发条件：svelte-check 的 tsgo 集成覆盖 Svelte 模块类型后重做双装。oxlint-tsgolint 7 自带 TS 7 语义的类型检查引擎，与项目 typescript 版本解耦，互不阻塞——lint 侧已在 TS7 语义下运行。
-- **katex 0.18.2 到 0.19** — 0.19 已发布，SvelTeX 0.5.1 的 peer range 仍为 `^0.16 || ^0.17`。0.18.2 已于 2026-10-06 由 dependabot 自动升入（PR #158，击穿当时无 ignore 兜底的挂起项），事后实测风险未发生：katex.min.css 与渲染输出同版本，0.18 的内部 class 前缀化（`.strut` 改 `.katex-strut`）两侧一致，站点也无硬编码旧内部 class，数学页正常。触发条件：SvelTeX 放开 peer range 后升 0.19 并目检博客数学页（dependabot.yml 的 ignore 挡 0.19+，届时解除）。
+- **katex 0.18.2 到 0.19** — 0.19 已发布，SvelTeX 0.5.1 的 peer range 仍为 `^0.16 || ^0.17`。0.18.2 已于 2026-10-06 由 dependabot 自动升入（PR #158，击穿当时无 ignore 兜底的挂起项），事后实测风险未发生：katex.min.css 与渲染输出同版本，0.18 的内部 class 前缀化（`.strut` 改 `.katex-strut`）两侧一致，站点也无硬编码旧内部 class，数学页正常。触发条件：SvelTeX 放开 peer range 后升 0.19 并目检内容数学页（dependabot.yml 的 ignore 挡 0.19+，届时解除）。
 
 ## 其他挂起项
 
