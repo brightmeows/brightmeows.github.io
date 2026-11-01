@@ -26,10 +26,18 @@
     model: CourseModel;
     entries: Record<string, unknown>[];
     disabled?: boolean;
+    /** 外层已有折叠标题时传 false，避免重复标题。 */
+    showHeading?: boolean;
     onchange?: (() => void) | undefined;
   }
 
-  let { model = $bindable(), entries, disabled = false, onchange }: Props = $props();
+  let {
+    model = $bindable(),
+    entries,
+    disabled = false,
+    showHeading = true,
+    onchange,
+  }: Props = $props();
 
   const PICKER_LIMIT = 20;
 
@@ -121,8 +129,10 @@
 
 <section>
   <div class="mb-3 flex flex-wrap items-center gap-3">
-    <h3 class="tag-accent-sm">{m["editor.course_section"]()}</h3>
-    <span class="text-[0.85rem] text-white-50">{m["editor.course_hint"]()}</span>
+    {#if showHeading}
+      <h3 class="tag-accent-sm">{m["editor.course_section"]()}</h3>
+      <span class="text-[0.85rem] text-white-50">{m["editor.course_hint"]()}</span>
+    {/if}
     <div class="ml-auto flex flex-wrap gap-2">
       {#if model.shape === "nested"}
         <button

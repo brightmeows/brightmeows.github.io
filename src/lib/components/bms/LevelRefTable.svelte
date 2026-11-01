@@ -9,12 +9,15 @@
     headerUrl?: string;
     hasData?: boolean;
     loadState?: "idle" | "loading" | "done" | "not-found" | "error";
+    /** 外层已有折叠标题时传 false，避免重复标题。 */
+    showHeading?: boolean;
   }
 
   let {
     headerUrl = undefined,
     hasData = $bindable(false),
     loadState = $bindable("idle"),
+    showHeading = true,
   }: Props = $props();
 
   let levelRefData = $state<LevelRefItem[]>([]);
@@ -73,19 +76,23 @@
 
         if (Array.isArray(data)) {
           levelRefData = data;
+          hasData = data.length > 0;
           loadState = "done";
         } else {
           console.warn("level-ref.json 格式不正确，应为数组");
+          hasData = false;
           loadState = "error";
           loadErrorMessage = m["levelref.bad_format"]();
         }
       } else if (response.status === 404) {
+        hasData = false;
         loadState = "not-found";
       } else {
         throw new Error(`HTTP ${response.status} ${response.statusText}`);
       }
     } catch (err) {
       console.error("加载难度对照表数据失败:", err);
+      hasData = false;
       loadState = "error";
       loadErrorMessage = err instanceof Error ? err.message : m["common.unknown_error"]();
     }
@@ -101,15 +108,21 @@
 </script>
 
 {#if loadState === "loading"}
-  <h3 class="section-title mt-0 mb-6 text-center">{m["levelref.heading"]()}</h3>
+  {#if showHeading}
+    <h3 class="section-title mt-0 mb-6 text-center">{m["levelref.heading"]()}</h3>
+  {/if}
   <LoadingProgress variant="compact" message={m["levelref.loading"]()} />
 {:else if loadState === "error"}
-  <h3 class="section-title mt-0 mb-6 text-center">{m["levelref.heading"]()}</h3>
+  {#if showHeading}
+    <h3 class="section-title mt-0 mb-6 text-center">{m["levelref.heading"]()}</h3>
+  {/if}
   <div class="message-error">
     {m["common.load_failed_with_error"]({ error: loadErrorMessage })}
   </div>
 {:else if hasContent}
-  <h3 class="section-title mt-0 mb-6 text-center">{m["levelref.heading"]()}</h3>
+  {#if showHeading}
+    <h3 class="section-title mt-0 mb-6 text-center">{m["levelref.heading"]()}</h3>
+  {/if}
   <div class="flex flex-wrap items-start justify-center gap-8">
     {#each tableHalves as half (half.id)}
       <div class="min-w-[18rem] flex-1">
@@ -144,4 +157,6 @@
       </div>
     {/each}
   </div>
+{:else}
+  <p class="text-[0.9rem] text-white-50">{m["levelref.empty"]()}</p>
 {/if}

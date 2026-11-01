@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
+  import DetailsPanel from "#lib/components/ui/DetailsPanel.svelte";
   import { btnGhostXs } from "#lib/constants/ui-classes.js";
   import {
     fetchFetchStatus,
@@ -158,7 +158,7 @@
 </script>
 
 {#if auth.status === "ready"}
-  <GlassPanel class="mt-4">
+  <DetailsPanel class="mt-4" summary={m["mirror.add_table"]()} hint={m["mirror.add_table_hint"]()}>
     <div class="text-[0.9rem] text-white-60">
       {m["shared.cross_before"]()}
       <a class="link-accent" href="/bms/table/shared/">{m["nav.shared"]()}</a>
@@ -256,5 +256,5 @@
         {/if}
       </div>
     {/if}
-  </GlassPanel>
+  </DetailsPanel>
 {/if}

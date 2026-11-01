@@ -3,6 +3,7 @@
   import type { MetaOverride } from "@brightmeows/mirror/user-layer";
   import { untrack } from "svelte";
 
+  import DetailsPanel from "#lib/components/ui/DetailsPanel.svelte";
   import { btnDanger, btnGhostXs, inputInline } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { MirrorMetaFields } from "#lib/types/bms-view.js";
@@ -28,7 +29,6 @@
     onmetasave: (fields: MirrorMetaFields) => void;
     onmetaclear: () => void;
     ondelete?: ((item: MirrorTableItem) => void) | undefined;
-    oncollapse: () => void;
   }
 
   let {
@@ -46,7 +46,6 @@
     onmetasave,
     onmetaclear,
     ondelete,
-    oncollapse,
   }: Props = $props();
 
   // 草稿只取挂载时的覆盖值：详情行仅在 overview 就绪后渲染，写操作成功后收起重挂
@@ -91,14 +90,8 @@
 </script>
 
 <tr class="bg-black-30 last:[&>td]:border-b-0">
-  <td colspan={colCount} class="table-td-glass">
-    <div class="flex flex-col gap-4 rounded-lg border border-white-10 bg-black-20 p-4">
-      <div class="flex justify-end">
-        <button class={btnGhostXs} type="button" onclick={oncollapse}>
-          {m["mirror.collapse_edit"]()}
-        </button>
-      </div>
-
+  <td colspan={colCount} class="table-td-compact">
+    <div class="flex flex-col gap-3 rounded-lg border border-white-10 bg-black-20 p-3">
       <section class="flex flex-col gap-2">
         <h4 class="text-[0.95rem] font-semibold text-white-90">{m["admin.auth_section"]()}</h4>
         <p class={helpText}>{m["admin.auth_help"]()}</p>
@@ -160,9 +153,11 @@
 
       <div class="border-t border-white-10"></div>
 
-      <section class="flex flex-col gap-3">
-        <h4 class="text-[0.95rem] font-semibold text-white-90">{m["admin.meta_heading"]()}</h4>
-        <p class={helpText}>{m["admin.meta_help"]()}</p>
+      <DetailsPanel
+        summary={m["admin.meta_heading"]()}
+        hint={override === null ? m["admin.meta_summary_empty"]() : m["admin.meta_summary_set"]()}
+      >
+        <p class="mb-3 {helpText}">{m["admin.meta_help"]()}</p>
         <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <div class="flex flex-col gap-1">
             <label class="text-[0.8rem] text-white-60" for="mirror-edit-name">
@@ -254,7 +249,7 @@
             {m["admin.meta_clear"]()}
           </button>
         </div>
-      </section>
+      </DetailsPanel>
 
       <datalist id="mirror-tag1-options">
         {#each tag1Options as option (option)}<option value={option}></option>{/each}

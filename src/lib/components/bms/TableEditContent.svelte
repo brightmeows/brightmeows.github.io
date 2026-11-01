@@ -53,6 +53,7 @@
   import TableEntryImportPanel from "#lib/components/bms/TableEntryImportPanel.svelte";
   import TableHeaderForm from "#lib/components/bms/TableHeaderForm.svelte";
   import TableImportPanel from "#lib/components/bms/TableImportPanel.svelte";
+  import DetailsPanel from "#lib/components/ui/DetailsPanel.svelte";
   import { btnGhostMd } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
 
@@ -138,7 +139,7 @@
   }
 </script>
 
-<div class="flex flex-col gap-6">
+<div class="flex flex-col gap-4">
   {#if banner}
     {@render banner()}
   {:else if localOnly}
@@ -167,57 +168,61 @@
     {/if}
   </section>
 
-  <hr class="border-white-10" />
-
-  <section id="course-list" class="scroll-mt-24">
-    <CourseEditor bind:model={courseModel} {entries} disabled={busy} onchange={onChange} />
-  </section>
+  <DetailsPanel
+    id="course-list"
+    class="scroll-mt-20"
+    summary={m["editor.course_section"]()}
+    hint={m["editor.course_hint"]()}
+  >
+    <CourseEditor
+      bind:model={courseModel}
+      {entries}
+      disabled={busy}
+      showHeading={false}
+      onchange={onChange}
+    />
+  </DetailsPanel>
 
   {#if levelRef}
-    <hr class="border-white-10" />
-    {@render levelRef()}
+    <DetailsPanel id="level-ref" class="scroll-mt-20" summary={m["levelref.heading"]()}>
+      {@render levelRef()}
+    </DetailsPanel>
   {/if}
 
-  <hr class="border-white-10" />
-
   <section id="charts-list" class="scroll-mt-24">
-    <BmsDropZone {entries} disabled={busy} onadd={handleDropAdd} />
-    <div class="mt-6">
+    <TableEntryEditor
+      bind:entries
+      {levels}
+      {levelFilter}
+      {symbol}
+      {levelHints}
+      disabled={busy}
+      onchange={onChange}
+    />
+  </section>
+
+  <DetailsPanel id="import-export" class="scroll-mt-20" summary={m["editor.io_section"]()}>
+    <div class="flex flex-col gap-4">
+      <BmsDropZone {entries} disabled={busy} onadd={handleDropAdd} />
       <TableEntryImportPanel {entries} disabled={busy} onapply={handleEntryImport} />
-    </div>
-    <div class="mt-6">
-      <TableEntryEditor
-        bind:entries
-        {levels}
-        {levelFilter}
-        {symbol}
-        {levelHints}
-        disabled={busy}
-        onchange={onChange}
-      />
-    </div>
-  </section>
-
-  <hr class="border-white-10" />
-
-  <section id="import-export" class="scroll-mt-24">
-    <TableImportPanel disabled={busy} onapply={handleImport} />
-    <div class="mt-6">
-      <div class="mb-3 flex flex-wrap items-center gap-3">
-        <h3 class="tag-accent-sm">{m["editor.export_section"]()}</h3>
-        <span class="text-[0.85rem] text-white-50">{m["editor.export_hint"]()}</span>
-      </div>
-      <div class="flex flex-wrap gap-2">
-        <button class={btnGhostMd} type="button" onclick={() => onExport("header")}>
-          {m["editor.export_header"]()}
-        </button>
-        <button class={btnGhostMd} type="button" onclick={() => onExport("data")}>
-          {m["editor.export_data"]()}
-        </button>
-        <button class={btnGhostMd} type="button" onclick={() => onExport("package")}>
-          {m["editor.export_package"]()}
-        </button>
+      <TableImportPanel disabled={busy} onapply={handleImport} />
+      <div>
+        <div class="mb-3 flex flex-wrap items-center gap-3">
+          <h3 class="tag-accent-sm">{m["editor.export_section"]()}</h3>
+          <span class="text-[0.85rem] text-white-50">{m["editor.export_hint"]()}</span>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button class={btnGhostMd} type="button" onclick={() => onExport("header")}>
+            {m["editor.export_header"]()}
+          </button>
+          <button class={btnGhostMd} type="button" onclick={() => onExport("data")}>
+            {m["editor.export_data"]()}
+          </button>
+          <button class={btnGhostMd} type="button" onclick={() => onExport("package")}>
+            {m["editor.export_package"]()}
+          </button>
+        </div>
       </div>
     </div>
-  </section>
+  </DetailsPanel>
 </div>

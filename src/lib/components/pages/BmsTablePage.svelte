@@ -18,6 +18,7 @@
   import type { TableEditContentProps } from "#lib/components/bms/TableEditContent.svelte";
   import TableEditToc from "#lib/components/bms/TableEditToc.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
+  import DetailsPanel from "#lib/components/ui/DetailsPanel.svelte";
   import EmptyState from "#lib/components/ui/EmptyState.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
   import { btnBar, btnGhostMd, btnPrimary, btnPrimaryLarge } from "#lib/constants/ui-classes.js";
@@ -61,9 +62,7 @@
   // 模型只需知道数据是否就绪（目录与编辑分区列表用），经输入 getter 注入。
   let levelRefHasData = $state(false);
   let levelRefLoadState = $state<"idle" | "loading" | "done" | "not-found" | "error">("idle");
-  const showLevelRefPane = $derived(
-    levelRefLoadState === "idle" || levelRefLoadState === "loading" || levelRefHasData
-  );
+  const showLevelRefPane = $derived(levelRefLoadState !== "not-found");
 
   // getter 传递：props 对象经闭包读取，模型内的 $derived 跟踪其响应式变化
   const model = createTableModel({
@@ -76,6 +75,11 @@
   const saveAsShared = $derived(publish.saveAsShared ?? "none");
   const sharedMode = $derived(capabilities.mode === "shared");
   const createMode = $derived(capabilities.createMode ?? false);
+  const editHint = $derived.by(() => {
+    if (createMode) return m["editor.enter_table_hint_create"]();
+    if (sharedMode && capabilities.canWrite === true) return m["editor.enter_table_hint_save"]();
+    return m["editor.enter_table_hint_local"]();
+  });
 
   // ---- 模式（?edit=1 浅层路由；深链与刷新保持编辑态） ----
   // SvelteKit 的 pushState 只更新历史与 page.state、不更新 page.url，模式因此由
@@ -219,11 +223,13 @@
       </div>
     {/if}
     {#if model.ready}
-      <div class="mt-3 flex flex-wrap items-center justify-center gap-2">
-        {#if actions}
+      {#if actions}
+        <div class="mt-3 flex flex-wrap items-center justify-center gap-2">
           {@render actions()}
-        {/if}
-        {#if isEdit}
+        </div>
+      {/if}
+      {#if isEdit}
+        <div class="mt-2 flex flex-wrap items-center justify-center gap-2">
           {#if !createMode}
             <button class={btnBar} type="button" onclick={() => setMode("view")}>
               {m["editor.view"]()}
@@ -249,11 +255,19 @@
               {m["editor.save_as_shared"]()}
             </button>
           {/if}
-        {:else}
-          <button class={btnBar} type="button" onclick={() => setMode("edit")}>
-            {model.dirty ? m["editor.continue_edit"]() : m["editor.enter"]()}
+        </div>
+      {:else}
+        <div class="mt-3 flex flex-col items-center gap-1.5">
+          <button class={btnPrimary} type="button" onclick={() => setMode("edit")}>
+            {model.dirty ? m["editor.continue_edit"]() : m["editor.enter_table"]()}
           </button>
-          {#if model.dirty && model.canSave}
+          <p class="max-w-3xl text-[0.85rem] text-white-50">{editHint}</p>
+        </div>
+      {/if}
+      {#if model.dirty}
+        <div class="mt-2 flex flex-wrap items-center justify-center gap-2">
+          <span class="text-amber-300">{m["editor.unsaved_badge"]()}</span>
+          {#if !isEdit && model.canSave}
             <button
               class={btnPrimary}
               type="button"
@@ -263,9 +277,6 @@
               {model.saveLabel}
             </button>
           {/if}
-        {/if}
-        {#if model.dirty}
-          <span class="text-amber-300">{m["editor.unsaved_badge"]()}</span>
           <button
             class={btnGhostMd}
             type="button"
@@ -274,8 +285,8 @@
           >
             {m["editor.discard_unsaved"]()}
           </button>
-        {/if}
-      </div>
+        </div>
+      {/if}
     {/if}
     {#if isEdit && model.ready && model.draftStatusText !== ""}
       <div class="mt-2 text-[0.85rem] text-white-50">{model.draftStatusText}</div>
@@ -386,19 +397,23 @@
 {/snippet}
 
 {#snippet coursePane()}
-  <div id="course-list" class="scroll-mt-5">
-    <CourseSection groups={model.courseGroups} symbol={model.symbol} />
-  </div>
+  <CourseSection
+    id="course-list"
+    groups={model.courseGroups}
+    symbol={model.symbol}
+    initiallyCollapsed={true}
+  />
 {/snippet}
 
 {#snippet levelRefPane()}
-  <div id="level-ref" class="scroll-mt-5">
+  <DetailsPanel id="level-ref" class="scroll-mt-20" summary={m["levelref.heading"]()}>
     <LevelRefTable
       headerUrl={headerUrl ?? ""}
       bind:hasData={levelRefHasData}
       bind:loadState={levelRefLoadState}
+      showHeading={false}
     />
-  </div>
+  </DetailsPanel>
 {/snippet}
 
 {#snippet chartsPane()}
@@ -450,11 +465,10 @@
 {/snippet}
 
 {#snippet levelRefSnippet()}
-  <section id="level-ref" class="scroll-mt-24">
-    <LevelRefTable
-      headerUrl={headerUrl ?? ""}
-      bind:hasData={levelRefHasData}
-      bind:loadState={levelRefLoadState}
-    />
-  </section>
+  <LevelRefTable
+    headerUrl={headerUrl ?? ""}
+    bind:hasData={levelRefHasData}
+    bind:loadState={levelRefLoadState}
+    showHeading={false}
+  />
 {/snippet}

@@ -233,6 +233,21 @@
     @apply border-b border-white-5 px-4 py-3 text-white-90;
   }
 
+  /* 紧凑表格：难度表与镜像列表专用，避免全局改 .table-td-glass 影响其他表 */
+  .table-th-compact {
+    @apply border-b-2 border-white-10 bg-accent/20 px-4 py-2 text-left font-semibold text-white;
+  }
+
+  .table-td-compact {
+    @apply border-b border-white-5 px-4 py-1.5 text-white-90;
+  }
+
+  /* 粘性表头：合并为单表后滚动时保持列名可见；贴着视口顶部，顶栏下滑时隐藏 */
+  .table-th-sticky {
+    @apply sticky top-0 z-10;
+    background-color: color-mix(in srgb, var(--color-accent) 22%, var(--color-background));
+  }
+
   /* ===== 弹出框 ===== */
   .popover-glass {
     @apply fixed z-2000 overflow-hidden rounded-xl bg-glass shadow-[var(--glass-lighting),0_10px_24px_rgba(0,0,0,0.45)] backdrop-blur-sm;
