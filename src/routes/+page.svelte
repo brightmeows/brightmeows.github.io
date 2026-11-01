@@ -4,10 +4,10 @@
   import type { PageData } from "./$types";
 
   import BlogPostCard from "#lib/components/content/BlogPostCard.svelte";
-  import { buildTocFromHeadings } from "#lib/components/layout/FloatingToc.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import { m } from "#lib/paraglide/messages.js";
   import type { TocItem } from "#lib/types/ui.js";
+  import { buildTocFromHeadings } from "#lib/utils/ui/toc.js";
   import { resolve } from "$app/paths";
 
   let { data }: { data: PageData } = $props();
