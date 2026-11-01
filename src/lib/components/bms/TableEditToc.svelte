@@ -7,6 +7,7 @@
 
 <script lang="ts">
   import { entryGroupAnchorId } from "@brightmeows/bms/editor";
+  import { tick } from "svelte";
 
   import Checkbox from "#lib/components/ui/Checkbox.svelte";
   import FloatingPanel from "#lib/components/ui/FloatingPanel.svelte";
@@ -35,9 +36,14 @@
     onToggleUnassigned,
   }: Props = $props();
 
-  function scrollToId(id: string): void {
+  async function scrollToId(id: string): Promise<void> {
     const element = document.getElementById(id);
     if (element === null) return;
+    const details = element.closest("details");
+    if (details !== null && !details.open) {
+      details.open = true;
+      await tick();
+    }
     element.scrollIntoView({ behavior: "smooth", block: "start" });
     history.replaceState(null, "", `#${encodeURIComponent(id)}`);
   }
@@ -45,7 +51,7 @@
   function scrollToGroup(level: string, unassigned: boolean): void {
     const id = entryGroupAnchorId(level, unassigned);
     // 被筛选隐藏的组不在 DOM 里：回落到条目分区，仍有反馈
-    scrollToId(document.getElementById(id) === null ? "charts-list" : id);
+    void scrollToId(document.getElementById(id) === null ? "charts-list" : id);
   }
 </script>
 
@@ -66,7 +72,7 @@
       <button
         class="block w-full rounded-lg px-3 py-2 text-left text-[0.9rem] leading-snug text-white-85 transition-colors hover:bg-white-8 hover:text-white"
         type="button"
-        onclick={() => scrollToId(section.id)}
+        onclick={() => void scrollToId(section.id)}
       >
         {section.title}
       </button>

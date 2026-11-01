@@ -10,7 +10,12 @@
   } from "@brightmeows/bms/editor";
   import { untrack } from "svelte";
 
-  import { btnGhost, btnIconDanger, inputEditorMono } from "#lib/constants/ui-classes.js";
+  import {
+    btnDanger,
+    btnGhost,
+    btnIconDanger,
+    inputEditorMono,
+  } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
 
   /**
@@ -25,9 +30,11 @@
     disabled?: boolean;
     oncommit: (entry: Record<string, unknown>) => void;
     oncancel: () => void;
+    /** 编辑既有条目时提供的删除入口；新增时为 undefined。 */
+    ondelete?: (() => void) | undefined;
   }
 
-  let { entry, levels, disabled = false, oncommit, oncancel }: Props = $props();
+  let { entry, levels, disabled = false, oncommit, oncancel, ondelete }: Props = $props();
 
   /** 初始快照：父级用 keyed 区块重挂载来切换编辑对象，这里无需响应 prop 变化。 */
   function snapshot(value: Record<string, unknown> | null): {
@@ -195,12 +202,19 @@
     <p class="mt-2 text-[0.85rem] text-red-300">{errorMessage}</p>
   {/if}
 
-  <div class="mt-3 flex gap-2">
-    <button class={btnGhost} type="button" {disabled} onclick={handleSave}>
-      {m["editor.entry_save"]()}
-    </button>
-    <button class={btnGhost} type="button" {disabled} onclick={oncancel}>
-      {m["common.cancel"]()}
-    </button>
+  <div class="mt-3 flex flex-wrap items-center gap-2">
+    {#if entry !== null && ondelete}
+      <button class={btnDanger} type="button" {disabled} onclick={ondelete}>
+        {m["editor.entry_delete"]()}
+      </button>
+    {/if}
+    <div class="ml-auto flex gap-2">
+      <button class={btnGhost} type="button" {disabled} onclick={handleSave}>
+        {m["editor.entry_save"]()}
+      </button>
+      <button class={btnGhost} type="button" {disabled} onclick={oncancel}>
+        {m["common.cancel"]()}
+      </button>
+    </div>
   </div>
 </section>

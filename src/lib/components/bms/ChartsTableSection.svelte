@@ -80,19 +80,31 @@
       </colgroup>
       <thead>
         <tr>
-          <th class="table-th-glass text-center whitespace-nowrap"> {m["table.th_level"]()} </th>
-          <th class="table-th-glass text-center whitespace-nowrap"> {m["table.th_download"]()} </th>
-          <th class="table-th-glass text-center whitespace-nowrap"> {m["table.th_site"]()} </th>
-          <th class="table-th-glass text-center whitespace-nowrap"> {m["table.th_title"]()} </th>
-          <th class="table-th-glass text-center whitespace-nowrap"> {m["table.th_artist"]()} </th>
-          <th class="table-th-glass text-center whitespace-nowrap"> {m["table.th_comment"]()} </th>
+          <th class="table-th-compact text-center whitespace-nowrap">
+            {m["table.th_level"]()}
+          </th>
+          <th class="table-th-compact text-center whitespace-nowrap">
+            {m["table.th_download"]()}
+          </th>
+          <th class="table-th-compact text-center whitespace-nowrap">
+            {m["table.th_site"]()}
+          </th>
+          <th class="table-th-compact text-center whitespace-nowrap">
+            {m["table.th_title"]()}
+          </th>
+          <th class="table-th-compact text-center whitespace-nowrap">
+            {m["table.th_artist"]()}
+          </th>
+          <th class="table-th-compact text-center whitespace-nowrap">
+            {m["table.th_comment"]()}
+          </th>
         </tr>
       </thead>
       {#each groups as group, gIndex (group.level)}
         {@const groupColor = levelSegmentColor(gIndex, groups.length)}
         <tbody id={`difficulty-group-${group.level}`} class="scroll-mt-5">
           <tr>
-            <td colspan="6" class="border-b-2 border-white-10 px-4 py-3">
+            <td colspan="6" class="border-b-2 border-white-10 px-4 py-2">
               <div class="flex items-center gap-4">
                 <span
                   class="shadow-[0_2px_8px rgba(0,0,0,0.2)] rounded-[20px] px-6 py-2 text-[1.2rem] font-bold text-white"

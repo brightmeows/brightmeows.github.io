@@ -12,10 +12,12 @@
   interface Props {
     levels: string[];
     disabled?: boolean;
+    /** 外层已有折叠标题时传 false，避免重复标题。 */
+    showHeading?: boolean;
     onchange?: (() => void) | undefined;
   }
 
-  let { levels = $bindable([]), disabled = false, onchange }: Props = $props();
+  let { levels = $bindable([]), disabled = false, showHeading = true, onchange }: Props = $props();
 
   let textMode = $state(false);
   let textValue = $state("");
@@ -59,8 +61,10 @@
 
 <section>
   <div class="mb-3 flex flex-wrap items-center gap-3">
-    <h3 class="tag-accent-sm">{m["editor.field_level_order"]()}</h3>
-    <span class="text-[0.85rem] text-white-50">{m["editor.level_order_hint"]()}</span>
+    {#if showHeading}
+      <h3 class="tag-accent-sm">{m["editor.field_level_order"]()}</h3>
+      <span class="text-[0.85rem] text-white-50">{m["editor.level_order_hint"]()}</span>
+    {/if}
     <div class="ml-auto flex gap-2">
       {#if textMode}
         <button class={btnGhostSm} type="button" {disabled} onclick={applyTextMode}>

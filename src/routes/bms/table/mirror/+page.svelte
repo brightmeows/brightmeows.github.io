@@ -69,6 +69,7 @@
   let selectedMap = $state<Record<string, boolean>>({});
   let searchQuery = $state("");
   let showProtectedOnly = $state(false);
+  let operationsMode = $state(false);
   let tocItems = $state<TocItem[]>([]);
 
   let cb = clipboardFeedback();
@@ -406,6 +407,21 @@
         />
         {m["mirror.protected_filter"]()}
       </label>
+      {#if auth.user !== null}
+        <label
+          class="flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-[0.35rem] text-[0.85rem] transition-colors duration-200 select-none {operationsMode
+            ? 'border-[#64b5f6] bg-[#64b5f6]/20 text-[#64b5f6]'
+            : 'border-white-20 text-white-50 hover:border-white-40 hover:text-white-70'}"
+        >
+          <Checkbox
+            size="sm"
+            ariaLabel={m["mirror.operations_mode"]()}
+            checked={operationsMode}
+            onchange={(v: boolean) => (operationsMode = v)}
+          />
+          {m["mirror.operations_mode"]()}
+        </label>
+      {/if}
       {#if isAdmin}
         <button
           class="cursor-pointer rounded-md border px-2 py-[0.35rem] text-[0.85rem] transition-colors duration-200 {adminPanelOpen
@@ -415,10 +431,15 @@
           aria-expanded={adminPanelOpen}
           onclick={toggleAdminPanel}
         >
-          {m["mirror.manage"]()}
+          {m["mirror.admin_panel"]()}
         </button>
       {/if}
     </div>
+    {#if operationsMode}
+      <p class="text-center text-[0.85rem] text-white-50">
+        {m["mirror.operations_mode_hint"]()}
+      </p>
+    {/if}
 
     <div class="relative w-full">
       <input
@@ -490,6 +511,7 @@
       {adminUi}
       {mirrorPreview}
       showDelete={auth.user !== null}
+      {operationsMode}
       {deletingDir}
       ondelete={(item: MirrorTableItem) => void handleDelete(item)}
     />

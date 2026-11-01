@@ -1,5 +1,6 @@
 <script lang="ts">
   import LevelOrderEditor from "#lib/components/bms/LevelOrderEditor.svelte";
+  import DetailsPanel from "#lib/components/ui/DetailsPanel.svelte";
   import { inputEditorLg } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
 
@@ -62,7 +63,9 @@
   </div>
 
   <div class="mt-6">
-    <LevelOrderEditor bind:levels {disabled} {onchange} />
+    <DetailsPanel summary={m["editor.field_level_order"]()} hint={m["editor.level_order_hint"]()}>
+      <LevelOrderEditor bind:levels {disabled} showHeading={false} {onchange} />
+    </DetailsPanel>
   </div>
 
   <details class="mt-4 rounded-lg border border-white-15 bg-black-20 p-3">

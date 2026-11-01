@@ -7,7 +7,7 @@
   import Checkbox from "#lib/components/ui/Checkbox.svelte";
   import GradientButton from "#lib/components/ui/GradientButton.svelte";
   import { jsonPreview } from "#lib/components/ui/JsonPreview.svelte";
-  import { btnIconDanger, btnIconPlain } from "#lib/constants/ui-classes.js";
+  import { btnDanger, btnGhostXs, btnIconPlain } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { MirrorAdminUi } from "#lib/types/bms-view.js";
   import type { JsonPreviewHandle } from "#lib/types/ui.js";
@@ -55,17 +55,17 @@
 </script>
 
 <tr class="hover:bg-white-5 last:[&>td]:border-b-0">
-  <td class="table-td-glass wrap-break-word">
+  <td class="table-td-compact wrap-break-word">
     <Checkbox
       ariaLabel={m["mirror.select_row_aria"]({ name: tableLabelOf(item) })}
       checked={selected}
       onchange={(v: boolean) => onchange(v)}
     />
   </td>
-  <td class="table-td-glass wrap-break-word">
+  <td class="table-td-compact wrap-break-word">
     {item.symbol ?? ""}
   </td>
-  <td class="table-td-glass min-w-50 wrap-break-word">
+  <td class="table-td-compact min-w-50 wrap-break-word">
     <strong
       class="cursor-default"
       use:jsonPreview={{
@@ -80,7 +80,7 @@
       {item.name}
     </strong>
   </td>
-  <td class="table-td-glass px-2">
+  <td class="table-td-compact px-2">
     {#if adminUi.isAdmin}
       <button
         class={btnIconPlain}
@@ -162,7 +162,7 @@
       </span>
     {/if}
   </td>
-  <td class="table-td-glass min-w-32.5 wrap-break-word">
+  <td class="table-td-compact min-w-32.5 wrap-break-word">
     <div class="flex items-center gap-1">
       <GradientButton
         variant="blue"
@@ -187,7 +187,7 @@
       {/if}
     </div>
   </td>
-  <td class="table-td-glass min-w-32.5 wrap-break-word">
+  <td class="table-td-compact min-w-32.5 wrap-break-word">
     {#if item.url_from}
       <div class="flex items-center gap-1">
         <GradientButton
@@ -217,56 +217,28 @@
     {/if}
   </td>
   {#if showActions}
-    <td class="table-td-glass px-2">
+    <td class="table-td-compact px-2">
       <div class="flex items-center gap-1">
         {#if adminUi.isAdmin}
           <button
-            class={btnIconPlain}
+            class={btnGhostXs}
             type="button"
             title={m["mirror.edit_table_title"]()}
-            aria-label={m["mirror.edit_table_title"]()}
             aria-expanded={isExpanded}
             onclick={() => adminUi.toggleEdit(item)}
           >
-            <svg
-              class="size-4 text-white-70"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M12 20h9" />
-              <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
-            </svg>
+            {isExpanded ? m["mirror.collapse_edit"]() : m["mirror.manage"]()}
           </button>
         {:else if canDelete && item.protected !== true && ondelete}
           <button
-            class={btnIconDanger}
+            class={btnDanger}
             type="button"
             title={deleteLabel}
             aria-label={deleteLabel}
             disabled={deleting}
             onclick={() => ondelete(item)}
           >
-            <svg
-              class="size-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M3 6h18" />
-              <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
-              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-              <path d="M10 11v6" />
-              <path d="M14 11v6" />
-            </svg>
+            {deleting ? m["mirror.deleting"]() : m["common.delete"]()}
           </button>
         {/if}
       </div>
@@ -277,7 +249,7 @@
 {#if adminUi.isAdmin && isExpanded}
   {#if adminUi.overviewState === "idle" || adminUi.overviewState === "loading"}
     <tr class="bg-black-30 last:[&>td]:border-b-0">
-      <td colspan={columnCount} class="table-td-glass text-[0.9rem] text-white-60">
+      <td colspan={columnCount} class="table-td-compact text-[0.9rem] text-white-60">
         {m["mirror.loading_override"]()}
       </td>
     </tr>
@@ -297,7 +269,6 @@
       onmetasave={(fields) => adminUi.saveMeta(item, fields)}
       onmetaclear={() => adminUi.clearMeta(item)}
       {ondelete}
-      oncollapse={() => adminUi.toggleEdit(item)}
     />
   {/if}
 {/if}
