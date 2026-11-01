@@ -7,5 +7,5 @@
  * 的惯例移除它，也不要把非构建期数据挂进来。
  */
 
-export { getBlogPosts } from "./blog";
+export { getHomePosts, getPostsByCategory } from "./posts";
 export { getBmsTableEntries, getBmsTables } from "./table-list";

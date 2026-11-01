@@ -1,7 +1,9 @@
+import type { CategoryId } from "#lib/constants/content.js";
+
 /**
  * Markdown frontmatter 的镜像，字段均可缺省
  */
-export interface BlogFrontmatter {
+export interface PostFrontmatter {
   title?: string;
   date?: string;
   order?: number;
@@ -10,11 +12,12 @@ export interface BlogFrontmatter {
   tags?: string[];
 }
 
-export interface BlogPostMetadata extends BlogFrontmatter {
+export interface PostMetadata extends PostFrontmatter {
   title: string;
 }
 
-export interface BlogPost {
+export interface Post {
+  category: CategoryId;
   slug: string;
   title: string;
   order?: number | undefined;

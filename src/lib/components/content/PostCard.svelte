@@ -1,8 +1,8 @@
 <script lang="ts">
-  import type { BlogPost } from "#lib/types/blog.js";
+  import type { Post } from "#lib/types/post.js";
 
   interface Props {
-    post: BlogPost;
+    post: Post;
   }
 
   let { post }: Props = $props();

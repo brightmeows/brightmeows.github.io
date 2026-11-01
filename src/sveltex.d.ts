@@ -9,19 +9,19 @@
 declare module "*.md" {
   import type { Component } from "svelte";
 
-  import type { BlogFrontmatter } from "#lib/types/blog.js";
+  import type { PostFrontmatter } from "#lib/types/post.js";
 
   const component: Component;
   export default component;
-  export const metadata: BlogFrontmatter | undefined;
+  export const metadata: PostFrontmatter | undefined;
 }
 
 declare module "*.svx" {
   import type { Component } from "svelte";
 
-  import type { BlogFrontmatter } from "#lib/types/blog.js";
+  import type { PostFrontmatter } from "#lib/types/post.js";
 
   const component: Component;
   export default component;
-  export const metadata: BlogFrontmatter | undefined;
+  export const metadata: PostFrontmatter | undefined;
 }
