@@ -1,0 +1,22 @@
+{
+  "zones": [
+    {
+      "name": "brightmeows.com",
+      "ruleRef": "legacy-redirect-brightmeows-com",
+      "matchApex": false,
+      "excludeHosts": ["bms-table-mirror-r2.brightmeows.com"]
+    },
+    {
+      "name": "brightmeows.cn",
+      "ruleRef": "legacy-redirect-brightmeows-cn",
+      "matchApex": true,
+      "excludeHosts": []
+    },
+    {
+      "name": "miyakomeow.site",
+      "ruleRef": "legacy-redirect-miyakomeow-site",
+      "matchApex": true,
+      "excludeHosts": ["bms-table-mirror-r2.miyakomeow.site"]
+    }
+  ]
+}

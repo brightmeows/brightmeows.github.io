@@ -1,6 +1,7 @@
-# 外部状态的只读漂移检查：桶的 CORS 来源是“改了仓库但线上没跟上就会静默退化”的
-# 一项（漏放来源时原生客户端照常工作，只有浏览器侧失败）。因此它进入配置并由本
-# 工作流在**配置变更的 PR** 与手动触发时与线上比对。
+# 外部状态的只读漂移检查：桶 CORS 来源与旧主机 301 规则都是“改了仓库但线上没
+# 跟上就会静默退化”的项。前者漏放来源时只有浏览器失败；后者规则被删或被改时
+# 旧表导入链接会静默断掉。两项都进入配置，由本工作流在配置变更的 PR、每周
+# schedule 与手动触发时与线上比对。
 #
 # 只在配置变更路径上跑：日常 CI 不必依赖 Cloudflare API，避免把抖动带进每次反馈。
 name: Config Drift
@@ -8,7 +9,13 @@ on:
   pull_request:
     paths:
       - "config/site.json"
+      - "config/redirects.json"
+      - "scripts/check-redirect-rules.ts"
+      - "scripts/redirect-rules.ts"
     branches: [main]
+  schedule:
+    # 每周一 04:00 UTC，抓控制台里绕过仓库的改动
+    - cron: "0 4 * * 1"
   workflow_dispatch:
 
 jobs:
@@ -32,3 +39,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
         run: node scripts/check-r2-cors.ts
+      - name: Compare Cloudflare Single Redirect rules with config
+        env:
+          CLOUDFLARE_RULES_TOKEN: ${{ secrets.CLOUDFLARE_RULES_TOKEN }}
+        run: node scripts/check-redirect-rules.ts
