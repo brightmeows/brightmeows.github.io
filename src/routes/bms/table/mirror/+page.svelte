@@ -11,6 +11,7 @@
   import Checkbox from "#lib/components/ui/Checkbox.svelte";
   import JsonPreview from "#lib/components/ui/JsonPreview.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
+  import PageHeader from "#lib/components/ui/PageHeader.svelte";
   import {
     collapseAdminEdit,
     initialMirrorAdminState,
@@ -352,32 +353,32 @@
   });
 </script>
 
-<PageShell {tocItems} panes={[titlePane, contentPane]} />
+<PageShell width="wide" {tocItems}>
+  {#snippet header()}
+    <PageHeader id="bms-table-mirror" title={pageTitle}>
+      {#snippet subtitle()}
+        <span class="italic">
+          {m["mirror.bms_hint_before"]()}
+          <button class="link-accent" type="button" onclick={copyTables}>
+            {m["common.click_copy"]()}
+          </button>
+          {m["mirror.bms_hint_after"]()}
+          <a
+            class="link-accent"
+            href="https://darksabun.club/table/tablelist.html"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {m["mirror.tutorial"]()}
+          </a>
+          {#if cb.copied}
+            <span class="ml-2 text-[#4caf50]">{m["common.copied"]()}</span>
+          {/if}
+        </span>
+      {/snippet}
+    </PageHeader>
+  {/snippet}
 
-{#snippet titlePane()}
-  <h1 id="bms-table-mirror" class="page-title mb-2 scroll-mt-5 text-center">{pageTitle}</h1>
-
-  <div class="mt-1 text-center text-[1.1rem] text-white-70 italic">
-    {m["mirror.bms_hint_before"]()}
-    <button class="link-accent" type="button" onclick={copyTables}>
-      {m["common.click_copy"]()}
-    </button>
-    {m["mirror.bms_hint_after"]()}
-    <a
-      class="link-accent"
-      href="https://darksabun.club/table/tablelist.html"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      {m["mirror.tutorial"]()}
-    </a>
-    {#if cb.copied}
-      <span class="ml-2 text-[#4caf50]">{m["common.copied"]()}</span>
-    {/if}
-  </div>
-{/snippet}
-
-{#snippet contentPane()}
   <div class="flex flex-col gap-3">
     <MirrorUserActions bind:this={userActions} onchanged={handleUserChanged} />
 
@@ -494,7 +495,7 @@
       ondelete={(item: MirrorTableItem) => void handleDelete(item)}
     />
   {/if}
-{/snippet}
+</PageShell>
 
 <SelectedTablesPanel {tables} bind:selectedMap {mirrorPreview} {displayOrderUrls} />
 <JsonPreview bind:this={mirrorPreview} />

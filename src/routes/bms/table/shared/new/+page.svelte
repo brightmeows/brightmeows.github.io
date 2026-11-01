@@ -4,8 +4,8 @@
   import { onMount } from "svelte";
 
   import PageShell from "#lib/components/layout/PageShell.svelte";
-  import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
+  import PageHeader from "#lib/components/ui/PageHeader.svelte";
   import { btnPrimary, inputPanel } from "#lib/constants/ui-classes.js";
   import { fetchSharedCheckId } from "#lib/data/api/shared-api.js";
   import { auth } from "#lib/data/store/auth-store.svelte.js";
@@ -107,15 +107,16 @@
   }
 </script>
 
-<PageShell panes={[titlePane, contentPane]} />
+<PageShell width="wide">
+  {#snippet header()}
+    <PageHeader title={m["shared.new_title"]()}>
+      {#snippet subtitle()}
+        {m["shared.new_subtitle"]()}
+      {/snippet}
+    </PageHeader>
+  {/snippet}
 
-{#snippet titlePane()}
-  <h1 class="page-title text-center">{m["shared.new_title"]()}</h1>
-  <p class="mt-2 text-center text-[1.1rem] text-white-70">{m["shared.new_subtitle"]()}</p>
-{/snippet}
-
-{#snippet contentPane()}
-  <GlassPanel>
+  <div class="mx-auto max-w-[880px]">
     {#if auth.status === "idle" || auth.status === "loading"}
       <LoadingProgress
         variant="indeterminate"
@@ -208,5 +209,5 @@
         </div>
       </form>
     {/if}
-  </GlassPanel>
-{/snippet}
+  </div>
+</PageShell>

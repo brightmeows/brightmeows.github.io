@@ -8,6 +8,7 @@
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import Checkbox from "#lib/components/ui/Checkbox.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
+  import PageHeader from "#lib/components/ui/PageHeader.svelte";
   import { btnPrimaryLink } from "#lib/constants/ui-classes.js";
   import { loadSharedTables, submitSharedDelete } from "#lib/data/api/shared-api.js";
   import { auth } from "#lib/data/store/auth-store.svelte.js";
@@ -78,19 +79,20 @@
   });
 </script>
 
-<PageShell panes={[titlePane, contentPane]} />
+<PageShell width="wide">
+  {#snippet header()}
+    <PageHeader title={pageTitle}>
+      {#snippet subtitle()}
+        {m["shared.subtitle"]()}
+      {/snippet}
+      {#snippet actions()}
+        <a class={btnPrimaryLink} href={resolve("/bms/table/shared/new")}>
+          {m["shared.create_button"]()}
+        </a>
+      {/snippet}
+    </PageHeader>
+  {/snippet}
 
-{#snippet titlePane()}
-  <h1 class="page-title text-center">{pageTitle}</h1>
-  <p class="mt-2 text-center text-[1.1rem] text-white-70">{m["shared.subtitle"]()}</p>
-  <div class="mt-4 text-center">
-    <a class={btnPrimaryLink} href={resolve("/bms/table/shared/new")}>
-      {m["shared.create_button"]()}
-    </a>
-  </div>
-{/snippet}
-
-{#snippet contentPane()}
   <div class="flex flex-col gap-3">
     <SharedTrashPanel bind:this={trashPanel} onchanged={() => void loadTables(true)} />
 
@@ -169,4 +171,4 @@
       ondelete={(item) => void handleDelete(item)}
     />
   {/if}
-{/snippet}
+</PageShell>

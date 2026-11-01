@@ -9,21 +9,32 @@
 
   interface Props {
     tocItems?: TocItem[];
-    mainClass?: string;
-    /** 玻璃面板列表（每个元素为一个独立玻璃面板） */
-    panes?: Snippet[];
+    /** 内容列宽度：default 为 1400（列表与阅读页），wide 为 1920（功能页）。 */
+    width?: "default" | "wide";
+    /** 标题区：并入主玻璃顶部，加载与错误时保持常驻。 */
+    header?: Snippet;
+    /** 内容区。 */
+    children?: Snippet;
   }
 
-  let { tocItems = [], mainClass, panes = [] }: Props = $props();
+  let { tocItems = [], width = "default", header, children }: Props = $props();
+
+  const widthClass = $derived(width === "wide" ? "max-w-[120rem]" : "max-w-350");
 </script>
 
 <StarryBackground />
 <TopBar {tocItems} />
-<main class={mainClass ?? "m-0 mx-auto box-border w-full max-w-350 px-8 pt-24 pb-8"}>
-  {#each panes as pane, i (i)}
-    {@const isLast = i === panes.length - 1}
-    <GlassContainer animate={true} class="w-full {!isLast ? 'mb-8' : ''}">
-      {@render pane()}
-    </GlassContainer>
-  {/each}
+<main class="m-0 mx-auto box-border w-full {widthClass} px-4 pt-24 pb-8 sm:px-6 lg:px-8">
+  <GlassContainer animate={true} padding="none" class="w-full overflow-hidden">
+    {#if header}
+      <header class="border-b border-white-10 px-5 py-5 sm:px-6 lg:px-8">
+        {@render header()}
+      </header>
+    {/if}
+    <div class="px-5 py-6 sm:px-6 lg:px-8">
+      {#if children}
+        {@render children()}
+      {/if}
+    </div>
+  </GlassContainer>
 </main>

@@ -20,6 +20,7 @@
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import EmptyState from "#lib/components/ui/EmptyState.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
+  import PageHeader from "#lib/components/ui/PageHeader.svelte";
   import { btnBar, btnGhostMd, btnPrimary, btnPrimaryLarge } from "#lib/constants/ui-classes.js";
   import type { EditorNotice } from "#lib/controllers/editor.js";
   import {
@@ -55,7 +56,13 @@
     management?: Snippet | undefined;
   }
 
-  let { source, publish = {}, capabilities = {}, actions, management }: Props = $props();
+  let {
+    source,
+    publish = {},
+    capabilities = {},
+    actions: headerActions,
+    management,
+  }: Props = $props();
 
   // 等级参考的状态属主是本组件：LevelRefTable 自取数并经 bind 回写；
   // 模型只需知道数据是否就绪（目录与编辑分区列表用），经输入 getter 注入。
@@ -64,7 +71,6 @@
   const showLevelRefPane = $derived(
     levelRefLoadState === "idle" || levelRefLoadState === "loading" || levelRefHasData
   );
-
   // getter 传递：props 对象经闭包读取，模型内的 $derived 跟踪其响应式变化
   const model = createTableModel({
     source: () => source,
@@ -72,6 +78,7 @@
     capabilities: () => capabilities,
     levelRefHasData: () => levelRefHasData,
   });
+  const hasCourse = $derived(model.courseGroups.length > 0);
   const headerUrl = $derived(source.headerUrl);
   const saveAsShared = $derived(publish.saveAsShared ?? "none");
   const sharedMode = $derived(capabilities.mode === "shared");
@@ -132,36 +139,57 @@
   <title>{formatTitle(model.pageTitle)}</title>
 </svelte:head>
 
-<PageShell
-  tocItems={isEdit ? [] : model.tocItems}
-  panes={[
-    titlePane,
-    ...(model.pendingDraft !== null ? [draftBannerPane] : []),
-    ...(isEdit
-      ? model.headerLoadState === "loading"
-        ? [headerLoadingPane]
-        : model.headerLoadState === "error"
-          ? [headerErrorPane]
-          : model.dataLoadState === "idle" || model.dataLoadState === "loading"
-            ? [dataLoadingPane]
-            : model.dataLoadState === "error"
-              ? [dataErrorPane]
-              : [editPane]
-      : model.headerLoadState === "loading"
-        ? [headerLoadingPane]
-        : model.headerLoadState === "error"
-          ? [headerErrorPane]
-          : [
-              ...(model.courseGroups.length > 0 ? [coursePane] : []),
-              ...(showLevelRefPane ? [levelRefPane] : []),
-              ...(model.dataLoadState === "idle" || model.dataLoadState === "loading"
-                ? [dataLoadingPane]
-                : []),
-              ...(model.dataLoadState === "loaded" ? [chartsPane] : []),
-              ...(model.dataLoadState === "error" ? [dataErrorPane] : []),
-            ]),
-  ]}
-/>
+<PageShell width="wide" tocItems={isEdit ? [] : model.tocItems}>
+  {#snippet header()}
+    {@render titlePane()}
+  {/snippet}
+
+  {#if model.pendingDraft !== null}
+    {@render draftBannerPane()}
+  {/if}
+
+  {#if isEdit}
+    {#if model.headerLoadState === "loading"}
+      {@render headerLoadingPane()}
+    {:else if model.headerLoadState === "error"}
+      {@render headerErrorPane()}
+    {:else if model.dataLoadState === "idle" || model.dataLoadState === "loading"}
+      {@render dataLoadingPane()}
+    {:else if model.dataLoadState === "error"}
+      {@render dataErrorPane()}
+    {:else}
+      {@render editPane()}
+    {/if}
+  {:else if model.headerLoadState === "loading"}
+    {@render headerLoadingPane()}
+  {:else if model.headerLoadState === "error"}
+    {@render headerErrorPane()}
+  {:else}
+    {#if hasCourse}
+      <div class="pb-8">
+        {@render coursePane()}
+      </div>
+    {/if}
+    {#if showLevelRefPane}
+      <div class="border-white-10 py-8 {hasCourse ? 'border-t' : ''}">
+        {@render levelRefPane()}
+      </div>
+    {/if}
+    {#if model.dataLoadState === "idle" || model.dataLoadState === "loading"}
+      <div class="border-t border-white-10 pt-8">
+        {@render dataLoadingPane()}
+      </div>
+    {:else if model.dataLoadState === "loaded"}
+      <div class="border-t border-white-10 pt-8">
+        {@render chartsPane()}
+      </div>
+    {:else if model.dataLoadState === "error"}
+      <div class="border-t border-white-10 pt-8">
+        {@render dataErrorPane()}
+      </div>
+    {/if}
+  {/if}
+</PageShell>
 
 {#if isEdit && model.ready}
   <TableEditToc
@@ -175,53 +203,64 @@
 {/if}
 
 {#snippet titlePane()}
-  <div class="text-center">
-    <h1 class="page-title mb-2">{model.pageTitle}</h1>
-    {#if model.symbol.trim() !== ""}
-      <div class="text-[1.2rem] text-white-70 italic">
-        {m["table.symbol"]({ symbol: model.symbol })}
-      </div>
-    {/if}
-    {#if !createMode}
-      <div class="mt-2 text-[1.2rem] text-white-70 italic">
-        {m["table.import_hint"]()}
-        {#if importUrl}
-          <span class="font-mono text-[0.95rem] break-all text-white-85">{importUrl}</span>
-          <button class="link-accent" type="button" onclick={copyImportUrl}>
-            {m["common.click_copy"]()}
-          </button>
-        {:else}
-          <span class="text-white-50">{m["table.reading"]()}</span>
-        {/if}
-        {#if cb.copied}
-          <span class="ml-2 text-[#4caf50]">{m["common.copied"]()}</span>
-        {/if}
-      </div>
-      <div class="mt-2 text-[1.2rem] text-white-70 italic">
-        {#if headerUrl}
-          <a class="link-accent" href={headerUrl} target="_blank" rel="noopener noreferrer">
-            {m["table.view_header"]()}
-          </a>
-        {/if}
-        {#if headerUrl && model.dataFetchUrl}
-          <span class="mx-2">|</span>
-        {/if}
-        {#if model.dataFetchUrl}
-          <a
-            class="link-accent"
-            href={model.dataFetchUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {m["table.view_data"]()}
-          </a>
-        {/if}
-      </div>
-    {/if}
-    {#if model.ready}
-      <div class="mt-3 flex flex-wrap items-center justify-center gap-2">
-        {#if actions}
-          {@render actions()}
+  <PageHeader title={model.pageTitle}>
+    {#snippet meta()}
+      {#if model.ready && model.tableStats}
+        <span class="italic">
+          {m["table.stats"]({
+            total: model.tableStats.totalCharts,
+            difficulties: model.tableStats.difficulties.length,
+          })}
+        </span>
+      {/if}
+    {/snippet}
+    {#snippet subtitle()}
+      {#if model.symbol.trim() !== ""}
+        <span class="italic">{m["table.symbol"]({ symbol: model.symbol })}</span>
+      {/if}
+    {/snippet}
+    {#snippet children()}
+      {#if !createMode}
+        <div class="italic">
+          {m["table.import_hint"]()}
+          {#if importUrl}
+            <span class="font-mono text-[0.95rem] break-all text-white-85">{importUrl}</span>
+            <button class="link-accent" type="button" onclick={copyImportUrl}>
+              {m["common.click_copy"]()}
+            </button>
+          {:else}
+            <span class="text-white-50">{m["table.reading"]()}</span>
+          {/if}
+          {#if cb.copied}
+            <span class="ml-2 text-[#4caf50]">{m["common.copied"]()}</span>
+          {/if}
+        </div>
+        <div class="mt-1 italic">
+          {#if headerUrl}
+            <a class="link-accent" href={headerUrl} target="_blank" rel="noopener noreferrer">
+              {m["table.view_header"]()}
+            </a>
+          {/if}
+          {#if headerUrl && model.dataFetchUrl}
+            <span class="mx-2">|</span>
+          {/if}
+          {#if model.dataFetchUrl}
+            <a
+              class="link-accent"
+              href={model.dataFetchUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {m["table.view_data"]()}
+            </a>
+          {/if}
+        </div>
+      {/if}
+    {/snippet}
+    {#snippet actions()}
+      {#if model.ready}
+        {#if headerActions}
+          {@render headerActions()}
         {/if}
         {#if isEdit}
           {#if !createMode}
@@ -275,42 +314,34 @@
             {m["editor.discard_unsaved"]()}
           </button>
         {/if}
-      </div>
-    {/if}
-    {#if isEdit && model.ready && model.draftStatusText !== ""}
-      <div class="mt-2 text-[0.85rem] text-white-50">{model.draftStatusText}</div>
-    {/if}
-    {#if model.ready && model.tableStats}
-      <div class="mt-2 text-[1.2rem] text-white-70 italic">
-        {m["table.stats"]({
-          total: model.tableStats.totalCharts,
-          difficulties: model.tableStats.difficulties.length,
-        })}
-      </div>
-    {/if}
-    {#if model.notice !== null}
-      <div
-        class="mx-auto mt-3 max-w-3xl rounded-lg border px-3 py-2 text-[0.9rem] {model.notice
-          .kind === 'ok'
-          ? 'border-[#4caf50]/40 bg-[#4caf50]/10 text-[#a5d6a7]'
-          : model.notice.kind === 'warn'
-            ? 'border-amber-300/40 bg-amber-300/10 text-amber-200'
-            : 'border-red-400/40 bg-red-400/10 text-red-200'}"
-      >
-        {model.notice.text}
-      </div>
-    {/if}
-  </div>
+        {#if isEdit && model.draftStatusText !== ""}
+          <span class="text-[0.85rem] text-white-50">{model.draftStatusText}</span>
+        {/if}
+      {/if}
+    {/snippet}
+  </PageHeader>
+
+  {#if model.notice !== null}
+    <div
+      class="mt-3 rounded-lg border px-3 py-2 text-[0.9rem] {model.notice.kind === 'ok'
+        ? 'border-[#4caf50]/40 bg-[#4caf50]/10 text-[#a5d6a7]'
+        : model.notice.kind === 'warn'
+          ? 'border-amber-300/40 bg-amber-300/10 text-amber-200'
+          : 'border-red-400/40 bg-red-400/10 text-red-200'}"
+    >
+      {model.notice.text}
+    </div>
+  {/if}
 {/snippet}
 
 {#snippet draftBannerPane()}
   {#if model.pendingDraft !== null}
-    <div class="py-2 text-center">
+    <div class="mb-6 rounded-lg border border-amber-300/30 bg-amber-300/10 px-4 py-3">
       <p class="text-[1.05rem] text-amber-200">{m["editor.draft_found_title"]()}</p>
-      <p class="mx-auto mt-2 max-w-120 text-[0.9rem] text-white-65">
+      <p class="mt-1 text-[0.9rem] text-white-65">
         {m["editor.draft_found_desc"]({ time: model.formatClock(model.pendingDraft.savedAt) })}
       </p>
-      <div class="mt-4 flex flex-wrap justify-center gap-3">
+      <div class="mt-3 flex flex-wrap gap-3">
         <button class={btnPrimary} type="button" onclick={model.restorePendingDraft}>
           {m["editor.draft_restore"]()}
         </button>

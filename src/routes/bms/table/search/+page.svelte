@@ -5,6 +5,7 @@
   import BmsSearchResult from "#lib/components/bms/BmsSearchResult.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import EmptyState from "#lib/components/ui/EmptyState.svelte";
+  import PageHeader from "#lib/components/ui/PageHeader.svelte";
   import { createEpochGuard, runTableLoad, waitingState } from "#lib/controllers/table-load.js";
   import type { CandidateEntry, TableLoadState } from "#lib/data/api/bms-search.js";
   import {
@@ -199,19 +200,20 @@
   });
 </script>
 
-<PageShell panes={[titlePane, contentPane]} />
+<PageShell width="wide">
+  {#snippet header()}
+    <PageHeader title={m["search.page_title"]()}>
+      {#snippet subtitle()}
+        {m["search.subtitle"]()}
+      {/snippet}
+      {#snippet children()}
+        <a class="text-accent underline-offset-2 hover:underline" href="/bms/table/search/batch">
+          {m["search.batch_link"]()}
+        </a>
+      {/snippet}
+    </PageHeader>
+  {/snippet}
 
-{#snippet titlePane()}
-  <h1 class="page-title text-center">{m["search.page_title"]()}</h1>
-  <p class="mt-2 text-center text-[1.1rem] text-white-70">{m["search.subtitle"]()}</p>
-  <p class="mt-3 text-center text-[0.95rem] text-white-40">
-    <a class="text-accent underline-offset-2 hover:underline" href="/bms/table/search/batch">
-      {m["search.batch_link"]()}
-    </a>
-  </p>
-{/snippet}
-
-{#snippet contentPane()}
   {#if indexClient.phase === "loading"}
     <!-- 索引加载进度 -->
     <div class="p-8 text-center">
@@ -330,4 +332,4 @@
       />
     {/if}
   {/if}
-{/snippet}
+</PageShell>

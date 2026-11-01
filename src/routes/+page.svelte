@@ -5,6 +5,7 @@
 
   import PostCard from "#lib/components/content/PostCard.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
+  import PageHeader from "#lib/components/ui/PageHeader.svelte";
   import { m } from "#lib/paraglide/messages.js";
   import type { TocItem } from "#lib/types/ui.js";
   import { buildTocFromHeadings } from "#lib/utils/ui/toc.js";
@@ -18,13 +19,11 @@
   });
 </script>
 
-<PageShell {tocItems} panes={[titlePane, contentPane]} />
+<PageShell {tocItems}>
+  {#snippet header()}
+    <PageHeader title={m["home.title"]()} />
+  {/snippet}
 
-{#snippet titlePane()}
-  <h1 class="page-title text-center">{m["home.title"]()}</h1>
-{/snippet}
-
-{#snippet contentPane()}
   <div class="header-row">
     <h2 class="section-title m-0">{data.sectionTitle}</h2>
     <a
@@ -44,4 +43,4 @@
       {/each}
     </div>
   {/if}
-{/snippet}
+</PageShell>

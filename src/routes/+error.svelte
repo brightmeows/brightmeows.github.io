@@ -21,9 +21,7 @@
   ];
 </script>
 
-<PageShell panes={[errorPane]} />
-
-{#snippet errorPane()}
+<PageShell>
   <div class="py-12 text-center">
     <p class="m-0 text-[clamp(3rem,7vw,4.5rem)] leading-none font-extrabold text-white">
       {page.status}
@@ -36,4 +34,4 @@
       {/each}
     </div>
   </div>
-{/snippet}
+</PageShell>

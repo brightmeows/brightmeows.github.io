@@ -7,7 +7,6 @@
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import BmsTablePage from "#lib/components/pages/BmsTablePage.svelte";
   import EmptyState from "#lib/components/ui/EmptyState.svelte";
-  import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
   import { r2SharedDataUrl, r2SharedHeaderUrl } from "#lib/constants/r2.js";
   import { btnBar, btnGhostMd, btnPrimary, inputEditorBase } from "#lib/constants/ui-classes.js";
@@ -194,9 +193,37 @@
     />
   </div>
 {:else if isEdit && s === null}
-  <PageShell panes={[loadingPane]} />
+  <PageShell>
+    <LoadingProgress
+      variant="indeterminate"
+      message={m["shared.editor_loading"]()}
+      title={m["shared.new_title"]()}
+    />
+  </PageShell>
 {:else if isEdit && s !== null && (s.phase === "login" || s.phase === "notfound" || s.phase === "error")}
-  <PageShell panes={[messagePane]} />
+  <PageShell>
+    <div class="py-6 text-center">
+      {#if s?.phase === "login"}
+        <p class="text-[1rem] text-white-75">{m["shared.login_required"]()}</p>
+        <a class="{btnPrimary} mt-4 inline-block" href={loginHref}>{m["topbar.login"]()}</a>
+      {:else if s?.phase === "notfound"}
+        <p class="text-[1.05rem] text-red-300">{m["shared.not_found"]()}</p>
+        <p class="mt-2 text-[0.9rem] text-white-60">{m["shared.not_found_hint"]()}</p>
+        <a class="link-accent mt-3 inline-block" href="/bms/table/shared/">
+          {m["shared.back_to_list"]()}
+        </a>
+      {:else if s?.phase === "error"}
+        <p class="text-[1.05rem] text-red-300">
+          {m["common.load_failed_with_error"]({
+            error: s.loadError ?? m["common.unknown_error"](),
+          })}
+        </p>
+        <button class="{btnGhostMd} mt-3" type="button" onclick={() => void load()}>
+          {m["common.reload"]()}
+        </button>
+      {/if}
+    </div>
+  </PageShell>
 {:else}
   <BmsTablePage
     source={{
@@ -284,39 +311,3 @@
     {/snippet}
   </BmsTablePage>
 {/if}
-
-{#snippet loadingPane()}
-  <GlassPanel>
-    <LoadingProgress
-      variant="indeterminate"
-      message={m["shared.editor_loading"]()}
-      title={m["shared.new_title"]()}
-    />
-  </GlassPanel>
-{/snippet}
-
-{#snippet messagePane()}
-  <GlassPanel>
-    <div class="py-6 text-center">
-      {#if s?.phase === "login"}
-        <p class="text-[1rem] text-white-75">{m["shared.login_required"]()}</p>
-        <a class="{btnPrimary} mt-4 inline-block" href={loginHref}>{m["topbar.login"]()}</a>
-      {:else if s?.phase === "notfound"}
-        <p class="text-[1.05rem] text-red-300">{m["shared.not_found"]()}</p>
-        <p class="mt-2 text-[0.9rem] text-white-60">{m["shared.not_found_hint"]()}</p>
-        <a class="link-accent mt-3 inline-block" href="/bms/table/shared/">
-          {m["shared.back_to_list"]()}
-        </a>
-      {:else if s?.phase === "error"}
-        <p class="text-[1.05rem] text-red-300">
-          {m["common.load_failed_with_error"]({
-            error: s.loadError ?? m["common.unknown_error"](),
-          })}
-        </p>
-        <button class="{btnGhostMd} mt-3" type="button" onclick={() => void load()}>
-          {m["common.reload"]()}
-        </button>
-      {/if}
-    </div>
-  </GlassPanel>
-{/snippet}

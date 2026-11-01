@@ -7,6 +7,7 @@
 
   import MarkdownContent from "#lib/components/content/MarkdownContent.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
+  import PageHeader from "#lib/components/ui/PageHeader.svelte";
   import type { TocItem } from "#lib/types/ui.js";
   import { buildTocFromHeadings } from "#lib/utils/ui/toc.js";
 
@@ -26,14 +27,14 @@
   });
 </script>
 
-<PageShell {tocItems} panes={[titlePane, contentPane]} />
+<PageShell {tocItems}>
+  {#snippet header()}
+    <div class="mx-auto max-w-[44rem]">
+      <PageHeader title="BMS" />
+    </div>
+  {/snippet}
 
-{#snippet titlePane()}
-  <h1 class="page-title text-center">BMS</h1>
-{/snippet}
-
-{#snippet contentPane()}
   <MarkdownContent>
     <BmsContent />
   </MarkdownContent>
-{/snippet}
+</PageShell>

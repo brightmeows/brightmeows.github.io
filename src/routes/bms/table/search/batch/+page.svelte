@@ -8,6 +8,7 @@
   import EmptyState from "#lib/components/ui/EmptyState.svelte";
   import GradientButton from "#lib/components/ui/GradientButton.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
+  import PageHeader from "#lib/components/ui/PageHeader.svelte";
   import { createEpochGuard, runTableLoad } from "#lib/controllers/table-load.js";
   import type { CandidateEntry, QueryType, TableLoadState } from "#lib/data/api/bms-search.js";
   import {
@@ -244,19 +245,20 @@
   });
 </script>
 
-<PageShell panes={[titlePane, contentPane]} />
+<PageShell width="wide">
+  {#snippet header()}
+    <PageHeader title={m["batch.page_title"]()}>
+      {#snippet subtitle()}
+        {m["batch.subtitle"]()}
+      {/snippet}
+      {#snippet children()}
+        <a class="text-accent underline-offset-2 hover:underline" href="/bms/table/search">
+          {m["batch.back_link"]()}
+        </a>
+      {/snippet}
+    </PageHeader>
+  {/snippet}
 
-{#snippet titlePane()}
-  <h1 class="page-title text-center">{m["batch.page_title"]()}</h1>
-  <p class="mt-2 text-center text-[1.1rem] text-white-70">{m["batch.subtitle"]()}</p>
-  <p class="mt-3 text-center text-[0.95rem] text-white-40">
-    <a class="text-accent underline-offset-2 hover:underline" href="/bms/table/search">
-      {m["batch.back_link"]()}
-    </a>
-  </p>
-{/snippet}
-
-{#snippet contentPane()}
   {#if indexClient.phase === "loading"}
     <!-- 索引加载进度 -->
     <div class="p-8 text-center">
@@ -435,4 +437,4 @@
       <EmptyState title={m["batch.idle_title"]()} description={m["batch.idle_desc"]()} emoji="📋" />
     {/if}
   {/if}
-{/snippet}
+</PageShell>

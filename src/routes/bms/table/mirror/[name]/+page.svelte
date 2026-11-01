@@ -1,6 +1,7 @@
 <script lang="ts">
   import { draftStorageKey } from "@brightmeows/bms/editor";
 
+  import PageShell from "#lib/components/layout/PageShell.svelte";
   import BmsTablePage from "#lib/components/pages/BmsTablePage.svelte";
   import EmptyState from "#lib/components/ui/EmptyState.svelte";
   import { r2TableDataUrl, r2TableHeaderUrl } from "#lib/constants/r2.js";
@@ -13,12 +14,14 @@
 </script>
 
 {#if tableId === ""}
-  <div class="p-12 text-center">
-    <EmptyState
-      title={m["mirror.missing_param_title"]()}
-      description={m["mirror.missing_param_desc"]()}
-    />
-  </div>
+  <PageShell>
+    <div class="p-12 text-center">
+      <EmptyState
+        title={m["mirror.missing_param_title"]()}
+        description={m["mirror.missing_param_desc"]()}
+      />
+    </div>
+  </PageShell>
 {:else}
   <BmsTablePage
     source={{
