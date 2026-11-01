@@ -3,7 +3,7 @@
 
   import type { PageData } from "./$types";
 
-  import BlogPostCard from "#lib/components/content/BlogPostCard.svelte";
+  import PostCard from "#lib/components/content/PostCard.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import { m } from "#lib/paraglide/messages.js";
   import type { TocItem } from "#lib/types/ui.js";
@@ -40,7 +40,7 @@
   {:else}
     <div class="flex flex-col gap-4">
       {#each data.recentPosts as post (post.slug)}
-        <BlogPostCard {post} />
+        <PostCard {post} />
       {/each}
     </div>
   {/if}

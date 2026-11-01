@@ -78,7 +78,7 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`�
 
 ```text
 构建期（pnpm build，三遍 flavor 组装多语产物）
-  git：content/blog/*.md ──loaders──> SSG 博客页
+  git：content/posts/*.md ──loaders──> SSG 内容页
   git：static/bms/table/<自托管>/   ──> 自托管表页与 header/data
 
 

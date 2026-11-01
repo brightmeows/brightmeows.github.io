@@ -3,9 +3,9 @@ import { join } from "node:path";
 
 import matter from "gray-matter";
 
-import type { BlogPost } from "../types/blog";
+import type { Post } from "../types/post";
 
-import { extractFirstSentence, validateFrontmatter } from "./blog-metadata";
+import { extractFirstSentence, validateFrontmatter } from "./post-metadata";
 
 import { extractDateFromSlug, EPOCH_DATE } from "#lib/utils/infra/date.js";
 
@@ -18,21 +18,21 @@ function extractFirstHeading(content: string): string | undefined {
 }
 
 /**
- * 扫描博客目录并生成索引
- * @param blogDir - 博客目录路径
+ * 扫描内容目录并生成索引
+ * @param postsDir - 内容目录路径
  * @param basePath - URL 基础路径（通常为空或 BASE_PATH 环境变量）
- * @returns 博客文章列表
+ * @returns 内容文章列表
  */
-export function scanBlogDirectory(blogDir: string, basePath = ""): BlogPost[] {
-  const posts: BlogPost[] = [];
-  const entries = readdirSync(blogDir, { recursive: true });
+export function scanPostsDirectory(postsDir: string, basePath = ""): Post[] {
+  const posts: Post[] = [];
+  const entries = readdirSync(postsDir, { recursive: true });
 
   for (const entry of entries) {
     // 跳过非字符串条目和非 Markdown 文件
     if (typeof entry !== "string") continue;
     if (!/\.(md|svx)$/.exec(entry)) continue;
 
-    const fullPath = join(blogDir, entry);
+    const fullPath = join(postsDir, entry);
     const content = readFileSync(fullPath, "utf-8");
     const parsed = matter(content);
     const metadata = validateFrontmatter(parsed.data, fullPath);
@@ -60,11 +60,11 @@ export function scanBlogDirectory(blogDir: string, basePath = ""): BlogPost[] {
 }
 
 /**
- * 对博客文章进行排序
- * @param posts - 博客文章列表
- * @returns 排序后的博客文章列表
+ * 对内容文章进行排序
+ * @param posts - 内容文章列表
+ * @returns 排序后的内容文章列表
  */
-function sortPosts(posts: BlogPost[]): BlogPost[] {
+function sortPosts(posts: Post[]): Post[] {
   return posts.sort((a, b) => {
     // order 优先
     if (a.order !== undefined && b.order !== undefined) {

@@ -1,5 +1,5 @@
 import { m } from "#lib/paraglide/messages.js";
-import type { BlogFrontmatter } from "#lib/types/blog.js";
+import type { PostFrontmatter } from "#lib/types/post.js";
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -17,12 +17,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * @param source - 出错信息中显示的文件来源
  * @returns 校验通过的 frontmatter
  */
-export function validateFrontmatter(data: unknown, source: string): BlogFrontmatter {
+export function validateFrontmatter(data: unknown, source: string): PostFrontmatter {
   if (!isRecord(data)) {
     throw new Error(`${source}: frontmatter 必须是键值映射`);
   }
 
-  const result: BlogFrontmatter = {};
+  const result: PostFrontmatter = {};
   const { title, date, order, slug, description, tags } = data;
 
   if (title !== undefined) {

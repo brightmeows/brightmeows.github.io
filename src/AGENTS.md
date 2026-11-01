@@ -40,15 +40,15 @@
 
 ### 博客系统
 
-- **`content/blog/` 存放博客源文件** — 位于项目根目录而非 `src/` 内，因为 `$blog` 别名路径用作模块 URL（Vite 处理 `import()` 时生成），若放在 `blog/` 则 URL 为 `/blog/xxx.md`，与路由 `/blog/[...slug]` 路径前缀冲突。`content/blog/` 的模块 URL 为 `/content/blog/xxx.md`，不冲突。 Kit 3 起 `config.alias` 已弃用：`$blog` 已迁 package.json subpath imports（`#blog/*` → `./content/blog/*`，2026-10），迁移后模块 URL 形态不变（仍为 `content/blog/xxx.md` 相对形态，已验证无路由前缀冲突）。
-- **`loaders/blog.ts` 用 `process.cwd()`** — `BLOG_DIR` 常量值为 `"content/blog"`，`process.cwd()` 在 SSG 构建上下文中安全（单进程），但如果将来引入 SSR 路由会出问题。
+- **`content/posts/` 存放内容源文件** — 位于项目根目录而非 `src/` 内，因为 `#posts` 别名路径用作模块 URL（Vite 处理 `import()` 时生成），若放在 `posts/` 则 URL 为 `/posts/xxx.md`，与路由路径前缀冲突。`content/posts/` 的模块 URL 为 `/content/posts/xxx.md`，不冲突。 Kit 3 起 `config.alias` 已弃用：内容别名已迁 package.json subpath imports（`#posts/*` → `./content/posts/*`，2026-10），迁移后模块 URL 形态不变（仍为 `content/posts/xxx.md` 相对形态，已验证无路由前缀冲突）。
+- **`loaders/posts.ts` 用 `process.cwd()`** — `POSTS_DIR` 常量值为 `"content/posts"`，`process.cwd()` 在 SSG 构建上下文中安全（单进程），但如果将来引入 SSR 路由会出问题。
 - **博客路由 `[...slug]` 处理尾斜杠** — 全局 `trailingSlash="always"` 使 rest parameter 捕获末尾 `/`，在 `load` 中 `params.slug.replace(/\/$/, "")` 清理。
-- **`src/sveltex.d.ts` 声明 Markdown 模块类型** — `*.md`/`*.svx` 导出 `default`（Svelte 组件）与 `metadata`（frontmatter 镜像，类型 `Partial<BlogPostMetadata>`）。
+- **`src/sveltex.d.ts` 声明 Markdown 模块类型** — `*.md`/`*.svx` 导出 `default`（Svelte 组件）与 `metadata`（frontmatter 镜像，类型 `Partial<PostMetadata>`）。
 
 ## 架构边界
 
 - **BMS 数据源分流** — `static/bms/table/` 下只有自托管表（`self-sp/`、`self-dp/`、`satellite-skill-analyzer-3rd-preview/`、`starlight-preview/`）在 git 中；镜像表的一切（单表 meta 页、`tables.json`、表数据 `header.json`/`data.json`、搜索索引）都是运行时取数，由 Worker 生成；共享表同属运行时取数（R2 `shared/` 前缀 + Worker 动态路由）。修改数据入口时区分来源。
-- **`src/lib/loaders/`** — 构建时数据加载层（Node.js 环境）。博客扫描、BMS 表枚举与列表条目 header 读取（`getBmsTableEntries`）入口在此，不走路由内联。`blog-scanner.ts`、`blog-metadata.ts` 也在此目录。
+- **`src/lib/loaders/`** — 构建时数据加载层（Node.js 环境）。内容扫描、BMS 表枚举与列表条目 header 读取（`getBmsTableEntries`）入口在此，不走路由内联。`post-scanner.ts`、`post-metadata.ts` 也在此目录。
 - **`src/lib/data/`** — 客户端数据获取层（浏览器环境），2026-10 起按职责分两个子目录：`api/` 收传输与取数（端点函数、清单加载编排、`bms-search` 搜索三件与 `search-aggregator` 聚合器、`table-drafts.ts` 的 IndexedDB 草稿单快照），`store/` 收响应式模块（`.svelte.ts`：`auth-store` 登录态、`theme-store` 主题、`search-converters` 的 opencc 懒加载 store 与 `search-index-client` 索引 Worker 客户端（镜像列表/单搜/批量搜三页共用，勿再各自复制）、`shared-new` 新建共享表状态）。store 反向引用 api 走 `../api/` 相对路径；`bms-search.worker.ts` 的 `new URL` 挂在 store 侧客户端，模块移位时两边要同步。响应式的页面模型也在此层（`table-page-model.svelte.ts`：难度表页的主模型——内存模型态、派生展示、保存发布与对外门面；两段式加载与草稿生命周期拆在同目录的 `table-model-loader.svelte.ts` 与 `table-model-drafts.svelte.ts` 子模型（2026-10 行为冻结拆分，依赖单向：loader 引用 drafts）；路由组件持模式切换与模板，等级参考状态属主是页面组件（LevelRefTable 自取数经 bind 回写，模型经输入 getter 只读其就绪态）；模型经 getter 收 props 保持响应式，编排胶水按既有口径不测，纯决策在 controllers 与 bms 包）。API 传输层单份在 `api/http.ts`（`requestJson` 与 `ApiUnavailableError`：同源请求、凭据携带与错误封套翻译；`toFailure` 把异常集中分流为 `AsyncState` 失败态，代替各页手写 instanceof 分支）；端点形状与窄化来自 `@brightmeows/mirror/api`（契约单一来源），不要在端点模块里重写响应形状或另建传输层；同站清单（镜像与共享）的取数骨架在 `api/table-list.ts`。fetch 仅在 `onMount` 中调用。
 - **`src/lib/controllers/`** — 页面编排层：纯决策函数（状态转移表、回退链分支）加无 UI 依赖的异步编排（调用 data 层、返回下一状态），路由组件只持 `$state` 并在事件里调用。约束由 oxlint 机械守住（本仓唯一按目录限定导入源的规则）：禁导入组件、`.svelte` 与 Svelte 运行时，禁触碰 `#lib/loaders`——DOM effect（`scrollIntoView`、`tick`、hash 监听）留在组件。异步编排以依赖注入收编 fetch 调用（页面传真实现、单测传假实现），保持“纯函数层可测”的既有口径；页面私有编排与跨页共享编排同层，靠文件名前缀区分域。
 - **`src/lib/utils/`** — 纯函数。无副作用、无平台特定 API 依赖（轻量 DOM 工具除外）。任何环境可调用。2026-10 起按域分三个子目录：`ui/`（`clipboard`、`style`、`toc` 与标题目录构建、`topbar-scroll` 顶栏显隐阈值、`starfield` 粒子物理、`theme` 主题纯逻辑）、`infra/`（`fetch-stream`、`download`、`md5`、`url`、`date`、`format`、`slugify`）、`i18n/`（`i18n` 消息翻译、`opencc-loader`）；BMS 域逻辑已在 `@brightmeows/bms`（见 `packages/bms/AGENTS.md`），镜像域（`mirror-tables`）与标题格式化（`title`）留顶层（共享表域已迁 `@brightmeows/bms/shared`、头部编辑态拆分已迁 `@brightmeows/bms/header`，均为 2026-10 入包）。

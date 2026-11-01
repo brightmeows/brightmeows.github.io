@@ -1,10 +1,10 @@
 <script lang="ts">
-  import BlogPostCard from "#lib/components/content/BlogPostCard.svelte";
+  import PostCard from "#lib/components/content/PostCard.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import { m } from "#lib/paraglide/messages.js";
-  import type { BlogPost } from "#lib/types/blog.js";
+  import type { Post } from "#lib/types/post.js";
 
-  let { data }: { data: { posts: BlogPost[] } } = $props();
+  let { data }: { data: { posts: Post[] } } = $props();
 </script>
 
 <PageShell panes={[titlePane, contentPane]} />
@@ -19,7 +19,7 @@
   {:else}
     <div class="flex flex-col gap-4">
       {#each data.posts as post (post.slug)}
-        <BlogPostCard {post} />
+        <PostCard {post} />
       {/each}
     </div>
   {/if}

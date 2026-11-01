@@ -3,13 +3,13 @@ import type { Component } from "svelte";
 
 import type { PageLoad } from "./$types";
 
-import type { BlogPostMetadata } from "#lib/types/blog.js";
+import type { PostMetadata } from "#lib/types/post.js";
 import { extractDateFromSlug, EPOCH_DATE } from "#lib/utils/infra/date.js";
 import { formatTitle } from "#lib/utils/title.js";
 
-interface BlogPostModule {
+interface PostModule {
   default: Component;
-  metadata?: Partial<BlogPostMetadata>;
+  metadata?: Partial<PostMetadata>;
 }
 
 /** 博客正文页数据：按 slug 动态 import Markdown 模块，返回组件与元数据。 */
@@ -17,7 +17,7 @@ export const load: PageLoad = async ({ params }) => {
   const slug = params.slug.replace(/\/$/, "");
 
   try {
-    const post = (await import(`#blog/${slug}.md`)) as BlogPostModule;
+    const post = (await import(`#posts/${slug}.md`)) as PostModule;
     const meta = post.metadata ?? {};
 
     // 元数据优先使用 frontmatter 导出，无 frontmatter 时从 slug 推算
