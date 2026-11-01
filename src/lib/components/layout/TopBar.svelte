@@ -1,5 +1,10 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { cubicOut } from "svelte/easing";
+  import { fade, fly } from "svelte/transition";
+
+  import TocPanel from "./TocPanel.svelte";
+  import { consumeNavHoverSuppression, suppressNextNavHover } from "./topbar-nav-hover.js";
 
   import { createPanelGroup } from "#lib/components/ui/dropdown-panel.svelte.js";
   import GlassButton from "#lib/components/ui/GlassButton.svelte";
@@ -10,14 +15,22 @@
   import { theme } from "#lib/data/store/theme-store.svelte.js";
   import { m } from "#lib/paraglide/messages.js";
   import { getLocale, setLocale } from "#lib/paraglide/runtime.js";
+  import type { TocItem } from "#lib/types/ui.js";
   import {
     computeAnchoredPanelPosition,
     type PanelAlign,
     type PanelPosition,
   } from "#lib/utils/ui/panel-position.js";
   import type { ThemePreference } from "#lib/utils/ui/theme.js";
+  import { hasScrolledPastViewport, isNearDocumentBottom } from "#lib/utils/ui/topbar-scroll.js";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
+
+  interface Props {
+    tocItems?: TocItem[];
+  }
+
+  let { tocItems = [] }: Props = $props();
 
   // —— 滚动自动隐藏（阈值与节奏沿用原 BreadcrumbNav） ——
 
@@ -28,22 +41,28 @@
   const HOVER_OPEN_DELAY = 150;
   const HOVER_CLOSE_DELAY = 250;
 
+  const PANEL_IN_DURATION = 150;
+  const PANEL_OUT_DURATION = 100;
+
   let isVisible = $state(true);
   let lastScrollY = $state(0);
   let accumulatedDelta = $state(0);
+  let scrolledPastViewport = $state(false);
+  let reduceMotion = $state(false);
 
-  // —— 弹层：Home 资料卡 / 导航下拉与菜单 / 用户菜单 / 主题 / 语言，互斥
-  // 展开；交互原语在 dropdown-panel.svelte.ts（Escape 焦点恢复、外点关闭、
-  // 互斥状态），滚动即收起与悬停意图是顶栏自身行为，在本文件里处理。 ——
+  // —— 弹层：Home 资料卡 / 导航下拉与菜单 / 目录 / 用户菜单 / 主题 / 语言，
+  // 互斥展开；交互原语在 dropdown-panel.svelte.ts（Escape 焦点恢复、外点
+  // 关闭、互斥状态），滚动即收起与悬停意图是顶栏自身行为，在本文件里处理。 ——
 
   let root: HTMLDivElement | undefined;
+  let rightPill: HTMLDivElement | undefined;
   const panels = createPanelGroup(() => root);
 
   // —— 弹层定位：弹层经 popoverLayer 进 top layer，脱离 DOM 流后位置由触
   // 发按钮的视口坐标决定（换算在 utils/ui/panel-position，纯函数直测）。
-  // 宽度变化意味着顶栏重排，收起全部弹层；高度变化多为移动端地址栏伸
-  // 缩，忽略。 ——
-  let panelPosition = $state<PanelPosition | null>(null);
+  // 位置按面板 id 保存：收起动画期间弹层仍挂在 DOM 里，不能立刻清空位置，
+  // 否则 out 过渡会跳回默认坐标。 ——
+  let panelPositions = $state<Record<string, PanelPosition>>({});
 
   let hoverOpenTimer: number | null = null;
   let hoverCloseTimer: number | null = null;
@@ -55,6 +74,16 @@
   // Escape 关闭后焦点会回到触发按钮；Home 是链接且聚焦即展开资料卡，用
   // 这个标记跳过回焦触发的那一次 focus，避免关闭后立刻重开。
   let suppressProfileFocus = false;
+
+  const showToc = $derived(tocItems.length > 0);
+  const showBackToTop = $derived(scrolledPastViewport);
+
+  const panelIn = $derived(
+    reduceMotion ? { duration: 0 } : { y: -4, duration: PANEL_IN_DURATION, easing: cubicOut }
+  );
+  const panelOut = $derived(
+    reduceMotion ? { duration: 0 } : { y: -4, duration: PANEL_OUT_DURATION, easing: cubicOut }
+  );
 
   function clearHoverTimers(): void {
     if (hoverOpenTimer !== null) {
@@ -71,43 +100,47 @@
     clearHoverTimers();
     panels.close();
     panelOpenedBy = null;
-    panelPosition = null;
   }
 
-  function positionPanel(anchor: HTMLElement, align: PanelAlign): void {
-    panelPosition = computeAnchoredPanelPosition(
-      anchor.getBoundingClientRect(),
-      window.innerWidth,
-      align
-    );
+  function positionPanel(id: string, anchor: HTMLElement, align: PanelAlign): void {
+    panelPositions = {
+      ...panelPositions,
+      [id]: computeAnchoredPanelPosition(anchor.getBoundingClientRect(), window.innerWidth, align),
+    };
   }
 
   function openPanel(id: string, align: PanelAlign, anchor: HTMLElement): void {
     clearHoverTimers();
+    positionPanel(id, anchor, align);
     if (!panels.isOpen(id)) {
       panels.toggle(id);
       panelOpenedBy = "hover";
     }
-    positionPanel(anchor, align);
   }
 
-  function togglePanel(id: string, align: PanelAlign, event: Event): void {
-    const anchor = event.currentTarget;
-    if (!(anchor instanceof HTMLElement)) return;
+  function togglePanel(
+    id: string,
+    align: PanelAlign,
+    event: Event,
+    anchorOverride?: HTMLElement
+  ): void {
+    const anchor =
+      anchorOverride ?? (event.currentTarget instanceof HTMLElement ? event.currentTarget : null);
+    if (!anchor) return;
     clearHoverTimers();
     if (panels.isOpen(id) && panelOpenedBy === "hover") {
       panelOpenedBy = "click";
-      positionPanel(anchor, align);
+      positionPanel(id, anchor, align);
       return;
     }
-    panels.toggle(id);
-    if (!panels.isOpen(id)) {
+    if (panels.isOpen(id)) {
+      panels.close();
       panelOpenedBy = null;
-      panelPosition = null;
       return;
     }
+    positionPanel(id, anchor, align);
+    panels.toggle(id);
     panelOpenedBy = "click";
-    positionPanel(anchor, align);
   }
 
   function scheduleHoverOpen(id: string, align: PanelAlign, anchor: HTMLElement): void {
@@ -130,12 +163,19 @@
     }, HOVER_CLOSE_DELAY);
   }
 
-  function triggerHoverHandlers(id: string, align: PanelAlign) {
+  function triggerHoverHandlers(
+    id: string,
+    align: PanelAlign,
+    getAnchor?: () => HTMLElement | undefined
+  ) {
     return {
       onpointerenter: (event: PointerEvent): void => {
         if (event.pointerType !== "mouse") return;
-        const anchor = event.currentTarget;
-        if (anchor instanceof HTMLElement) scheduleHoverOpen(id, align, anchor);
+        if (consumeNavHoverSuppression(id)) return;
+        const anchor =
+          getAnchor?.() ??
+          (event.currentTarget instanceof HTMLElement ? event.currentTarget : null);
+        if (anchor) scheduleHoverOpen(id, align, anchor);
       },
       onpointerleave: (event: PointerEvent): void => {
         if (event.pointerType === "mouse") scheduleHoverClose();
@@ -154,9 +194,20 @@
     };
   }
 
-  function panelPositionStyle(pos: PanelPosition): string {
+  function panelPositionStyle(id: string): string {
+    const pos = panelPositions[id];
+    if (!pos) return "";
     const horizontal = pos.left !== undefined ? `left:${pos.left}px` : `right:${pos.right}px`;
     return `top:${pos.top}px;${horizontal}`;
+  }
+
+  function hasKeyboardFocusWithin(): boolean {
+    const active = document.activeElement;
+    return (
+      active instanceof HTMLElement &&
+      root?.contains(active) === true &&
+      active.matches(":focus-visible")
+    );
   }
 
   function handleProfileFocusOut(event: FocusEvent): void {
@@ -180,10 +231,25 @@
 
   $effect(() => {
     let lastWidth = window.innerWidth;
+    let lastHeight = window.innerHeight;
     const onResize = (): void => {
-      if (window.innerWidth === lastWidth) return;
-      lastWidth = window.innerWidth;
-      closePanels();
+      if (window.innerWidth !== lastWidth) {
+        lastWidth = window.innerWidth;
+        closePanels();
+      }
+      if (window.innerHeight !== lastHeight) {
+        lastHeight = window.innerHeight;
+      }
+      scrolledPastViewport = hasScrolledPastViewport(window.scrollY, window.innerHeight);
+      if (
+        isNearDocumentBottom(
+          window.scrollY,
+          window.innerHeight,
+          document.documentElement.scrollHeight
+        )
+      ) {
+        isVisible = true;
+      }
     };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
@@ -193,10 +259,30 @@
     const currentScrollY = window.scrollY;
     const delta = currentScrollY - lastScrollY;
     lastScrollY = currentScrollY;
+    scrolledPastViewport = hasScrolledPastViewport(currentScrollY, window.innerHeight);
 
     // 弹层展开或悬停计时中滚动即视为离开信号
     if (panels.openId !== null || hoverOpenTimer !== null || hoverCloseTimer !== null) {
       closePanels();
+    }
+
+    // 键盘焦点仍在顶栏内时保持可见，避免滚动把用户正在操作的链接移出视口。
+    if (hasKeyboardFocusWithin()) {
+      accumulatedDelta = 0;
+      return;
+    }
+
+    // 接近页面底部时始终显示顶栏，让回到顶部在长页末尾仍然可达。
+    if (
+      isNearDocumentBottom(
+        currentScrollY,
+        window.innerHeight,
+        document.documentElement.scrollHeight
+      )
+    ) {
+      isVisible = true;
+      accumulatedDelta = 0;
+      return;
     }
 
     if (isVisible) {
@@ -235,15 +321,29 @@
 
   onMount(() => {
     lastScrollY = window.scrollY;
+    scrolledPastViewport = hasScrolledPastViewport(window.scrollY, window.innerHeight);
+
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    reduceMotion = motionQuery.matches;
+    const onMotionChange = (event: MediaQueryListEvent): void => {
+      reduceMotion = event.matches;
+    };
+    motionQuery.addEventListener("change", onMotionChange);
+
     window.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener("keydown", handleEscapeCapture, true);
     void auth.ensureLoaded();
     return () => {
       window.removeEventListener("scroll", handleScroll);
       window.removeEventListener("keydown", handleEscapeCapture, true);
+      motionQuery.removeEventListener("change", onMotionChange);
       clearHoverTimers();
     };
   });
+
+  function scrollToTop(): void {
+    window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
+  }
 
   async function doLogout(): Promise<void> {
     closePanels();
@@ -386,12 +486,23 @@
   </section>
 {/snippet}
 
+<!-- 顶栏隐藏后唯一的上缘唤出带：12px 高、透明，鼠标进入或点击即显示顶栏。 -->
+<button
+  type="button"
+  tabindex="-1"
+  aria-hidden="true"
+  class="fixed inset-x-0 top-0 z-1000 h-3 w-full cursor-default border-0 bg-transparent p-0"
+  onpointerenter={(event) => {
+    if (event.pointerType === "mouse") isVisible = true;
+  }}
+  onclick={() => (isVisible = true)}
+></button>
+
 <div
   bind:this={root}
-  class="pointer-events-none fixed inset-x-0 top-3 z-1000 px-3"
-  style="transform: {isVisible
-    ? 'none'
-    : 'translateY(-150%)'}; transition: transform 150ms ease-out"
+  class="pointer-events-none fixed inset-x-0 top-3 z-1000 px-3 transition-transform duration-150 ease-out motion-reduce:transition-none"
+  style="transform: {isVisible ? 'none' : 'translateY(-150%)'}"
+  onfocusin={() => (isVisible = true)}
 >
   <div class="flex items-center justify-between gap-3">
     <!-- 左胶囊：桌面导航；窄屏只剩菜单入口 -->
@@ -401,35 +512,61 @@
           {#if "children" in item}
             {@const dropdownActive = isActiveDropdown(item)}
             <div class="relative">
-              <button
-                type="button"
-                class="{linkBase} flex items-center gap-1 {dropdownActive
-                  ? 'bg-white-15 font-semibold text-white'
+              <div
+                class="flex items-center rounded-lg transition-colors duration-150 {dropdownActive
+                  ? 'bg-white-15 text-white'
                   : 'text-white-85 hover:bg-white-10 hover:text-white'}"
-                aria-expanded={panels.isOpen(item.id)}
-                aria-current={dropdownActive ? "true" : undefined}
                 {...triggerHoverHandlers(item.id, "left")}
-                onclick={(event) => togglePanel(item.id, "left", event)}
               >
-                {item.label()}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  class="size-3.5"
-                  fill="currentColor"
-                  aria-hidden="true"
+                <a
+                  href={item.href}
+                  class="flex cursor-pointer items-center rounded-l-lg py-2 pr-1.5 pl-3 text-sm no-underline {dropdownActive
+                    ? 'font-semibold'
+                    : ''}"
+                  aria-current={dropdownActive ? "true" : undefined}
+                  onclick={(event) => {
+                    if (event.detail > 0) suppressNextNavHover(item.id);
+                    closePanels();
+                  }}
                 >
-                  <path d="M7 10l5 5 5-5z" />
-                </svg>
-              </button>
+                  {item.label()}
+                </a>
+                <button
+                  type="button"
+                  class="flex cursor-pointer items-center rounded-r-lg py-2 pr-2 pl-1 text-current opacity-70 transition-opacity hover:opacity-100"
+                  aria-label={m["topbar.expand_nav"]({ name: item.label() })}
+                  aria-expanded={panels.isOpen(item.id)}
+                  onclick={(event) => {
+                    const wrapper = event.currentTarget.parentElement;
+                    togglePanel(
+                      item.id,
+                      "left",
+                      event,
+                      wrapper instanceof HTMLElement ? wrapper : undefined
+                    );
+                  }}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    class="size-3.5"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    <path d="M7 10l5 5 5-5z" />
+                  </svg>
+                </button>
+              </div>
 
               {#if panels.isOpen(item.id)}
                 <div
                   use:popoverLayer
                   role="presentation"
                   class="fixed w-56"
-                  style={panelPosition ? panelPositionStyle(panelPosition) : ""}
+                  style={panelPositionStyle(item.id)}
                   {...panelHoverHandlers()}
+                  in:fly={panelIn}
+                  out:fly={panelOut}
                 >
                   <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
                     {@render dropdownEntries(item.children)}
@@ -459,8 +596,10 @@
                   use:popoverLayer
                   role="presentation"
                   class="fixed w-[min(320px,calc(100vw-1.5rem))]"
-                  style={panelPosition ? panelPositionStyle(panelPosition) : ""}
+                  style={panelPositionStyle("profile")}
                   {...panelHoverHandlers()}
+                  in:fly={panelIn}
+                  out:fly={panelOut}
                 >
                   <GlassPanel class="rounded-2xl p-5" padding="none" rounded="none">
                     {@render profileContent(false)}
@@ -487,20 +626,24 @@
       <div class="relative md:hidden">
         <button
           type="button"
-          class="{linkBase} flex items-center gap-1 text-white-85 hover:bg-white-10 hover:text-white"
+          class="flex size-9 cursor-pointer items-center justify-center rounded-full text-white-85 transition-colors hover:bg-white-10 hover:text-white"
+          aria-label={m["topbar.menu"]()}
+          title={m["topbar.menu"]()}
           aria-expanded={panels.isOpen("menu")}
           {...triggerHoverHandlers("menu", "left")}
           onclick={(event) => togglePanel("menu", "left", event)}
         >
-          {m["topbar.menu"]()}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 24 24"
-            class="size-3.5"
-            fill="currentColor"
+            class="size-5"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
             aria-hidden="true"
           >
-            <path d="M7 10l5 5 5-5z" />
+            <path d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
 
@@ -509,8 +652,10 @@
             use:popoverLayer
             role="presentation"
             class="fixed w-[min(18rem,calc(100vw-1.5rem))]"
-            style={panelPosition ? panelPositionStyle(panelPosition) : ""}
+            style={panelPositionStyle("menu")}
             {...panelHoverHandlers()}
+            in:fly={panelIn}
+            out:fly={panelOut}
           >
             <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
               <div class="max-h-[calc(100vh-6rem)] overflow-y-auto">
@@ -526,9 +671,13 @@
                 <div class="mx-2 my-1 border-t border-white-15"></div>
                 {#each topLevelNav as item, i (i)}
                   {#if "children" in item}
-                    <div class="px-3 pt-2 pb-1 text-xs font-medium text-white-50">
+                    <a
+                      href={item.href}
+                      class="block rounded-xl px-3 py-2.5 text-xs font-medium text-white-60 no-underline transition-colors hover:bg-white-10 hover:text-white"
+                      onclick={() => closePanels()}
+                    >
                       {item.label()}
-                    </div>
+                    </a>
                     {@render dropdownEntries(item.children)}
                   {/if}
                 {/each}
@@ -539,9 +688,75 @@
       </div>
     </GlassPanel>
 
-    <!-- 右胶囊：主题、语言、账户（账户固定最右） -->
+    <!-- 右胶囊：页面工具（目录、回到顶部）、主题、语言、账户（账户固定最右） -->
     <GlassPanel class={pillClass} padding="none" rounded="none" overflow={false}>
-      <div class="flex items-center gap-1.5">
+      <div bind:this={rightPill} class="flex items-center gap-1.5">
+        {#if showToc}
+          <div class="relative">
+            <button
+              type="button"
+              class={iconButtonClass}
+              title={m["toc.title"]()}
+              aria-label={m["toc.title"]()}
+              aria-expanded={panels.isOpen("toc")}
+              {...triggerHoverHandlers("toc", "right", () => rightPill)}
+              onclick={(event) => togglePanel("toc", "right", event, rightPill)}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                class="size-5"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M4 6h16v2H4V6zm0 5h10v2H4v-2zm0 5h16v2H4v-2z" />
+              </svg>
+            </button>
+
+            {#if panels.isOpen("toc")}
+              <div
+                use:popoverLayer
+                role="presentation"
+                class="fixed w-[min(20rem,calc(100vw-1.5rem))]"
+                style={panelPositionStyle("toc")}
+                {...panelHoverHandlers()}
+                in:fly={panelIn}
+                out:fly={panelOut}
+              >
+                <GlassPanel class="rounded-2xl p-4" padding="none" rounded="none">
+                  <TocPanel items={tocItems} onNavigate={closePanels} />
+                </GlassPanel>
+              </div>
+            {/if}
+          </div>
+        {/if}
+
+        {#if showBackToTop}
+          <button
+            type="button"
+            class={iconButtonClass}
+            title={m["common.back_to_top"]()}
+            aria-label={m["common.back_to_top"]()}
+            onclick={scrollToTop}
+            in:fade={{ duration: reduceMotion ? 0 : 120 }}
+            out:fade={{ duration: reduceMotion ? 0 : 80 }}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              class="size-5"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path d="M12 4l-7 7h4v9h6v-9h4L12 4z" />
+            </svg>
+          </button>
+        {/if}
+
+        {#if showToc || showBackToTop}
+          <div class="mx-1 h-5 w-px bg-white-15" aria-hidden="true"></div>
+        {/if}
+
         <div class="relative">
           <button
             type="button"
@@ -598,8 +813,10 @@
               use:popoverLayer
               role="presentation"
               class="fixed w-40"
-              style={panelPosition ? panelPositionStyle(panelPosition) : ""}
+              style={panelPositionStyle("theme")}
               {...panelHoverHandlers()}
+              in:fly={panelIn}
+              out:fly={panelOut}
             >
               <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
                 {#each themeOptions as option (option.value)}
@@ -654,8 +871,10 @@
               use:popoverLayer
               role="presentation"
               class="fixed w-40"
-              style={panelPosition ? panelPositionStyle(panelPosition) : ""}
+              style={panelPositionStyle("language")}
               {...panelHoverHandlers()}
+              in:fly={panelIn}
+              out:fly={panelOut}
             >
               <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
                 {#each languages as language (language.code)}
@@ -722,8 +941,10 @@
                 use:popoverLayer
                 role="presentation"
                 class="fixed w-56"
-                style={panelPosition ? panelPositionStyle(panelPosition) : ""}
+                style={panelPositionStyle("user")}
                 {...panelHoverHandlers()}
+                in:fly={panelIn}
+                out:fly={panelOut}
               >
                 <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
                   <div class="px-3 py-2">

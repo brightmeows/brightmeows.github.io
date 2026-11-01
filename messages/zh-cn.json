@@ -613,6 +613,7 @@
   "topbar.account_menu": "账户菜单",
   "topbar.admin_panel": "站长后台",
   "topbar.bio": "追逐成就感中",
+  "topbar.expand_nav": "展开 {name}",
   "topbar.lang_en": "English",
   "topbar.lang_ja": "日本語",
   "topbar.lang_zh": "简体中文",

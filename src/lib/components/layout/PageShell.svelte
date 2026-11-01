@@ -1,8 +1,6 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
 
-  import FloatingToc from "./FloatingToc.svelte";
-  import QuickActions from "./QuickActions.svelte";
   import TopBar from "./TopBar.svelte";
 
   import GlassContainer from "#lib/components/ui/GlassContainer.svelte";
@@ -20,7 +18,7 @@
 </script>
 
 <StarryBackground />
-<TopBar />
+<TopBar {tocItems} />
 <main class={mainClass ?? "m-0 mx-auto box-border w-full max-w-350 px-8 pt-24 pb-8"}>
   {#each panes as pane, i (i)}
     {@const isLast = i === panes.length - 1}
@@ -29,7 +27,3 @@
     </GlassContainer>
   {/each}
 </main>
-{#if tocItems.length > 0}
-  <FloatingToc items={tocItems} />
-{/if}
-<QuickActions />

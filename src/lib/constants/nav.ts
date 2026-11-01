@@ -18,12 +18,14 @@ export interface NavItem {
   label: () => string;
 }
 
-/** 顶层下拉导航项：按钮展开子页菜单（不跳转），children 收全部子页入口。 */
+/** 顶层下拉导航项：文字跳到分组落点，箭头展开子页菜单。 */
 export interface NavDropdown {
   /** 弹层互斥标识（顶栏内唯一） */
   id: string;
   /** 下拉按钮显示文本（调用时按当前 locale 求值） */
   label: () => string;
+  /** 分组文字链接的落点 */
+  href: string;
   /** 子页入口（当前在任一子页时按钮高亮） */
   children: NavItem[];
 }
@@ -32,6 +34,7 @@ export interface NavDropdown {
 export const bmsServicesNav: NavDropdown = {
   id: "bms-services",
   label: () => m["nav.bms_services"](),
+  href: "/bms",
   children: [
     { href: "/bms", label: () => m["nav.overview"]() },
     { href: "/bms/table", label: () => m["nav.table"]() },
@@ -45,6 +48,7 @@ export const bmsServicesNav: NavDropdown = {
 export const bmsPersonalNav: NavDropdown = {
   id: "bms-personal",
   label: () => m["nav.bms_personal"](),
+  href: "/bms/table",
   children: [
     { href: "/bms/table/self-sp", label: () => m["nav.self_sp"]() },
     { href: "/bms/table/self-dp", label: () => m["nav.self_dp"]() },
