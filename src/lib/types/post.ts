@@ -1,3 +1,5 @@
+import type { CategoryId } from "#lib/constants/content.js";
+
 /**
  * Markdown frontmatter 的镜像，字段均可缺省
  */
@@ -15,6 +17,7 @@ export interface PostMetadata extends PostFrontmatter {
 }
 
 export interface Post {
+  category: CategoryId;
   slug: string;
   title: string;
   order?: number | undefined;

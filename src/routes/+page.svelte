@@ -26,7 +26,7 @@
 
 {#snippet contentPane()}
   <div class="header-row">
-    <h2 class="section-title m-0">{m["nav.blog"]()}</h2>
+    <h2 class="section-title m-0">{data.sectionTitle}</h2>
     <a
       class="text-sm text-accent-light no-underline transition hover:text-accent"
       href={resolve("/blog")}
@@ -36,7 +36,7 @@
   </div>
 
   {#if !data.recentPosts || data.recentPosts.length === 0}
-    <div class="text-center text-white-70">{m["blog.no_posts"]()}</div>
+    <div class="text-center text-white-70">{m["content.no_posts"]()}</div>
   {:else}
     <div class="flex flex-col gap-4">
       {#each data.recentPosts as post (post.slug)}

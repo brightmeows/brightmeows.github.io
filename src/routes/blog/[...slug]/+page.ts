@@ -12,12 +12,12 @@ interface PostModule {
   metadata?: Partial<PostMetadata>;
 }
 
-/** 博客正文页数据：按 slug 动态 import Markdown 模块，返回组件与元数据。 */
+/** 博客分类正文页数据：按 slug 动态 import Markdown 模块，返回组件与元数据。 */
 export const load: PageLoad = async ({ params }) => {
   const slug = params.slug.replace(/\/$/, "");
 
   try {
-    const post = (await import(`#posts/${slug}.md`)) as PostModule;
+    const post = (await import(`#posts/blog/${slug}.md`)) as PostModule;
     const meta = post.metadata ?? {};
 
     // 元数据优先使用 frontmatter 导出，无 frontmatter 时从 slug 推算

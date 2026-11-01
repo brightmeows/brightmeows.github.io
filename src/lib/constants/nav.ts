@@ -9,6 +9,7 @@
  * 下拉，不随页面变化。路径均为站内绝对路径，渲染时经 resolve() 处理 base。
  */
 
+import { getCategory, POST_CATEGORIES } from "#lib/constants/content.js";
 import { m } from "#lib/paraglide/messages.js";
 
 export interface NavItem {
@@ -55,10 +56,22 @@ export const bmsPersonalNav: NavDropdown = {
   ],
 };
 
+/** 内容分类下拉：文字跳到博客列表，箭头展开博客与杂记。 */
+const blogCategory = getCategory("blog");
+const contentNav: NavDropdown = {
+  id: "content",
+  label: blogCategory.label,
+  href: `/${blogCategory.id}`,
+  children: POST_CATEGORIES.map((category) => ({
+    href: `/${category.id}`,
+    label: category.label,
+  })),
+};
+
 /** 长栏左侧的顶层导航项。 */
 export const topLevelNav: (NavItem | NavDropdown)[] = [
   { href: "/", label: () => m["nav.home"]() },
   bmsServicesNav,
   bmsPersonalNav,
-  { href: "/blog", label: () => m["nav.blog"]() },
+  contentNav,
 ];

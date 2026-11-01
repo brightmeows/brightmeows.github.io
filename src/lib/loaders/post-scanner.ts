@@ -1,12 +1,14 @@
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { join, sep } from "node:path";
 
 import matter from "gray-matter";
 
+import type { CategoryId, PostCategory } from "../constants/content";
 import type { Post } from "../types/post";
 
 import { extractFirstSentence, validateFrontmatter } from "./post-metadata";
 
+import { duplicateSlugs, sortPosts, validateCategories } from "#lib/utils/content/categories.js";
 import { extractDateFromSlug, EPOCH_DATE } from "#lib/utils/infra/date.js";
 
 /**
@@ -19,61 +21,83 @@ function extractFirstHeading(content: string): string | undefined {
 
 /**
  * 扫描内容目录并生成索引
+ *
+ * 分类由 `content/posts/<id>/` 的顶层目录决定；注册表负责文案与首页标记。
+ * 目录结构、文件扩展名、slug 与首页分类都在这里做构建期断言，坏数据直接
+ * 让构建失败。
+ *
  * @param postsDir - 内容目录路径
+ * @param categories - 分类注册表
+ * @param reservedPaths - 分类 id 不得占用的顶层路径
  * @param basePath - URL 基础路径（通常为空或 BASE_PATH 环境变量）
  * @returns 内容文章列表
  */
-export function scanPostsDirectory(postsDir: string, basePath = ""): Post[] {
+export function scanPostsDirectory(
+  postsDir: string,
+  categories: readonly PostCategory<CategoryId>[],
+  reservedPaths: readonly string[],
+  basePath = ""
+): Post[] {
+  const categoryIssues = validateCategories(categories, reservedPaths);
+  if (categoryIssues.length > 0) {
+    throw new Error(categoryIssues.join("\n"));
+  }
+
+  const categoryIds = new Set<string>(categories.map((category) => category.id));
+  const rootEntries = readdirSync(postsDir, { withFileTypes: true });
+  for (const entry of rootEntries) {
+    if (entry.isDirectory()) {
+      if (!categoryIds.has(entry.name)) {
+        throw new Error(`content/posts 下存在未登记分类目录：${entry.name}`);
+      }
+      continue;
+    }
+    throw new Error(`content/posts 下存在散落文件：${entry.name}`);
+  }
+
   const posts: Post[] = [];
-  const entries = readdirSync(postsDir, { recursive: true });
+  for (const category of categories) {
+    const categoryDir = join(postsDir, category.id);
+    if (!existsSync(categoryDir) || !statSync(categoryDir).isDirectory()) {
+      throw new Error(`分类目录不存在：${category.id}`);
+    }
 
-  for (const entry of entries) {
-    // 跳过非字符串条目和非 Markdown 文件
-    if (typeof entry !== "string") continue;
-    if (!/\.(md|svx)$/.exec(entry)) continue;
+    const entries = readdirSync(categoryDir, { recursive: true, encoding: "utf8" });
+    for (const entry of entries) {
+      const fullPath = join(categoryDir, entry);
+      if (statSync(fullPath).isDirectory()) continue;
+      if (!entry.endsWith(".md")) {
+        throw new Error(`内容目录只支持 .md 文件：${fullPath}`);
+      }
 
-    const fullPath = join(postsDir, entry);
-    const content = readFileSync(fullPath, "utf-8");
-    const parsed = matter(content);
-    const metadata = validateFrontmatter(parsed.data, fullPath);
+      const content = readFileSync(fullPath, "utf-8");
+      const parsed = matter(content);
+      const metadata = validateFrontmatter(parsed.data, fullPath);
+      const slug = entry.slice(0, -3).split(sep).join("/");
 
-    // 从文件名提取 slug（不含扩展名）
-    const filename = entry.replace(/\.(md|svx)$/, "");
-    const slug = metadata.slug ?? filename;
+      if (metadata.slug !== undefined && metadata.slug !== slug) {
+        throw new Error(`${fullPath}: metadata.slug 必须等于文件相对路径（${slug}）`);
+      }
 
-    // title：优先 frontmatter，其次第一个标题，最后用 slug
-    const title = metadata.title ?? extractFirstHeading(parsed.content) ?? slug;
-    // date：优先 frontmatter，其次目录路径，最后 UTC epoch
-    const date = metadata.date ?? extractDateFromSlug(slug) ?? EPOCH_DATE;
+      const title = metadata.title ?? extractFirstHeading(parsed.content) ?? slug;
+      const date = metadata.date ?? extractDateFromSlug(slug) ?? EPOCH_DATE;
 
-    posts.push({
-      slug,
-      title,
-      date,
-      order: metadata.order,
-      firstSentence: metadata.description ?? extractFirstSentence(content),
-      url: `${basePath}/blog/${slug}`,
-    });
+      posts.push({
+        category: category.id,
+        slug,
+        title,
+        date,
+        order: metadata.order,
+        firstSentence: metadata.description ?? extractFirstSentence(content),
+        url: `${basePath}/${category.id}/${slug}`,
+      });
+    }
+  }
+
+  const duplicates = duplicateSlugs(posts);
+  if (duplicates.length > 0) {
+    throw new Error(`同一分类内 slug 重复：${duplicates.join(", ")}`);
   }
 
   return sortPosts(posts);
-}
-
-/**
- * 对内容文章进行排序
- * @param posts - 内容文章列表
- * @returns 排序后的内容文章列表
- */
-function sortPosts(posts: Post[]): Post[] {
-  return posts.sort((a, b) => {
-    // order 优先
-    if (a.order !== undefined && b.order !== undefined) {
-      return a.order - b.order;
-    }
-    // 然后按 date 降序
-    if (a.date && b.date) {
-      return new Date(b.date).getTime() - new Date(a.date).getTime();
-    }
-    return 0;
-  });
 }

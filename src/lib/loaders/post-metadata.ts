@@ -94,5 +94,5 @@ export function extractFirstSentence(markdown: string): string {
 
   // 如果没有找到有效行,返回前 100 个字符
   const fallback = withoutHeadings.slice(0, 100).trim();
-  return fallback.length > 0 ? fallback + "..." : m["blog.no_preview"]();
+  return fallback.length > 0 ? fallback + "..." : m["content.no_preview"]();
 }
