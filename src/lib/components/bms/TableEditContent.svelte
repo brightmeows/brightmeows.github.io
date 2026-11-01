@@ -48,7 +48,7 @@
   import { editorHeaderState } from "@brightmeows/bms/header";
 
   import BmsDropZone from "#lib/components/bms/BmsDropZone.svelte";
-  import CourseEditor from "#lib/components/bms/CourseEditor.svelte";
+  import CoursePanel from "#lib/components/bms/CoursePanel.svelte";
   import TableEntryEditor from "#lib/components/bms/TableEntryEditor.svelte";
   import TableEntryImportPanel from "#lib/components/bms/TableEntryImportPanel.svelte";
   import TableHeaderForm from "#lib/components/bms/TableHeaderForm.svelte";
@@ -168,20 +168,17 @@
     {/if}
   </section>
 
-  <DetailsPanel
+  <CoursePanel
     id="course-list"
-    class="scroll-mt-20"
-    summary={m["editor.course_section"]()}
-    hint={m["editor.course_hint"]()}
-  >
-    <CourseEditor
-      bind:model={courseModel}
-      {entries}
-      disabled={busy}
-      showHeading={false}
-      onchange={onChange}
-    />
-  </DetailsPanel>
+    editing={true}
+    bind:model={courseModel}
+    {entries}
+    {symbol}
+    disabled={busy}
+    nested={courseModel.shape === "nested"}
+    initiallyCollapsed={true}
+    {onChange}
+  />
 
   {#if levelRef}
     <DetailsPanel id="level-ref" class="scroll-mt-20" summary={m["levelref.heading"]()}>

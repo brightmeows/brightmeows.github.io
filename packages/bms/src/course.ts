@@ -252,18 +252,27 @@ export function courseChartResolvedIn(
   return hash !== "" && hashSet.has(hash);
 }
 
-/** 在最后一个课程组追加一个空课程；模型为空且原本不存在时建立嵌套形状。 */
-export function addCourseToModel(model: CourseModel): CourseModel {
-  const course: EditableCourse = { name: "", constraints: [], trophies: [], charts: [], extra: {} };
+function emptyEditableCourse(): EditableCourse {
+  return { name: "", constraints: [], trophies: [], charts: [], extra: {} };
+}
+
+/** 在指定课程组追加一个空课程；模型为空且原本不存在时建立嵌套形状。 */
+export function addCourseToGroup(model: CourseModel, groupIndex: number): CourseModel {
+  const course = emptyEditableCourse();
   const groups = [...model.groups];
   if (groups.length === 0) {
     const shape = model.present ? model.shape : "nested";
     return { shape, groups: [{ courses: [course] }], present: true };
   }
-  const last = groups[groups.length - 1];
-  if (last === undefined) return model;
-  groups[groups.length - 1] = { courses: [...last.courses, course] };
+  const target = groups[groupIndex];
+  if (target === undefined) return model;
+  groups[groupIndex] = { courses: [...target.courses, course] };
   return { ...model, groups, present: true };
+}
+
+/** 在最后一个课程组追加一个空课程；模型为空且原本不存在时建立嵌套形状。 */
+export function addCourseToModel(model: CourseModel): CourseModel {
+  return addCourseToGroup(model, Math.max(0, model.groups.length - 1));
 }
 
 /** 删除指定课程；删空后保留组结构（序列化时为空组）。 */
@@ -280,11 +289,10 @@ export function removeCourseFromModel(
 
 /** 追加一个空课程组（形状切换为嵌套）。 */
 export function addGroupToModel(model: CourseModel): CourseModel {
-  const course: EditableCourse = { name: "", constraints: [], trophies: [], charts: [], extra: {} };
   return {
     ...model,
     shape: "nested",
-    groups: [...model.groups, { courses: [course] }],
+    groups: [...model.groups, { courses: [emptyEditableCourse()] }],
     present: true,
   };
 }

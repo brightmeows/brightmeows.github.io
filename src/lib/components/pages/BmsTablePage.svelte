@@ -13,7 +13,7 @@
   import { onMount } from "svelte";
 
   import ChartsTableSection from "#lib/components/bms/ChartsTableSection.svelte";
-  import CourseSection from "#lib/components/bms/CourseSection.svelte";
+  import CoursePanel from "#lib/components/bms/CoursePanel.svelte";
   import LevelRefTable from "#lib/components/bms/LevelRefTable.svelte";
   import type { TableEditContentProps } from "#lib/components/bms/TableEditContent.svelte";
   import TableEditToc from "#lib/components/bms/TableEditToc.svelte";
@@ -397,10 +397,12 @@
 {/snippet}
 
 {#snippet coursePane()}
-  <CourseSection
+  <CoursePanel
     id="course-list"
+    editing={false}
     groups={model.courseGroups}
     symbol={model.symbol}
+    nested={model.courseModel.shape === "nested"}
     initiallyCollapsed={true}
   />
 {/snippet}

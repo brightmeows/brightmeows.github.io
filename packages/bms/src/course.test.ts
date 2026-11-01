@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  addCourseToGroup,
   addCourseToModel,
   addGroupToModel,
   buildEntryHashSet,
@@ -128,6 +129,14 @@ describe("structural helpers", () => {
     const appended = addCourseToModel(flat);
     expect(appended.shape).toBe("flat");
     expect(appended.groups[0]?.courses).toHaveLength(2);
+  });
+
+  it("adds a course to the requested group instead of the last group", () => {
+    const model = parseCourse([[{ name: "A" }], [{ name: "B" }]]);
+    const next = addCourseToGroup(model, 0);
+    expect(next.groups[0]?.courses.map((item) => item.name)).toEqual(["A", ""]);
+    expect(next.groups[1]?.courses.map((item) => item.name)).toEqual(["B"]);
+    expect(addCourseToGroup(model, 9)).toBe(model);
   });
 
   it("adds and removes groups, removes courses and moves rows", () => {

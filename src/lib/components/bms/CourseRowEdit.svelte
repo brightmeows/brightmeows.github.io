@@ -1,57 +1,69 @@
 <script lang="ts">
+  import { formatConstraint, trophyEmoji } from "@brightmeows/bms/constants";
   import {
     COURSE_CONSTRAINTS,
     TROPHY_NAMES,
-    addCourseToModel,
-    addGroupToModel,
     buildEntryHashSet,
     courseChartResolvedIn,
     courseHashIssue,
-    moveCourseInModel,
-    removeCourseFromModel,
-    removeGroupFromModel,
-    type CourseModel,
     type EditableCourse,
   } from "@brightmeows/bms/course";
   import { entryLabel, filterEntryIndices, moveItem } from "@brightmeows/bms/editor";
 
-  import { btnGhost, btnIcon, btnIconDanger, inputEditorMono } from "#lib/constants/ui-classes.js";
+  import CourseRow from "./CourseRow.svelte";
+
+  import {
+    btnGhost,
+    btnGhostXs,
+    btnIcon,
+    btnIconDanger,
+    inputEditorMono,
+  } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
 
-  /**
-   * 段位（course）结构化编辑器：分组与课程增删、constraint 多选、trophy 行与
-   * charts 行（可从当前表条目挑选）。未知字段在 extra 里原样保留并以只读 JSON 展示。
-   */
+  /** 编辑态段位行：摘要、行头操作与展开后的全宽表单。 */
   interface Props {
-    model: CourseModel;
+    course: EditableCourse;
     entries: Record<string, unknown>[];
-    disabled?: boolean;
-    /** 外层已有折叠标题时传 false，避免重复标题。 */
-    showHeading?: boolean;
-    onchange?: (() => void) | undefined;
+    disabled: boolean;
+    expanded: boolean;
+    canMoveUp: boolean;
+    canMoveDown: boolean;
+    onToggle: () => void;
+    onDelete: () => void;
+    onMoveUp: () => void;
+    onMoveDown: () => void;
+    onChange: () => void;
   }
 
   let {
-    model = $bindable(),
+    course,
     entries,
-    disabled = false,
-    showHeading = true,
-    onchange,
+    disabled,
+    expanded,
+    canMoveUp,
+    canMoveDown,
+    onToggle,
+    onDelete,
+    onMoveUp,
+    onMoveDown,
+    onChange,
   }: Props = $props();
 
   const PICKER_LIMIT = 20;
 
-  let pickerFor = $state<{ group: number; course: number } | null>(null);
+  let pickerOpen = $state(false);
   let pickerQuery = $state("");
 
   const knownHashes = $derived(buildEntryHashSet(entries));
-  const pickerResults = $derived.by(() => {
-    if (pickerFor === null) return [];
-    return filterEntryIndices(entries, { level: { kind: "all" }, query: pickerQuery }).slice(
-      0,
-      PICKER_LIMIT
-    );
-  });
+  const pickerResults = $derived(
+    pickerOpen
+      ? filterEntryIndices(entries, { level: { kind: "all" }, query: pickerQuery }).slice(
+          0,
+          PICKER_LIMIT
+        )
+      : []
+  );
 
   function describe(entry: Record<string, unknown>): { label: string; hash: string } {
     const md5 = typeof entry.md5 === "string" ? entry.md5 : "";
@@ -61,17 +73,17 @@
   }
 
   function notify(): void {
-    onchange?.();
+    onChange();
   }
 
-  function toggleConstraint(course: EditableCourse, value: string): void {
+  function toggleConstraint(value: string): void {
     course.constraints = course.constraints.includes(value)
       ? course.constraints.filter((item) => item !== value)
       : [...course.constraints, value];
     notify();
   }
 
-  function addTrophy(course: EditableCourse): void {
+  function addTrophy(): void {
     course.trophies = [
       ...course.trophies,
       { name: "goldmedal", missrateText: "", scorerateText: "", extra: {} },
@@ -79,169 +91,138 @@
     notify();
   }
 
-  function removeTrophy(course: EditableCourse, index: number): void {
+  function removeTrophy(index: number): void {
     course.trophies = course.trophies.filter((_, i) => i !== index);
     notify();
   }
 
-  function addChartRow(
-    course: EditableCourse,
-    md5: string,
-    sha256: string,
-    levelText: string
-  ): void {
+  function addChartRow(md5: string, sha256: string, levelText: string): void {
     course.charts = [...course.charts, { md5, sha256, levelText, extra: {} }];
     notify();
   }
 
-  function removeChart(course: EditableCourse, index: number): void {
+  function addEmptyChart(): void {
+    addChartRow("", "", "");
+  }
+
+  function removeChart(index: number): void {
     course.charts = course.charts.filter((_, i) => i !== index);
     notify();
   }
 
-  function moveChart(course: EditableCourse, index: number, delta: number): void {
+  function moveChart(index: number, delta: number): void {
     course.charts = moveItem(course.charts, index, index + delta);
     notify();
   }
 
-  function openPicker(group: number, course: number): void {
-    pickerFor =
-      pickerFor?.group === group && pickerFor.course === course ? null : { group, course };
+  function openPicker(): void {
+    pickerOpen = !pickerOpen;
     pickerQuery = "";
   }
 
-  function addFromPicker(target: EditableCourse, entry: Record<string, unknown>): void {
+  function addFromPicker(entry: Record<string, unknown>): void {
     const md5 = typeof entry.md5 === "string" ? entry.md5 : "";
     const sha256 = typeof entry.sha256 === "string" ? entry.sha256 : "";
-    const level = typeof entry.level === "string" ? entry.level : "";
-    addChartRow(target, md5, sha256, level);
-  }
-
-  function pickerCourse(): EditableCourse | null {
-    if (pickerFor === null) return null;
-    return model.groups[pickerFor.group]?.courses[pickerFor.course] ?? null;
-  }
-
-  function addEmptyChart(course: EditableCourse): void {
-    addChartRow(course, "", "", "");
+    const levelText = typeof entry.level === "string" ? entry.level : "";
+    addChartRow(md5, sha256, levelText);
   }
 </script>
 
-<section>
-  <div class="mb-3 flex flex-wrap items-center gap-3">
-    {#if showHeading}
-      <h3 class="tag-accent-sm">{m["editor.course_section"]()}</h3>
-      <span class="text-[0.85rem] text-white-50">{m["editor.course_hint"]()}</span>
-    {/if}
-    <div class="ml-auto flex flex-wrap gap-2">
-      {#if model.shape === "nested"}
-        <button
-          class={btnGhost}
-          type="button"
-          {disabled}
-          onclick={() => {
-            model = addGroupToModel(model);
-            notify();
-          }}
+<CourseRow {expanded}>
+  {#snippet summary()}
+    <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+      <span class="text-[1rem] font-semibold text-white">
+        {course.name || m["course.unnamed"]()}
+      </span>
+      {#each course.constraints as constraint (constraint)}
+        <span
+          class="inline-block rounded-[6px] border border-warning/40 bg-warning/10 px-2 py-0.5 text-[0.75rem] text-warning"
         >
-          {m["editor.course_group_add"]()}
-        </button>
-      {/if}
-      <button
-        class={btnGhost}
-        type="button"
-        {disabled}
-        onclick={() => {
-          model = addCourseToModel(model);
-          notify();
-        }}
-      >
-        {m["editor.course_add"]()}
-      </button>
-    </div>
-  </div>
-
-  {#snippet courseCard(course: EditableCourse, groupIndex: number, courseIndex: number)}
-    <div class="rounded-lg border border-white-15 bg-black-20 p-3">
-      <div class="flex flex-wrap items-center gap-2">
-        <span class="text-[0.8rem] text-white-50">
-          {m["editor.course_group_course"]({ group: groupIndex + 1, index: courseIndex + 1 })}
+          {formatConstraint(constraint)}
         </span>
-        <div class="ml-auto flex items-center gap-1">
-          <button
-            class={btnIcon}
-            type="button"
-            {disabled}
-            title={m["editor.level_order_move_up"]()}
-            aria-label={m["editor.level_order_move_up"]()}
-            onclick={() => {
-              model = moveCourseInModel(model, groupIndex, courseIndex, -1);
-              notify();
-            }}
-          >
-            <svg
-              class="size-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"><path d="m18 15-6-6-6 6" /></svg
-            >
-          </button>
-          <button
-            class={btnIcon}
-            type="button"
-            {disabled}
-            title={m["editor.level_order_move_down"]()}
-            aria-label={m["editor.level_order_move_down"]()}
-            onclick={() => {
-              model = moveCourseInModel(model, groupIndex, courseIndex, 1);
-              notify();
-            }}
-          >
-            <svg
-              class="size-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg
-            >
-          </button>
-          <button
-            class={btnIconDanger}
-            type="button"
-            {disabled}
-            title={m["editor.course_remove"]()}
-            aria-label={m["editor.course_remove"]()}
-            onclick={() => {
-              model = removeCourseFromModel(model, groupIndex, courseIndex);
-              pickerFor = null;
-              notify();
-            }}
-          >
-            <svg
-              class="size-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M3 6h18" />
-              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-            </svg>
-          </button>
-        </div>
-      </div>
+      {/each}
+      {#if course.trophies.length > 0}
+        <span class="flex flex-wrap items-center gap-1 text-[0.8rem] text-white-50">
+          {#each course.trophies as trophy, index (index)}
+            <span>{trophyEmoji(trophy.name)} {trophy.name}</span>
+          {/each}
+        </span>
+      {/if}
+      <span class="text-[0.8rem] text-white-40">
+        {m["table.chart_count"]({ count: course.charts.length })}
+      </span>
+    </div>
+  {/snippet}
 
-      <label class="mt-2 block">
+  {#snippet actions()}
+    <button class={btnGhostXs} type="button" aria-expanded={expanded} onclick={onToggle}>
+      {expanded ? m["common.collapse"]() : m["common.edit"]()}
+    </button>
+    <button
+      class={btnIcon}
+      type="button"
+      disabled={disabled || !canMoveUp}
+      title={m["editor.level_order_move_up"]()}
+      aria-label={m["editor.level_order_move_up"]()}
+      onclick={onMoveUp}
+    >
+      <svg
+        class="size-4"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"><path d="m18 15-6-6-6 6" /></svg
+      >
+    </button>
+    <button
+      class={btnIcon}
+      type="button"
+      disabled={disabled || !canMoveDown}
+      title={m["editor.level_order_move_down"]()}
+      aria-label={m["editor.level_order_move_down"]()}
+      onclick={onMoveDown}
+    >
+      <svg
+        class="size-4"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg
+      >
+    </button>
+    <button
+      class={btnIconDanger}
+      type="button"
+      {disabled}
+      title={m["editor.course_remove"]()}
+      aria-label={m["editor.course_remove"]()}
+      onclick={onDelete}
+    >
+      <svg
+        class="size-4"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M3 6h18" />
+        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+      </svg>
+    </button>
+  {/snippet}
+
+  {#snippet children()}
+    <div class="flex flex-col gap-4">
+      <label class="block">
         <span class="mb-1 block text-[0.8rem] text-white-60">{m["editor.course_name"]()}</span>
         <input
           class="{inputEditorMono} max-w-120"
@@ -256,7 +237,7 @@
         />
       </label>
 
-      <div class="mt-3">
+      <div>
         <div class="mb-1 text-[0.8rem] text-white-60">{m["editor.course_constraint"]()}</div>
         <div class="flex flex-wrap gap-x-4 gap-y-1">
           {#each [...COURSE_CONSTRAINTS, ...course.constraints.filter((item) => !COURSE_CONSTRAINTS.includes(item))] as constraint (constraint)}
@@ -265,30 +246,25 @@
                 type="checkbox"
                 checked={course.constraints.includes(constraint)}
                 {disabled}
-                onchange={() => toggleConstraint(course, constraint)}
+                onchange={() => toggleConstraint(constraint)}
               />
-              {constraint}
+              {formatConstraint(constraint)}
             </label>
           {/each}
         </div>
       </div>
 
-      <div class="mt-3">
+      <div>
         <div class="mb-1 flex items-center gap-2">
           <span class="text-[0.8rem] text-white-60">{m["editor.course_trophy"]()}</span>
-          <button
-            class="{btnGhost} ml-auto"
-            type="button"
-            {disabled}
-            onclick={() => addTrophy(course)}
-          >
+          <button class="{btnGhost} ml-auto" type="button" {disabled} onclick={addTrophy}>
             {m["editor.course_trophy_add"]()}
           </button>
         </div>
         {#if course.trophies.length > 0}
           <div class="flex flex-col gap-2">
-            {#each course.trophies as trophy, ti (ti)}
-              <div class="flex items-center gap-2">
+            {#each course.trophies as trophy, index (index)}
+              <div class="flex flex-wrap items-center gap-2">
                 <input
                   class="{inputEditorMono} max-w-44 flex-1"
                   type="text"
@@ -331,7 +307,7 @@
                   {disabled}
                   title={m["editor.course_trophy_remove"]()}
                   aria-label={m["editor.course_trophy_remove"]()}
-                  onclick={() => removeTrophy(course, ti)}
+                  onclick={() => removeTrophy(index)}
                 >
                   <svg
                     class="size-4"
@@ -355,26 +331,21 @@
         {/if}
       </div>
 
-      <div class="mt-3">
+      <div>
         <div class="mb-1 flex flex-wrap items-center gap-2">
           <span class="text-[0.8rem] text-white-60">{m["editor.course_charts"]()}</span>
           <span class="text-[0.78rem] text-white-40">{m["editor.course_charts_hint"]()}</span>
           <div class="ml-auto flex gap-2">
-            <button
-              class={btnGhost}
-              type="button"
-              {disabled}
-              onclick={() => openPicker(groupIndex, courseIndex)}
-            >
+            <button class={btnGhost} type="button" {disabled} onclick={openPicker}>
               {m["editor.course_chart_pick"]()}
             </button>
-            <button class={btnGhost} type="button" {disabled} onclick={() => addEmptyChart(course)}>
+            <button class={btnGhost} type="button" {disabled} onclick={addEmptyChart}>
               {m["editor.course_chart_add"]()}
             </button>
           </div>
         </div>
 
-        {#if pickerFor?.group === groupIndex && pickerFor.course === courseIndex}
+        {#if pickerOpen}
           <div class="mb-2 rounded-lg border border-[#64b5f6]/40 bg-[#64b5f6]/10 p-2">
             <div class="mb-2 flex items-center gap-2">
               <input
@@ -384,7 +355,7 @@
                 placeholder={m["editor.course_picker_search"]()}
                 {disabled}
               />
-              <button class={btnGhost} type="button" onclick={() => (pickerFor = null)}>
+              <button class={btnGhost} type="button" onclick={openPicker}>
                 {m["common.cancel"]()}
               </button>
             </div>
@@ -406,10 +377,7 @@
                       class={btnGhost}
                       type="button"
                       {disabled}
-                      onclick={() => {
-                        const target = pickerCourse();
-                        if (target !== null) addFromPicker(target, entry);
-                      }}
+                      onclick={() => addFromPicker(entry)}
                     >
                       {m["editor.course_picker_add"]()}
                     </button>
@@ -422,7 +390,7 @@
 
         {#if course.charts.length > 0}
           <div class="flex flex-col gap-2">
-            {#each course.charts as chart, chi (chi)}
+            {#each course.charts as chart, index (index)}
               {@const issue = courseHashIssue(chart)}
               {@const resolved = courseChartResolvedIn(knownHashes, chart)}
               <div class="rounded-lg border border-white-10 bg-black-10 p-2">
@@ -487,7 +455,7 @@
                       {disabled}
                       title={m["editor.level_order_move_up"]()}
                       aria-label={m["editor.level_order_move_up"]()}
-                      onclick={() => moveChart(course, chi, -1)}
+                      onclick={() => moveChart(index, -1)}
                     >
                       <svg
                         class="size-4"
@@ -506,7 +474,7 @@
                       {disabled}
                       title={m["editor.level_order_move_down"]()}
                       aria-label={m["editor.level_order_move_down"]()}
-                      onclick={() => moveChart(course, chi, 1)}
+                      onclick={() => moveChart(index, 1)}
                     >
                       <svg
                         class="size-4"
@@ -525,7 +493,7 @@
                       {disabled}
                       title={m["editor.course_chart_remove"]()}
                       aria-label={m["editor.course_chart_remove"]()}
-                      onclick={() => removeChart(course, chi)}
+                      onclick={() => removeChart(index)}
                     >
                       <svg
                         class="size-4"
@@ -552,7 +520,7 @@
       </div>
 
       {#if Object.keys(course.extra).length > 0}
-        <details class="mt-2 rounded-md border border-white-10 p-2">
+        <details class="rounded-md border border-white-10 p-2">
           <summary class="cursor-pointer text-[0.78rem] text-white-50">
             {m["editor.course_extra"]()}
           </summary>
@@ -565,81 +533,11 @@
         </details>
       {/if}
     </div>
+
+    <datalist id="editor-trophy-names">
+      {#each TROPHY_NAMES as name (name)}
+        <option value={name}></option>
+      {/each}
+    </datalist>
   {/snippet}
-
-  <datalist id="editor-trophy-names">
-    {#each TROPHY_NAMES as name (name)}
-      <option value={name}></option>
-    {/each}
-  </datalist>
-
-  {#if model.shape === "nested"}
-    <div class="flex flex-col gap-3">
-      {#each model.groups as group, groupIndex (groupIndex)}
-        <div class="rounded-lg border border-white-20 p-2">
-          <div class="mb-2 flex items-center gap-2">
-            <span class="text-[0.85rem] text-white-70">
-              {m["editor.course_group"]({ index: groupIndex + 1 })}
-            </span>
-            <button
-              class="{btnIconDanger} ml-auto"
-              type="button"
-              {disabled}
-              title={m["editor.course_group_remove"]()}
-              aria-label={m["editor.course_group_remove"]()}
-              onclick={() => {
-                model = removeGroupFromModel(model, groupIndex);
-                pickerFor = null;
-                notify();
-              }}
-            >
-              <svg
-                class="size-4"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M3 6h18" />
-                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-              </svg>
-            </button>
-          </div>
-          <div class="flex flex-col gap-3">
-            {#each group.courses as course, courseIndex (courseIndex)}
-              {@render courseCard(course, groupIndex, courseIndex)}
-            {/each}
-            {#if group.courses.length === 0}
-              <p class="text-[0.85rem] text-white-50">{m["editor.course_group_empty"]()}</p>
-            {/if}
-          </div>
-          <div class="mt-2">
-            <button
-              class={btnGhost}
-              type="button"
-              {disabled}
-              onclick={() => {
-                model = addCourseToModel(model);
-                notify();
-              }}
-            >
-              {m["editor.course_add"]()}
-            </button>
-          </div>
-        </div>
-      {/each}
-    </div>
-  {:else}
-    <div class="flex flex-col gap-3">
-      {#each model.groups[0]?.courses ?? [] as course, courseIndex (courseIndex)}
-        {@render courseCard(course, 0, courseIndex)}
-      {/each}
-      {#if (model.groups[0]?.courses.length ?? 0) === 0}
-        <p class="text-[0.85rem] text-white-50">{m["editor.course_empty"]()}</p>
-      {/if}
-    </div>
-  {/if}
-</section>
+</CourseRow>
