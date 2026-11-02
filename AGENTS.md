@@ -19,10 +19,10 @@
 首次 clone 后执行一次 `pre-commit install`（配置了 `default_install_hook_types: [pre-commit, commit-msg]`，会同时安装提交信息检查）。
 
 ```bash
-pre-commit run --all-files --quiet    # 手动触发全部 hooks
+pre-commit run --all-files    # 手动触发全部 hooks
 ```
 
-Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`、`pnpm check:bms`、`pnpm check:worker`、`pnpm check:config`、`pnpm check:i18n`、`pnpm check:jsdoc`、`pnpm test`、no-confusable-unicode、cn-quotes、site-config、i18n-coverage、jsdoc-coverage、conventional-commit（commit-msg stage 校验提交信息）。
+Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`、`pnpm check:bms`、`pnpm check:worker`、`pnpm check:config`、`pnpm check:i18n`、`pnpm check:jsdoc`、`pnpm check:quotes`、`pnpm test`、no-confusable-unicode、site-config、i18n-coverage、jsdoc-coverage、conventional-commit（commit-msg stage 校验提交信息）。
 
 ### 手动命令
 
@@ -32,6 +32,7 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`�
 - `pnpm check:config` — 配置一致性校验（离线，毫秒级）
 - `pnpm check:i18n` — i18n 覆盖校验（三语 key 对称与占位符、引用/死 key、源码 CJK 残留、英文漏翻；离线，毫秒级）
 - `pnpm check:jsdoc` — 导出函数 JSDoc 覆盖校验（离线，毫秒级，见 `scripts/AGENTS.md`）
+- `pnpm check:quotes` — 全量中文引号检查（扩展名与 `static/` 排除规则在 `package.json`，pre-commit 与 CI 共用；离线，毫秒级）
 
 域内命令见子文档：部署与 wrangler 相关在 `packages/worker/AGENTS.md`；管线、抓取、对拍与校验脚本在 `scripts/AGENTS.md`。
 
@@ -46,15 +47,15 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`�
 - **`pnpm-workspace.yaml` 的 `allowBuilds` 由 pnpm 11 维护** — 遇到未决的 build script 时 pnpm 会自动写入占位符（值为字面量 `set this to true or false`），带着占位符提交会让 CI 的 install 直接失败。本地需改成明确的 `true`/`false` 再提交。
 - **pnpm 设置只在 `pnpm-workspace.yaml`** — pnpm 11 起 `.npmrc` 只读 registry/auth 设置，`engineStrict: true`（依赖 engines 与当前 Node 不匹配即安装失败）与工作区 `packages` 都在此文件；旧 `.npmrc` 里的 `engine-strict` 被 pnpm 11 静默忽略，2026-09 迁入并启用，`.npmrc` 已删除。
 - **本地 install 可能因 npmmirror 同步延迟失败** — 全局 registry 指向 `registry.npmmirror.com`，其同步有延迟（曾出现 `@inlang/paraglide-js` 2.25.2 缺失导致 `--frozen-lockfile` 报 404）。另一类症状是 npmmirror 缺 `@lix-js/sdk-*` 平台包的 manifest（tarball 可下、元数据 404），pnpm 的 lockfile 供应链校验（`minimumReleaseAge`）会因此报 `ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION`。两种都可用 `pnpm install --registry=https://registry.npmjs.org` 绕过；报策略错时包其实已装好，脚本可继续用。CI 使用官方源，不受影响。
-- **同一事实只允许一个权威点，其余由门槛机械守住** — `config/site.json` 是站点与部署配置的单一来源；不能 import 它的地方（`wrangler.jsonc` 的 routes 与 vars、工作流 YAML、`.nvmrc` 与 `devEngines.packageManager`）由 `scripts/check-site-config.ts` 的七条断言守住，进 pre-commit 与 `pnpm check:config`。工作流里**任何位置（含注释）**都不该出现域名：域名通过 `--target=<目标名>` 交给脚本从配置解析。唯一豁免是仓库自身的远程地址（`git@github.com:owner/brightmeows.github.io.git`）—— 其中的 `brightmeows.github.io` 是仓库名。
-- **`config/site.json` 是站点与部署配置的单一来源** — 字段：`origin`（站点规范域）、`targets[]`（部署目标：cloudflare/worker + hosts；两个跳转目标的 `kind` 为 `redirect`、`siteBase` 为与 target 名对齐的子域、`legacyHosts` 为平台原域）、`r2.base`/`r2.manifestObject`/`r2.corsOrigins`。能 import 的消费者直接 import（`src/lib/constants/r2.ts`、`src/lib/constants/site.ts` 导出 `SITE_ORIGIN`）；不能 import 的（Worker 的 `vars`、`wrangler.jsonc` 的 routes、工作流里的域名）由 `scripts/check-site-config.ts` 的七条断言守住（含“跳转 siteBase 主机必须等于 `<target 名>.<主站 host>`”）。桶名不入该配置：它只出现在 `wrangler.jsonc` 的 R2 binding（部署期配置，无法用 secret 注入）与 Actions secret（管线 S3 凭据）里，凭据本身不入库。
+- **同一事实只允许一个权威点，其余由门槛机械守住** — `config/site.json` 是站点与部署配置的单一来源；不能 import 它的地方（`wrangler.jsonc` 的 routes 与 vars、工作流 YAML、`.nvmrc` 与 `devEngines.packageManager`）由 `scripts/check-site-config.ts` 的五条断言守住，进 pre-commit 与 `pnpm check:config`。工作流里**任何位置（含注释）**都不该出现域名。唯一豁免是仓库自身的远程地址（`git@github.com:owner/brightmeows.github.io.git`）—— 其中的 `brightmeows.github.io` 是仓库名。
+- **`config/site.json` 是站点与部署配置的单一来源** — 字段：`origin`（站点规范域）、`targets[]`（部署目标：cloudflare/worker + hosts；旧主机 301 由 Cloudflare Single Redirects 负责，不再进入本配置）、`r2.base`/`r2.manifestObject`/`r2.corsOrigins`。能 import 的消费者直接 import（`src/lib/constants/r2.ts`、`src/lib/constants/site.ts` 导出 `SITE_ORIGIN`）；不能 import 的（Worker 的 `vars`、`wrangler.jsonc` 的 routes、工作流里的域名）由 `scripts/check-site-config.ts` 的五条断言守住。桶名不入该配置：它只出现在 `wrangler.jsonc` 的 R2 binding（部署期配置，无法用 secret 注入）与 Actions secret（管线 S3 凭据）里，凭据本身不入库。
 - **应用版本由构建期统一注入三个 flavor** — 版本号内嵌进各语言树 HTML 的客户端配置，客户端在未命中路由的 fallback 与跳转前会与 `/_app/version.json` 比对；两边不一致就整页刷新，而未命中路由时刷新不收敛（表现为非英语 404 空白页）。`scripts/build-site.ts` 每次组装只生成一个值并经 `BUILD_VERSION` 传给各遍构建，`vite.config.ts` 读它填 `kit.version.name`；不要再让各 flavor 各自取默认时间戳，也不要事后改写 `_app/version.json`。
 - **外部状态只把会静默退化的项纳入仓库** — 桶 CORS 来源与旧主机 301 规则是两项“改了仓库但线上没跟上就静默退化”的外部状态：漏放 CORS 来源时原生客户端正常、只有浏览器失败；规则被删或被改时旧表导入链接会静默断掉。期望值分别在 `config/site.json` 的 `r2.corsOrigins` 与 `config/redirects.json` 的 zone 列表，由 `scripts/check-r2-cors.ts`、`scripts/check-redirect-rules.ts` 只读比对；`.github/workflows/config-drift.yml` 在相关配置变更的 PR、每周 schedule 与手动触发时跑（CORS 复用 `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID`/`R2_BUCKET`，旧主机规则用 `CLOUDFLARE_RULES_TOKEN`，桶名与令牌权限见 `packages/worker/AGENTS.md`）。其余外部状态（zone 开关、DNS 记录、secrets）维持文档口径——其中 DNS 是发布链路的硬前提（Worker 自定义域的解析）；需要 DNS 编辑权限的凭据（wrangler 的 OAuth scope 不含 DNS，只能控制台或临时令牌）。
 - **旧主机 301 的期望规则单独在 `config/redirects.json`** — zone 列表、托管 ref/规则名、是否匹配 apex 与 R2 排除项在这里；目标来源取 `config/site.json` 的 `origin`，不复制主站域名。规则由 `scripts/check-redirect-rules.ts` 只读比对，实际应用在 Cloudflare 控制台完成（见 `packages/worker/AGENTS.md`）。
-- **浏览器侧取数依赖 R2 桶的 CORS policy** — 镜像表 viewer 与谱面搜索都在客户端直连 R2（`r2TableHeaderUrl()`/`r2TableDataUrl()`、`R2_INDEXES_BASE`）。bucket 未放行站点来源时，浏览器报 `Failed to fetch`（viewer）与“索引加载失败”（搜索），而 beatoraja 等原生客户端不受影响，容易误判为代码缺陷。**期望来源写在 `config/site.json` 的 `r2.corsOrigins`**（主站、旧域过渡来源与本地端口），线上值用 `R2_BUCKET=<桶名> node scripts/check-r2-cors.ts` 只读比对；policy 位置在 Cloudflare 控制台 R2 → 桶 → Settings → CORS Policy。改域或新增来源时先改配置再同步线上（`config-drift.yml` 会在配置变更的 PR 上拦一次）。验证：`curl -sI -H "Origin: https://brightmeows.com" <R2 header 地址> | rg -i access-control` 应出现 `access-control-allow-origin`。
+- **浏览器侧取数依赖 R2 桶的 CORS policy** — 镜像表 viewer 与谱面搜索都在客户端直连 R2（`r2TableHeaderUrl()`/`r2TableDataUrl()`、`R2_INDEXES_BASE`）。bucket 未放行站点来源时，浏览器报 `Failed to fetch`（viewer）与“索引加载失败”（搜索），而 beatoraja 等原生客户端不受影响，容易误判为代码缺陷。**期望来源写在 `config/site.json` 的 `r2.corsOrigins`**（主站与本地端口；旧域过渡来源已于 2026-11 提前清理），线上值用 `R2_BUCKET=<桶名> node scripts/check-r2-cors.ts` 只读比对；policy 位置在 Cloudflare 控制台 R2 → 桶 → Settings → CORS Policy。改域或新增来源时先改配置再同步线上（`config-drift.yml` 会在配置变更的 PR 上拦一次）。验证：`curl -sI -H "Origin: https://brightmeows.com" <R2 header 地址> | rg -i access-control` 应出现 `access-control-allow-origin`。
 - **R2 自定义域的表数据边缘缓存由 zone 的 Cache Rules 承担** — `bms-table-mirror-r2.brightmeows.com` 上，表内容与搜索索引（`/tables/*/header.json`、`/tables/*/data.json`、`/indexes/`）在 zone 的 `http_request_cache_settings` entrypoint 有一条规则：`set_cache_settings`（eligible for cache，edge TTL 600 秒，browser TTL 600 秒）；`tables.json`、`shared/`、`meta/` 由表达式排除。R2 对象本身没有 Cache-Control，JSON 不在 Cloudflare 默认缓存扩展名列表里——不配这条规则时客户端每次直连 R2（2026-10 实测 `cf-cache-status` 恒为 DYNAMIC），浏览器侧也没有缓存头（规则生效后响应带 `cache-control: max-age=600`）。属外部状态、不进仓库断言：漏配是性能退化而非功能故障。**验证必须用 GET**（`curl -s -o /dev/null -D -` 连发两次，第二次应为 `HIT` 且有 `age`）：HEAD 请求不参与缓存查找与填充，`curl -I` 恒显示 DYNAMIC——2026-10 排查时曾被这一点误导（先怀疑了规则与表达式，实际机制一直有效）。
 - **旧客户端 UA 是否被拦由 zone 级 Browser Integrity Check 决定** — 实测 `Java/1.8.x`、`Python-urllib`、`libwww-perl` 在 r2.dev、R2 自定义域与 workers.dev 上一律 403（Cloudflare error 1010），根因是 Browser Integrity Check，不是 r2.dev 的特有策略。本 zone 已关闭该开关（`browser_check = off`），因此 `bms-table-mirror-r2.brightmeows.com` 与站点对旧 UA 全部放行；r2.dev 已于 2026-09-19 关闭（API：`PUT /accounts/{id}/r2/buckets/{bucket}/domains/managed`，body `{"enabled":false}`）。开关位置：控制台 zone → Security → Settings，或 `PATCH /zones/{id}/settings/browser_check`。
-- **CI 与 Deploy 的检查分工** — CI 的 lint/test/format 不依赖 build 产物（把 `build/` 移走后全部通过），因此只有 check job 跑一次 `pnpm build`，作为 CI 里唯一的构建验证点（frontmatter 校验、构建期数据加载与打包错误都在这里暴露）；Deploy 只做 build 与部署，不重复 lint/check/test——main 的每次提交已由 PR 必过门槛与 push 触发的 CI 覆盖，所有变更都经 PR。列表变动只影响运行时读取，不再触发部署。各工作流持有独立 concurrency group：CI 取消被取代的旧运行，Deploy 排队串行（避免旧提交的部署最后完成、覆盖新版本）；各作业均设超时（CI/Deploy 15 分钟、config-drift 10 分钟、update-tables 30 分钟、fetch-table 15 分钟），防挂起占满 runner。
+- **CI 与 Deploy 的检查分工** — CI 的 lint/test/format 不依赖 build 产物（把 `build/` 移走后全部通过），因此只有 check job 跑一次 `pnpm build`，作为 CI 里唯一的构建验证点（frontmatter 校验、构建期数据加载与打包错误都在这里暴露）；Deploy 只做 build 与部署，不重复 lint/check/test——main 的每次提交已由 PR 必过门槛与 push 触发的 CI 覆盖，所有变更都经 PR。列表变动只影响运行时读取，不再触发部署。各工作流持有独立 concurrency group：CI 取消被取代的旧运行，Deploy 排队串行（避免旧提交的部署最后完成、覆盖新版本）；各作业均设超时（CI/Deploy 15 分钟、config-drift 10 分钟、update-tables 30 分钟、fetch-table 15 分钟、mirror 10 分钟、dependabot-auto-merge 10 分钟），防挂起占满 runner。
 - **pnpm 缓存只配置一处** — `pnpm/action-setup` 的 `cache: true` 与 `actions/setup-node` 的 `cache: "pnpm"` 缓存的是同一个 pnpm store（实测两份缓存哈希相同、每个 job 各恢复约 312MB）。统一只保留 setup-node 的 `cache: "pnpm"`，不要再给 pnpm/action-setup 加缓存输入。
 
 ## Lint 与校验
@@ -70,7 +71,7 @@ Hooks：`pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`�
 
 ## 架构边界
 
-- **纯 SSG（含一处边缘例外）** — `@sveltejs/adapter-static` + 全局 `prerender = true`，不加 server routes / API endpoints。例外是 Cloudflare Worker（`packages/worker/index.ts`）：`assets.run_worker_first` 为全量 `true`，每个请求先过 Worker——镜像表动态路由与写接口之外，还承担边缘语言分发（分发机制见 `packages/worker/AGENTS.md`），其余请求回落静态资源。多语产物由 `pnpm build`（构建机制见 `scripts/AGENTS.md`）三遍 flavor 构建组装；静态跳转宿主已全部退役（2026-10-31），旧域由 Cloudflare Single Redirects 301，Worker 自定义域只作迁移期兜底（见 `packages/worker/AGENTS.md`）。
+- **纯 SSG（含一处边缘例外）** — `@sveltejs/adapter-static` + 全局 `prerender = true`，不加 server routes / API endpoints。例外是 Cloudflare Worker（`packages/worker/index.ts`）：`assets.run_worker_first` 为全量 `true`，每个请求先过 Worker——镜像表动态路由与写接口之外，还承担边缘语言分发（分发机制见 `packages/worker/AGENTS.md`），其余请求回落静态资源。多语产物由 `pnpm build`（构建机制见 `scripts/AGENTS.md`）三遍 flavor 构建组装；静态跳转宿主已全部退役（2026-10-31），旧域由 Cloudflare Single Redirects 301，Worker 只服务主站 apex（见 `packages/worker/AGENTS.md`）。
 
 ### 数据流总图
 

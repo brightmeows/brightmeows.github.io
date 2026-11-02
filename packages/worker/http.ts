@@ -52,7 +52,7 @@ export async function readJsonBody(request: Request): Promise<Record<string, unk
 
 /**
  * 写操作的来源校验：Origin 必须存在且与请求 origin 相同。
- * 静态宿主已退化为跳转壳，API 只接受主站同源写请求。
+ * 静态宿主已退役，API 只接受主站同源写请求。
  */
 export function checkSameOrigin(request: Request): boolean {
   const origin = request.headers.get("origin");

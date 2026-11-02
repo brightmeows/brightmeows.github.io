@@ -24,7 +24,7 @@ import { m } from "#lib/paraglide/messages.js";
  * 共享表接口的客户端封装（与 mirror-user-api 同构：契约在
  * `@brightmeows/mirror/api`，传输层在 `./http`）。
  *
- * 接口只存在于主站 Worker；静态宿主已退化为跳转壳，不再承载应用。
+ * 接口只存在于主站 Worker；静态宿主已退役，不再承载应用。
  * 写操作不消耗每日配额，防线是每人 3 张持有上限。
  */
 
@@ -113,8 +113,8 @@ export async function fetchSharedRemoved(): Promise<SharedRemovedEntry[]> {
 }
 
 /**
- * 加载共享表清单（Worker 动态响应或静态宿主构建期产物）。
- * url 统一改写为站内相对路径，跨源页面上的绝对地址不直接消费。
+ * 加载共享表清单（Worker 动态响应）。
+ * url 统一改写为站内相对路径。
  */
 export async function loadSharedTables(
   tablesJsonPath = "/bms/table/shared/tables.json",

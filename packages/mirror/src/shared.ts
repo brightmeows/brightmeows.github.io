@@ -204,7 +204,7 @@ export interface SharedTableItem {
   updated_at: string;
   /** data.json 条目数，来自最近一次保存时的统计。 */
   entries: number;
-  /** 站点共享页绝对地址；静态宿主生成时用 --site-base 重写。 */
+  /** 站点共享页绝对地址；生成时按请求 origin 重写。 */
   url: string;
 }
 
@@ -217,7 +217,7 @@ export function transformSharedTableList(
   return items.map((item) => ({ ...item, url: `${base}${sharedTablePath(item.id)}` }));
 }
 
-/** 站点清单的稳定序列化：Worker 动态响应与静态宿主产物共用。 */
+/** 站点清单的稳定序列化：Worker 动态响应使用。 */
 export function serializeSharedTableList(items: SharedTableItem[]): string {
   return `${JSON.stringify(items, null, 2)}\n`;
 }

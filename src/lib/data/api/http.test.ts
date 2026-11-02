@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { ApiUnavailableError, toFailure } from "./http";
 
 describe("toFailure", () => {
-  it("ApiUnavailableError 分流为 unavailable（静态宿主降级）", () => {
+  it("ApiUnavailableError 分流为 unavailable（接口不可用降级）", () => {
     expect(toFailure(new ApiUnavailableError("404"))).toEqual({ phase: "unavailable" });
   });
 

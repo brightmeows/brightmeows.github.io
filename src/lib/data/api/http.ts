@@ -8,8 +8,8 @@ import { messageInputs, translateMessage } from "#lib/utils/i18n/i18n.js";
  * 端点函数在 mirror-user-api / mirror-admin-api / shared-api 三个模块；
  * 端点的形状与窄化在 `@brightmeows/mirror/api`（契约单一来源）。
  *
- * 接口只存在于主站 Worker（Cloudflare）；静态宿主已退化为跳转壳，不再承载
- * 应用，因此这里不再有跨源基址与静态宿主降级分支。
+ * 接口只存在于主站 Worker（Cloudflare）；静态宿主已退役，因此这里不再有
+ * 跨源基址与静态宿主降级分支。
  */
 
 /** 接口不可用（服务异常或非 JSON 404）。 */
