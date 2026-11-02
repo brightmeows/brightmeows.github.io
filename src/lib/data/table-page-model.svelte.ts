@@ -3,15 +3,11 @@ import {
   buildCombinedPackage,
   buildEditorHeader,
   countUnassigned,
-  groupEntryIndices,
-  levelFilterFromSelection,
   type DraftPayload,
-  type LevelFilter,
   type TableEditPayload,
 } from "@brightmeows/bms/editor";
 import type { ChartData } from "@brightmeows/bms/format";
 import { editorHeaderState } from "@brightmeows/bms/header";
-import { sortDifficultyGroups } from "@brightmeows/bms/table";
 import { computeTableStats, groupChartsByLevel, resolveCourses } from "@brightmeows/bms/transform";
 import { withLocalDataUrl } from "@brightmeows/mirror/shared";
 
@@ -30,7 +26,6 @@ import {
 } from "#lib/data/table-model-drafts.svelte.js";
 import { createTableLoader } from "#lib/data/table-model-loader.svelte.js";
 import { m } from "#lib/paraglide/messages.js";
-import type { EditTocLevel, EditTocSection } from "#lib/types/bms-view.js";
 import type { TocItem } from "#lib/types/ui.js";
 import { downloadJsonFile } from "#lib/utils/infra/download.js";
 import { goto } from "$app/navigation";
@@ -116,18 +111,10 @@ export function createTableModel(input: TableModelInput) {
   let baselineUpdatedAt = $state<string | undefined>(undefined);
   let notice = $state<EditorNotice | null>(null);
 
-  // ---- 条目多选等级筛选（目录复选框与条目表共用） ----
-  let selectedLevels = $state<Set<string>>(new Set());
-  let includeUnassigned = $state(false);
-  const levelFilter = $derived<LevelFilter>(
-    levelFilterFromSelection(selectedLevels, includeUnassigned)
-  );
-
   // ---- 派生：查看态展示 ----
   const headerRecord = $derived(buildHeader());
   const groups = $derived(groupChartsByLevel(entries));
   const tableStats = $derived(computeTableStats(groups));
-  const sortedDifficultyGroups = $derived(sortDifficultyGroups(groups, levels));
   const courseGroups = $derived(resolveCourses(headerRecord.course, entries));
   const canSave = $derived(onSave !== undefined && canWrite);
   const saveLabel = $derived(
@@ -142,78 +129,25 @@ export function createTableModel(input: TableModelInput) {
   );
 
   // ---- 派生：目录 ----
-  const difficultyTocItems = $derived.by(() => {
-    const sorted = sortedDifficultyGroups;
-    if (sorted.length === 0) return [];
-    return sorted.map((group) => {
-      const id = `difficulty-group-${group.level}`;
-      return {
-        id,
-        title: m["table.toc_difficulty"]({ level: group.level, count: group.charts.length }),
-        href: `#${id}`,
-      };
-    });
-  });
-  const tocItems = $derived.by<TocItem[]>(() => {
-    const items: TocItem[] = [];
-    if (levelRefHasData) {
-      items.push({ id: "level-ref", title: m["table.toc_level_ref"](), href: "#level-ref" });
-    }
-    if (courseGroups.length > 0) {
-      items.push({ id: "course-list", title: m["table.toc_course"](), href: "#course-list" });
-    }
-    items.push({
-      id: "charts-list",
-      title: m["table.toc_charts"](),
-      href: "#charts-list",
-      children: difficultyTocItems,
-    });
-    return items;
-  });
+  const tocItems = $derived<TocItem[]>([
+    { id: "overview", title: m["editor.header_section"](), href: "#overview" },
+    ...(courseGroups.length > 0
+      ? [{ id: "course-list", title: m["editor.course_section"](), href: "#course-list" }]
+      : []),
+    ...(levelRefHasData
+      ? [{ id: "level-ref", title: m["levelref.heading"](), href: "#level-ref" }]
+      : []),
+    { id: "charts-list", title: m["editor.entries_section"](), href: "#charts-list" },
+    { id: "import-export", title: m["editor.export_section"](), href: "#import-export" },
+  ]);
 
-  const editTocSections = $derived<EditTocSection[]>([
+  const editTocItems = $derived<TocItem[]>([
     { id: "overview", title: m["editor.header_section"]() },
     { id: "course-list", title: m["editor.course_section"]() },
     ...(levelRefHasData ? [{ id: "level-ref", title: m["levelref.heading"]() }] : []),
     { id: "charts-list", title: m["editor.entries_section"]() },
     { id: "import-export", title: m["editor.io_section"]() },
   ]);
-  const entryLevelGroups = $derived.by<EditTocLevel[]>(() => {
-    const present = groupEntryIndices(
-      entries,
-      entries.map((_, index) => index),
-      levels
-    );
-    const counts = new Map<string, number>();
-    for (const group of present) {
-      counts.set(group.unassigned ? "__unassigned__" : group.level, group.indices.length);
-    }
-    const items: EditTocLevel[] = [];
-    const seen = new Set<string>();
-    // level_order 里的等级全部列出（含当前空组），保证筛选项不会因清空而消失
-    for (const level of levels) {
-      if (seen.has(level)) continue;
-      seen.add(level);
-      items.push({ level, unassigned: false, count: counts.get(level) ?? 0 });
-    }
-    // 数据里出现但不在 level_order 的等级
-    for (const group of present) {
-      if (group.unassigned || seen.has(group.level)) continue;
-      seen.add(group.level);
-      items.push({ level: group.level, unassigned: false, count: group.indices.length });
-    }
-    // 已勾选但已不在前两类里的等级（防止筛选死角）
-    for (const level of selectedLevels) {
-      if (seen.has(level)) continue;
-      seen.add(level);
-      items.push({ level, unassigned: false, count: 0 });
-    }
-    const unassignedCount = counts.get("__unassigned__") ?? 0;
-    if (unassignedCount > 0 || includeUnassigned) {
-      items.push({ level: "", unassigned: true, count: unassignedCount });
-    }
-    return items;
-  });
 
   // ---- 模型装配 ----
   function applyHeaderState(header: Record<string, unknown>): void {
@@ -380,17 +314,6 @@ export function createTableModel(input: TableModelInput) {
     }
   }
 
-  function toggleLevel(level: string, checked: boolean): void {
-    const next = new Set(selectedLevels);
-    if (checked) next.add(level);
-    else next.delete(level);
-    selectedLevels = next;
-  }
-
-  function toggleUnassigned(checked: boolean): void {
-    includeUnassigned = checked;
-  }
-
   return {
     // 模型（可写字段：编辑表单经 bind 双向）
     get name() {
@@ -485,14 +408,14 @@ export function createTableModel(input: TableModelInput) {
     get tableStats() {
       return tableStats;
     },
-    get sortedDifficultyGroups() {
-      return sortedDifficultyGroups;
-    },
     get courseGroups() {
       return courseGroups;
     },
     get tocItems() {
       return tocItems;
+    },
+    get editTocItems() {
+      return editTocItems;
     },
     get pageTitle() {
       return pageTitle;
@@ -530,24 +453,6 @@ export function createTableModel(input: TableModelInput) {
     save,
     saveAsSharedNow,
     exportTable,
-    // 筛选
-    get selectedLevels() {
-      return selectedLevels;
-    },
-    get includeUnassigned() {
-      return includeUnassigned;
-    },
-    get levelFilter() {
-      return levelFilter;
-    },
-    get entryLevelGroups() {
-      return entryLevelGroups;
-    },
-    get editTocSections() {
-      return editTocSections;
-    },
-    toggleLevel,
-    toggleUnassigned,
     // 工具
     formatClock,
   };

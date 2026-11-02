@@ -12,14 +12,14 @@
   import type { Component, Snippet } from "svelte";
   import { onMount } from "svelte";
 
-  import ChartsTableSection from "#lib/components/bms/ChartsTableSection.svelte";
   import CoursePanel from "#lib/components/bms/CoursePanel.svelte";
+  import EntriesPanel from "#lib/components/bms/EntriesPanel.svelte";
   import LevelRefTable from "#lib/components/bms/LevelRefTable.svelte";
   import type { TableEditContentProps } from "#lib/components/bms/TableEditContent.svelte";
-  import TableEditToc from "#lib/components/bms/TableEditToc.svelte";
+  import TableIoPanel from "#lib/components/bms/TableIoPanel.svelte";
+  import TableOverviewPanel from "#lib/components/bms/TableOverviewPanel.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import DetailsPanel from "#lib/components/ui/DetailsPanel.svelte";
-  import EmptyState from "#lib/components/ui/EmptyState.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
   import { btnBar, btnGhostMd, btnPrimary, btnPrimaryLarge } from "#lib/constants/ui-classes.js";
   import type { EditorNotice } from "#lib/controllers/editor.js";
@@ -137,7 +137,7 @@
 </svelte:head>
 
 <PageShell
-  tocItems={isEdit ? [] : model.tocItems}
+  tocItems={isEdit ? model.editTocItems : model.tocItems}
   panes={[
     titlePane,
     ...(model.pendingDraft !== null ? [draftBannerPane] : []),
@@ -156,6 +156,7 @@
         : model.headerLoadState === "error"
           ? [headerErrorPane]
           : [
+              overviewPane,
               ...(model.courseGroups.length > 0 ? [coursePane] : []),
               ...(showLevelRefPane ? [levelRefPane] : []),
               ...(model.dataLoadState === "idle" || model.dataLoadState === "loading"
@@ -163,20 +164,10 @@
                 : []),
               ...(model.dataLoadState === "loaded" ? [chartsPane] : []),
               ...(model.dataLoadState === "error" ? [dataErrorPane] : []),
+              ioPane,
             ]),
   ]}
 />
-
-{#if isEdit && model.ready}
-  <TableEditToc
-    sections={model.editTocSections}
-    levels={model.entryLevelGroups}
-    selectedLevels={model.selectedLevels}
-    includeUnassigned={model.includeUnassigned}
-    onToggleLevel={model.toggleLevel}
-    onToggleUnassigned={model.toggleUnassigned}
-  />
-{/if}
 
 {#snippet titlePane()}
   <div class="text-center">
@@ -199,26 +190,6 @@
         {/if}
         {#if cb.copied}
           <span class="ml-2 text-[#4caf50]">{m["common.copied"]()}</span>
-        {/if}
-      </div>
-      <div class="mt-2 text-[1.2rem] text-white-70 italic">
-        {#if headerUrl}
-          <a class="link-accent" href={headerUrl} target="_blank" rel="noopener noreferrer">
-            {m["table.view_header"]()}
-          </a>
-        {/if}
-        {#if headerUrl && model.dataFetchUrl}
-          <span class="mx-2">|</span>
-        {/if}
-        {#if model.dataFetchUrl}
-          <a
-            class="link-accent"
-            href={model.dataFetchUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {m["table.view_data"]()}
-          </a>
         {/if}
       </div>
     {/if}
@@ -396,6 +367,18 @@
   </div>
 {/snippet}
 
+{#snippet overviewPane()}
+  <TableOverviewPanel
+    editing={false}
+    name={model.name}
+    symbol={model.symbol}
+    tag={model.tag}
+    headerMode={model.headerMode}
+    levels={model.levels}
+    extraHeader={model.extraHeader}
+  />
+{/snippet}
+
 {#snippet coursePane()}
   <CoursePanel
     id="course-list"
@@ -420,16 +403,23 @@
 
 {#snippet chartsPane()}
   <div id="charts-list" class="scroll-mt-5">
-    {#if model.sortedDifficultyGroups.length > 0}
-      <ChartsTableSection
-        groups={model.sortedDifficultyGroups}
-        totalCharts={model.entries.length}
-        symbol={model.symbol}
-      />
-    {:else}
-      <EmptyState title={m["table.no_charts_title"]()} description={m["table.no_charts_desc"]()} />
-    {/if}
+    <EntriesPanel
+      editing={false}
+      entries={model.entries}
+      levels={model.levels}
+      symbol={model.symbol}
+    />
   </div>
+{/snippet}
+
+{#snippet ioPane()}
+  <TableIoPanel
+    editing={false}
+    {headerUrl}
+    dataUrl={model.dataFetchUrl}
+    onExport={model.exportTable}
+    exportDisabled={model.dataLoadState !== "loaded"}
+  />
 {/snippet}
 
 {#snippet editPane()}
@@ -446,7 +436,8 @@
       bind:entries={model.entries}
       bind:levelHints={model.levelHints}
       busy={model.busy}
-      levelFilter={model.levelFilter}
+      {headerUrl}
+      dataUrl={model.dataFetchUrl}
       localOnly={sharedMode && !capabilities.canWrite}
       onChange={model.markDirty}
       onNotice={(value: EditorNotice | null) => (model.notice = value)}
