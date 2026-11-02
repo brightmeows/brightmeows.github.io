@@ -423,7 +423,7 @@
   "mirror.fetch_failed": "抓取失败：{reason}",
   "mirror.fetch_timeout": "等待超时，稍后刷新页面查看结果。",
   "mirror.fetch_waiting": "抓取中，已等待 {seconds} 秒…",
-  "mirror.list_heading": "镜像列表",
+  "mirror.table_count": "{count} 张表",
   "mirror.loading": "正在加载镜像列表...",
   "mirror.loading_override": "正在读取现有覆盖值…",
   "mirror.login_hint": "用 GitHub 登录后可以添加或删除难度表（每账号每日 10 次）；登录入口在页面顶栏。",

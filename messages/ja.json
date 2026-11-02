@@ -423,7 +423,7 @@
   "mirror.fetch_failed": "取得に失敗しました：{reason}",
   "mirror.fetch_timeout": "タイムアウトしました。後で再読み込みして結果を確認してください。",
   "mirror.fetch_waiting": "取得中、{seconds}秒経過…",
-  "mirror.list_heading": "ミラーリスト",
+  "mirror.table_count": "{count} 件の表",
   "mirror.loading": "ミラーリストを読み込み中…",
   "mirror.loading_override": "既存の上書き値を読み込み中…",
   "mirror.login_hint": "GitHub でログインすると表の追加や削除ができます（1アカウント1日10回）。ログインはトップバーから。",

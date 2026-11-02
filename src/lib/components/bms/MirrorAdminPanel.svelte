@@ -1,8 +1,7 @@
 <script lang="ts">
   import type { DisabledEntry } from "@brightmeows/mirror/user-layer";
 
-  import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
-  import { btnGhostXs, inputInline } from "#lib/constants/ui-classes.js";
+  import { btnGhost, inputInline } from "#lib/constants/ui-classes.js";
   import type { AdminOverview, TrashEntry } from "#lib/data/api/mirror-admin-api.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { MirrorOverviewState } from "#lib/types/bms-view.js";
@@ -51,13 +50,13 @@
   }
 </script>
 
-<GlassPanel class="mt-1">
+<div>
   {#if overview === null && (overviewState === "idle" || overviewState === "loading")}
     <div class="text-[0.95rem] text-white-70">{m["common.loading_data"]()}</div>
   {:else if overview === null}
     <div class="flex flex-wrap items-center gap-3 text-[0.95rem] text-red-300">
       <span>{error ?? m["common.load_failed"]()}</span>
-      <button class={btnGhostXs} type="button" onclick={onretry}>{m["common.retry"]()}</button>
+      <button class={btnGhost} type="button" onclick={onretry}>{m["common.retry"]()}</button>
     </div>
   {:else}
     <div class="flex flex-col gap-5">
@@ -81,7 +80,7 @@
             disabled={busy}
           />
           <button
-            class={btnGhostXs}
+            class={btnGhost}
             type="button"
             disabled={busy || replaceFrom.trim() === "" || replaceTo.trim() === ""}
             onclick={() => void submitReplace()}
@@ -95,7 +94,7 @@
               <li class="flex flex-wrap items-center gap-2">
                 <span>{m["admin.replace_item"]({ from: rule.from, to: rule.to })}</span>
                 <button
-                  class={btnGhostXs}
+                  class={btnGhost}
                   type="button"
                   disabled={busy}
                   onclick={() => void onreplaceremove(rule.from)}
@@ -121,7 +120,7 @@
                     >{/if}
                 </span>
                 <button
-                  class={btnGhostXs}
+                  class={btnGhost}
                   type="button"
                   disabled={busy}
                   onclick={() => void onenable(item)}>{m["admin.enable"]()}</button
@@ -145,7 +144,7 @@
                   ></span
                 >
                 <button
-                  class={btnGhostXs}
+                  class={btnGhost}
                   type="button"
                   disabled={busy}
                   onclick={() => void onrestore(item)}>{m["admin.restore"]()}</button
@@ -176,4 +175,4 @@
       </section>
     </div>
   {/if}
-</GlassPanel>
+</div>

@@ -423,7 +423,7 @@
   "mirror.fetch_failed": "Fetch failed: {reason}",
   "mirror.fetch_timeout": "Timed out waiting; refresh later to check the result.",
   "mirror.fetch_waiting": "Fetching, waiting {seconds}s…",
-  "mirror.list_heading": "Mirror list",
+  "mirror.table_count": "{count} tables",
   "mirror.loading": "Loading mirror list...",
   "mirror.loading_override": "Loading existing overrides…",
   "mirror.login_hint": "Log in with GitHub to add or remove tables (10 actions per account daily); the login entry is in the top bar.",

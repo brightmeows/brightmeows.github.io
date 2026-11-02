@@ -9,8 +9,10 @@
   import SelectedTablesPanel from "#lib/components/bms/SelectedTablesPanel.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import Checkbox from "#lib/components/ui/Checkbox.svelte";
+  import DetailsPanel from "#lib/components/ui/DetailsPanel.svelte";
   import JsonPreview from "#lib/components/ui/JsonPreview.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
+  import { inputPanel } from "#lib/constants/ui-classes.js";
   import {
     collapseAdminEdit,
     initialMirrorAdminState,
@@ -128,7 +130,7 @@
       },
       {
         id: "mirror-list",
-        title: m["mirror.list_heading"](),
+        title: m["mirror.all_tables"](),
         href: "#mirror-list",
         children: tagItems,
       },
@@ -353,7 +355,10 @@
   });
 </script>
 
-<PageShell {tocItems} panes={[titlePane, contentPane]} />
+<PageShell
+  {tocItems}
+  panes={[titlePane, ...(auth.status === "ready" ? [addTablePane] : []), listPane]}
+/>
 
 {#snippet titlePane()}
   <h1 id="bms-table-mirror" class="page-title mb-2 scroll-mt-5 text-center">{pageTitle}</h1>
@@ -378,144 +383,156 @@
   </div>
 {/snippet}
 
-{#snippet contentPane()}
-  <div class="flex flex-col gap-3">
-    <MirrorUserActions bind:this={userActions} onchanged={handleUserChanged} />
+{#snippet addTablePane()}
+  <MirrorUserActions bind:this={userActions} onchanged={handleUserChanged} />
+{/snippet}
 
-    {#if admin.notice}
-      <div
-        class="text-center text-[0.9rem] {admin.notice.kind === 'ok'
-          ? 'text-[#4caf50]'
-          : 'text-red-300'}"
-      >
-        {admin.notice.text}
-      </div>
-    {/if}
+{#snippet listPane()}
+  <DetailsPanel
+    id="mirror-list"
+    class="scroll-mt-20"
+    summary={m["mirror.all_tables"]()}
+    hint={tables.length > 0 ? m["mirror.table_count"]({ count: tables.length }) : ""}
+    variant="plain"
+    collapsible={false}
+  >
+    <div class="flex flex-col gap-3">
+      {#if admin.notice}
+        <div
+          class="text-center text-[0.9rem] {admin.notice.kind === 'ok'
+            ? 'text-[#4caf50]'
+            : 'text-red-300'}"
+        >
+          {admin.notice.text}
+        </div>
+      {/if}
 
-    <div class="flex flex-wrap items-center justify-center gap-3">
-      <h2 class="section-title">{m["mirror.all_tables"]()}</h2>
-      <label
-        class="flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-[0.35rem] text-[0.85rem] transition-colors duration-200 select-none {showProtectedOnly
-          ? 'border-[#ffd54f] bg-[#ffd54f]/20 text-[#ffd54f]'
-          : 'border-white-20 text-white-50 hover:border-white-40 hover:text-white-70'}"
-      >
-        <Checkbox
-          size="sm"
-          ariaLabel={m["mirror.protected_filter"]()}
-          checked={showProtectedOnly}
-          onchange={(v: boolean) => (showProtectedOnly = v)}
-        />
-        {m["mirror.protected_filter"]()}
-      </label>
-      {#if auth.user !== null}
+      <div class="flex flex-wrap items-center gap-2">
         <label
-          class="flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-[0.35rem] text-[0.85rem] transition-colors duration-200 select-none {operationsMode
-            ? 'border-[#64b5f6] bg-[#64b5f6]/20 text-[#64b5f6]'
+          class="flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-[0.35rem] text-[0.85rem] transition-colors duration-200 select-none {showProtectedOnly
+            ? 'border-[#ffd54f] bg-[#ffd54f]/20 text-[#ffd54f]'
             : 'border-white-20 text-white-50 hover:border-white-40 hover:text-white-70'}"
         >
           <Checkbox
             size="sm"
-            ariaLabel={m["mirror.operations_mode"]()}
-            checked={operationsMode}
-            onchange={(v: boolean) => (operationsMode = v)}
+            ariaLabel={m["mirror.protected_filter"]()}
+            checked={showProtectedOnly}
+            onchange={(v: boolean) => (showProtectedOnly = v)}
           />
-          {m["mirror.operations_mode"]()}
+          {m["mirror.protected_filter"]()}
         </label>
-      {/if}
-      {#if isAdmin}
-        <button
-          class="cursor-pointer rounded-md border px-2 py-[0.35rem] text-[0.85rem] transition-colors duration-200 {adminPanelOpen
-            ? 'border-[#64b5f6]/60 bg-[#64b5f6]/20 text-[#64b5f6]'
-            : 'border-white-20 text-white-50 hover:border-white-40 hover:text-white-70'}"
-          type="button"
-          aria-expanded={adminPanelOpen}
-          onclick={toggleAdminPanel}
-        >
-          {m["mirror.admin_panel"]()}
-        </button>
-      {/if}
-    </div>
-    {#if operationsMode}
-      <p class="text-center text-[0.85rem] text-white-50">
-        {m["mirror.operations_mode_hint"]()}
-      </p>
-    {/if}
-
-    <div class="relative w-full">
-      <input
-        class="w-full rounded-xl border border-white-20 bg-black-20 px-4 py-3 pr-12 text-white outline-none placeholder:text-white-50 focus:border-[#64b5f6]/60 focus:ring-2 focus:ring-[#64b5f6]/30"
-        type="text"
-        placeholder={m["mirror.search_placeholder"]()}
-        bind:value={searchQuery}
-        onfocus={searchConverters.ensureLoaded}
-      />
-      {#if searchQuery.trim().length > 0}
-        <button
-          class="absolute top-1/2 right-2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg border border-white-20 bg-white-10 p-0 text-[1.25rem] leading-none text-white transition-all duration-200 ease-in-out hover:bg-white-20"
-          type="button"
-          aria-label={m["common.clear_search"]()}
-          onclick={() => (searchQuery = "")}
-        >
-          ×
-        </button>
-      {/if}
-    </div>
-    {#if searchQuery.trim().length > 0 || showProtectedOnly}
-      <div class="text-[0.95rem] text-white-60">
-        {m["common.matched"]({
-          shown: protectedFilteredTables.length,
-          total: tables.length,
-        })}
-      </div>
-    {/if}
-
-    {#if isAdmin}
-      <div id="mirror-admin" class="scroll-mt-5">
-        {#if adminPanelOpen}
-          <MirrorAdminPanel
-            overviewState={admin.overviewState}
-            error={admin.overviewError}
-            overview={admin.overview}
-            busy={admin.busy}
-            onretry={() => void loadOverview(true)}
-            onreplaceadd={handleReplaceAdd}
-            onreplaceremove={handleReplaceRemove}
-            onenable={handleEnable}
-            onrestore={handleRestore}
-          />
+        {#if auth.user !== null}
+          <label
+            class="flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-[0.35rem] text-[0.85rem] transition-colors duration-200 select-none {operationsMode
+              ? 'border-[#64b5f6] bg-[#64b5f6]/20 text-[#64b5f6]'
+              : 'border-white-20 text-white-50 hover:border-white-40 hover:text-white-70'}"
+          >
+            <Checkbox
+              size="sm"
+              ariaLabel={m["mirror.operations_mode"]()}
+              checked={operationsMode}
+              onchange={(v: boolean) => (operationsMode = v)}
+            />
+            {m["mirror.operations_mode"]()}
+          </label>
+        {/if}
+        {#if isAdmin}
+          <button
+            class="cursor-pointer rounded-md border px-2 py-[0.35rem] text-[0.85rem] transition-colors duration-200 {adminPanelOpen
+              ? 'border-[#64b5f6]/60 bg-[#64b5f6]/20 text-[#64b5f6]'
+              : 'border-white-20 text-white-50 hover:border-white-40 hover:text-white-70'}"
+            type="button"
+            aria-expanded={adminPanelOpen}
+            onclick={toggleAdminPanel}
+          >
+            {m["mirror.admin_panel"]()}
+          </button>
         {/if}
       </div>
-    {/if}
-  </div>
+      {#if operationsMode}
+        <p class="text-[0.85rem] text-white-50">
+          {m["mirror.operations_mode_hint"]()}
+        </p>
+      {/if}
 
-  {#if listState.phase === "loading"}
-    <div class="mt-6">
-      <LoadingProgress variant="indeterminate" message={m["mirror.loading"]()} title={pageTitle} />
+      <div class="relative w-full">
+        <input
+          class="{inputPanel} pr-12"
+          type="text"
+          placeholder={m["mirror.search_placeholder"]()}
+          bind:value={searchQuery}
+          onfocus={searchConverters.ensureLoaded}
+        />
+        {#if searchQuery.trim().length > 0}
+          <button
+            class="absolute top-1/2 right-2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg border border-white-20 bg-white-10 p-0 text-[1.25rem] leading-none text-white transition-all duration-200 ease-in-out hover:bg-white-20"
+            type="button"
+            aria-label={m["common.clear_search"]()}
+            onclick={() => (searchQuery = "")}
+          >
+            ×
+          </button>
+        {/if}
+      </div>
+      {#if searchQuery.trim().length > 0 || showProtectedOnly}
+        <div class="text-[0.95rem] text-white-60">
+          {m["common.matched"]({
+            shown: protectedFilteredTables.length,
+            total: tables.length,
+          })}
+        </div>
+      {/if}
+
+      {#if isAdmin}
+        <div id="mirror-admin" class="scroll-mt-20">
+          {#if adminPanelOpen}
+            <MirrorAdminPanel
+              overviewState={admin.overviewState}
+              error={admin.overviewError}
+              overview={admin.overview}
+              busy={admin.busy}
+              onretry={() => void loadOverview(true)}
+              onreplaceadd={handleReplaceAdd}
+              onreplaceremove={handleReplaceRemove}
+              onenable={handleEnable}
+              onrestore={handleRestore}
+            />
+          {/if}
+        </div>
+      {/if}
+
+      {#if listState.phase === "loading"}
+        <LoadingProgress
+          variant="indeterminate"
+          message={m["mirror.loading"]()}
+          title={pageTitle}
+        />
+      {:else if listState.phase === "error"}
+        <div class="text-red-300">
+          {m["common.load_failed_with_error"]({ error: listState.message })}
+        </div>
+      {:else if listState.phase === "unavailable"}
+        <div class="text-red-300">
+          {m["common.load_failed_with_error"]({ error: m["common.unknown_error"]() })}
+        </div>
+      {:else if groupedByTags.length === 0}
+        <div class="text-white-70">
+          {showProtectedOnly ? m["mirror.no_match_protected"]() : m["mirror.no_match"]()}
+        </div>
+      {:else}
+        <GroupedTablesSection
+          bind:selectedMap
+          groups={groupedByTags}
+          {adminUi}
+          {mirrorPreview}
+          showDelete={auth.user !== null}
+          {operationsMode}
+          {deletingDir}
+          ondelete={(item: MirrorTableItem) => void handleDelete(item)}
+        />
+      {/if}
     </div>
-  {:else if listState.phase === "error"}
-    <div class="mt-6 text-red-300">
-      {m["common.load_failed_with_error"]({ error: listState.message })}
-    </div>
-  {:else if listState.phase === "unavailable"}
-    <div class="mt-6 text-red-300">
-      {m["common.load_failed_with_error"]({ error: m["common.unknown_error"]() })}
-    </div>
-  {:else if groupedByTags.length === 0}
-    <div class="mt-6 text-white-70">
-      {showProtectedOnly ? m["mirror.no_match_protected"]() : m["mirror.no_match"]()}
-    </div>
-  {:else}
-    <GroupedTablesSection
-      bind:selectedMap
-      groups={groupedByTags}
-      {adminUi}
-      {mirrorPreview}
-      showDelete={auth.user !== null}
-      {operationsMode}
-      {deletingDir}
-      ondelete={(item: MirrorTableItem) => void handleDelete(item)}
-    />
-  {/if}
+  </DetailsPanel>
 {/snippet}
 
 <SelectedTablesPanel {tables} bind:selectedMap {mirrorPreview} {displayOrderUrls} />
