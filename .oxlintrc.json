@@ -13,8 +13,7 @@
     "$inspect": "readonly",
     "$host": "readonly",
     "$bindable": "readonly",
-    "__SITE_LOCALE__": "readonly",
-    "__STATIC_TARGET__": "readonly"
+    "__SITE_LOCALE__": "readonly"
   },
   "ignorePatterns": [
     ".svelte-kit/",
@@ -36,7 +35,6 @@
     "src/lib/paraglide",
     "project.inlang/cache/",
     ".vite",
-    "/legacy",
     "static/bms/"
   ],
   "rules": {

@@ -5,8 +5,7 @@
   "main": "./packages/worker/index.ts",
   "compatibility_date": "2026-09-19",
   "assets": {
-    // 多语构建组装后的主站树：en 根 + `_i18n/zh-cn`、`_i18n/ja` 内部前缀（scripts/build-site.ts）；
-    // 跳转壳的 build-static/ 不经这里部署
+    // 多语构建组装后的主站树：en 根 + `_i18n/zh-cn`、`_i18n/ja` 内部前缀（scripts/build-site.ts）
     "directory": "./build",
     "binding": "ASSETS",
     // 站点全局 trailingSlash="always"，构建产物为 <route>/index.html

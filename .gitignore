@@ -7,7 +7,6 @@ node_modules
 .wrangler
 /.svelte-kit
 /build
-/build-static
 /.build-out
 
 # OS
@@ -25,16 +24,11 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+.vite
 
 # Paraglide
 src/lib/paraglide
 project.inlang/cache/
-
-# Vite
-.vite
-
-# Legacy Page
-/legacy/.worktrees
 
 # Git Worktrees
 /.worktrees
