@@ -34,7 +34,6 @@ import { handleApi } from "./api.ts";
 import { backupUserLayer } from "./backup.ts";
 import { canonicalSlashRedirect } from "./canonical-slash.ts";
 import type { Env } from "./env.ts";
-import { redirectForHost } from "./host-redirects.ts";
 import {
   cleanInternalPath,
   detectLocale,
@@ -237,10 +236,6 @@ async function handleSharedPage(
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
-    const hostRedirect = redirectForHost(url);
-    if (hostRedirect !== null) {
-      return Response.redirect(hostRedirect.toString(), 301);
-    }
     // 语言判定一次贯穿：页面级文案、SPA 外壳与静态树映射共用（见 worker/i18n.ts）
     const locale = detectLocale(request);
 
