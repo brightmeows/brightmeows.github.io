@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import { SvelteMap } from "svelte/reactivity";
 
   import { m } from "#lib/paraglide/messages.js";
@@ -89,12 +89,17 @@
     scheduleUpdateActive();
   }
 
-  function handleNavigate(item: FlatTocItem, event: MouseEvent): void {
+  async function handleNavigate(item: FlatTocItem, event: MouseEvent): Promise<void> {
     if (!item.href.startsWith("#")) return;
     event.preventDefault();
 
     const id = decodeURIComponent(item.href.slice(1));
     const el = document.getElementById(id);
+    const details = el?.closest("details") as HTMLDetailsElement | null | undefined;
+    if (details && !details.open) {
+      details.open = true;
+      await tick();
+    }
     el?.scrollIntoView({ behavior: "smooth", block: "start" });
     history.replaceState(null, "", `#${encodeURIComponent(id)}`);
     onNavigate?.();
@@ -139,7 +144,7 @@
           : "text-white-85 hover:bg-white-8 hover:text-white",
       ].join(" ")}
       style={`padding-left: ${12 + item.depth * 14}px;`}
-      onclick={(event) => handleNavigate(item, event)}
+      onclick={(event) => void handleNavigate(item, event)}
     >
       {item.title}
     </a>

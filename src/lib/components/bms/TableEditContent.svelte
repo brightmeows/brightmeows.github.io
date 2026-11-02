@@ -3,7 +3,6 @@
   import type {
     BmsDropResult,
     EntryImportResult,
-    LevelFilter,
     TableImportResult,
   } from "@brightmeows/bms/editor";
   import type { ChartData } from "@brightmeows/bms/format";
@@ -27,10 +26,10 @@
     courseModel: CourseModel;
     entries: ChartData[];
     levelHints: Record<string, string>;
+    headerUrl?: string | null | undefined;
+    dataUrl?: string | null | undefined;
     // ---- 支持状态 ----
     busy: boolean;
-    /** 目录复选框的多选等级筛选（页面持有）。 */
-    levelFilter: LevelFilter;
     /** 他人的共享表本地编辑：提示保存与改名仅作者可用。 */
     localOnly: boolean;
     // ---- 回调 ----
@@ -49,12 +48,12 @@
 
   import BmsDropZone from "#lib/components/bms/BmsDropZone.svelte";
   import CoursePanel from "#lib/components/bms/CoursePanel.svelte";
-  import TableEntryEditor from "#lib/components/bms/TableEntryEditor.svelte";
+  import EntriesPanel from "#lib/components/bms/EntriesPanel.svelte";
   import TableEntryImportPanel from "#lib/components/bms/TableEntryImportPanel.svelte";
-  import TableHeaderForm from "#lib/components/bms/TableHeaderForm.svelte";
   import TableImportPanel from "#lib/components/bms/TableImportPanel.svelte";
+  import TableIoPanel from "#lib/components/bms/TableIoPanel.svelte";
+  import TableOverviewPanel from "#lib/components/bms/TableOverviewPanel.svelte";
   import DetailsPanel from "#lib/components/ui/DetailsPanel.svelte";
-  import { btnGhostMd } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
 
   let {
@@ -67,8 +66,9 @@
     courseModel = $bindable(),
     entries = $bindable([]),
     levelHints = $bindable({}),
+    headerUrl = null,
+    dataUrl = null,
     busy,
-    levelFilter,
     localOnly,
     onChange,
     onNotice,
@@ -77,8 +77,6 @@
     management,
     levelRef,
   }: TableEditContentProps = $props();
-
-  const extraJson = $derived(JSON.stringify(extraHeader, null, 2));
 
   /** 导入的 header 应用到编辑态各字段（拆分逻辑与页面加载共用）。 */
   function applyImportedHeader(header: Record<string, unknown>): void {
@@ -150,23 +148,18 @@
     </div>
   {/if}
 
-  <section id="overview" class="scroll-mt-24">
-    <TableHeaderForm
-      bind:name
-      bind:symbol
-      bind:tag
-      bind:mode={headerMode}
-      bind:levels
-      {extraJson}
-      disabled={busy}
-      onchange={onChange}
-    />
-    {#if management}
-      <div class="mt-6">
-        {@render management()}
-      </div>
-    {/if}
-  </section>
+  <TableOverviewPanel
+    editing={true}
+    bind:name
+    bind:symbol
+    bind:tag
+    bind:headerMode
+    bind:levels
+    bind:extraHeader
+    disabled={busy}
+    {management}
+    {onChange}
+  />
 
   <CoursePanel
     id="course-list"
@@ -187,39 +180,22 @@
   {/if}
 
   <section id="charts-list" class="scroll-mt-24">
-    <TableEntryEditor
+    <EntriesPanel
+      editing={true}
       bind:entries
       {levels}
-      {levelFilter}
       {symbol}
       {levelHints}
       disabled={busy}
-      onchange={onChange}
+      {onChange}
     />
   </section>
 
-  <DetailsPanel id="import-export" class="scroll-mt-20" summary={m["editor.io_section"]()}>
-    <div class="flex flex-col gap-4">
-      <BmsDropZone {entries} disabled={busy} onadd={handleDropAdd} />
-      <TableEntryImportPanel {entries} disabled={busy} onapply={handleEntryImport} />
-      <TableImportPanel disabled={busy} onapply={handleImport} />
-      <div>
-        <div class="mb-3 flex flex-wrap items-center gap-3">
-          <h3 class="tag-accent-sm">{m["editor.export_section"]()}</h3>
-          <span class="text-[0.85rem] text-white-50">{m["editor.export_hint"]()}</span>
-        </div>
-        <div class="flex flex-wrap gap-2">
-          <button class={btnGhostMd} type="button" onclick={() => onExport("header")}>
-            {m["editor.export_header"]()}
-          </button>
-          <button class={btnGhostMd} type="button" onclick={() => onExport("data")}>
-            {m["editor.export_data"]()}
-          </button>
-          <button class={btnGhostMd} type="button" onclick={() => onExport("package")}>
-            {m["editor.export_package"]()}
-          </button>
-        </div>
-      </div>
-    </div>
-  </DetailsPanel>
+  {#snippet importSection()}
+    <BmsDropZone {entries} disabled={busy} onadd={handleDropAdd} />
+    <TableEntryImportPanel {entries} disabled={busy} onapply={handleEntryImport} />
+    <TableImportPanel disabled={busy} onapply={handleImport} />
+  {/snippet}
+
+  <TableIoPanel editing={true} {headerUrl} {dataUrl} {onExport} {importSection} />
 </div>

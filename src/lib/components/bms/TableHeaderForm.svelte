@@ -17,6 +17,8 @@
     /** 未编辑字段的只读 JSON（含 course、level_ref 等自定义字段）。 */
     extraJson: string;
     disabled?: boolean;
+    /** 外层已有折叠标题时传 false，避免重复标题。 */
+    showHeading?: boolean;
     onchange?: (() => void) | undefined;
   }
 
@@ -28,15 +30,18 @@
     levels = $bindable([]),
     extraJson,
     disabled = false,
+    showHeading = true,
     onchange,
   }: Props = $props();
 </script>
 
 <section>
-  <div class="mb-3 flex flex-wrap items-center gap-3">
-    <h3 class="tag-accent-sm">{m["editor.header_section"]()}</h3>
-    <span class="text-[0.85rem] text-white-50">{m["editor.header_hint"]()}</span>
-  </div>
+  {#if showHeading}
+    <div class="mb-3 flex flex-wrap items-center gap-3">
+      <h3 class="tag-accent-sm">{m["editor.header_section"]()}</h3>
+      <span class="text-[0.85rem] text-white-50">{m["editor.header_hint"]()}</span>
+    </div>
+  {/if}
   <div class="grid gap-4 sm:grid-cols-2">
     <label class="block">
       <span class="mb-1.5 block text-[0.9rem] text-white-70">
