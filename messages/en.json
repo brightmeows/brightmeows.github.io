@@ -355,6 +355,7 @@
   "editor.import_tab_fork": "From another table",
   "editor.import_tab_json": "Paste JSON",
   "editor.io_section": "Import & export",
+  "editor.io_hint": "Header and data links, package import and standard export.",
   "editor.json_parse_failed": "JSON parse failed: {detail}",
   "editor.level_order_add": "Add",
   "editor.level_order_add_placeholder": "New level",

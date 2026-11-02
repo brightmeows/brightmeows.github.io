@@ -233,13 +233,32 @@
     @apply border-b border-white-5 px-4 py-3 text-white-90;
   }
 
-  /* 紧凑表格：难度表与镜像列表专用，避免全局改 .table-td-glass 影响其他表 */
+  /* 详情页表格密度：表头/单元格共享底色与边框，紧凑与宽松只差内边距。
+     紧凑 token 仍供镜像列表使用，值保持不变。 */
+  .table-th-compact,
+  .table-th-roomy {
+    @apply border-b-2 border-white-10 bg-accent/20 text-left font-semibold text-white;
+  }
+
   .table-th-compact {
-    @apply border-b-2 border-white-10 bg-accent/20 px-4 py-2 text-left font-semibold text-white;
+    @apply px-4 py-2;
+  }
+
+  .table-th-roomy {
+    @apply px-4 py-3;
+  }
+
+  .table-td-compact,
+  .table-td-roomy {
+    @apply border-b border-white-5 text-white-90;
   }
 
   .table-td-compact {
-    @apply border-b border-white-5 px-4 py-1.5 text-white-90;
+    @apply px-4 py-1.5;
+  }
+
+  .table-td-roomy {
+    @apply px-4 py-3;
   }
 
   /* 粘性表头：合并为单表后滚动时保持列名可见；贴着视口顶部，顶栏下滑时隐藏 */

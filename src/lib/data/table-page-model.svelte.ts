@@ -26,7 +26,6 @@ import {
 } from "#lib/data/table-model-drafts.svelte.js";
 import { createTableLoader } from "#lib/data/table-model-loader.svelte.js";
 import { m } from "#lib/paraglide/messages.js";
-import type { TocItem } from "#lib/types/ui.js";
 import { downloadJsonFile } from "#lib/utils/infra/download.js";
 import { goto } from "$app/navigation";
 
@@ -75,8 +74,6 @@ export interface TableModelInput {
   source: () => TablePageSource;
   publish: () => TablePagePublish;
   capabilities: () => TablePageCapabilities;
-  /** 等级参考数据是否已加载（状态由页面的 LevelRefTable 回写）。 */
-  levelRefHasData?: (() => boolean) | undefined;
 }
 
 /** 难度表页内存模型工厂：两段式加载、草稿与保存发布的响应式编排（输入经 getter 保持响应式）。 */
@@ -93,7 +90,6 @@ export function createTableModel(input: TableModelInput) {
   const canWrite = $derived(Boolean(capabilities().canWrite ?? false));
   const createMode = $derived(capabilities().createMode ?? false);
   const seed = $derived(capabilities().seed);
-  const levelRefHasData = $derived(input.levelRefHasData?.() ?? false);
 
   // ---- 模型（查看态与编辑态共享） ----
   let name = $state("");
@@ -127,27 +123,6 @@ export function createTableModel(input: TableModelInput) {
         : m["table.loading_header"]()
       : name.trim()
   );
-
-  // ---- 派生：目录 ----
-  const tocItems = $derived<TocItem[]>([
-    { id: "overview", title: m["editor.header_section"](), href: "#overview" },
-    ...(courseGroups.length > 0
-      ? [{ id: "course-list", title: m["editor.course_section"](), href: "#course-list" }]
-      : []),
-    ...(levelRefHasData
-      ? [{ id: "level-ref", title: m["levelref.heading"](), href: "#level-ref" }]
-      : []),
-    { id: "charts-list", title: m["editor.entries_section"](), href: "#charts-list" },
-    { id: "import-export", title: m["editor.export_section"](), href: "#import-export" },
-  ]);
-
-  const editTocItems = $derived<TocItem[]>([
-    { id: "overview", title: m["editor.header_section"]() },
-    { id: "course-list", title: m["editor.course_section"]() },
-    ...(levelRefHasData ? [{ id: "level-ref", title: m["levelref.heading"]() }] : []),
-    { id: "charts-list", title: m["editor.entries_section"]() },
-    { id: "import-export", title: m["editor.io_section"]() },
-  ]);
 
   // ---- 模型装配 ----
   function applyHeaderState(header: Record<string, unknown>): void {
@@ -410,12 +385,6 @@ export function createTableModel(input: TableModelInput) {
     },
     get courseGroups() {
       return courseGroups;
-    },
-    get tocItems() {
-      return tocItems;
-    },
-    get editTocItems() {
-      return editTocItems;
     },
     get pageTitle() {
       return pageTitle;

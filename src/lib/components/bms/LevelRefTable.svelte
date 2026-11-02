@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { LevelRefItem } from "@brightmeows/bms/format";
 
+  import InlineEmpty from "#lib/components/ui/InlineEmpty.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
   import { m } from "#lib/paraglide/messages.js";
   import { resolveUrl } from "#lib/utils/infra/url.js";
@@ -9,15 +10,12 @@
     headerUrl?: string;
     hasData?: boolean;
     loadState?: "idle" | "loading" | "done" | "not-found" | "error";
-    /** 外层已有折叠标题时传 false，避免重复标题。 */
-    showHeading?: boolean;
   }
 
   let {
     headerUrl = undefined,
     hasData = $bindable(false),
     loadState = $bindable("idle"),
-    showHeading = true,
   }: Props = $props();
 
   let levelRefData = $state<LevelRefItem[]>([]);
@@ -108,55 +106,48 @@
 </script>
 
 {#if loadState === "loading"}
-  {#if showHeading}
-    <h3 class="section-title mt-0 mb-6 text-center">{m["levelref.heading"]()}</h3>
-  {/if}
   <LoadingProgress variant="compact" message={m["levelref.loading"]()} />
 {:else if loadState === "error"}
-  {#if showHeading}
-    <h3 class="section-title mt-0 mb-6 text-center">{m["levelref.heading"]()}</h3>
-  {/if}
   <div class="message-error">
     {m["common.load_failed_with_error"]({ error: loadErrorMessage })}
   </div>
 {:else if hasContent}
-  {#if showHeading}
-    <h3 class="section-title mt-0 mb-6 text-center">{m["levelref.heading"]()}</h3>
-  {/if}
   <div class="flex flex-wrap items-start justify-center gap-8">
     {#each tableHalves as half (half.id)}
       <div class="min-w-[18rem] flex-1">
-        <table class="table-glass">
-          <colgroup>
-            {#each ["40%", "60%"] as w (w)}
-              <col style={`width: ${w}`} />
-            {/each}
-          </colgroup>
-          <thead>
-            <tr>
-              {#each [m["levelref.col_level"](), m["levelref.col_ref"]()] as label (label)}
-                <th class="table-th-glass text-center">
-                  {label}
-                </th>
+        <div class="table-wrapper">
+          <table class="w-full table-fixed border-collapse">
+            <colgroup>
+              {#each ["40%", "60%"] as w (w)}
+                <col style={`width: ${w}`} />
               {/each}
-            </tr>
-          </thead>
-          <tbody>
-            {#each half.items as item (item.level)}
-              <tr class="hover:bg-white-5 last:[&>td]:border-b-0">
-                <td class="table-td-glass text-center">
-                  {item.level}
-                </td>
-                <td class="table-td-glass text-center">
-                  {item.ref}
-                </td>
+            </colgroup>
+            <thead>
+              <tr>
+                {#each [m["levelref.col_level"](), m["levelref.col_ref"]()] as label (label)}
+                  <th class="table-th-roomy text-center">
+                    {label}
+                  </th>
+                {/each}
               </tr>
-            {/each}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {#each half.items as item (item.level)}
+                <tr class="hover:bg-white-5 last:[&>td]:border-b-0">
+                  <td class="table-td-roomy text-center">
+                    {item.level}
+                  </td>
+                  <td class="table-td-roomy text-center">
+                    {item.ref}
+                  </td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
       </div>
     {/each}
   </div>
 {:else}
-  <p class="text-[0.9rem] text-white-50">{m["levelref.empty"]()}</p>
+  <InlineEmpty text={m["levelref.empty"]()} />
 {/if}

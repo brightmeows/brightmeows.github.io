@@ -2,7 +2,7 @@
   import type { Snippet } from "svelte";
 
   import DetailsPanel from "#lib/components/ui/DetailsPanel.svelte";
-  import { btnGhostMd } from "#lib/constants/ui-classes.js";
+  import { btnGhost } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
 
   /** 导入导出面板：查看态提供链接与导出，编辑态再加导入；默认折叠。 */
@@ -29,6 +29,8 @@
   id="import-export"
   class="scroll-mt-20"
   summary={editing ? m["editor.io_section"]() : m["editor.export_section"]()}
+  hint={editing ? m["editor.io_hint"]() : m["editor.export_hint"]()}
+  variant="plain"
   defaultOpen={false}
 >
   <div class="flex flex-col gap-4">
@@ -53,13 +55,16 @@
     {/if}
 
     <div>
-      <div class="mb-2 flex flex-wrap items-center gap-3">
-        <span class="tag-accent-sm">{m["editor.export_section"]()}</span>
-        <span class="text-[0.85rem] text-white-50">{m["editor.export_hint"]()}</span>
-      </div>
+      {#if editing}
+        <div class="mb-2 flex flex-wrap items-center gap-3">
+          <h3 class="text-[0.95rem] font-semibold text-white-85">
+            {m["editor.export_section"]()}
+          </h3>
+        </div>
+      {/if}
       <div class="flex flex-wrap gap-2">
         <button
-          class={btnGhostMd}
+          class={btnGhost}
           type="button"
           disabled={exportDisabled}
           onclick={() => onExport("header")}
@@ -67,7 +72,7 @@
           {m["editor.export_header"]()}
         </button>
         <button
-          class={btnGhostMd}
+          class={btnGhost}
           type="button"
           disabled={exportDisabled}
           onclick={() => onExport("data")}
@@ -75,7 +80,7 @@
           {m["editor.export_data"]()}
         </button>
         <button
-          class={btnGhostMd}
+          class={btnGhost}
           type="button"
           disabled={exportDisabled}
           onclick={() => onExport("package")}

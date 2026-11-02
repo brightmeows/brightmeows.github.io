@@ -22,8 +22,10 @@
   import ChartTableRow from "#lib/components/bms/ChartTableRow.svelte";
   import DifficultyNav, { type DifficultyNavItem } from "#lib/components/bms/DifficultyNav.svelte";
   import EntryDetailForm from "#lib/components/bms/EntryDetailForm.svelte";
+  import DetailsPanel from "#lib/components/ui/DetailsPanel.svelte";
   import JsonPreview from "#lib/components/ui/JsonPreview.svelte";
-  import { btnGhost, inputEditorMono } from "#lib/constants/ui-classes.js";
+  import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
+  import { btnGhost, btnPrimary, inputEditorMono } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { JsonPreviewHandle } from "#lib/types/ui.js";
   import { validateUrl } from "#lib/utils/infra/url.js";
@@ -44,6 +46,12 @@
     /** 查看态只读；编辑态增加操作。 */
     editing: boolean;
     disabled?: boolean;
+    loadState?: "idle" | "loading" | "loaded" | "error";
+    loadMessage?: string;
+    loadPercent?: number;
+    loadDetail?: string;
+    dataError?: string | null;
+    onRetry?: (() => void | Promise<void>) | undefined;
     onChange?: (() => void) | undefined;
   }
 
@@ -54,6 +62,12 @@
     levelHints = {},
     editing,
     disabled = false,
+    loadState = "loaded",
+    loadMessage = "",
+    loadPercent = 0,
+    loadDetail = "",
+    dataError = null,
+    onRetry,
     onChange,
   }: Props = $props();
 
@@ -108,6 +122,13 @@
       seen.add(level);
       out.push(level);
     }
+    if (editing) {
+      for (const level of selectedLevels) {
+        if (seen.has(level)) continue;
+        seen.add(level);
+        out.push(level);
+      }
+    }
     return out;
   });
 
@@ -125,7 +146,7 @@
     const items: DifficultyNavItem[] = [];
     for (const [index, level] of allLevels.entries()) {
       const count = levelCounts.get(level) ?? 0;
-      if (!editing && count === 0) continue;
+      if (count === 0 && !(editing && selectedLevels.has(level))) continue;
       items.push({
         level,
         unassigned: false,
@@ -217,6 +238,21 @@
     if (editingIndex === null) return;
     if (filteredIndices.includes(editingIndex)) return;
     editingIndex = null;
+  });
+
+  $effect(() => {
+    if (editing) return;
+    editingIndex = null;
+    adding = false;
+    batchOpen = false;
+    bulkOpen = false;
+    selected = new Set();
+    batchChoice = BATCH_NONE;
+    bulkText = "";
+    bulkError = null;
+    notice = null;
+    selectedLevels = new Set();
+    includeUnassigned = false;
   });
 
   function setSelected(index: number, checked: boolean): void {
@@ -342,292 +378,323 @@
   }
 </script>
 
-<section>
-  <div class="mb-3 flex flex-wrap items-center gap-3">
-    <h3 class="tag-accent-sm">{m["editor.entries_section"]()}</h3>
-    <span class="text-[0.9rem] text-white-50">
-      {m["editor.entries_total"]({ count: entries.length })}
+{#snippet headerActions()}
+  {#if loadState === "loaded" && unassignedCount > 0}
+    <span class="rounded-[10px] bg-amber-300/15 px-2 py-[0.1rem] text-[0.8rem] text-amber-200">
+      {m["editor.entries_unassigned_count"]({ count: unassignedCount })}
     </span>
-    {#if unassignedCount > 0}
-      <span class="rounded-[10px] bg-amber-300/15 px-2 py-[0.1rem] text-[0.8rem] text-amber-200">
-        {m["editor.entries_unassigned_count"]({ count: unassignedCount })}
-      </span>
-    {/if}
-    {#if editing}
-      <div class="ml-auto flex flex-wrap gap-2">
-        <button class={btnGhost} type="button" {disabled} onclick={startAdd}>
-          {m["editor.entries_add"]()}
-        </button>
-        <button
-          class={btnGhost}
-          type="button"
-          {disabled}
-          aria-expanded={batchOpen}
-          onclick={() => (batchOpen = !batchOpen)}
-        >
-          {m["editor.entries_batch_toggle"]()}
-        </button>
-      </div>
-    {/if}
-  </div>
-
-  <div class="mb-3 flex flex-wrap items-center gap-2">
-    <input
-      class="{inputEditorMono} max-w-64 flex-1"
-      type="text"
-      bind:value={query}
-      placeholder={m["editor.entries_search_placeholder"]()}
-      {disabled}
-    />
-    {#if filtering}
-      <span class="text-[0.85rem] text-white-60">
-        {m["common.matched"]({ shown: filteredIndices.length, total: entries.length })}
-      </span>
-    {/if}
-  </div>
-
-  {#if navItems.length > 0}
-    <div class="mb-3">
-      <DifficultyNav
-        items={navItems}
-        {editing}
-        {symbol}
-        {selectedLevels}
-        {includeUnassigned}
-        onToggleLevel={toggleLevel}
-        onToggleUnassigned={toggleUnassigned}
-        onJump={jumpToGroup}
-      />
-    </div>
   {/if}
+  {#if editing}
+    <button class={btnGhost} type="button" {disabled} onclick={startAdd}>
+      {m["editor.entries_add"]()}
+    </button>
+    <button
+      class={btnGhost}
+      type="button"
+      {disabled}
+      aria-expanded={batchOpen}
+      onclick={() => (batchOpen = !batchOpen)}
+    >
+      {m["editor.entries_batch_toggle"]()}
+    </button>
+  {/if}
+{/snippet}
 
-  {#if editing && batchOpen}
-    <div class="mb-3 rounded-lg border border-white-15 bg-black-20 p-3">
-      <div class="flex flex-wrap items-center gap-2">
-        <span class="text-[0.85rem] text-white-60">
-          {m["editor.entries_selected"]({ count: selectedCount })}
-        </span>
-        <button class={btnGhost} type="button" {disabled} onclick={selectAllFiltered}>
-          {m["editor.entries_select_filtered"]()}
+<DetailsPanel
+  id="charts-list"
+  class="scroll-mt-20"
+  summary={m["editor.entries_section"]()}
+  hint={loadState === "loaded" ? m["editor.entries_total"]({ count: entries.length }) : ""}
+  variant="plain"
+  collapsible={false}
+  actions={headerActions}
+>
+  {#if loadState === "idle" || loadState === "loading"}
+    <LoadingProgress
+      title={m["table.loading_charts"]()}
+      message={loadMessage}
+      progress={loadPercent}
+      detail={loadDetail}
+      variant="determinate"
+    />
+  {:else if loadState === "error"}
+    <div class="py-8 text-center">
+      <h3 class="mb-3 text-error">{m["table.data_load_failed_title"]()}</h3>
+      <p class="message-error my-4">{dataError ?? m["common.unknown_error"]()}</p>
+      <p class="mb-4 text-white-70">{m["table.data_load_failed_tip"]()}</p>
+      {#if onRetry}
+        <button class={btnPrimary} type="button" onclick={() => void onRetry?.()}>
+          {m["table.retry_load_charts"]()}
         </button>
-        <button class={btnGhost} type="button" {disabled} onclick={clearSelection}>
-          {m["editor.entries_clear_selection"]()}
-        </button>
-        <select
-          class="rounded-md border border-white-20 bg-black-30 px-2 py-1 text-[0.85rem] text-white outline-none"
-          bind:value={batchChoice}
-          {disabled}
-        >
-          <option value={BATCH_NONE} disabled>{m["editor.entries_batch_choose"]()}</option>
-          {#each levels as level (level)}
-            <option value={encodeLevelFilterOption(level)}>{level}</option>
-          {/each}
-          <option value="">{m["editor.entries_batch_clear"]()}</option>
-        </select>
-        <button
-          class={btnGhost}
-          type="button"
-          disabled={disabled || selectedCount === 0 || batchChoice === BATCH_NONE}
-          onclick={assignSelected}
-        >
-          {m["editor.entries_batch_apply"]()}
-        </button>
-        <button
-          class="{btnGhost} text-red-200/80 hover:bg-red-400/20 hover:text-red-200"
-          type="button"
-          disabled={disabled || selectedCount === 0}
-          onclick={deleteSelected}
-        >
-          {m["editor.entries_batch_delete"]()}
-        </button>
-        {#if hintApplicableCount > 0}
-          <button class={btnGhost} type="button" {disabled} onclick={assignFromHints}>
-            {m["editor.entries_assign_hint"]({ count: hintApplicableCount })}
-          </button>
-        {/if}
-        <button
-          class="{btnGhost} ml-auto"
-          type="button"
-          {disabled}
-          aria-expanded={bulkOpen}
-          onclick={() => (bulkOpen = !bulkOpen)}
-        >
-          {m["editor.bulk_paste"]()}
-        </button>
-      </div>
-      {#if bulkOpen}
-        <div class="mt-3 border-t border-white-10 pt-3">
-          <p class="mb-2 text-[0.85rem] text-white-60">{m["editor.bulk_paste_hint"]()}</p>
-          <textarea class="{inputEditorMono} min-h-32" bind:value={bulkText} placeholder="[…]"
-          ></textarea>
-          <div class="mt-2 flex flex-wrap items-center gap-3">
-            <label class="flex items-center gap-1.5 text-[0.85rem] text-white-70">
-              <input type="radio" bind:group={bulkMode} value="append" />
-              {m["editor.bulk_mode_append"]()}
-            </label>
-            <label class="flex items-center gap-1.5 text-[0.85rem] text-white-70">
-              <input type="radio" bind:group={bulkMode} value="replace" />
-              {m["editor.bulk_mode_replace"]()}
-            </label>
-            <button class={btnGhost} type="button" onclick={applyBulk}>
-              {m["editor.bulk_apply"]()}
-            </button>
-            <button class={btnGhost} type="button" onclick={() => (bulkOpen = false)}>
-              {m["common.cancel"]()}
-            </button>
-          </div>
-          {#if bulkError}
-            <p class="mt-2 text-[0.85rem] text-red-300">{bulkError}</p>
-          {/if}
-        </div>
       {/if}
     </div>
-  {/if}
-
-  {#if notice}
-    <div
-      class="mb-3 rounded-lg border border-amber-300/40 bg-amber-300/10 px-3 py-2 text-[0.85rem] text-amber-200"
-    >
-      {notice}
+  {:else}
+    <div class="mb-3 flex flex-wrap items-center gap-2">
+      <input
+        class="{inputEditorMono} max-w-64 flex-1"
+        type="text"
+        bind:value={query}
+        placeholder={m["editor.entries_search_placeholder"]()}
+        {disabled}
+      />
+      {#if filtering}
+        <span class="text-[0.85rem] text-white-60">
+          {m["common.matched"]({ shown: filteredIndices.length, total: entries.length })}
+        </span>
+      {/if}
     </div>
-  {/if}
 
-  {#if editing && adding}
-    {#key editKey}
-      <div class="mb-4">
-        <EntryDetailForm
-          entry={null}
-          {levels}
-          {disabled}
-          oncommit={commitDetail}
-          oncancel={cancelDetail}
+    {#if navItems.length > 0}
+      <div class="mb-3">
+        <DifficultyNav
+          items={navItems}
+          {editing}
+          {symbol}
+          {selectedLevels}
+          {includeUnassigned}
+          onToggleLevel={toggleLevel}
+          onToggleUnassigned={toggleUnassigned}
+          onJump={jumpToGroup}
         />
       </div>
-    {/key}
-  {/if}
+    {/if}
 
-  <div class="table-wrapper">
-    <table class="w-full min-w-225 table-fixed border-collapse">
-      <colgroup>
-        {#if editing}<col class="w-10" />{/if}
-        <col class="w-24" />
-        <col class="w-40" />
-        <col class="w-24" />
-        <col />
-        <col />
-        <col />
-      </colgroup>
-      <thead>
-        <tr>
-          {#if editing}<th class="table-th-compact px-2"></th>{/if}
-          <th class="table-th-compact">{m["table.th_level"]()}</th>
-          <th class="table-th-compact text-center whitespace-nowrap">
-            {m["table.th_download"]()}
-          </th>
-          <th class="table-th-compact text-center whitespace-nowrap">
-            {m["table.th_site"]()}
-          </th>
-          <th class="table-th-compact text-center whitespace-nowrap">
-            {m["table.th_title"]()}
-          </th>
-          <th class="table-th-compact text-center whitespace-nowrap">
-            {m["table.th_artist"]()}
-          </th>
-          <th class="table-th-compact text-center whitespace-nowrap">
-            {m["table.th_comment"]()}
-          </th>
-        </tr>
-      </thead>
-      {#each groups as group (group.unassigned ? "__unassigned__" : group.level)}
-        {@const groupColor = colorFor(group.level, group.unassigned)}
-        {@const groupLabel = group.unassigned
-          ? m["editor.entries_filter_unassigned"]()
-          : `${symbol}${group.level}`}
-        {@const groupCollapsed = collapsedGroups[groupKey(group.level, group.unassigned)] === true}
-        <tbody id={entryGroupAnchorId(group.level, group.unassigned)} class="scroll-mt-5">
-          <tr>
-            <td colspan={columnCount} class="border-b-2 border-white-10 px-4 py-2">
-              <button
-                class="flex cursor-pointer items-center gap-4 border-none bg-transparent p-0 text-left"
-                type="button"
-                aria-expanded={!groupCollapsed}
-                onclick={() => toggleGroupCollapsed(group.level, group.unassigned)}
-              >
-                <span
-                  class="shadow-[0_2px_8px rgba(0,0,0,0.2)] rounded-[20px] px-6 py-2 text-[1.2rem] font-bold text-white"
-                  style={`background-color:${groupColor};`}
-                >
-                  {groupLabel}
-                </span>
-                <span class="text-[1.1rem] text-white-80">
-                  {m["table.chart_count"]({ count: group.indices.length })}
-                </span>
-                <span
-                  class="text-[0.8rem] text-white-50 transition-transform duration-200 {groupCollapsed
-                    ? ''
-                    : 'rotate-180'}"
-                >
-                  ▼
-                </span>
-              </button>
-            </td>
-          </tr>
-          {#if !groupCollapsed}
-            {#each group.indices as index (index)}
-              {@const entry = entries[index] ?? {}}
-              {@const levelHint =
-                editing && isUnassigned(entry) && hintFor(entry) !== null
-                  ? m["editor.entry_level_hint"]({ level: hintFor(entry) ?? "" })
-                  : null}
-              <ChartTableRow
-                chart={toChart(entry)}
-                groupLevel={group.unassigned
-                  ? m["editor.entries_filter_unassigned"]()
-                  : group.level}
-                symbol={group.unassigned ? "" : symbol}
-                {groupColor}
-                bundleUrl={resolvedBundleUrl(entry)}
-                diffUrl={resolvedDiffUrl(entry)}
-                {chartPreview}
-                {levelHint}
-                selectable={editing}
-                selected={selected.has(index)}
-                {disabled}
-                onSelect={(checked: boolean) => setSelected(index, checked)}
-                onEdit={editing ? () => startEdit(index) : undefined}
-              />
-              {#if editing && editingIndex === index}
-                <tr>
-                  <td colspan={columnCount} class="table-td-compact">
-                    {#key editKey}
-                      <EntryDetailForm
-                        entry={entries[index] ?? null}
-                        {levels}
-                        {disabled}
-                        oncommit={commitDetail}
-                        oncancel={cancelDetail}
-                        ondelete={deleteEditing}
-                      />
-                    {/key}
-                  </td>
-                </tr>
-              {/if}
+    {#if editing && batchOpen}
+      <div class="mb-3 rounded-lg border border-white-15 bg-black-20 p-3">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-[0.85rem] text-white-60">
+            {m["editor.entries_selected"]({ count: selectedCount })}
+          </span>
+          <button class={btnGhost} type="button" {disabled} onclick={selectAllFiltered}>
+            {m["editor.entries_select_filtered"]()}
+          </button>
+          <button class={btnGhost} type="button" {disabled} onclick={clearSelection}>
+            {m["editor.entries_clear_selection"]()}
+          </button>
+          <select
+            class="rounded-md border border-white-20 bg-black-30 px-2 py-1 text-[0.85rem] text-white outline-none"
+            bind:value={batchChoice}
+            {disabled}
+          >
+            <option value={BATCH_NONE} disabled>{m["editor.entries_batch_choose"]()}</option>
+            {#each levels as level (level)}
+              <option value={encodeLevelFilterOption(level)}>{level}</option>
             {/each}
+            <option value="">{m["editor.entries_batch_clear"]()}</option>
+          </select>
+          <button
+            class={btnGhost}
+            type="button"
+            disabled={disabled || selectedCount === 0 || batchChoice === BATCH_NONE}
+            onclick={assignSelected}
+          >
+            {m["editor.entries_batch_apply"]()}
+          </button>
+          <button
+            class="{btnGhost} text-red-200/80 hover:bg-red-400/20 hover:text-red-200"
+            type="button"
+            disabled={disabled || selectedCount === 0}
+            onclick={deleteSelected}
+          >
+            {m["editor.entries_batch_delete"]()}
+          </button>
+          {#if hintApplicableCount > 0}
+            <button class={btnGhost} type="button" {disabled} onclick={assignFromHints}>
+              {m["editor.entries_assign_hint"]({ count: hintApplicableCount })}
+            </button>
           {/if}
-        </tbody>
-      {/each}
-      {#if groups.length === 0}
-        <tbody>
+          <button
+            class="{btnGhost} ml-auto"
+            type="button"
+            {disabled}
+            aria-expanded={bulkOpen}
+            onclick={() => (bulkOpen = !bulkOpen)}
+          >
+            {m["editor.bulk_paste"]()}
+          </button>
+        </div>
+        {#if bulkOpen}
+          <div class="mt-3 border-t border-white-10 pt-3">
+            <p class="mb-2 text-[0.85rem] text-white-60">{m["editor.bulk_paste_hint"]()}</p>
+            <textarea class="{inputEditorMono} min-h-32" bind:value={bulkText} placeholder="[…]"
+            ></textarea>
+            <div class="mt-2 flex flex-wrap items-center gap-3">
+              <label class="flex items-center gap-1.5 text-[0.85rem] text-white-70">
+                <input type="radio" bind:group={bulkMode} value="append" />
+                {m["editor.bulk_mode_append"]()}
+              </label>
+              <label class="flex items-center gap-1.5 text-[0.85rem] text-white-70">
+                <input type="radio" bind:group={bulkMode} value="replace" />
+                {m["editor.bulk_mode_replace"]()}
+              </label>
+              <button class={btnGhost} type="button" onclick={applyBulk}>
+                {m["editor.bulk_apply"]()}
+              </button>
+              <button class={btnGhost} type="button" onclick={() => (bulkOpen = false)}>
+                {m["common.cancel"]()}
+              </button>
+            </div>
+            {#if bulkError}
+              <p class="mt-2 text-[0.85rem] text-red-300">{bulkError}</p>
+            {/if}
+          </div>
+        {/if}
+      </div>
+    {/if}
+
+    {#if notice}
+      <div
+        class="mb-3 rounded-lg border border-amber-300/40 bg-amber-300/10 px-3 py-2 text-[0.85rem] text-amber-200"
+      >
+        {notice}
+      </div>
+    {/if}
+
+    {#if editing && adding}
+      {#key editKey}
+        <div class="mb-4">
+          <EntryDetailForm
+            entry={null}
+            {levels}
+            {disabled}
+            oncommit={commitDetail}
+            oncancel={cancelDetail}
+          />
+        </div>
+      {/key}
+    {/if}
+
+    <div class="table-wrapper">
+      <table class="w-full min-w-225 table-fixed border-collapse">
+        <colgroup>
+          {#if editing}<col class="w-10" />{/if}
+          <col class="w-24" />
+          <col class="w-40" />
+          <col class="w-24" />
+          <col />
+          <col />
+          <col />
+        </colgroup>
+        <thead>
           <tr>
-            <td class="table-td-compact text-center text-white-50" colspan={columnCount}>
-              {entries.length === 0
-                ? m["editor.entries_empty"]()
-                : m["editor.entries_empty_filtered"]()}
-            </td>
+            {#if editing}<th class="table-th-compact px-2"></th>{/if}
+            <th class="table-th-compact">{m["table.th_level"]()}</th>
+            <th class="table-th-compact text-center whitespace-nowrap">
+              {m["table.th_download"]()}
+            </th>
+            <th class="table-th-compact text-center whitespace-nowrap">
+              {m["table.th_site"]()}
+            </th>
+            <th class="table-th-compact text-center whitespace-nowrap">
+              {m["table.th_title"]()}
+            </th>
+            <th class="table-th-compact text-center whitespace-nowrap">
+              {m["table.th_artist"]()}
+            </th>
+            <th class="table-th-compact text-center whitespace-nowrap">
+              {m["table.th_comment"]()}
+            </th>
           </tr>
-        </tbody>
-      {/if}
-    </table>
-  </div>
-  <JsonPreview bind:this={chartPreview} />
-</section>
+        </thead>
+        {#each groups as group (group.unassigned ? "__unassigned__" : group.level)}
+          {@const groupColor = colorFor(group.level, group.unassigned)}
+          {@const groupLabel = group.unassigned
+            ? m["editor.entries_filter_unassigned"]()
+            : `${symbol}${group.level}`}
+          {@const groupCollapsed =
+            collapsedGroups[groupKey(group.level, group.unassigned)] === true}
+          <tbody id={entryGroupAnchorId(group.level, group.unassigned)} class="scroll-mt-5">
+            <tr>
+              <td colspan={columnCount} class="border-b-2 border-white-10 px-4 py-2">
+                <button
+                  class="flex cursor-pointer items-center gap-4 border-none bg-transparent p-0 text-left"
+                  type="button"
+                  aria-expanded={!groupCollapsed}
+                  onclick={() => toggleGroupCollapsed(group.level, group.unassigned)}
+                >
+                  <span
+                    class="shadow-[0_2px_8px rgba(0,0,0,0.2)] rounded-[20px] px-6 py-2 text-[1.2rem] font-bold text-white"
+                    style={`background-color:${groupColor};`}
+                  >
+                    {groupLabel}
+                  </span>
+                  <span class="text-[1.1rem] text-white-80">
+                    {m["table.chart_count"]({ count: group.indices.length })}
+                  </span>
+                  <svg
+                    class="size-4 flex-none text-white-50 transition-transform duration-200 {groupCollapsed
+                      ? ''
+                      : 'rotate-180'}"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </button>
+              </td>
+            </tr>
+            {#if !groupCollapsed}
+              {#each group.indices as index (index)}
+                {@const entry = entries[index] ?? {}}
+                {@const levelHint =
+                  editing && isUnassigned(entry) && hintFor(entry) !== null
+                    ? m["editor.entry_level_hint"]({ level: hintFor(entry) ?? "" })
+                    : null}
+                <ChartTableRow
+                  chart={toChart(entry)}
+                  groupLevel={group.unassigned
+                    ? m["editor.entries_filter_unassigned"]()
+                    : group.level}
+                  symbol={group.unassigned ? "" : symbol}
+                  {groupColor}
+                  bundleUrl={resolvedBundleUrl(entry)}
+                  diffUrl={resolvedDiffUrl(entry)}
+                  {chartPreview}
+                  {levelHint}
+                  selectable={editing}
+                  selected={selected.has(index)}
+                  {disabled}
+                  onSelect={(checked: boolean) => setSelected(index, checked)}
+                  onEdit={editing ? () => startEdit(index) : undefined}
+                />
+                {#if editing && editingIndex === index}
+                  <tr>
+                    <td colspan={columnCount} class="table-td-compact">
+                      {#key editKey}
+                        <EntryDetailForm
+                          entry={entries[index] ?? null}
+                          {levels}
+                          {disabled}
+                          oncommit={commitDetail}
+                          oncancel={cancelDetail}
+                          ondelete={deleteEditing}
+                        />
+                      {/key}
+                    </td>
+                  </tr>
+                {/if}
+              {/each}
+            {/if}
+          </tbody>
+        {/each}
+        {#if groups.length === 0}
+          <tbody>
+            <tr>
+              <td class="table-td-compact text-center text-white-50" colspan={columnCount}>
+                {entries.length === 0
+                  ? m["editor.entries_empty"]()
+                  : m["editor.entries_empty_filtered"]()}
+              </td>
+            </tr>
+          </tbody>
+        {/if}
+      </table>
+    </div>
+    <JsonPreview bind:this={chartPreview} />
+  {/if}
+</DetailsPanel>

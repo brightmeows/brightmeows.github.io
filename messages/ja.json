@@ -355,6 +355,7 @@
   "editor.import_tab_fork": "他の表からインポート",
   "editor.import_tab_json": "JSON を貼り付け",
   "editor.io_section": "インポート / エクスポート",
+  "editor.io_hint": "ヘッダーとデータのリンク、パッケージ取り込み、標準エクスポート。",
   "editor.json_parse_failed": "JSON の解析に失敗しました：{detail}",
   "editor.level_order_add": "追加",
   "editor.level_order_add_placeholder": "新しいレベル",

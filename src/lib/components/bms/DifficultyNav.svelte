@@ -41,7 +41,7 @@
   {#each items as item (item.unassigned ? "__unassigned__" : item.level)}
     {#if editing}
       <div
-        class="flex items-center gap-1.5 rounded-full px-2 py-1 text-white"
+        class="flex items-center gap-1.5 rounded-full border-2 border-transparent px-3 py-1.5 text-[0.9rem] font-semibold text-white transition-all duration-200 hover:brightness-110"
         style={`background-color:${item.color};`}
       >
         <Checkbox

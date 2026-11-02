@@ -355,6 +355,7 @@
   "editor.import_tab_fork": "从其他表导入",
   "editor.import_tab_json": "粘贴 JSON",
   "editor.io_section": "导入 / 导出",
+  "editor.io_hint": "头部与数据链接、整包导入与标准导出。",
   "editor.json_parse_failed": "JSON 解析失败：{detail}",
   "editor.level_order_add": "添加",
   "editor.level_order_add_placeholder": "新等级",
