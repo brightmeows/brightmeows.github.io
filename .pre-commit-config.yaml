@@ -104,15 +104,16 @@ repos:
   # Markdown 扫直引号与直角/全角无向引号（跳过 frontmatter、代码块与
   # HTML 标签）；代码与配置只扫直角与全角无向引号（ASCII 直引号是语法）。
   # static/ 是数据资产（含日文原文）不扫；行内含 cn-quotes-ignore 可豁免。
+  # 受检扩展名与 static 排除规则在 package.json 的 check:quotes。
   # 日语内容（messages/ja.json 与 *.ja.md）按路径跳过，见脚本头注。
   - repo: local
     hooks:
       - id: cn-quotes
         name: Chinese quotes follow GB/T 15834-2011
-        entry: python3 scripts/check-cn-quotes.py
+        entry: pnpm check:quotes
         language: system
-        files: \.(md|svx|ts|svelte|js|py|yml|yaml|json|jsonc|toml|css|html)$
-        exclude: ^static/
+        types: [text]
+        pass_filenames: false
 
   # 同一事实在不能 import 配置的地方（wrangler.jsonc、工作流 YAML、版本文件）
   # 必须与 config/site.json 一致；纯离线、毫秒级。
