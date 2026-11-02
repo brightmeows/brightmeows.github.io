@@ -2,7 +2,7 @@
   import { addLevel, moveItem, removeLevelAt } from "@brightmeows/bms/editor";
   import { levelOrderToText, textToLevelOrder } from "@brightmeows/bms/shared";
 
-  import { btnGhostSm, btnIcon, inputEditorBase } from "#lib/constants/ui-classes.js";
+  import { btnGhost, btnIcon, inputEditorBase } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
 
   /**
@@ -12,12 +12,10 @@
   interface Props {
     levels: string[];
     disabled?: boolean;
-    /** 外层已有折叠标题时传 false，避免重复标题。 */
-    showHeading?: boolean;
     onchange?: (() => void) | undefined;
   }
 
-  let { levels = $bindable([]), disabled = false, showHeading = true, onchange }: Props = $props();
+  let { levels = $bindable([]), disabled = false, onchange }: Props = $props();
 
   let textMode = $state(false);
   let textValue = $state("");
@@ -61,20 +59,16 @@
 
 <section>
   <div class="mb-3 flex flex-wrap items-center gap-3">
-    {#if showHeading}
-      <h3 class="tag-accent-sm">{m["editor.field_level_order"]()}</h3>
-      <span class="text-[0.85rem] text-white-50">{m["editor.level_order_hint"]()}</span>
-    {/if}
     <div class="ml-auto flex gap-2">
       {#if textMode}
-        <button class={btnGhostSm} type="button" {disabled} onclick={applyTextMode}>
+        <button class={btnGhost} type="button" {disabled} onclick={applyTextMode}>
           {m["editor.level_order_apply_text"]()}
         </button>
-        <button class={btnGhostSm} type="button" onclick={() => (textMode = false)}>
+        <button class={btnGhost} type="button" onclick={() => (textMode = false)}>
           {m["common.cancel"]()}
         </button>
       {:else}
-        <button class={btnGhostSm} type="button" {disabled} onclick={startTextMode}>
+        <button class={btnGhost} type="button" {disabled} onclick={startTextMode}>
           {m["editor.level_order_text_mode"]()}
         </button>
       {/if}
@@ -214,7 +208,7 @@
           }
         }}
       />
-      <button class={btnGhostSm} type="button" {disabled} onclick={handleAdd}>
+      <button class={btnGhost} type="button" {disabled} onclick={handleAdd}>
         {m["editor.level_order_add"]()}
       </button>
     </div>

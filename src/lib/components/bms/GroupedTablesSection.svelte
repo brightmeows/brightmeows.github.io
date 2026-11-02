@@ -122,13 +122,14 @@
 {#if groups.length === 0}
   <EmptyState title={m["mirror.empty_title"]()} description={m["mirror.empty_desc"]()} />
 {:else}
-  <div class="mt-8">
+  <div class="flex flex-col gap-3">
     <ScrollSyncGroup watchKeys={groups}>
       {#snippet children({ setRef })}
         <DetailsPanel
-          class="mt-2"
           summary={m["mirror.tag_nav"]()}
           hint={m["mirror.tag_nav_hint"]({ count: groups.length })}
+          variant="plain"
+          sub={true}
         >
           <div class="flex flex-wrap items-center gap-2">
             {#each groups as g (g.tag1)}
@@ -156,7 +157,7 @@
           </div>
         </DetailsPanel>
 
-        <div class="table-wrapper mt-6 lg:overflow-visible" use:setRef>
+        <div class="table-wrapper lg:overflow-visible" use:setRef>
           <table class="w-full min-w-200 table-fixed border-collapse">
             <colgroup>
               <col class="w-15" />
