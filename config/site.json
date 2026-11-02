@@ -4,18 +4,7 @@
     {
       "name": "cloudflare",
       "kind": "worker",
-      "hosts": [
-        "brightmeows.com",
-        "www.brightmeows.com",
-        "brightmeows.cn",
-        "www.brightmeows.cn",
-        "github-pages.brightmeows.com",
-        "codeberg-pages.brightmeows.com",
-        "github-pages.miyakomeow.site",
-        "codeberg-pages.miyakomeow.site",
-        "miyakomeow.site",
-        "www.miyakomeow.site"
-      ]
+      "hosts": ["brightmeows.com"]
     }
   ],
   "r2": {
@@ -23,11 +12,6 @@
     "manifestObject": "tables/tables.json",
     "corsOrigins": [
       "https://brightmeows.com",
-      "https://miyakomeow.site",
-      "https://github-pages.miyakomeow.site",
-      "https://codeberg-pages.miyakomeow.site",
-      "https://brightmeows.github.io",
-      "https://brightmeows.codeberg.page",
       "http://localhost:5173",
       "http://localhost:5174",
       "http://localhost:5175",

@@ -2,13 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import {
   collectDomains,
-  collectTargetFlags,
   corsCoverageIssues,
   findDomainsInText,
   hardcodedDomainIssues,
-  redirectSiteBaseIssues,
   routeHostIssues,
-  targetFlagIssues,
   versionSourceIssues,
   wranglerRouteHosts,
   wranglerVarsIssues,
@@ -20,42 +17,15 @@ const config = parseSiteConfig(
     origin: "https://brightmeows.com",
     targets: [
       { name: "cloudflare", kind: "worker", hosts: ["brightmeows.com", "www.brightmeows.com"] },
-      {
-        name: "github-pages",
-        kind: "redirect",
-        siteBase: "https://github-pages.brightmeows.com",
-        legacyHosts: ["brightmeows.github.io"],
-      },
-      {
-        name: "codeberg-pages",
-        kind: "redirect",
-        siteBase: "https://codeberg-pages.brightmeows.com",
-        legacyHosts: ["brightmeows.codeberg.page"],
-      },
     ],
     r2: {
       base: "https://r2.example",
       manifestObject: "tables/tables.json",
-      corsOrigins: [
-        "https://brightmeows.com",
-        "https://github-pages.brightmeows.com",
-        "https://codeberg-pages.brightmeows.com",
-        "https://brightmeows.github.io",
-        "https://brightmeows.codeberg.page",
-        "http://localhost:5173",
-      ],
+      corsOrigins: ["https://brightmeows.com", "http://localhost:5173"],
     },
   },
   "test"
 );
-
-describe("collectTargetFlags", () => {
-  it("抓出所有 --target= 名称", () => {
-    expect(
-      collectTargetFlags("run: node x.ts --target=github-pages\nnode y.ts --target=codeberg-pages")
-    ).toEqual(["github-pages", "codeberg-pages"]);
-  });
-});
 
 describe("wranglerRouteHosts", () => {
   it("从带注释与尾逗号的 JSONC 里取出 route 主机", () => {
@@ -75,24 +45,20 @@ describe("wranglerRouteHosts", () => {
   });
 });
 
-describe("targetFlagIssues", () => {
-  it("合法目标名通过，非法目标名报错", () => {
-    expect(targetFlagIssues(["github-pages", "codeberg-pages"], config)).toEqual([]);
-    expect(targetFlagIssues(["cloudflare"], config)).toEqual([
-      expect.stringContaining("--target=cloudflare"),
-    ]);
-    expect(targetFlagIssues(["nope"], config)).toHaveLength(1);
-  });
-});
-
 describe("routeHostIssues", () => {
-  it("routes 主机都在 worker.hosts 里时通过", () => {
+  it("routes 主机与 worker.hosts 完全一致时通过", () => {
     expect(routeHostIssues(["brightmeows.com", "www.brightmeows.com"], config)).toEqual([]);
   });
 
   it("出现额外主机时报错", () => {
-    expect(routeHostIssues(["brightmeows.com", "evil.example"], config)).toEqual([
-      expect.stringContaining("evil.example"),
+    expect(
+      routeHostIssues(["brightmeows.com", "www.brightmeows.com", "evil.example"], config)
+    ).toEqual([expect.stringContaining("evil.example")]);
+  });
+
+  it("缺少配置里的主机时报错", () => {
+    expect(routeHostIssues(["brightmeows.com"], config)).toEqual([
+      expect.stringContaining("www.brightmeows.com"),
     ]);
   });
 });
@@ -100,21 +66,13 @@ describe("routeHostIssues", () => {
 describe("hardcodedDomainIssues / findDomainsInText", () => {
   it("配置域名全部被识别（含 R2 主机与 worker 的 www）", () => {
     expect(collectDomains(config).sort()).toEqual(
-      [
-        "brightmeows.codeberg.page",
-        "brightmeows.github.io",
-        "codeberg-pages.brightmeows.com",
-        "github-pages.brightmeows.com",
-        "brightmeows.com",
-        "r2.example",
-        "www.brightmeows.com",
-      ].sort()
+      ["brightmeows.com", "r2.example", "www.brightmeows.com"].sort()
     );
   });
 
   it("工作流里出现域名即报错，注释里的也不算白名单", () => {
     const files = [
-      { path: "a.yml", text: "run: node x.ts --target=github-pages" },
+      { path: "a.yml", text: "run: echo ok" },
       { path: "b.yml", text: "run: curl https://brightmeows.com/" },
     ];
     expect(hardcodedDomainIssues(files, config)).toEqual([expect.stringContaining("b.yml")]);
@@ -227,30 +185,5 @@ describe("wranglerVarsIssues", () => {
     expect(wranglerVarsIssues({ config, wranglerText: "{}" })).toEqual([
       expect.stringContaining("找不到 vars"),
     ]);
-  });
-});
-
-describe("redirectSiteBaseIssues", () => {
-  it("siteBase 与 target 名对齐时通过", () => {
-    expect(redirectSiteBaseIssues(config)).toEqual([]);
-  });
-
-  it("子域与 target 名不对齐时报错", () => {
-    const misaligned = parseSiteConfig(
-      {
-        ...JSON.parse(JSON.stringify(config)),
-        targets: [
-          { name: "cloudflare", kind: "worker", hosts: ["brightmeows.com"] },
-          {
-            name: "github-pages",
-            kind: "redirect",
-            siteBase: "https://wrong.brightmeows.com",
-            legacyHosts: ["brightmeows.github.io"],
-          },
-        ],
-      },
-      "test"
-    );
-    expect(redirectSiteBaseIssues(misaligned)).toEqual([expect.stringContaining("github-pages")]);
   });
 });

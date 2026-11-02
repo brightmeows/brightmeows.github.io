@@ -4,9 +4,10 @@
   "name": "brightmeows-site",
   "main": "./packages/worker/index.ts",
   "compatibility_date": "2026-09-19",
+  // 只通过自定义域提供服务；关闭 workers.dev 预览入口
+  "workers_dev": false,
   "assets": {
-    // 多语构建组装后的主站树：en 根 + `_i18n/zh-cn`、`_i18n/ja` 内部前缀（scripts/build-site.ts）；
-    // 跳转壳的 build-static/ 不经这里部署
+    // 多语构建组装后的主站树：en 根 + `_i18n/zh-cn`、`_i18n/ja` 内部前缀（scripts/build-site.ts）
     "directory": "./build",
     "binding": "ASSETS",
     // 站点全局 trailingSlash="always"，构建产物为 <route>/index.html
@@ -32,23 +33,13 @@
   ],
   // 部署期变量：Worker 的 R2 基址与清单对象键不再 import config/site.json，
   // 改为从 env 读取；config/site.json 仍是权威源，一致性由
-  // scripts/check-site-config.ts 的第 6 条断言守住。
+  // scripts/check-site-config.ts 的第 5 条断言守住。
   "vars": {
     "R2_BASE": "https://bms-table-mirror-r2.brightmeows.com",
     "R2_MANIFEST_OBJECT": "tables/tables.json",
   },
-  "routes": [
-    { "pattern": "brightmeows.com", "custom_domain": true },
-    { "pattern": "www.brightmeows.com", "custom_domain": true },
-    { "pattern": "brightmeows.cn", "custom_domain": true },
-    { "pattern": "www.brightmeows.cn", "custom_domain": true },
-    { "pattern": "github-pages.brightmeows.com", "custom_domain": true },
-    { "pattern": "codeberg-pages.brightmeows.com", "custom_domain": true },
-    { "pattern": "github-pages.miyakomeow.site", "custom_domain": true },
-    { "pattern": "codeberg-pages.miyakomeow.site", "custom_domain": true },
-    { "pattern": "miyakomeow.site", "custom_domain": true },
-    { "pattern": "www.miyakomeow.site", "custom_domain": true },
-  ],
+  // 旧主机由 Cloudflare Single Redirects 301；Worker 只服务主站 apex
+  "routes": [{ "pattern": "brightmeows.com", "custom_domain": true }],
   // 定时任务：每天 UTC 18:30（北京时间 02:30）把用户层导出成 R2 快照，
   // 保留最近 14 份（见 packages/worker/backup.ts）。免费账户可建 5 个 cron trigger。
   "triggers": {

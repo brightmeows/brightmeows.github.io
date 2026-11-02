@@ -35,7 +35,7 @@ export function transformTableList(
   });
 }
 
-/** 站点清单的稳定序列化：Worker 动态响应与静态宿主产物共用。 */
+/** 站点清单的稳定序列化：Worker 动态响应使用。 */
 export function serializeSiteTableList(list: MirrorTableItem[]): string {
   return `${JSON.stringify(list, null, 2)}\n`;
 }

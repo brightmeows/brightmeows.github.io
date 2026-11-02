@@ -8,20 +8,21 @@
 - `node scripts/fetch-tables.ts` — 本地跑数据管线（基线经 rclone 同步自 R2，用户层经站点 Worker 的内部接口读取，需要 `INTERNAL_API_TOKEN`；写 `tables/`、`indexes/`、`warnings.log`；产物已 gitignore）
 - `node scripts/fetch-table-once.ts --url=<表源> --request-id=<id> --out-dir=./out` — 单表抓取（复用管线抓取与命名逻辑）：数据目录供 `fetch-table` 工作流上传到 R2，抓取结果与状态经内部接口写进 D1
 - `pnpm test:parity` — 手动新旧实现对拍（用公开 R2 基线与归档工具 v0.4.2 的二进制，逐对象比对产物；`PARITY_LIMIT` 可只对拍前 N 张表）
+- `pnpm check:quotes` — 全量中文引号检查（扩展名与 `static/` 排除规则在 `package.json`，pre-commit 与 CI 共用）
 - `R2_BUCKET=<桶名> node scripts/check-r2-cors.ts` — 与线上桶 CORS policy 比对（需 Cloudflare 凭据；只读）
 - `node scripts/check-redirect-rules.ts` — 与线上三个 zone 的旧主机 301 规则比对（需 `CLOUDFLARE_RULES_TOKEN`；只读）
 
 ## 校验脚本
 
-- `scripts/check-cn-quotes.py` — 中文文本引号规范（GB/T 15834-2011）。两档策略：Markdown（`.md`/`.svx`）扫直引号、全角无向引号与直角引号，跳过 frontmatter、代码块、行内代码与 HTML 标签（这些位置的引号是语法）；代码与配置类型只扫直角引号与全角无向引号（ASCII 直引号在代码里是字符串与语法，无法与注释引号机械区分，不扫）。`static/` 为数据资产（含日文原文）不扫；行内含 `cn-quotes-ignore` 注释可豁免单行（字符映射表、测试断言等“引号即数据”场景，豁免与原因就近可见）。日语内容豁免（`messages/ja.json` 与 `*.ja.md`）：日语正式引号为 U+300C/U+300D，与简中排版规则不同，不适用本检查；其余门槛（易混淆字符、i18n 覆盖）照常约束这些文件。
+- `scripts/check-cn-quotes.py` — 中文文本引号规范（GB/T 15834-2011）。两档策略：Markdown（`.md`/`.svx`）扫直引号、全角无向引号与直角引号，跳过 frontmatter、代码块、行内代码与 HTML 标签（这些位置的引号是语法）；代码与配置类型只扫直角引号与全角无向引号（ASCII 直引号在代码里是字符串与语法，无法与注释引号机械区分，不扫）。`static/` 为数据资产（含日文原文）不扫；行内含 `cn-quotes-ignore` 注释可豁免单行（字符映射表、测试断言等“引号即数据”场景，豁免与原因就近可见）。`pnpm check:quotes` 调用它，pre-commit 与 CI 共用同一份扩展名清单。日语内容豁免（`messages/ja.json` 与 `*.ja.md`）：日语正式引号为 U+300C/U+300D，与简中排版规则不同，不适用本检查；其余门槛（易混淆字符、i18n 覆盖）照常约束这些文件。
 - `scripts/check-commit-msg.py` — Conventional Commits 格式校验（见根 `AGENTS.md` 的“提交格式”节），pre-commit commit-msg stage 与 CI 的 PR job 共用。
-- `scripts/check-site-config.ts` — 离线一致性校验（七条断言：`--target` 合法、wrangler routes ⊆ 配置、工作流无硬编码域名、CORS 覆盖 `origin`、版本来源唯一（devEngines 范围加工作流不传 pnpm 版本）、wrangler vars 与 R2 配置一致、跳转目标 siteBase 主机与 target 名对齐）。`pnpm check:config` 调用它，pre-commit 与 CI 都跑。
+- `scripts/check-site-config.ts` — 离线一致性校验（五条断言：wrangler routes 与 worker hosts 完全一致、工作流无硬编码域名、CORS 覆盖 `origin`、版本来源唯一（devEngines 范围加工作流不传 pnpm 版本）、wrangler vars 与 R2 配置一致）。`pnpm check:config` 调用它，pre-commit 与 CI 都跑。
 - `scripts/check-i18n-coverage.ts` — i18n 覆盖校验（六条断言：三语 key 对称、占位符一致、源码引用与 Worker 错误码常量表（`@brightmeows/mirror/api` 的 `API_ERROR_CODES` 全部值）存在于 messages、Worker 源码里的 `code:` 字面量视为漂移、死 key、src 残留中日韩字符（注释/console/测试/AGENTS/领域术语按豁免清单）、en 值漏翻（语言自称键豁免））。`pnpm check:i18n` 调用它，pre-commit 与 CI 都跑；豁免口径见脚本头注。
 - `scripts/check-jsdoc.ts` — 导出函数 JSDoc 覆盖校验：`export function` 与 `export const` 箭头/函数表达式必须有 `/** */` 且去掉 tag 行后有非空描述。范围 `src/`、`packages/`、`scripts/` 的非测试 `.ts`（`.svelte` 组件脚本与 `*.test.ts` 豁免，`.d.ts` 与 paraglide 生成物不参与）。`pnpm check:jsdoc` 调用它，pre-commit 与 CI 都跑；判定逻辑拆纯函数由相邻单测锁定。2026-10 查证时 oxlint 原生未实现 `jsdoc/require-jsdoc`（上游 tracking issue 里仍在 TODO）、JS 插件机制承载 eslint-plugin-jsdoc 仍为 alpha 且无兼容实测记录，故自造；oxlint 原生实现该规则后退役换规则。
 - `scripts/check-r2-cors.ts` — 只读比对桶 CORS policy 与配置（需 `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID`/`R2_BUCKET`）；不在日常 CI 跑，由 `config-drift.yml` 在配置变更的 PR 与手动触发时调用。
 - `scripts/check-redirect-rules.ts` — 只读比对三个 zone 的 `http_request_dynamic_redirect` entrypoint 与 `config/redirects.json`（需 `CLOUDFLARE_RULES_TOKEN`，权限 `Zone / Dynamic URL Redirects / Read` 加 `Zone / Zone / Read`，scoped 到三个 zone）；由 `config-drift.yml` 在配置变更的 PR、每周 schedule 与手动触发时调用，不在 pre-commit 跑。
 - `scripts/redirect-rules.ts` — 旧主机 301 的配置解析、表达式与规则构造、线上规则归一化与比对纯函数；`scripts/redirect-rules.test.ts` 锁定这些逻辑。
-- `scripts/site-config.ts` — 读取并校验 `config/site.json`（站点与部署配置的单一来源，脚本与校验共用）。
+- `scripts/site-config.ts` — 读取并校验 `config/site.json`（站点与部署配置的单一来源，脚本与校验共用；targets 只支持 worker）。
 
 ## 反直觉决策
 

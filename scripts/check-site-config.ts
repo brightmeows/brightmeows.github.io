@@ -1,18 +1,15 @@
 /**
  * 离线一致性校验：把“不能 import 配置”的消费者钉在 `config/site.json` 上。
  *
- * 七条断言，每条都是纯函数（输入为文本），便于单测：
- * 1. 工作流里的 `--target=<名>` 必须存在于配置且是跳转目标
- * 2. `wrangler.jsonc` 的 routes 主机必须 ⊆ cloudflare 目标的 hosts
- * 3. 工作流文件里不得出现配置中的任何域名（域名一律由 `--target` 解析）
- * 4. `r2.corsOrigins` 必须覆盖 `origin`（跳转目标不再直接读 R2）
- * 5. `.nvmrc` 存在，`package.json` 的 `devEngines.packageManager` 声明 pnpm 版本范围，
+ * 五条断言，每条都是纯函数（输入为文本），便于单测：
+ * 1. `wrangler.jsonc` 的 routes 主机必须与 cloudflare 目标的 hosts 完全一致
+ * 2. 工作流文件里不得出现配置中的任何域名
+ * 3. `r2.corsOrigins` 必须覆盖 `origin`
+ * 4. `.nvmrc` 存在，`package.json` 的 `devEngines.packageManager` 声明 pnpm 版本范围，
  *    且工作流不显式传 pnpm 版本；node 版本通过文件读取（不能读文件的平台允许写
  *    字面量，但必须与 `.nvmrc` 相同）
- * 6. `wrangler.jsonc` 的 `vars` 与 `r2.base`/`r2.manifestObject` 一致，且不引入
+ * 5. `wrangler.jsonc` 的 `vars` 与 `r2.base`/`r2.manifestObject` 一致，且不引入
  *    配置之外的键（Worker 从 env 读这两个值，这里是它们的守门）
- * 7. 跳转目标的 `siteBase` 主机必须是 `<name>.<主站 host>`：子域名与 target 名
- *    对齐是机械规则，断言守住“名字即事实”
  *
  * 纯读、不联网、毫秒级，进 pre-commit 与 CI。用法：`node scripts/check-site-config.ts`
  */
@@ -22,11 +19,6 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { CONFIG_PATH, readSiteConfig, type SiteConfig } from "./site-config.ts";
-
-/** 收集工作流文本里所有 `--target=<名>`。 */
-export function collectTargetFlags(text: string): string[] {
-  return [...text.matchAll(/--target=([A-Za-z0-9._-]+)/g)].map((match) => match[1] ?? "");
-}
 
 /**
  * 从 wrangler.jsonc 提取 routes 的主机名。
@@ -63,30 +55,23 @@ export function findDomainsInText(text: string, domains: string[]): string[] {
   return hits;
 }
 
-/** 断言 1：`--target=` 必须指向配置里存在的跳转目标。 */
-export function targetFlagIssues(flags: string[], config: SiteConfig): string[] {
-  const redirectNames = new Set(
-    config.targets.filter((target) => target.kind === "redirect").map((target) => target.name)
-  );
-  return flags
-    .filter((flag) => !redirectNames.has(flag))
-    .map(
-      (flag) =>
-        `工作流里的 --target=${flag} 不是配置中的跳转目标（可选：${[...redirectNames].join("、")}）`
-    );
-}
-
-/** 断言 2：wrangler routes 主机必须都在 cloudflare 目标的 hosts 里。 */
+/** 断言 1：wrangler routes 主机必须与 cloudflare 目标的 hosts 完全一致。 */
 export function routeHostIssues(hosts: string[], config: SiteConfig): string[] {
-  const worker = config.targets.find((target) => target.kind === "worker");
+  const worker = config.targets[0];
   if (!worker) return ["配置里没有 kind=worker 的目标，无法核对 wrangler.jsonc 的 routes"];
   const allowed = new Set(worker.hosts);
-  return hosts
-    .filter((host) => !allowed.has(host))
-    .map((host) => `wrangler.jsonc 的 route 主机 ${host} 不在配置的 ${worker.name}.hosts 里`);
+  const actual = new Set(hosts);
+  return [
+    ...hosts
+      .filter((host) => !allowed.has(host))
+      .map((host) => `wrangler.jsonc 的 route 主机 ${host} 不在配置的 ${worker.name}.hosts 里`),
+    ...worker.hosts
+      .filter((host) => !actual.has(host))
+      .map((host) => `配置的 ${worker.name}.hosts 主机 ${host} 不在 wrangler.jsonc 的 routes 里`),
+  ];
 }
 
-/** 断言 3：工作流文本里不得出现配置中的域名。 */
+/** 断言 2：工作流文本里不得出现配置中的域名。 */
 export function hardcodedDomainIssues(
   files: { path: string; text: string }[],
   config: SiteConfig
@@ -95,13 +80,13 @@ export function hardcodedDomainIssues(
   const issues: string[] = [];
   for (const file of files) {
     for (const domain of findDomainsInText(file.text, domains)) {
-      issues.push(`${file.path} 里出现域名 ${domain}：工作流不应硬编码域名，请改用 --target`);
+      issues.push(`${file.path} 里出现域名 ${domain}：工作流不应硬编码域名`);
     }
   }
   return issues;
 }
 
-/** 断言 4：corsOrigins 覆盖 origin。 */
+/** 断言 3：corsOrigins 覆盖 origin。 */
 export function corsCoverageIssues(config: SiteConfig): string[] {
   const required = [config.origin];
   const origins = new Set(config.r2.corsOrigins);
@@ -110,7 +95,7 @@ export function corsCoverageIssues(config: SiteConfig): string[] {
     .map((origin) => `r2.corsOrigins 缺少 ${origin}：该来源无法从浏览器读取 R2 数据`);
 }
 
-/** 断言 5：版本来源唯一（`.nvmrc` + `devEngines.packageManager`）。 */
+/** 断言 4：版本来源唯一（`.nvmrc` + `devEngines.packageManager`）。 */
 export function versionSourceIssues(args: {
   nvmrc: string | null;
   packageJson: unknown;
@@ -174,7 +159,7 @@ export function versionSourceIssues(args: {
 }
 
 /**
- * 断言 6：`wrangler.jsonc` 的 `vars` 与配置的 r2 字段一致，且键集受控。
+ * 断言 5：`wrangler.jsonc` 的 `vars` 与配置的 r2 字段一致，且键集受控。
  *
  * Worker 不再 import `config/site.json`（改从 env 读 `R2_BASE` 与 `R2_MANIFEST_OBJECT`），
  * 这两个值的一致性只能靠断言守：值要一致，键集也不得超出配置管理的范围。
@@ -211,41 +196,14 @@ export function wranglerVarsIssues(args: { config: SiteConfig; wranglerText: str
   return issues;
 }
 
-/**
- * 断言 7：跳转目标的 siteBase 主机必须是 `<name>.<主站 host>`。
- *
- * 子域名与 target 名对齐是机械规则：名字即事实，Worker 的 Origin 白名单、
- * 会话 cookie 的 Domain、CORS 配置都依赖这条规则的可推导性。
- */
-export function redirectSiteBaseIssues(config: SiteConfig): string[] {
-  const mainHost = new URL(config.origin).host;
-  return config.targets
-    .filter((target) => target.kind === "redirect")
-    .map((target) => {
-      const expectedHost = `${target.name}.${mainHost}`;
-      return new URL(target.siteBase).host === expectedHost
-        ? null
-        : `跳转目标 ${target.name} 的 siteBase 主机应为 ${expectedHost}（与 target 名对齐），实际是 ${new URL(target.siteBase).host}`;
-    })
-    .filter((issue): issue is string => issue !== null);
-}
-
-/** 配置里出现过的全部域名（用于断言 3 的扫描列表；含跳转目标的原域与 git-pages 服务主机）。 */
+/** 配置里出现过的全部域名（用于断言 2 的扫描列表）。 */
 export function collectDomains(config: SiteConfig): string[] {
   const hostOf = (url: string): string => new URL(url).host;
   return [
     ...new Set([
       hostOf(config.origin),
       hostOf(config.r2.base),
-      ...config.targets.flatMap((target) =>
-        target.kind === "redirect"
-          ? [
-              hostOf(target.siteBase),
-              ...target.legacyHosts,
-              ...(target.pagesServer === undefined ? [] : [target.pagesServer]),
-            ]
-          : target.hosts
-      ),
+      ...config.targets.flatMap((target) => target.hosts),
     ]),
   ];
 }
@@ -276,15 +234,12 @@ function main(): void {
     path: file,
     text: read(repoRoot, file),
   }));
-  const allWorkflowText = workflowFiles.map((file) => file.text).join("\n");
 
   const nvmrcPath = path.join(repoRoot, ".nvmrc");
   const wranglerText = read(repoRoot, "wrangler.jsonc");
   const issues: string[] = [
-    ...targetFlagIssues(collectTargetFlags(allWorkflowText), config),
     ...routeHostIssues(wranglerRouteHosts(wranglerText), config),
     ...wranglerVarsIssues({ config, wranglerText }),
-    ...redirectSiteBaseIssues(config),
     ...hardcodedDomainIssues(workflowFiles, config),
     ...corsCoverageIssues(config),
     ...versionSourceIssues({

@@ -12,11 +12,19 @@ on:
       - "config/redirects.json"
       - "scripts/check-redirect-rules.ts"
       - "scripts/redirect-rules.ts"
+      - "scripts/check-r2-cors.ts"
+      - "scripts/check-site-config.ts"
+      - "scripts/site-config.ts"
+      - "package.json"
     branches: [main]
   schedule:
     # 每周一 04:00 UTC，抓控制台里绕过仓库的改动
     - cron: "0 4 * * 1"
   workflow_dispatch:
+
+concurrency:
+  group: config-drift
+  cancel-in-progress: true
 
 jobs:
   drift:

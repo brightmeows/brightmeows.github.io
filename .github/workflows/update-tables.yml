@@ -33,7 +33,7 @@ jobs:
       - uses: actions/checkout@v7
 
       # 本工作流只做一件事：抓取 + R2 双向同步。镜像表页面与 tables.json
-      # 由 Worker 运行时应答，静态宿主已退化为跳转壳，不再需要按列表变动重建。
+      # 由 Worker 运行时应答，静态宿主已全部退役，不再需要按列表变动重建。
       #
       # 抓取逻辑在 scripts/fetch-tables.ts（scripts/pipeline/），与站点同仓演进。
       #

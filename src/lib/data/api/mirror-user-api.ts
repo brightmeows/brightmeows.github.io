@@ -26,7 +26,7 @@ import { translateMessage } from "#lib/utils/i18n/i18n.js";
  * 镜像表用户操作接口的客户端封装。
  *
  * 形状与窄化来自 `@brightmeows/mirror/api`；传输层在 `./http`。
- * 接口只存在于主站 Worker；静态宿主已退化为跳转壳。
+ * 接口只存在于主站 Worker；静态宿主已退役。
  */
 
 export { ApiUnavailableError } from "./http";

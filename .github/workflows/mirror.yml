@@ -8,9 +8,14 @@ on:
     # auto-merge 即此类），bot 合并的漂移由本 cron 收敛至至多一天
     - cron: "30 4 * * *"
 
+concurrency:
+  group: mirror
+  cancel-in-progress: false
+
 jobs:
   mirror:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v7
