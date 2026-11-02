@@ -76,3 +76,9 @@ export const inputInline =
 /** 面板输入框（大圆角）。 */
 export const inputPanel =
   "w-full rounded-xl border border-white-20 bg-black-20 px-4 py-2.5 text-white outline-none placeholder:text-white-50 focus:border-[#64b5f6]/60 focus:ring-2 focus:ring-[#64b5f6]/30";
+
+// ---- 图表链接图标 ----
+
+/** 谱面行内的统一方形图标按钮（链接与“...”共用）。 */
+export const chartLinkIcon =
+  "flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md border border-white-20 bg-white-10 text-white-80 transition-colors duration-200 hover:bg-white-20 hover:text-white focus-visible:ring-2 focus-visible:ring-[#64b5f6]/40 focus-visible:outline-none";

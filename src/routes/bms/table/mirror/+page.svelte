@@ -8,8 +8,8 @@
   import MirrorUserActions from "#lib/components/bms/MirrorUserActions.svelte";
   import SelectedTablesPanel from "#lib/components/bms/SelectedTablesPanel.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
+  import CardSwitcher, { type CardSwitchItem } from "#lib/components/ui/CardSwitcher.svelte";
   import Checkbox from "#lib/components/ui/Checkbox.svelte";
-  import DetailsPanel from "#lib/components/ui/DetailsPanel.svelte";
   import JsonPreview from "#lib/components/ui/JsonPreview.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
   import { inputPanel } from "#lib/constants/ui-classes.js";
@@ -83,6 +83,45 @@
 
   let mirrorPreview = $state<JsonPreviewHandle | undefined>(undefined);
 
+  type MirrorCardId = "mirror-add" | "mirror-list";
+  let visibleCards = $state<Record<MirrorCardId, boolean>>({
+    "mirror-add": false,
+    "mirror-list": true,
+  });
+
+  const cardItems = $derived<CardSwitchItem[]>([
+    ...(auth.status === "ready"
+      ? [
+          {
+            id: "mirror-add",
+            label: m["mirror.add_table"](),
+            checked: visibleCards["mirror-add"],
+            title: m["mirror.add_table_hint"](),
+          },
+        ]
+      : []),
+    {
+      id: "mirror-list",
+      label: m["mirror.all_tables"](),
+      checked: visibleCards["mirror-list"],
+      count: tables.length,
+    },
+  ]);
+
+  function toggleCard(id: string, checked: boolean): void {
+    visibleCards = { ...visibleCards, [id as MirrorCardId]: checked };
+  }
+
+  async function jumpToCard(id: string): Promise<void> {
+    const cardId = id as MirrorCardId;
+    if (!visibleCards[cardId]) {
+      visibleCards = { ...visibleCards, [cardId]: true };
+      await tick();
+    }
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    history.replaceState(null, "", `#${id}`);
+  }
+
   // ---- 管理交互（仅 ADMIN_LOGIN 角色可见，服务端权限不变） ----
   let admin = $state<MirrorAdminState>(initialMirrorAdminState());
   let adminPanelOpen = $state(false);
@@ -128,18 +167,25 @@
         title: pageTitle,
         href: "#bms-table-mirror",
       },
-      {
-        id: "mirror-list",
-        title: m["mirror.all_tables"](),
-        href: "#mirror-list",
-        children: tagItems,
-      },
+      ...(visibleCards["mirror-list"]
+        ? [
+            {
+              id: "mirror-list",
+              title: m["mirror.all_tables"](),
+              href: "#mirror-list",
+              children: tagItems,
+            },
+          ]
+        : []),
     ];
   });
 
   // 顶栏管理入口以 #mirror-admin 锚点落页：登录态就绪后展开管理区并滚动到位
   $effect(() => {
     if (!isAdmin || currentHash !== "#mirror-admin") return;
+    if (!visibleCards["mirror-list"]) {
+      visibleCards = { ...visibleCards, "mirror-list": true };
+    }
     if (!adminPanelOpen) {
       adminPanelOpen = true;
       void loadOverview(false);
@@ -195,6 +241,7 @@
       admin = { ...admin, notice: { kind: "ok", text: m["mirror.deleted"]({ name: label }) } };
       await loadTables(true);
       await userActions?.refresh();
+      if (userActions === undefined) await auth.refresh();
     } catch (e) {
       admin = {
         ...admin,
@@ -357,7 +404,11 @@
 
 <PageShell
   {tocItems}
-  panes={[titlePane, ...(auth.status === "ready" ? [addTablePane] : []), listPane]}
+  panes={[
+    titlePane,
+    ...(auth.status === "ready" && visibleCards["mirror-add"] ? [addTablePane] : []),
+    ...(visibleCards["mirror-list"] ? [listPane] : []),
+  ]}
 />
 
 {#snippet titlePane()}
@@ -381,21 +432,25 @@
       <span class="ml-2 text-[#4caf50]">{m["common.copied"]()}</span>
     {/if}
   </div>
+  <div class="mt-4">
+    <CardSwitcher
+      items={cardItems}
+      ariaLabel={m["table.sections"]()}
+      align="center"
+      onToggle={toggleCard}
+      onJump={(id) => void jumpToCard(id)}
+    />
+  </div>
 {/snippet}
 
 {#snippet addTablePane()}
-  <MirrorUserActions bind:this={userActions} onchanged={handleUserChanged} />
+  <div id="mirror-add" class="scroll-mt-20">
+    <MirrorUserActions bind:this={userActions} onchanged={handleUserChanged} />
+  </div>
 {/snippet}
 
 {#snippet listPane()}
-  <DetailsPanel
-    id="mirror-list"
-    class="scroll-mt-20"
-    summary={m["mirror.all_tables"]()}
-    hint={tables.length > 0 ? m["mirror.table_count"]({ count: tables.length }) : ""}
-    variant="plain"
-    collapsible={false}
-  >
+  <div id="mirror-list" class="scroll-mt-20">
     <div class="flex flex-col gap-3">
       {#if admin.notice}
         <div
@@ -532,7 +587,7 @@
         />
       {/if}
     </div>
-  </DetailsPanel>
+  </div>
 {/snippet}
 
 <SelectedTablesPanel {tables} bind:selectedMap {mirrorPreview} {displayOrderUrls} />
