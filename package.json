@@ -27,6 +27,7 @@
     "check:redirects": "node scripts/check-redirect-rules.ts",
     "check:i18n": "node scripts/check-i18n-coverage.ts",
     "check:jsdoc": "node scripts/check-jsdoc.ts",
+    "check:contrast": "node scripts/check-contrast.ts",
     "check:quotes": "git ls-files -z -- '*.md' '*.svx' '*.ts' '*.svelte' '*.js' '*.py' '*.yml' '*.yaml' '*.json' '*.jsonc' '*.toml' '*.css' '*.html' ':(exclude)static/**' | xargs -0 -r python3 scripts/check-cn-quotes.py"
   },
   "dependencies": {

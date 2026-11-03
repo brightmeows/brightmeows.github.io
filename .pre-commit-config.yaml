@@ -148,6 +148,17 @@ repos:
         types: [text]
         pass_filenames: false
 
+  # 语义 token 对比度：从 layout.css 读变量，按 WCAG AA 校验文字与控件边界；
+  # 纯离线、毫秒级，布局色板变更时自动跑。
+  - repo: local
+    hooks:
+      - id: contrast
+        name: token contrast meets WCAG AA
+        entry: node scripts/check-contrast.ts
+        language: system
+        files: ^(src/routes/layout\.css|scripts/check-contrast\.ts)$
+        pass_filenames: false
+
   # 提交信息遵循 Conventional Commits（见 AGENTS.md“提交格式”）
   - repo: local
     hooks:
