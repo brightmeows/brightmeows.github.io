@@ -105,6 +105,7 @@
             onclick={() => void cb.copy("mirror", formatJsonPreview(selectedMirrorArray))}
             use:jsonPreview={{
               preview: mirrorPreview,
+              trigger: "hover",
               options: {
                 value: selectedMirrorArray,
                 label: m["selected.mirror_json"](),
@@ -124,6 +125,7 @@
             onclick={() => void cb.copy("origin", formatJsonPreview(selectedOriginArray))}
             use:jsonPreview={{
               preview: mirrorPreview,
+              trigger: "hover",
               options: {
                 value: selectedOriginArray,
                 label: m["selected.origin_json"](),

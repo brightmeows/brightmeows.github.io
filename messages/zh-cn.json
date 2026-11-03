@@ -153,6 +153,8 @@
   "common.details": "详情",
   "common.diff": "差分",
   "common.edit": "编辑",
+  "common.json_hint_mouse": "右键查看 JSON",
+  "common.json_hint_touch": "长按查看 JSON",
   "common.load_failed": "加载失败",
   "common.load_failed_with_error": "加载失败：{error}",
   "common.loading_data": "正在加载数据...",

@@ -89,9 +89,10 @@
   </td>
   <td class="table-td-compact wrap-break-word">
     <strong
-      class="cursor-default"
+      class="cursor-context-menu"
       use:jsonPreview={{
         preview: chartPreview,
+        trigger: "contextmenu",
         options: {
           value: { ...chart, groupLevel },
           label: m["common.chart_json"](),
