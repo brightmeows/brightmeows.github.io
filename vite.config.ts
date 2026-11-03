@@ -33,8 +33,13 @@ const sveltexPreprocess = await sveltex(
     frontmatter: { head: false },
     // SvelTeX 默认不启用 GFM（表格/任务列表/删除线），需显式挂载
     markdown: { remarkPlugins: [remarkGfm] },
-    // 站点为深色主题，代码块用 shiki 的 github-dark 配色
-    code: { shiki: { theme: "github-dark" } },
+    // 两档主题各自用 Catppuccin 代码块；Shiki 输出 --shiki-light/--shiki-dark
+    // 变量，深夜端由 layout.css 的 [data-theme="dark"] 规则切换
+    code: {
+      shiki: {
+        themes: { light: "catppuccin-macchiato", dark: "catppuccin-mocha" },
+      },
+    },
     // katex CSS 由 MarkdownContent.svelte 本地引入，关闭 CDN 注入
     math: { css: { type: "none" } },
   }

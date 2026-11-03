@@ -326,6 +326,8 @@ function checkTheme(
   if (!base) throw new Error(`无法解析最坏背景 ${worstBackground}`);
   const failures: string[] = [];
   let checked = 0;
+  const glass = parseColor(variables.get("--color-glass") ?? "", variables);
+  const glassBackground = glass ? composite(glass, base) : base;
 
   const check = (pair: ContrastPair): void => {
     const resolved = resolvePair(variables, pair.foreground, pair.background, base);
@@ -343,6 +345,35 @@ function checkTheme(
   for (const pair of TEXT_PAIRS) check(pair);
   for (const pair of GLASS_PAIRS) check(pair);
   for (const pair of GRADIENT_PAIRS) check(pair);
+
+  // 控件与标签常把文字压在 surface / accent-soft 这类半透明层上；这些层
+  // 先合成到玻璃，再合成到最坏背景，单独检查，避免只在玻璃层过线。
+  const layerPairs: [string, string][] = [
+    ["--color-text", "--color-surface"],
+    ["--color-text", "--color-surface-strong"],
+    ["--color-text", "--color-surface-emphasis"],
+    ["--color-text", "--color-accent-soft"],
+    ["--color-text-secondary", "--color-surface"],
+    ["--color-text-secondary", "--color-surface-strong"],
+  ];
+  for (const [foregroundName, layerName] of layerPairs) {
+    const layer = parseColor(variables.get(layerName) ?? "", variables);
+    if (!layer) {
+      failures.push(`${layerName}：无法解析`);
+      continue;
+    }
+    const background = composite(layer, glassBackground);
+    const foreground = parseColor(variables.get(foregroundName) ?? "", variables);
+    if (!foreground) {
+      failures.push(`${foregroundName} / ${layerName}：无法解析`);
+      continue;
+    }
+    const ratio = contrastRatio(foreground, background);
+    checked += 1;
+    if (ratio + 1e-6 < 4.5) {
+      failures.push(`${foregroundName} / ${layerName}：${ratio.toFixed(2)}:1，低于 4.5:1`);
+    }
+  }
 
   const onAccent = resolvePair(variables, "--color-on-accent", "--color-accent", base);
   if (!onAccent) {

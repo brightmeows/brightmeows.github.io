@@ -258,6 +258,14 @@
   background-image: var(--gradient-sky);
 }
 
+/* Shiki 双主题：默认输出 Macchiato，深夜端切到 Mocha 的 --shiki-dark 变量。
+   代码块自身的内联背景色也走同一组变量，避免与 [&_pre] 的 token 底色打架。 */
+:root[data-theme="dark"] .shiki,
+:root[data-theme="dark"] .shiki span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -386,7 +394,7 @@
 
   /* ===== 错误信息块 ===== */
   .message-error {
-    @apply rounded-[10px] border-l-4 border-error bg-error/10 p-4 text-[0.9rem] text-error;
+    @apply rounded-[10px] border-l-4 border-error-strong bg-error/5 p-4 text-[0.9rem] text-error;
   }
 
   /* ===== 滚动导航标签 ===== */

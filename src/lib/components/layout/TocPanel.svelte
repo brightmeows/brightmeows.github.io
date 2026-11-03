@@ -140,7 +140,7 @@
       class={[
         "block rounded-lg py-2 pr-3 text-[0.9rem] leading-snug transition-colors",
         activeId === (item.href.startsWith("#") ? item.href.slice(1) : item.id)
-          ? "bg-surface text-link"
+          ? "bg-surface text-text"
           : "text-text-secondary hover:bg-surface-subtle hover:text-text",
       ].join(" ")}
       style={`padding-left: ${12 + item.depth * 14}px;`}

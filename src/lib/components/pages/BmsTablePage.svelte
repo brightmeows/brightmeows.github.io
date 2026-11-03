@@ -376,7 +376,7 @@
           ? 'border-success/40 bg-success/10 text-success'
           : model.notice.kind === 'warn'
             ? 'border-warning/40 bg-warning/10 text-warning'
-            : 'border-error-strong/40 bg-error-strong/10 text-error'}"
+            : 'border-error-strong/40 bg-error/5 text-error'}"
       >
         {model.notice.text}
       </div>
