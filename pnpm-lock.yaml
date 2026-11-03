@@ -2103,8 +2103,8 @@ packages:
     resolution: {integrity: sha512-nbD8lB9EB3wNdMhOCdx5Li8DxnLbvKByylRLcJ1h+4SkrowVeECAyZlyiKMThF7xFdRz0jSQ2MoJr+wXux2y0Q==}
     engines: {node: '>=20.0.0'}
 
-  launder@1.7.1:
-    resolution: {integrity: sha512-mU6WRz5EusL9ZZuiZ5SO4Y6C0P9PAUR9iwdb6bzj4KDihm28DiHFw+/yk9DBH4f+Pv1wuzQ4e2jV3oQ7mkIqvw==}
+  launder@1.7.2:
+    resolution: {integrity: sha512-DLg3HPnHUfBi5/MxMLmJD12dmlMpFEC2HgMW6vkZ/9JR0RU00kXoRGvDxAvFmdO0o610OA77i4FgNTLucmhDVg==}
 
   lightningcss-android-arm64@1.32.0:
     resolution: {integrity: sha512-YK7/ClTt4kAK0vo6w3X+Pnm0D2cf2vPHbhOXdoNti1Ga0al1P4TBZhwjATvjNwLEBCnKvjJc2jQgHXH0NEwlAg==}
@@ -2694,8 +2694,8 @@ packages:
     resolution: {integrity: sha512-xal3CZX1Xlo/k4ApwCFrHVACi9fBqJ7V+mwhBsuf/1IOKbBy098Fex+Wa/5QMubw09pSZ/u8EY8PWgevJsXp1A==}
     engines: {node: '>=6'}
 
-  sanitize-html@2.17.7:
-    resolution: {integrity: sha512-PGtEkc9cbnedU3s9TmzDbpsZ8w086g/0Q8k8/oIO1NLNU3i5k9yn835CrjJSajp1KMmkisbO1qPXxNKO3welAg==}
+  sanitize-html@2.18.1:
+    resolution: {integrity: sha512-2X5lC8fYla8YaT8g73Nj+HcLWXan5dLyCWLgVvaOmfw7JI78IRsyNtIDytTHdn7hBQbIkCah7Zbmd5jabzeDig==}
     engines: {node: '>=22.12.0'}
 
   sax@1.6.1:
@@ -3456,7 +3456,7 @@ snapshots:
       regex: 6.1.0
       rfdc: 1.4.1
       rimraf: 6.1.3
-      sanitize-html: 2.17.7
+      sanitize-html: 2.18.1
       smol-toml: 1.9.1
       svelte: 5.57.3
       svgo: 4.1.0
@@ -4369,7 +4369,7 @@ snapshots:
 
   kysely@0.28.17: {}
 
-  launder@1.7.1:
+  launder@1.7.2:
     dependencies:
       dayjs: 1.11.23
 
@@ -5317,13 +5317,12 @@ snapshots:
     dependencies:
       mri: 1.2.0
 
-  sanitize-html@2.17.7:
+  sanitize-html@2.18.1:
     dependencies:
-      deepmerge: 4.3.1
       escape-string-regexp: 4.0.0
       htmlparser2: 12.0.0
       is-plain-object: 5.1.0
-      launder: 1.7.1
+      launder: 1.7.2
       parse-srcset: 1.0.2
       postcss: 8.5.28
 
