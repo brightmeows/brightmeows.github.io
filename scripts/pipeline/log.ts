@@ -81,8 +81,8 @@ export class RunLog implements PipelineLogger {
     }
     if (summary.longHashWarnings.size > 0) {
       lines.push("# 超长哈希告警（按表折叠）：");
-      for (const [dirName, warning] of [...summary.longHashWarnings.entries()].sort(
-        (left, right) => (left[0] < right[0] ? -1 : left[0] > right[0] ? 1 : 0)
+      for (const [dirName, warning] of [...summary.longHashWarnings.entries()].sort((left, right) =>
+        left[0] < right[0] ? -1 : left[0] > right[0] ? 1 : 0
       )) {
         lines.push(`#   ${dirName}：${warning.count} 条，示例 ${warning.sample}`);
       }
