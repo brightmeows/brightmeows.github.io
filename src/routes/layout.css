@@ -159,9 +159,12 @@
   --ctp-blue: #8aadf4;
   --ctp-lavender: #b7bdf8;
 
-  --alpha-glass: rgb(147 154 183 / 0.1);
-  --alpha-glass-light: rgb(147 154 183 / 0.14);
-  --alpha-glass-hover: rgb(147 154 183 / 0.08);
+  /* 玻璃底色用中性白 alpha：白色叠在紫背景上稀释饱和度、提亮面板，
+     是“另一层材质”观感的来源；Catppuccin 色相的 alpha（如 overlay2）
+     与背景同色相，只会变成稍亮的背景，玻璃感消失（2026-11 实测回退）。 */
+  --alpha-glass: rgb(255 255 255 / 0.07);
+  --alpha-glass-light: rgb(255 255 255 / 0.12);
+  --alpha-glass-hover: rgb(255 255 255 / 0.05);
   --alpha-surface-subtle: rgb(128 135 162 / 0.06);
   --alpha-surface: rgb(128 135 162 / 0.12);
   --alpha-surface-strong: rgb(128 135 162 / 0.18);
@@ -210,9 +213,9 @@
   --ctp-blue: #89b4fa;
   --ctp-lavender: #b4befe;
 
-  --alpha-glass: rgb(147 153 178 / 0.1);
-  --alpha-glass-light: rgb(147 153 178 / 0.14);
-  --alpha-glass-hover: rgb(147 153 178 / 0.08);
+  --alpha-glass: rgb(255 255 255 / 0.07);
+  --alpha-glass-light: rgb(255 255 255 / 0.12);
+  --alpha-glass-hover: rgb(255 255 255 / 0.05);
   --alpha-surface-subtle: rgb(127 132 156 / 0.06);
   --alpha-surface: rgb(127 132 156 / 0.12);
   --alpha-surface-strong: rgb(127 132 156 / 0.18);
