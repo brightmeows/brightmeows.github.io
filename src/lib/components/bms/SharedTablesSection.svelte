@@ -50,13 +50,11 @@
           <div class="flex items-center gap-3">
             <span class="tag-accent">{group.author}</span>
             {#if group.isSelf}
-              <span
-                class="rounded-[10px] bg-[#64b5f6]/20 px-2 py-[0.1rem] text-[0.85rem] text-[#64b5f6]"
-              >
+              <span class="rounded-[10px] bg-accent-soft px-2 py-[0.1rem] text-[0.85rem] text-text">
                 {m["shared.mine_badge"]()}
               </span>
             {/if}
-            <span class="text-[0.9rem] text-white-50">
+            <span class="text-[0.9rem] text-text-secondary">
               {m["shared.group_count"]({ count: group.items.length })}
             </span>
           </div>

@@ -131,7 +131,7 @@
 <CourseRow {expanded}>
   {#snippet summary()}
     <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
-      <span class="text-[1rem] font-semibold text-white">
+      <span class="text-[1rem] font-semibold text-text">
         {course.name || m["course.unnamed"]()}
       </span>
       {#each course.constraints as constraint (constraint)}
@@ -142,13 +142,13 @@
         </span>
       {/each}
       {#if course.trophies.length > 0}
-        <span class="flex flex-wrap items-center gap-1 text-[0.8rem] text-white-50">
+        <span class="flex flex-wrap items-center gap-1 text-[0.8rem] text-text-secondary">
           {#each course.trophies as trophy, index (index)}
             <span>{trophyEmoji(trophy.name)} {trophy.name}</span>
           {/each}
         </span>
       {/if}
-      <span class="text-[0.8rem] text-white-40">
+      <span class="text-[0.8rem] text-text-secondary">
         {m["table.chart_count"]({ count: course.charts.length })}
       </span>
     </div>
@@ -223,7 +223,8 @@
   {#snippet children()}
     <div class="flex flex-col gap-4">
       <label class="block">
-        <span class="mb-1 block text-[0.8rem] text-white-60">{m["editor.course_name"]()}</span>
+        <span class="mb-1 block text-[0.8rem] text-text-secondary">{m["editor.course_name"]()}</span
+        >
         <input
           class="{inputEditorMono} max-w-120"
           type="text"
@@ -238,10 +239,12 @@
       </label>
 
       <div>
-        <div class="mb-1 text-[0.8rem] text-white-60">{m["editor.course_constraint"]()}</div>
+        <div class="mb-1 text-[0.8rem] text-text-secondary">{m["editor.course_constraint"]()}</div>
         <div class="flex flex-wrap gap-x-4 gap-y-1">
           {#each [...COURSE_CONSTRAINTS, ...course.constraints.filter((item) => !COURSE_CONSTRAINTS.includes(item))] as constraint (constraint)}
-            <label class="flex cursor-pointer items-center gap-1.5 text-[0.85rem] text-white-75">
+            <label
+              class="flex cursor-pointer items-center gap-1.5 text-[0.85rem] text-text-secondary"
+            >
               <input
                 type="checkbox"
                 checked={course.constraints.includes(constraint)}
@@ -256,7 +259,7 @@
 
       <div>
         <div class="mb-1 flex items-center gap-2">
-          <span class="text-[0.8rem] text-white-60">{m["editor.course_trophy"]()}</span>
+          <span class="text-[0.8rem] text-text-secondary">{m["editor.course_trophy"]()}</span>
           <button class="{btnGhost} ml-auto" type="button" {disabled} onclick={addTrophy}>
             {m["editor.course_trophy_add"]()}
           </button>
@@ -327,14 +330,14 @@
             {/each}
           </div>
         {:else}
-          <p class="text-[0.85rem] text-white-50">{m["editor.course_trophy_empty"]()}</p>
+          <p class="text-[0.85rem] text-text-secondary">{m["editor.course_trophy_empty"]()}</p>
         {/if}
       </div>
 
       <div>
         <div class="mb-1 flex flex-wrap items-center gap-2">
-          <span class="text-[0.8rem] text-white-60">{m["editor.course_charts"]()}</span>
-          <span class="text-[0.78rem] text-white-40">{m["editor.course_charts_hint"]()}</span>
+          <span class="text-[0.8rem] text-text-secondary">{m["editor.course_charts"]()}</span>
+          <span class="text-[0.78rem] text-text-secondary">{m["editor.course_charts_hint"]()}</span>
           <div class="ml-auto flex gap-2">
             <button class={btnGhost} type="button" {disabled} onclick={openPicker}>
               {m["editor.course_chart_pick"]()}
@@ -346,7 +349,7 @@
         </div>
 
         {#if pickerOpen}
-          <div class="mb-2 rounded-lg border border-[#64b5f6]/40 bg-[#64b5f6]/10 p-2">
+          <div class="mb-2 rounded-lg border border-accent/40 bg-accent/10 p-2">
             <div class="mb-2 flex items-center gap-2">
               <input
                 class="{inputEditorMono} flex-1"
@@ -360,17 +363,19 @@
               </button>
             </div>
             {#if pickerResults.length === 0}
-              <p class="text-[0.85rem] text-white-50">{m["editor.course_picker_empty"]()}</p>
+              <p class="text-[0.85rem] text-text-secondary">{m["editor.course_picker_empty"]()}</p>
             {:else}
               <ul class="max-h-64 overflow-auto">
                 {#each pickerResults as index (index)}
                   {@const entry = entries[index] ?? {}}
                   {@const info = describe(entry)}
-                  <li class="flex items-center gap-2 border-b border-white-5 py-1 last:border-b-0">
-                    <span class="min-w-0 flex-1 truncate text-[0.85rem] text-white-80">
+                  <li
+                    class="flex items-center gap-2 border-b border-border-subtle py-1 last:border-b-0"
+                  >
+                    <span class="min-w-0 flex-1 truncate text-[0.85rem] text-text-secondary">
                       {info.label}
                     </span>
-                    <span class="hidden font-mono text-[0.75rem] text-white-40 sm:inline">
+                    <span class="hidden font-mono text-[0.75rem] text-text-secondary sm:inline">
                       {info.hash.slice(0, 12)}…
                     </span>
                     <button
@@ -393,11 +398,11 @@
             {#each course.charts as chart, index (index)}
               {@const issue = courseHashIssue(chart)}
               {@const resolved = courseChartResolvedIn(knownHashes, chart)}
-              <div class="rounded-lg border border-white-10 bg-black-10 p-2">
+              <div class="rounded-lg border border-border-subtle bg-canvas-subtle p-2">
                 <div class="flex flex-wrap items-center gap-2">
                   <input
                     class="{inputEditorMono} min-w-52 flex-1 {issue === 'md5'
-                      ? 'border-red-400/60'
+                      ? 'border-error-strong/60'
                       : ''}"
                     type="text"
                     value={chart.md5}
@@ -410,7 +415,7 @@
                   />
                   <input
                     class="{inputEditorMono} min-w-52 flex-[1.4] {issue === 'sha256'
-                      ? 'border-red-400/60'
+                      ? 'border-error-strong/60'
                       : ''}"
                     type="text"
                     value={chart.sha256}
@@ -434,17 +439,17 @@
                   />
                 </div>
                 <div class="mt-1.5 flex flex-wrap items-center gap-2">
-                  <span class="text-[0.78rem] {resolved ? 'text-[#4caf50]' : 'text-amber-300'}">
+                  <span class="text-[0.78rem] {resolved ? 'text-success' : 'text-warning'}">
                     {resolved
                       ? m["editor.course_chart_resolved"]()
                       : m["editor.course_chart_unresolved"]()}
                   </span>
                   {#if issue === "missing"}
-                    <span class="text-[0.78rem] text-red-300">
+                    <span class="text-[0.78rem] text-error">
                       {m["editor.course_chart_identity"]()}
                     </span>
                   {:else if issue !== "ok"}
-                    <span class="text-[0.78rem] text-red-300">
+                    <span class="text-[0.78rem] text-error">
                       {m["editor.course_chart_hash_invalid"]({ field: issue })}
                     </span>
                   {/if}
@@ -515,17 +520,17 @@
             {/each}
           </div>
         {:else}
-          <p class="text-[0.85rem] text-white-50">{m["editor.course_charts_empty"]()}</p>
+          <p class="text-[0.85rem] text-text-secondary">{m["editor.course_charts_empty"]()}</p>
         {/if}
       </div>
 
       {#if Object.keys(course.extra).length > 0}
-        <details class="rounded-md border border-white-10 p-2">
-          <summary class="cursor-pointer text-[0.78rem] text-white-50">
+        <details class="rounded-md border border-border-subtle p-2">
+          <summary class="cursor-pointer text-[0.78rem] text-text-secondary">
             {m["editor.course_extra"]()}
           </summary>
           <pre
-            class="mt-1 max-h-40 overflow-auto font-mono text-[0.75rem] whitespace-pre-wrap text-white-60">{JSON.stringify(
+            class="mt-1 max-h-40 overflow-auto font-mono text-[0.75rem] whitespace-pre-wrap text-text-secondary">{JSON.stringify(
               course.extra,
               null,
               2

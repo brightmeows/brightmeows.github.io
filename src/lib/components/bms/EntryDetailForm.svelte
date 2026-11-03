@@ -98,15 +98,15 @@
   }
 </script>
 
-<section class="rounded-lg border border-[#64b5f6]/40 bg-[#64b5f6]/10 p-3">
-  <div class="mb-2 text-[0.9rem] text-[#90caf9]">
+<section class="rounded-lg border border-accent/40 bg-accent/10 p-3">
+  <div class="mb-2 text-[0.9rem] text-text-secondary">
     {entry === null ? m["editor.entry_add_title"]() : m["editor.entry_edit_title"]()}
   </div>
 
   <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
     {#each CORE_ENTRY_FIELDS as field (field)}
       <label class={field === "comment" ? "block sm:col-span-2" : "block"}>
-        <span class="mb-1 block text-[0.8rem] text-white-60">{FIELD_LABELS[field]}</span>
+        <span class="mb-1 block text-[0.8rem] text-text-secondary">{FIELD_LABELS[field]}</span>
         {#if field === "level"}
           <input
             class={inputEditorMono}
@@ -136,8 +136,8 @@
 
   <div class="mt-4">
     <div class="mb-2 flex flex-wrap items-center gap-2">
-      <span class="text-[0.85rem] text-white-70">{m["editor.entry_custom_title"]()}</span>
-      <span class="text-[0.8rem] text-white-50">{m["editor.entry_custom_hint"]()}</span>
+      <span class="text-[0.85rem] text-text-secondary">{m["editor.entry_custom_title"]()}</span>
+      <span class="text-[0.8rem] text-text-secondary">{m["editor.entry_custom_hint"]()}</span>
       <button
         class="{btnGhost} ml-auto"
         type="button"
@@ -148,7 +148,7 @@
       </button>
     </div>
     {#if custom.length === 0}
-      <p class="text-[0.85rem] text-white-50">{m["editor.entry_custom_empty"]()}</p>
+      <p class="text-[0.85rem] text-text-secondary">{m["editor.entry_custom_empty"]()}</p>
     {:else}
       <div class="flex flex-col gap-2">
         {#each custom as row, index (index)}
@@ -199,7 +199,7 @@
   </div>
 
   {#if error}
-    <p class="mt-2 text-[0.85rem] text-red-300">{errorMessage}</p>
+    <p class="mt-2 text-[0.85rem] text-error">{errorMessage}</p>
   {/if}
 
   <div class="mt-3 flex flex-wrap items-center gap-2">

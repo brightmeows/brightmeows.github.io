@@ -12,14 +12,7 @@
     /** 点击类型 */
     type?: "button" | "submit" | "reset";
     /** 颜色变体 */
-    variant?: "orange" | "purple" | "brown" | "cyan" | "blue" | "custom";
-    /** 自定义渐变颜色（仅当 variant="custom" 时使用） */
-    customGradient?: {
-      start: string;
-      end: string;
-      hoverStart?: string;
-      hoverEnd?: string;
-    };
+    variant?: "primary" | "warning" | "mocha" | "minir";
     /** 尺寸变体 */
     size?: "sm" | "md" | "lg";
     /** 自定义类名 */
@@ -48,8 +41,7 @@
     children,
     href,
     type = "button",
-    variant = "orange",
-    customGradient,
+    variant = "primary",
     size = "md",
     class: className = "",
     disabled = false,
@@ -69,19 +61,7 @@
     lg: "h-10 w-10 text-[1.4rem]",
   };
 
-  const variantClass = $derived(variant === "custom" ? "icon-btn-custom" : `icon-btn-${variant}`);
-
-  const resolvedStyle = $derived(
-    variant === "custom" && customGradient
-      ? {
-          "--grad-start": customGradient.start,
-          "--grad-end": customGradient.end,
-          "--grad-hover-start": customGradient.hoverStart ?? customGradient.start,
-          "--grad-hover-end": customGradient.hoverEnd ?? customGradient.end,
-          ...style,
-        }
-      : style
-  );
+  const variantClass = $derived(`icon-btn-${variant}`);
 </script>
 
 <style>
@@ -92,66 +72,52 @@
     overflow: hidden;
     border-radius: 9999px;
     padding: 0;
-    color: white;
+    color: var(--color-on-accent);
     border: none;
     transition: all 0.2s ease-in-out;
   }
   .icon-btn-base:hover:not(.no-hover) {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   }
-
-  .icon-btn-orange {
-    background: linear-gradient(135deg, var(--color-orange-from), var(--color-orange-to));
+  .icon-btn-base:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
   }
-  .icon-btn-orange:hover:not(.no-hover) {
+
+  .icon-btn-primary {
+    background: linear-gradient(135deg, var(--color-primary-from), var(--color-primary-to));
+  }
+  .icon-btn-primary:hover:not(.no-hover) {
     background: linear-gradient(
       135deg,
-      var(--color-orange-hover-from),
-      var(--color-orange-hover-to)
+      var(--color-primary-hover-from),
+      var(--color-primary-hover-to)
     );
   }
 
-  .icon-btn-purple {
-    background: linear-gradient(135deg, var(--color-purple-from), var(--color-purple-to));
+  .icon-btn-warning {
+    background: linear-gradient(135deg, var(--color-warning-from), var(--color-warning-to));
   }
-  .icon-btn-purple:hover:not(.no-hover) {
+  .icon-btn-warning:hover:not(.no-hover) {
     background: linear-gradient(
       135deg,
-      var(--color-purple-hover-from),
-      var(--color-purple-hover-to)
+      var(--color-warning-hover-from),
+      var(--color-warning-hover-to)
     );
   }
 
-  .icon-btn-brown {
-    background: linear-gradient(135deg, var(--color-brown-from), var(--color-brown-to));
+  .icon-btn-mocha {
+    background: linear-gradient(135deg, var(--color-mocha-from), var(--color-mocha-to));
   }
-  .icon-btn-brown:hover:not(.no-hover) {
-    background: linear-gradient(135deg, var(--color-brown-hover-from), var(--color-brown-hover-to));
-  }
-
-  .icon-btn-cyan {
-    background: linear-gradient(135deg, var(--color-cyan-from), var(--color-cyan-to));
-  }
-  .icon-btn-cyan:hover:not(.no-hover) {
-    background: linear-gradient(135deg, var(--color-cyan-hover-from), var(--color-cyan-hover-to));
+  .icon-btn-mocha:hover:not(.no-hover) {
+    background: linear-gradient(135deg, var(--color-mocha-hover-from), var(--color-mocha-hover-to));
   }
 
-  .icon-btn-blue {
-    background: linear-gradient(135deg, var(--color-blue-from), var(--color-blue-to));
+  .icon-btn-minir {
+    background: linear-gradient(135deg, var(--color-minir-from), var(--color-minir-to));
   }
-  .icon-btn-blue:hover:not(.no-hover) {
-    background: linear-gradient(135deg, var(--color-blue-hover-from), var(--color-blue-hover-to));
-  }
-
-  .icon-btn-custom {
-    background: linear-gradient(135deg, var(--grad-start), var(--grad-end));
-  }
-  .icon-btn-custom:hover:not(.no-hover) {
-    background: linear-gradient(
-      135deg,
-      var(--grad-hover-start, var(--grad-start)),
-      var(--grad-hover-end, var(--grad-end))
-    );
+  .icon-btn-minir:hover:not(.no-hover) {
+    background: linear-gradient(135deg, var(--color-minir-hover-from), var(--color-minir-hover-to));
   }
 </style>
 
@@ -166,7 +132,7 @@
       ? 'hover:scale-110'
       : ''} {clickShrink && !disabled ? 'active:scale-95' : ''} {className}"
     class:no-hover={disabled}
-    style={styleToString(resolvedStyle)}
+    style={styleToString(style)}
   >
     {#if children}
       {@render children()}
@@ -186,7 +152,7 @@
     class:cursor-not-allowed={disabled}
     class:cursor-pointer={!disabled}
     class:no-hover={disabled}
-    style={styleToString(resolvedStyle)}
+    style={styleToString(style)}
   >
     {#if children}
       {@render children()}

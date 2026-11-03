@@ -54,7 +54,7 @@
   );
 </script>
 
-<tr class="hover:bg-white-5 last:[&>td]:border-b-0">
+<tr class="hover:bg-surface-subtle last:[&>td]:border-b-0">
   <td class="table-td-compact wrap-break-word">
     <Checkbox
       ariaLabel={m["mirror.select_row_aria"]({ name: tableLabelOf(item) })}
@@ -105,7 +105,7 @@
           </svg>
         {:else}
           <svg
-            class="size-4 text-[#ffd54f]"
+            class="size-4 text-warning"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -144,7 +144,7 @@
           </svg>
         {:else}
           <svg
-            class="size-4 text-[#ffd54f]"
+            class="size-4 text-warning"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -166,7 +166,7 @@
   <td class="table-td-compact min-w-32.5 wrap-break-word">
     <div class="flex items-center gap-1">
       <GradientButton
-        variant="blue"
+        variant="primary"
         href={item.dir_name ? mirrorTablePath(item.dir_name) : item.url}
         size="sm"
         class="flex min-w-0 flex-1"
@@ -179,7 +179,7 @@
         <span class="badge-copied">{m["common.copied_bang"]()}</span>
       {:else}
         <button
-          class="flex-none cursor-pointer rounded-md border border-white-20 bg-white-10 px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-white-80 transition-all duration-200 ease-in-out hover:bg-white-20 hover:text-white"
+          class="flex-none cursor-pointer rounded-md border border-border-control bg-surface px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-text-secondary transition-all duration-200 ease-in-out hover:bg-surface-strong hover:text-text"
           onclick={() => cb.copy("mirror", new URL(item.url, window.location.origin).toString())}
           aria-label={m["mirror.copy_mirror_aria"]()}
         >
@@ -192,7 +192,7 @@
     {#if item.url_from}
       <div class="flex items-center gap-1">
         <GradientButton
-          variant="orange"
+          variant="warning"
           href={item.url_from}
           size="sm"
           class="flex min-w-0 flex-1"
@@ -205,7 +205,7 @@
           <span class="badge-copied">{m["common.copied_bang"]()}</span>
         {:else}
           <button
-            class="flex-none cursor-pointer rounded-md border border-white-20 bg-white-10 px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-white-80 transition-all duration-200 ease-in-out hover:bg-white-20 hover:text-white"
+            class="flex-none cursor-pointer rounded-md border border-border-control bg-surface px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-text-secondary transition-all duration-200 ease-in-out hover:bg-surface-strong hover:text-text"
             onclick={() => cb.copy("original", item.url_from!)}
             aria-label={m["mirror.copy_original_aria"]()}
           >
@@ -214,7 +214,7 @@
         {/if}
       </div>
     {:else}
-      <span class="text-white-50">{m["common.none"]()}</span>
+      <span class="text-text-secondary">{m["common.none"]()}</span>
     {/if}
   </td>
   {#if showActions}
@@ -249,8 +249,8 @@
 
 {#if adminUi.isAdmin && isExpanded}
   {#if adminUi.overviewState === "idle" || adminUi.overviewState === "loading"}
-    <tr class="bg-black-30 last:[&>td]:border-b-0">
-      <td colspan={columnCount} class="table-td-compact text-[0.9rem] text-white-60">
+    <tr class="bg-canvas-strong last:[&>td]:border-b-0">
+      <td colspan={columnCount} class="table-td-compact text-[0.9rem] text-text-secondary">
         {m["mirror.loading_override"]()}
       </td>
     </tr>

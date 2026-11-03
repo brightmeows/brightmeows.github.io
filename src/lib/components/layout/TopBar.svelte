@@ -395,11 +395,11 @@
   const linkBase =
     "rounded-lg px-3 py-2 text-sm no-underline transition-colors duration-150 cursor-pointer";
   const menuItemClass =
-    "block rounded-xl px-3 py-2 text-left text-sm text-white-90 no-underline transition-colors duration-150 cursor-pointer hover:bg-white-10";
+    "block rounded-xl px-3 py-2 text-left text-sm text-text no-underline transition-colors duration-150 cursor-pointer hover:bg-surface";
   const iconButtonClass =
-    "flex size-9 cursor-pointer items-center justify-center rounded-full text-white-60 transition-colors hover:bg-white-10 hover:text-white";
+    "flex size-9 cursor-pointer items-center justify-center rounded-full text-text-secondary transition-colors hover:bg-surface hover:text-text";
   const loginButtonClass =
-    "flex size-9 cursor-pointer items-center justify-center rounded-full bg-white-15 text-white transition-colors hover:bg-white-25";
+    "flex size-9 cursor-pointer items-center justify-center rounded-full bg-surface text-text transition-colors hover:bg-surface-emphasis";
   const pillClass = "pointer-events-auto rounded-2xl p-1.5";
 
   // 语言菜单：三语自称固定（不随界面语言变化），顺序 ja → zh-cn → en。
@@ -440,7 +440,7 @@
 {#snippet profileContent(compact: boolean)}
   <section aria-labelledby="profile-card-title" class="text-center">
     <img
-      class="mx-auto mb-3 rounded-full border-4 border-white-30 shadow-[0_0_20px_rgba(255,255,255,0.2)] transition-transform duration-300 ease-in-out hover:scale-105 hover:rotate-[5deg] {compact
+      class="mx-auto mb-3 rounded-full border-4 border-border-strong shadow-[0_0_20px_var(--alpha-accent-soft)] transition-transform duration-300 ease-in-out hover:scale-105 hover:rotate-[5deg] {compact
         ? 'h-16 w-16'
         : 'h-24 w-24'}"
       src="/assets/avatar.png"
@@ -448,12 +448,12 @@
     />
     <h2
       id="profile-card-title"
-      class="m-0 bg-[linear-gradient(90deg,#a78bfa,#f472b6,#60a5fa)] bg-clip-text text-3xl text-transparent"
+      class="m-0 bg-[linear-gradient(90deg,var(--ctp-lavender),var(--ctp-pink),var(--ctp-blue))] bg-clip-text text-3xl text-transparent"
     >
       {m["topbar.nickname"]()}
     </h2>
-    <p class="mt-1 mb-4 text-[#a5b4fc]">{m["topbar.motto"]()}</p>
-    <p class="mb-5 text-sm leading-relaxed text-white-90">{m["topbar.bio"]()}</p>
+    <p class="mt-1 mb-4 text-text-secondary">{m["topbar.motto"]()}</p>
+    <p class="mb-5 text-sm leading-relaxed text-text">{m["topbar.bio"]()}</p>
     <div class="flex flex-wrap justify-center gap-3">
       <GlassButton
         href="https://codeberg.org/brightmeows"
@@ -514,8 +514,8 @@
             <div class="relative">
               <div
                 class="flex items-center rounded-lg transition-colors duration-150 {dropdownActive
-                  ? 'bg-white-15 text-white'
-                  : 'text-white-85 hover:bg-white-10 hover:text-white'}"
+                  ? 'bg-surface text-text'
+                  : 'text-text-secondary hover:bg-surface hover:text-text'}"
                 {...triggerHoverHandlers(item.id, "left")}
               >
                 <a
@@ -580,8 +580,8 @@
               <a
                 href={item.href}
                 class="{linkBase} {isActive(item.href)
-                  ? 'bg-white-15 font-semibold text-white'
-                  : 'text-white-85 hover:bg-white-10 hover:text-white'}"
+                  ? 'bg-surface font-semibold text-text'
+                  : 'text-text-secondary hover:bg-surface hover:text-text'}"
                 aria-current={isActive(item.href) ? "page" : undefined}
                 aria-expanded={panels.isOpen("profile")}
                 {...triggerHoverHandlers("profile", "left")}
@@ -611,8 +611,8 @@
             <a
               href={item.href}
               class="{linkBase} {isActive(item.href)
-                ? 'bg-white-15 font-semibold text-white'
-                : 'text-white-85 hover:bg-white-10 hover:text-white'}"
+                ? 'bg-surface font-semibold text-text'
+                : 'text-text-secondary hover:bg-surface hover:text-text'}"
               aria-current={isActive(item.href) ? "page" : undefined}
               onclick={() => closePanels()}
             >
@@ -626,7 +626,7 @@
       <div class="relative md:hidden">
         <button
           type="button"
-          class="flex size-9 cursor-pointer items-center justify-center rounded-full text-white-85 transition-colors hover:bg-white-10 hover:text-white"
+          class="flex size-9 cursor-pointer items-center justify-center rounded-full text-text-secondary transition-colors hover:bg-surface hover:text-text"
           aria-label={m["topbar.menu"]()}
           title={m["topbar.menu"]()}
           aria-expanded={panels.isOpen("menu")}
@@ -660,7 +660,7 @@
             <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
               <div class="max-h-[calc(100vh-6rem)] overflow-y-auto">
                 <div class="px-2 pt-2 pb-1">{@render profileContent(true)}</div>
-                <div class="mx-2 my-1 border-t border-white-15"></div>
+                <div class="mx-2 my-1 border-t border-border-subtle"></div>
                 {#each topLevelNav as item, i (i)}
                   {#if !("children" in item)}
                     <a href={item.href} class={menuItemClass} onclick={() => closePanels()}>
@@ -668,12 +668,12 @@
                     </a>
                   {/if}
                 {/each}
-                <div class="mx-2 my-1 border-t border-white-15"></div>
+                <div class="mx-2 my-1 border-t border-border-subtle"></div>
                 {#each topLevelNav as item, i (i)}
                   {#if "children" in item}
                     <a
                       href={item.href}
-                      class="block rounded-xl px-3 py-2.5 text-xs font-medium text-white-60 no-underline transition-colors hover:bg-white-10 hover:text-white"
+                      class="block rounded-xl px-3 py-2.5 text-xs font-medium text-text-secondary no-underline transition-colors hover:bg-surface hover:text-text"
                       onclick={() => closePanels()}
                     >
                       {item.label()}
@@ -754,7 +754,7 @@
         {/if}
 
         {#if showToc || showBackToTop}
-          <div class="mx-1 h-5 w-px bg-white-15" aria-hidden="true"></div>
+          <div class="mx-1 h-5 w-px bg-surface" aria-hidden="true"></div>
         {/if}
 
         <div class="relative">
@@ -824,7 +824,7 @@
                   <button
                     type="button"
                     class="{menuItemClass} flex w-full items-center justify-between {active
-                      ? 'font-semibold text-white'
+                      ? 'font-semibold text-text'
                       : ''}"
                     aria-current={active ? "true" : undefined}
                     onclick={() => {
@@ -882,7 +882,7 @@
                   <button
                     type="button"
                     class="{menuItemClass} flex w-full items-center justify-between {active
-                      ? 'font-semibold text-white'
+                      ? 'font-semibold text-text'
                       : ''}"
                     lang={language.code}
                     aria-current={active ? "true" : undefined}
@@ -913,7 +913,7 @@
             {@const user = auth.user}
             <button
               type="button"
-              class="{iconButtonClass} border-2 border-transparent hover:border-white-40"
+              class="{iconButtonClass} border-2 border-transparent hover:border-border-strong"
               aria-label={m["topbar.account_menu"]()}
               title={user.login}
               aria-expanded={panels.isOpen("user")}
@@ -924,7 +924,7 @@
                 {@render personIcon()}
               {:else}
                 <img
-                  class="size-8 rounded-full border border-white-30 object-cover"
+                  class="size-8 rounded-full border border-border-strong object-cover"
                   src={githubAvatarUrl(user.login)}
                   alt=""
                   width="32"
@@ -948,8 +948,8 @@
               >
                 <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
                   <div class="px-3 py-2">
-                    <div class="truncate text-sm font-medium text-white">{user.login}</div>
-                    <div class="mt-0.5 text-sm text-white-70">
+                    <div class="truncate text-sm font-medium text-text">{user.login}</div>
+                    <div class="mt-0.5 text-sm text-text-secondary">
                       {m["topbar.remaining"]({ count: user.remaining })}
                     </div>
                   </div>
@@ -973,7 +973,7 @@
               </div>
             {/if}
           {:else}
-            <div class="size-9 animate-pulse rounded-full bg-white-10" aria-hidden="true"></div>
+            <div class="size-9 animate-pulse rounded-full bg-surface" aria-hidden="true"></div>
           {/if}
         </div>
       </div>

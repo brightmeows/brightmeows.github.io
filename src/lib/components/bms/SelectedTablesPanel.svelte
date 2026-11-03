@@ -5,7 +5,7 @@
 
   import Checkbox from "#lib/components/ui/Checkbox.svelte";
   import { jsonPreview } from "#lib/components/ui/JsonPreview.svelte";
-  import { btnGradientBlue, btnGradientOrange } from "#lib/constants/ui-classes.js";
+  import { btnGradientPrimary, btnGradientWarning } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { JsonPreviewHandle } from "#lib/types/ui.js";
   import { formatJsonPreview } from "#lib/utils/infra/json.js";
@@ -84,7 +84,7 @@
     out:fly={{ y: 24, opacity: 0, duration: 140, easing: cubicIn }}
   >
     <div
-      class="flex w-max flex-nowrap items-center gap-4 rounded-xl border border-white-20 bg-glass p-3 px-4 shadow-[0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur-[6px]"
+      class="flex w-max flex-nowrap items-center gap-4 rounded-xl border border-border-control bg-glass p-3 px-4 shadow-[0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur-[6px]"
     >
       <Checkbox
         ariaLabel={m["common.select_all_aria"]()}
@@ -92,7 +92,7 @@
         indeterminate={someSelected}
         onchange={(v: boolean) => handleSelectAll(v)}
       />
-      <div class="font-semibold whitespace-nowrap text-white">
+      <div class="font-semibold whitespace-nowrap text-text">
         {m["common.selected_count"]({ selected: selectedCount, total: totalCount })}
       </div>
       <div class="flex flex-nowrap items-center gap-3">
@@ -100,7 +100,7 @@
           <span class="badge-copied">{m["common.copied_bang"]()}</span>
         {:else}
           <button
-            class={btnGradientBlue}
+            class={btnGradientPrimary}
             type="button"
             onclick={() => void cb.copy("mirror", formatJsonPreview(selectedMirrorArray))}
             use:jsonPreview={{
@@ -120,7 +120,7 @@
           <span class="badge-copied">{m["common.copied_bang"]()}</span>
         {:else}
           <button
-            class={btnGradientOrange}
+            class={btnGradientWarning}
             type="button"
             onclick={() => void cb.copy("origin", formatJsonPreview(selectedOriginArray))}
             use:jsonPreview={{

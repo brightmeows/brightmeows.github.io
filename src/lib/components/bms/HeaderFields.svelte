@@ -72,7 +72,7 @@
       <div class="flex flex-wrap gap-2">
         {#each levels as level (level)}
           <span
-            class="rounded-md border border-white-10 bg-white-5 px-2 py-0.5 text-[0.8rem] text-white-75"
+            class="rounded-md border border-border-subtle bg-surface-subtle px-2 py-0.5 text-[0.8rem] text-text-secondary"
           >
             {level}
           </span>
@@ -86,7 +86,7 @@
   <DetailsPanel summary={m["editor.extra_json_title"]()} variant="plain" sub={true}>
     {#if extraJson.trim() !== "" && extraJson.trim() !== "{}"}
       <pre
-        class="max-h-64 overflow-auto font-mono text-[0.8rem] whitespace-pre-wrap text-white-70">{extraJson}</pre>
+        class="max-h-64 overflow-auto font-mono text-[0.8rem] whitespace-pre-wrap text-text-secondary">{extraJson}</pre>
     {:else}
       <InlineEmpty text={m["common.none"]()} />
     {/if}

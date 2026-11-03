@@ -37,7 +37,7 @@
       </a>
     {/if}
     {#if !headerUrl && !dataUrl}
-      <span class="text-white-50">{m["common.none"]()}</span>
+      <span class="text-text-secondary">{m["common.none"]()}</span>
     {/if}
   </div>
 
@@ -48,7 +48,7 @@
   <div>
     {#if editing}
       <div class="mb-2 flex flex-wrap items-center gap-3">
-        <h3 class="text-[0.95rem] font-semibold text-white-85">
+        <h3 class="text-[0.95rem] font-semibold text-text-secondary">
           {m["editor.export_section"]()}
         </h3>
       </div>
@@ -80,7 +80,7 @@
       </button>
     </div>
     {#if exportDisabled}
-      <p class="mt-2 text-[0.85rem] text-white-50">{m["editor.export_unavailable"]()}</p>
+      <p class="mt-2 text-[0.85rem] text-text-secondary">{m["editor.export_unavailable"]()}</p>
     {/if}
   </div>
 </div>

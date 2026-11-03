@@ -158,13 +158,13 @@
 
 {#if auth.status === "ready"}
   <div class="flex flex-col gap-3">
-    <div class="text-[0.9rem] text-white-60">
+    <div class="text-[0.9rem] text-text-secondary">
       {m["shared.cross_before"]()}
       <a class="link-accent" href="/bms/table/shared/">{m["nav.shared"]()}</a>
       {m["shared.cross_after"]()}
     </div>
     {#if user === null}
-      <div class="text-[0.95rem] text-white-75">
+      <div class="text-[0.95rem] text-text-secondary">
         {m["mirror.login_hint"]()}
       </div>
     {:else}
@@ -203,39 +203,41 @@
         </form>
 
         {#if previewError}
-          <div class="text-[0.9rem] text-amber-300">{previewError}</div>
+          <div class="text-[0.9rem] text-warning">{previewError}</div>
         {/if}
         {#if preview}
-          <div class="text-[0.9rem] text-white-70">
+          <div class="text-[0.9rem] text-text-secondary">
             {m["mirror.preview_result"]()}
-            <strong class="text-white">{preview.name || m["mirror.no_name"]()}</strong>
+            <strong class="text-text">{preview.name || m["mirror.no_name"]()}</strong>
             {preview.symbol ? m["mirror.preview_symbol"]({ symbol: preview.symbol }) : ""}{m[
               "mirror.preview_hint"
             ]()}
           </div>
         {/if}
         {#if progress}
-          <div class="text-[0.9rem] text-[#64b5f6]">{progress}</div>
+          <div class="text-[0.9rem] text-accent">{progress}</div>
         {/if}
         {#if notice}
-          <div class="text-[0.9rem] {notice.kind === 'ok' ? 'text-[#4caf50]' : 'text-red-300'}">
+          <div class="text-[0.9rem] {notice.kind === 'ok' ? 'text-success' : 'text-error'}">
             {notice.text}
           </div>
         {/if}
 
         {#if showRemoved}
-          <div class="border-t border-white-10 pt-3">
+          <div class="border-t border-border-subtle pt-3">
             {#if removed.length === 0}
-              <div class="text-[0.9rem] text-white-60">{m["mirror.no_removed"]()}</div>
+              <div class="text-[0.9rem] text-text-secondary">{m["mirror.no_removed"]()}</div>
             {:else}
               <ul class="flex flex-col gap-2">
                 {#each removed as record (record.dir_name)}
                   <li
-                    class="flex flex-wrap items-center justify-between gap-2 text-[0.9rem] text-white-75"
+                    class="flex flex-wrap items-center justify-between gap-2 text-[0.9rem] text-text-secondary"
                   >
                     <span>
                       {record.dir_name}
-                      <span class="ml-2 text-white-50">{formatRemovedAt(record.removed_at)}</span>
+                      <span class="ml-2 text-text-secondary"
+                        >{formatRemovedAt(record.removed_at)}</span
+                      >
                     </span>
                     <button
                       class={btnGhost}

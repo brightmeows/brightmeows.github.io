@@ -40,7 +40,7 @@
   }: Props = $props();
 </script>
 
-<tr class="hover:bg-white-5">
+<tr class="hover:bg-surface-subtle">
   {#if selectable}
     <td class="table-td-compact px-2">
       <Checkbox
@@ -84,7 +84,7 @@
       </button>
     {/if}
     {#if levelHint}
-      <div class="mt-1 text-[0.75rem] text-white-40">{levelHint}</div>
+      <div class="mt-1 text-[0.75rem] text-text-secondary">{levelHint}</div>
     {/if}
   </td>
   <td class="table-td-compact wrap-break-word">

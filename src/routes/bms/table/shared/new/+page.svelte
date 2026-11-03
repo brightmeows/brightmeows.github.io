@@ -111,7 +111,7 @@
 
 {#snippet titlePane()}
   <h1 class="page-title text-center">{m["shared.new_title"]()}</h1>
-  <p class="mt-2 text-center text-[1.1rem] text-white-70">{m["shared.new_subtitle"]()}</p>
+  <p class="mt-2 text-center text-[1.1rem] text-text-secondary">{m["shared.new_subtitle"]()}</p>
 {/snippet}
 
 {#snippet contentPane()}
@@ -124,7 +124,7 @@
       />
     {:else if !loggedIn}
       <div class="flex flex-col items-center gap-4 py-4 text-center">
-        <p class="text-[1rem] text-white-75">{m["shared.login_required"]()}</p>
+        <p class="text-[1rem] text-text-secondary">{m["shared.login_required"]()}</p>
         <a class={btnPrimary} href={loginHref}>{m["topbar.login"]()}</a>
       </div>
     {:else}
@@ -136,7 +136,7 @@
         }}
       >
         <div>
-          <label class="mb-1.5 block text-[0.95rem] text-white-80" for="shared-id">
+          <label class="mb-1.5 block text-[0.95rem] text-text-secondary" for="shared-id">
             {m["shared.id_label"]()}
           </label>
           <input
@@ -147,35 +147,35 @@
             placeholder={m["shared.id_placeholder"]()}
             autocomplete="off"
           />
-          <p class="mt-1.5 text-[0.85rem] text-white-50">{m["shared.id_hint"]()}</p>
+          <p class="mt-1.5 text-[0.85rem] text-text-secondary">{m["shared.id_hint"]()}</p>
           {#if idError !== null}
-            <p class="mt-2 text-[0.9rem] text-red-300">{idErrorMessage(idError)}</p>
+            <p class="mt-2 text-[0.9rem] text-error">{idErrorMessage(idError)}</p>
           {/if}
         </div>
 
-        <div class="rounded-lg border border-white-15 bg-black-20 p-3">
-          <div class="text-[0.85rem] text-white-50">{m["shared.id_preview_label"]()}</div>
+        <div class="rounded-lg border border-border-subtle bg-canvas p-3">
+          <div class="text-[0.85rem] text-text-secondary">{m["shared.id_preview_label"]()}</div>
           <div class="mt-1 flex flex-wrap items-center gap-2">
-            <code class="font-mono text-[0.95rem] break-all text-[#64b5f6]">{preview}</code>
+            <code class="font-mono text-[0.95rem] break-all text-accent">{preview}</code>
           </div>
           <div class="mt-2 text-[0.9rem]">
             {#if checkState === "checking"}
-              <span class="text-white-60">{m["shared.id_checking"]()}</span>
+              <span class="text-text-secondary">{m["shared.id_checking"]()}</span>
             {:else if checkState === "available"}
-              <span class="text-[#4caf50]">{m["shared.id_available"]()}</span>
+              <span class="text-success">{m["shared.id_available"]()}</span>
             {:else if checkState === "aliased"}
-              <span class="text-amber-300">{m["shared.id_was_aliased"]()}</span>
+              <span class="text-warning">{m["shared.id_was_aliased"]()}</span>
             {:else if checkState === "taken"}
-              <span class="text-red-300">{m["shared.id_taken"]()}</span>
+              <span class="text-error">{m["shared.id_taken"]()}</span>
             {:else if checkState === "failed"}
-              <span class="text-red-300">{m["shared.id_check_failed"]()}</span>
+              <span class="text-error">{m["shared.id_check_failed"]()}</span>
             {/if}
           </div>
         </div>
 
         <div class="grid gap-4 sm:grid-cols-2">
           <div>
-            <label class="mb-1.5 block text-[0.95rem] text-white-80" for="shared-name">
+            <label class="mb-1.5 block text-[0.95rem] text-text-secondary" for="shared-name">
               {m["shared.field_name"]()}
             </label>
             <input
@@ -187,7 +187,7 @@
             />
           </div>
           <div>
-            <label class="mb-1.5 block text-[0.95rem] text-white-80" for="shared-symbol">
+            <label class="mb-1.5 block text-[0.95rem] text-text-secondary" for="shared-symbol">
               {m["shared.field_symbol"]()}
             </label>
             <input
@@ -199,7 +199,7 @@
             />
           </div>
         </div>
-        <p class="-mt-2 text-[0.85rem] text-white-50">{m["shared.seed_hint"]()}</p>
+        <p class="-mt-2 text-[0.85rem] text-text-secondary">{m["shared.seed_hint"]()}</p>
 
         <div class="text-center">
           <button class={btnPrimary} type="submit" disabled={idResult?.ok !== true || busy}>

@@ -133,7 +133,7 @@
             </thead>
             <tbody>
               {#each half.items as item (item.level)}
-                <tr class="hover:bg-white-5 last:[&>td]:border-b-0">
+                <tr class="hover:bg-surface-subtle last:[&>td]:border-b-0">
                   <td class="table-td-roomy text-center">
                     {item.level}
                   </td>

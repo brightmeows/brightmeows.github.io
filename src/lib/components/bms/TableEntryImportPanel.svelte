@@ -205,14 +205,16 @@
   }
 </script>
 
-<details class="rounded-lg border border-white-15 bg-black-20 p-3">
-  <summary class="cursor-pointer text-[0.9rem] text-white-70">
+<details class="rounded-lg border border-border-subtle bg-canvas p-3">
+  <summary class="cursor-pointer text-[0.9rem] text-text-secondary">
     {m["editor.entry_import_section"]()}
   </summary>
 
   <div class="mt-3">
     {#if selectedSource === null}
-      <p class="mb-2 text-[0.85rem] text-white-60">{m["editor.entry_import_source_hint"]()}</p>
+      <p class="mb-2 text-[0.85rem] text-text-secondary">
+        {m["editor.entry_import_source_hint"]()}
+      </p>
       <input
         class="{inputEditorMono} max-w-96"
         type="text"
@@ -221,15 +223,17 @@
         {disabled}
       />
       {#if !sourcesLoaded}
-        <p class="mt-2 text-[0.85rem] text-white-50">{m["editor.entry_import_loading"]()}</p>
+        <p class="mt-2 text-[0.85rem] text-text-secondary">{m["editor.entry_import_loading"]()}</p>
       {:else if sources.length === 0}
-        <p class="mt-2 text-[0.85rem] text-white-50">{m["editor.entry_import_no_sources"]()}</p>
+        <p class="mt-2 text-[0.85rem] text-text-secondary">
+          {m["editor.entry_import_no_sources"]()}
+        </p>
       {:else}
         <ul class="mt-2 max-h-64 overflow-auto">
           {#each sourceMatches as source (source.kind + ":" + source.id)}
-            <li class="border-b border-white-5 last:border-b-0">
+            <li class="border-b border-border-subtle last:border-b-0">
               <button
-                class="w-full cursor-pointer px-1 py-1.5 text-left text-[0.85rem] text-white-75 transition-colors duration-150 hover:bg-white-5 hover:text-white"
+                class="w-full cursor-pointer px-1 py-1.5 text-left text-[0.85rem] text-text-secondary transition-colors duration-150 hover:bg-surface-subtle hover:text-text"
                 type="button"
                 {disabled}
                 onclick={() => void loadSource(source)}
@@ -242,11 +246,13 @@
       {/if}
     {:else}
       <div class="mb-2 flex flex-wrap items-center gap-2">
-        <span class="text-[0.9rem] text-white-80">
+        <span class="text-[0.9rem] text-text-secondary">
           {m["editor.entry_import_source_label"]()}
-          <span class="text-white-60">{sourceName === "" ? selectedSource.id : sourceName}</span>
+          <span class="text-text-secondary"
+            >{sourceName === "" ? selectedSource.id : sourceName}</span
+          >
         </span>
-        <span class="text-[0.85rem] text-white-50">
+        <span class="text-[0.85rem] text-text-secondary">
           {m["editor.entry_import_source_count"]({ count: sourceEntries.length })}
         </span>
         <button class="{btnGhost} ml-auto" type="button" {disabled} onclick={closeSource}>
@@ -255,9 +261,9 @@
       </div>
 
       {#if loading}
-        <p class="text-[0.85rem] text-white-50">{m["editor.entry_import_loading"]()}</p>
+        <p class="text-[0.85rem] text-text-secondary">{m["editor.entry_import_loading"]()}</p>
       {:else if loadError !== null}
-        <p class="text-[0.85rem] text-red-300">
+        <p class="text-[0.85rem] text-error">
           {m["editor.entry_import_failed"]({ detail: loadError })}
         </p>
       {:else}
@@ -270,7 +276,7 @@
             placeholder={m["editor.entry_import_search_charts"]()}
             {disabled}
           />
-          <span class="text-[0.85rem] text-white-60">
+          <span class="text-[0.85rem] text-text-secondary">
             {m["editor.entries_selected"]({ count: selectedCount })}
           </span>
           <button class={btnGhost} type="button" {disabled} onclick={selectAllFiltered}>
@@ -279,7 +285,7 @@
           <button class={btnGhost} type="button" {disabled} onclick={clearSelection}>
             {m["editor.entries_clear_selection"]()}
           </button>
-          <label class="flex items-center gap-1.5 text-[0.85rem] text-white-70">
+          <label class="flex items-center gap-1.5 text-[0.85rem] text-text-secondary">
             <input type="checkbox" bind:checked={keepLevel} {disabled} />
             {m["editor.entry_import_keep_level"]()}
           </label>
@@ -321,7 +327,7 @@
             <tbody>
               {#each pageIndices as index (index)}
                 {@const entry = sourceEntries[index] ?? {}}
-                <tr class="hover:bg-white-5 last:[&>td]:border-b-0">
+                <tr class="hover:bg-surface-subtle last:[&>td]:border-b-0">
                   <td class="table-td-glass px-2">
                     <Checkbox
                       size="sm"
@@ -331,25 +337,27 @@
                       onchange={() => toggleSelected(index)}
                     />
                   </td>
-                  <td class="table-td-glass wrap-break-word text-white-80">
+                  <td class="table-td-glass wrap-break-word text-text-secondary">
                     {typeof entry.level === "string" ? entry.level : ""}
                   </td>
                   <td class="table-td-glass min-w-50 wrap-break-word">
-                    <div class="text-white-90">
+                    <div class="text-text">
                       {entryLabel(entry) || m["editor.entry_unnamed"]()}
                     </div>
                     {#if typeof entry.artist === "string" && entry.artist !== ""}
-                      <div class="text-[0.8rem] text-white-50">{entry.artist}</div>
+                      <div class="text-[0.8rem] text-text-secondary">{entry.artist}</div>
                     {/if}
                   </td>
-                  <td class="table-td-glass font-mono text-[0.8rem] wrap-break-word text-white-55">
+                  <td
+                    class="table-td-glass font-mono text-[0.8rem] wrap-break-word text-text-secondary"
+                  >
                     {shortHash(entry)}
                   </td>
                 </tr>
               {/each}
               {#if pageIndices.length === 0}
                 <tr>
-                  <td class="table-td-glass text-center text-white-50" colspan="4">
+                  <td class="table-td-glass text-center text-text-secondary" colspan="4">
                     {m["editor.entries_empty_filtered"]()}
                   </td>
                 </tr>
@@ -368,7 +376,7 @@
             >
               {m["shared.page_prev"]()}
             </button>
-            <span class="text-white-60">
+            <span class="text-text-secondary">
               {m["shared.page_indicator"]({ page: safePage, pages })}
             </span>
             <button

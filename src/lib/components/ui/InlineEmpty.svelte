@@ -8,4 +8,4 @@
   let { text, class: className = "" }: Props = $props();
 </script>
 
-<p class="py-3 text-[0.9rem] text-white-50 {className}">{text}</p>
+<p class="py-3 text-[0.9rem] text-text-secondary {className}">{text}</p>

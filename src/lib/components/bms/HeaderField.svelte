@@ -24,16 +24,16 @@
 
 {#if editing}
   <label class="block">
-    <span class="mb-1.5 block text-[0.85rem] text-white-60">
+    <span class="mb-1.5 block text-[0.85rem] text-text-secondary">
       {label}
-      {#if required}<span class="text-amber-300">*</span>{/if}
+      {#if required}<span class="text-warning">*</span>{/if}
     </span>
     <input class={inputEditorLg} type="text" bind:value oninput={onchange} {disabled} />
   </label>
 {:else}
   <div>
-    <div class="mb-1 text-[0.85rem] text-white-50">{label}</div>
-    <div class="text-[0.95rem] text-white-85">
+    <div class="mb-1 text-[0.85rem] text-text-secondary">{label}</div>
+    <div class="text-[0.95rem] text-text-secondary">
       {value === "" ? m["common.none"]() : value}
     </div>
   </div>

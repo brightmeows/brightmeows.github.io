@@ -187,7 +187,7 @@
 <div class="flex flex-col gap-3">
   <div class="flex flex-col gap-3">
     <div class="flex flex-wrap items-center gap-2">
-      <span class="text-[0.85rem] text-white-50">{m["editor.course_hint"]()}</span>
+      <span class="text-[0.85rem] text-text-secondary">{m["editor.course_hint"]()}</span>
       {#if editing}
         <div class="ml-auto flex flex-wrap gap-2">
           {#if showGroups}
@@ -210,10 +210,10 @@
         <section class="flex flex-col gap-2">
           {#if showGroups}
             <div class="flex flex-wrap items-center gap-2">
-              <h3 class="text-[1rem] font-semibold text-white-90">
+              <h3 class="text-[1rem] font-semibold text-text">
                 {m["editor.course_group"]({ index: group.groupIndex + 1 })}
               </h3>
-              <span class="text-[0.8rem] text-white-50">
+              <span class="text-[0.8rem] text-text-secondary">
                 {m["course.course_count"]({ count: group.items.length })}
               </span>
               {#if editing}

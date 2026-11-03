@@ -61,7 +61,7 @@
     {href}
     {target}
     {rel}
-    class="relative block text-white no-underline {sharedClasses} {paddingConfig[
+    class="relative block text-text no-underline {sharedClasses} {paddingConfig[
       padding
     ]} {roundedConfig[rounded]} {hoverLift ? 'hover:-translate-y-0.5' : ''} {clickShrink
       ? 'active:translate-y-0 active:scale-95'
@@ -76,7 +76,7 @@
   <div
     role="button"
     tabindex="0"
-    class="relative text-white {sharedClasses} {paddingConfig[padding]} {roundedConfig[
+    class="relative text-text {sharedClasses} {paddingConfig[padding]} {roundedConfig[
       rounded
     ]} {hoverLift ? 'hover:-translate-y-0.5' : ''} {clickShrink
       ? 'active:translate-y-0 active:scale-95'

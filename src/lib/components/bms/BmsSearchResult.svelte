@@ -46,10 +46,10 @@
   <!-- 谱面基本信息 + 外部链接（同行） -->
   <div class="mb-4 flex items-start justify-between gap-4">
     <div class="min-w-0">
-      <h3 class="mb-1 text-[1.2rem] font-bold text-white">
+      <h3 class="mb-1 text-[1.2rem] font-bold text-text">
         {result.title ?? m["search.untitled"]()}
       </h3>
-      <p class="text-white-70">{result.artist ?? m["search.unknown_artist"]()}</p>
+      <p class="text-text-secondary">{result.artist ?? m["search.unknown_artist"]()}</p>
     </div>
     <div class="flex shrink-0 flex-wrap items-center justify-end gap-2">
       {#if result.md5}
@@ -57,10 +57,10 @@
           type="button"
           onclick={() => void cb.copy("md5", result.md5!)}
           title={cb.copiedField === "md5" ? m["common.copied"]() : `MD5: ${result.md5}`}
-          class="cursor-pointer rounded-[6px] px-2 py-1 text-[0.75rem] font-medium text-white transition-colors {cb.copiedField ===
+          class="cursor-pointer rounded-[6px] px-2 py-1 text-[0.75rem] font-medium text-text transition-colors {cb.copiedField ===
           'md5'
             ? 'bg-success'
-            : 'bg-[#607d8b] hover:bg-[#78909c]'}"
+            : 'bg-[var(--ctp-overlay1)] hover:bg-[var(--ctp-overlay2)]'}"
         >
           {cb.copiedField === "md5" ? m["common.copied"]() : m["search.copy_md5"]()}
         </button>
@@ -72,10 +72,10 @@
           title={cb.copiedField === "sha256"
             ? m["common.copied"]()
             : `SHA256: ${result.sha256.slice(0, 16)}...`}
-          class="cursor-pointer rounded-[6px] px-2 py-1 text-[0.75rem] font-medium text-white transition-colors {cb.copiedField ===
+          class="cursor-pointer rounded-[6px] px-2 py-1 text-[0.75rem] font-medium text-text transition-colors {cb.copiedField ===
           'sha256'
             ? 'bg-success'
-            : 'bg-[#607d8b] hover:bg-[#78909c]'}"
+            : 'bg-[var(--ctp-overlay1)] hover:bg-[var(--ctp-overlay2)]'}"
         >
           {cb.copiedField === "sha256" ? m["common.copied"]() : m["search.copy_sha256"]()}
         </button>
@@ -106,21 +106,21 @@
                 {entry.symbol ?? ""}{entry.chart.level ?? "?"}
               </span>
               <a
-                class="text-white no-underline transition-colors hover:text-accent"
+                class="text-text no-underline transition-colors hover:text-accent"
                 href={tableHref}
               >
                 {entry.tableName}
               </a>
             </div>
             {#if entry.chart.comment}
-              <p class="mt-1.5 text-[0.85rem] text-white-50">{entry.chart.comment}</p>
+              <p class="mt-1.5 text-[0.85rem] text-text-secondary">{entry.chart.comment}</p>
             {/if}
           </div>
           {#if bundleUrl ?? diffUrl}
             <div class="flex shrink-0 flex-row gap-[0.3rem]">
               {#if bundleUrl}
                 <GradientButton
-                  variant="green"
+                  variant="success"
                   href={bundleUrl}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -131,7 +131,7 @@
               {/if}
               {#if diffUrl}
                 <GradientButton
-                  variant="blue"
+                  variant="primary"
                   href={diffUrl}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -149,12 +149,12 @@
         <div class="card-dark flex flex-col gap-2">
           <div class="flex items-center justify-between">
             <a
-              class="text-white-80 no-underline transition-colors hover:text-accent"
+              class="text-text-secondary no-underline transition-colors hover:text-accent"
               href={tableHref}
             >
               {displayName}
             </a>
-            <span class="text-[0.8rem] text-white-50">
+            <span class="text-[0.8rem] text-text-secondary">
               {loadState.bytesTotal > 0
                 ? `${formatBytes(loadState.bytesLoaded)} / ${formatBytes(loadState.bytesTotal)}`
                 : formatBytes(loadState.bytesLoaded)}
@@ -164,22 +164,22 @@
             <div class="progress-track">
               <div class="progress-fill" style="width:{loadState.progress}%"></div>
             </div>
-            <span class="shrink-0 text-[0.8rem] text-white-50">{loadState.progress}%</span>
+            <span class="shrink-0 text-[0.8rem] text-text-secondary">{loadState.progress}%</span>
           </div>
         </div>
       {:else if loadState?.status === "loading-header" || loadState?.status === "parsing"}
         <!-- 表头加载/解析中 -->
         <div class="card-dark flex items-center gap-3">
           <div
-            class="h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-white-30 border-t-accent"
+            class="h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-border-strong border-t-accent"
           ></div>
           <a
-            class="flex-1 text-white-60 no-underline transition-colors hover:text-accent"
+            class="flex-1 text-text-secondary no-underline transition-colors hover:text-accent"
             href={tableHref}
           >
             {loadState.name}
           </a>
-          <span class="shrink-0 text-[0.8rem] text-white-40">
+          <span class="shrink-0 text-[0.8rem] text-text-secondary">
             {loadState.status === "loading-header"
               ? m["search.loading_header"]()
               : m["search.parsing"]()}
@@ -190,13 +190,13 @@
         <div class="card-dark flex items-center gap-3">
           <span class="shrink-0 text-error">✗</span>
           <div class="flex flex-1 flex-col gap-0.5">
-            <span class="text-white-80">{loadState.name}</span>
+            <span class="text-text-secondary">{loadState.name}</span>
             <span class="text-[0.8rem] text-error/70">{loadState.errorMessage}</span>
           </div>
           <button
             type="button"
             onclick={() => onretry(entry.tableId)}
-            class="cursor-pointer rounded-md border border-white-20 bg-white-10 px-3 py-1 text-[0.8rem] text-white-80 transition-colors hover:bg-white-20"
+            class="cursor-pointer rounded-md border border-border-control bg-surface px-3 py-1 text-[0.8rem] text-text-secondary transition-colors hover:bg-surface-strong"
           >
             {m["common.retry"]()}
           </button>
@@ -204,14 +204,14 @@
       {:else}
         <!-- 等待中或状态未知 -->
         <div class="card-dark flex items-center gap-3">
-          <span class="shrink-0 text-white-30">○</span>
+          <span class="shrink-0 text-text-secondary">○</span>
           <a
-            class="flex-1 text-white-50 no-underline transition-colors hover:text-accent"
+            class="flex-1 text-text-secondary no-underline transition-colors hover:text-accent"
             href={tableHref}
           >
             {entry.tableName}
           </a>
-          <span class="shrink-0 text-[0.8rem] text-white-30">{m["search.waiting"]()}</span>
+          <span class="shrink-0 text-[0.8rem] text-text-secondary">{m["search.waiting"]()}</span>
         </div>
       {/if}
     {/each}

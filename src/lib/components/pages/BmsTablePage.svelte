@@ -257,13 +257,13 @@
   <div class="flex flex-col items-center gap-3 text-center">
     <h1 class="page-title m-0">{model.pageTitle}</h1>
     {#if model.symbol.trim() !== ""}
-      <div class="text-[1.1rem] text-white-70 italic">
+      <div class="text-[1.1rem] text-text-secondary italic">
         {m["table.symbol"]({ symbol: model.symbol })}
       </div>
     {/if}
 
     <div
-      class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[0.9rem] text-white-60"
+      class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[0.9rem] text-text-secondary"
     >
       {#if model.ready && model.tableStats}
         <span>
@@ -275,21 +275,21 @@
       {/if}
       {#if !createMode}
         {#if model.ready && model.tableStats}
-          <span class="text-white-40">·</span>
+          <span class="text-text-secondary">·</span>
         {/if}
         <span>{m["table.import_url_short"]()}</span>
         {#if importUrl}
-          <span class="max-w-full font-mono text-[0.85rem] break-all text-white-75">
+          <span class="max-w-full font-mono text-[0.85rem] break-all text-text-secondary">
             {importUrl}
           </span>
           <button class="link-accent text-[0.85rem]" type="button" onclick={copyImportUrl}>
             {m["common.click_copy"]()}
           </button>
         {:else}
-          <span class="text-white-50">{m["table.reading"]()}</span>
+          <span class="text-text-secondary">{m["table.reading"]()}</span>
         {/if}
         {#if cb.copied}
-          <span class="text-[#4caf50]">{m["common.copied"]()}</span>
+          <span class="text-success">{m["common.copied"]()}</span>
         {/if}
       {/if}
     </div>
@@ -336,7 +336,7 @@
 
     {#if isEdit && sharedMode && capabilities.canWrite !== true}
       <p
-        class="rounded-lg border border-white-15 bg-black-20 px-3 py-2 text-[0.85rem] text-white-65"
+        class="rounded-lg border border-border-subtle bg-canvas px-3 py-2 text-[0.85rem] text-text-secondary"
       >
         {m["editor.shared_local_hint"]()}
       </p>
@@ -344,7 +344,7 @@
 
     {#if model.ready && model.dirty}
       <div class="flex flex-wrap items-center justify-center gap-2">
-        <span class="text-amber-300">{m["editor.unsaved_badge"]()}</span>
+        <span class="text-warning">{m["editor.unsaved_badge"]()}</span>
         {#if !isEdit && model.canSave}
           <button
             class={btnPrimary}
@@ -367,16 +367,16 @@
     {/if}
 
     {#if isEdit && model.ready && model.draftStatusText !== ""}
-      <p class="text-[0.85rem] text-white-50">{model.draftStatusText}</p>
+      <p class="text-[0.85rem] text-text-secondary">{model.draftStatusText}</p>
     {/if}
 
     {#if model.notice !== null}
       <div
         class="rounded-lg border px-3 py-2 text-[0.85rem] {model.notice.kind === 'ok'
-          ? 'border-[#4caf50]/40 bg-[#4caf50]/10 text-[#a5d6a7]'
+          ? 'border-success/40 bg-success/10 text-success'
           : model.notice.kind === 'warn'
-            ? 'border-amber-300/40 bg-amber-300/10 text-amber-200'
-            : 'border-red-400/40 bg-red-400/10 text-red-200'}"
+            ? 'border-warning/40 bg-warning/10 text-warning'
+            : 'border-error-strong/40 bg-error-strong/10 text-error'}"
       >
         {model.notice.text}
       </div>
@@ -395,8 +395,8 @@
 {#snippet draftBannerPane()}
   {#if model.pendingDraft !== null}
     <div class="py-2 text-center">
-      <p class="text-[1.05rem] text-amber-200">{m["editor.draft_found_title"]()}</p>
-      <p class="mx-auto mt-2 max-w-120 text-[0.9rem] text-white-65">
+      <p class="text-[1.05rem] text-warning">{m["editor.draft_found_title"]()}</p>
+      <p class="mx-auto mt-2 max-w-120 text-[0.9rem] text-text-secondary">
         {m["editor.draft_found_desc"]({ time: model.formatClock(model.pendingDraft.savedAt) })}
       </p>
       <div class="mt-4 flex flex-wrap justify-center gap-3">
@@ -445,7 +445,7 @@
     <p class="message-error my-6">
       {message}
     </p>
-    <p class="mb-6 text-white-70">{tip}</p>
+    <p class="mb-6 text-text-secondary">{tip}</p>
     <button class={btnPrimaryLarge} type="button" onclick={() => void onRetry()}>
       {buttonLabel}
     </button>

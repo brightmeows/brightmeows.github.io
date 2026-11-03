@@ -164,7 +164,7 @@
         level: "",
         unassigned: true,
         count: unassignedCount,
-        color: "#607d8b",
+        color: "var(--ctp-overlay1)",
       });
     }
     return items;
@@ -199,7 +199,7 @@
   }
 
   function colorFor(level: string, unassigned: boolean): string {
-    if (unassigned) return "#607d8b";
+    if (unassigned) return "var(--ctp-overlay1)";
     const index = allLevels.indexOf(level);
     return levelSegmentColor(index < 0 ? 0 : index, allLevels.length);
   }
@@ -386,7 +386,7 @@
     <div class="py-8 text-center">
       <h3 class="mb-3 text-error">{m["table.data_load_failed_title"]()}</h3>
       <p class="message-error my-4">{dataError ?? m["common.unknown_error"]()}</p>
-      <p class="mb-4 text-white-70">{m["table.data_load_failed_tip"]()}</p>
+      <p class="mb-4 text-text-secondary">{m["table.data_load_failed_tip"]()}</p>
       {#if onRetry}
         <button class={btnPrimary} type="button" onclick={() => void onRetry?.()}>
           {m["table.retry_load_charts"]()}
@@ -403,7 +403,7 @@
         {disabled}
       />
       {#if filtering}
-        <span class="text-[0.85rem] text-white-60">
+        <span class="text-[0.85rem] text-text-secondary">
           {m["common.matched"]({ shown: filteredIndices.length, total: entries.length })}
         </span>
       {/if}
@@ -445,9 +445,9 @@
     {/if}
 
     {#if editing && batchOpen}
-      <div class="rounded-lg border border-white-15 bg-black-20 p-3">
+      <div class="rounded-lg border border-border-subtle bg-canvas p-3">
         <div class="flex flex-wrap items-center gap-2">
-          <span class="text-[0.85rem] text-white-60">
+          <span class="text-[0.85rem] text-text-secondary">
             {m["editor.entries_selected"]({ count: selectedCount })}
           </span>
           <button class={btnGhost} type="button" {disabled} onclick={selectAllFiltered}>
@@ -457,7 +457,7 @@
             {m["editor.entries_clear_selection"]()}
           </button>
           <select
-            class="rounded-md border border-white-20 bg-black-30 px-2 py-1 text-[0.85rem] text-white outline-none"
+            class="rounded-md border border-border-control bg-canvas-strong px-2 py-1 text-[0.85rem] text-text outline-none"
             bind:value={batchChoice}
             {disabled}
           >
@@ -476,7 +476,7 @@
             {m["editor.entries_batch_apply"]()}
           </button>
           <button
-            class="{btnGhost} text-red-200/80 hover:bg-red-400/20 hover:text-red-200"
+            class="{btnGhost} text-error hover:bg-error-strong/20 hover:text-error"
             type="button"
             disabled={disabled || selectedCount === 0}
             onclick={deleteSelected}
@@ -499,16 +499,16 @@
           </button>
         </div>
         {#if bulkOpen}
-          <div class="mt-3 border-t border-white-10 pt-3">
-            <p class="mb-2 text-[0.85rem] text-white-60">{m["editor.bulk_paste_hint"]()}</p>
+          <div class="mt-3 border-t border-border-subtle pt-3">
+            <p class="mb-2 text-[0.85rem] text-text-secondary">{m["editor.bulk_paste_hint"]()}</p>
             <textarea class="{inputEditorMono} min-h-32" bind:value={bulkText} placeholder="[…]"
             ></textarea>
             <div class="mt-2 flex flex-wrap items-center gap-3">
-              <label class="flex items-center gap-1.5 text-[0.85rem] text-white-70">
+              <label class="flex items-center gap-1.5 text-[0.85rem] text-text-secondary">
                 <input type="radio" bind:group={bulkMode} value="append" />
                 {m["editor.bulk_mode_append"]()}
               </label>
-              <label class="flex items-center gap-1.5 text-[0.85rem] text-white-70">
+              <label class="flex items-center gap-1.5 text-[0.85rem] text-text-secondary">
                 <input type="radio" bind:group={bulkMode} value="replace" />
                 {m["editor.bulk_mode_replace"]()}
               </label>
@@ -520,7 +520,7 @@
               </button>
             </div>
             {#if bulkError}
-              <p class="mt-2 text-[0.85rem] text-red-300">{bulkError}</p>
+              <p class="mt-2 text-[0.85rem] text-error">{bulkError}</p>
             {/if}
           </div>
         {/if}
@@ -529,7 +529,7 @@
 
     {#if notice}
       <div
-        class="rounded-lg border border-amber-300/40 bg-amber-300/10 px-3 py-2 text-[0.85rem] text-amber-200"
+        class="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-[0.85rem] text-warning"
       >
         {notice}
       </div>
@@ -582,15 +582,15 @@
             : `${symbol}${group.level}`}
           <tbody id={entryGroupAnchorId(group.level, group.unassigned)} class="scroll-mt-5">
             <tr>
-              <td colspan={columnCount} class="border-b-2 border-white-10 px-4 py-2">
+              <td colspan={columnCount} class="border-b-2 border-border-subtle px-4 py-2">
                 <div class="flex items-center gap-4">
                   <span
-                    class="shadow-[0_2px_8px rgba(0,0,0,0.2)] rounded-[20px] px-6 py-2 text-[1.2rem] font-bold text-white"
+                    class="shadow-[0_2px_8px rgba(0,0,0,0.2)] rounded-[20px] px-6 py-2 text-[1.2rem] font-bold text-text"
                     style={`background-color:${groupColor};`}
                   >
                     {groupLabel}
                   </span>
-                  <span class="text-[1.1rem] text-white-80">
+                  <span class="text-[1.1rem] text-text-secondary">
                     {m["table.chart_count"]({ count: group.indices.length })}
                   </span>
                 </div>
@@ -639,7 +639,7 @@
         {#if groups.length === 0}
           <tbody>
             <tr>
-              <td class="table-td-compact text-center text-white-50" colspan={columnCount}>
+              <td class="table-td-compact text-center text-text-secondary" colspan={columnCount}>
                 {entries.length === 0
                   ? m["editor.entries_empty"]()
                   : m["editor.entries_empty_filtered"]()}

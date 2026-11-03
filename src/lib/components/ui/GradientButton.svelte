@@ -11,14 +11,7 @@
     /** 点击类型 */
     type?: "button" | "submit" | "reset";
     /** 颜色变体 */
-    variant?: "green" | "blue" | "orange" | "custom";
-    /** 自定义渐变颜色（仅当 variant="custom" 时使用） */
-    customGradient?: {
-      start: string;
-      end: string;
-      hoverStart?: string;
-      hoverEnd?: string;
-    };
+    variant?: "primary" | "success" | "warning";
     /** 自定义类名 */
     class?: string;
     /** 尺寸变体 */
@@ -41,8 +34,7 @@
     children,
     href,
     type = "button",
-    variant = "green",
-    customGradient,
+    variant = "primary",
     class: className = "",
     size = "sm",
     disabled = false,
@@ -59,21 +51,7 @@
     lg: "px-7 py-[0.9rem] text-lg",
   };
 
-  const variantClass = $derived(
-    variant === "custom" ? "gradient-btn-custom" : `gradient-btn-${variant}`
-  );
-
-  const resolvedStyle = $derived(
-    variant === "custom" && customGradient
-      ? {
-          "--grad-start": customGradient.start,
-          "--grad-end": customGradient.end,
-          "--grad-hover-start": customGradient.hoverStart ?? customGradient.start,
-          "--grad-hover-end": customGradient.hoverEnd ?? customGradient.end,
-          ...style,
-        }
-      : style
-  );
+  const variantClass = $derived(`gradient-btn-${variant}`);
 
   const liftClass = $derived(hoverLift && !disabled ? "-translate-y-0.5" : "");
 </script>
@@ -86,47 +64,48 @@
     border: none;
     border-radius: 0.375rem;
     font-weight: 600;
-    color: white;
+    color: var(--color-on-accent);
     text-decoration: none;
     transition: all 0.2s ease-in-out;
   }
   .gradient-btn-base:hover:not(.no-hover) {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   }
-
-  .gradient-btn-green {
-    background: linear-gradient(135deg, var(--color-green-from), var(--color-green-to));
-  }
-  .gradient-btn-green:hover:not(.no-hover) {
-    background: linear-gradient(135deg, var(--color-green-hover-from), var(--color-green-hover-to));
+  .gradient-btn-base:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
   }
 
-  .gradient-btn-blue {
-    background: linear-gradient(135deg, var(--color-blue-from), var(--color-blue-to));
+  .gradient-btn-primary {
+    background: linear-gradient(135deg, var(--color-primary-from), var(--color-primary-to));
   }
-  .gradient-btn-blue:hover:not(.no-hover) {
-    background: linear-gradient(135deg, var(--color-blue-hover-from), var(--color-blue-hover-to));
-  }
-
-  .gradient-btn-orange {
-    background: linear-gradient(135deg, var(--color-orange-from), var(--color-orange-to));
-  }
-  .gradient-btn-orange:hover:not(.no-hover) {
+  .gradient-btn-primary:hover:not(.no-hover) {
     background: linear-gradient(
       135deg,
-      var(--color-orange-hover-from),
-      var(--color-orange-hover-to)
+      var(--color-primary-hover-from),
+      var(--color-primary-hover-to)
     );
   }
 
-  .gradient-btn-custom {
-    background: linear-gradient(135deg, var(--grad-start), var(--grad-end));
+  .gradient-btn-success {
+    background: linear-gradient(135deg, var(--color-success-from), var(--color-success-to));
   }
-  .gradient-btn-custom:hover:not(.no-hover) {
+  .gradient-btn-success:hover:not(.no-hover) {
     background: linear-gradient(
       135deg,
-      var(--grad-hover-start, var(--grad-start)),
-      var(--grad-hover-end, var(--grad-end))
+      var(--color-success-hover-from),
+      var(--color-success-hover-to)
+    );
+  }
+
+  .gradient-btn-warning {
+    background: linear-gradient(135deg, var(--color-warning-from), var(--color-warning-to));
+  }
+  .gradient-btn-warning:hover:not(.no-hover) {
+    background: linear-gradient(
+      135deg,
+      var(--color-warning-hover-from),
+      var(--color-warning-hover-to)
     );
   }
 </style>
@@ -140,7 +119,7 @@
       ? 'active:translate-y-0 active:scale-95'
       : ''} {className}"
     class:no-hover={disabled}
-    style={styleToString(resolvedStyle)}
+    style={styleToString(style)}
   >
     {#if children}
       {@render children()}
@@ -158,7 +137,7 @@
     class:cursor-not-allowed={disabled}
     class:cursor-pointer={!disabled}
     class:no-hover={disabled}
-    style={styleToString(resolvedStyle)}
+    style={styleToString(style)}
   >
     {#if children}
       {@render children()}

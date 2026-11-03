@@ -27,7 +27,7 @@
 {#snippet titlePane()}
   <h1 class="page-title mb-4">{title}</h1>
   {#if date}
-    <div class="text-white-60">{date}</div>
+    <div class="text-text-secondary">{date}</div>
   {/if}
 {/snippet}
 

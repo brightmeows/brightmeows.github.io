@@ -219,7 +219,7 @@
   >
     {#snippet actions()}
       {#if s?.item != null}
-        <span class="text-[0.95rem] text-white-60">
+        <span class="text-[0.95rem] text-text-secondary">
           {m["shared.author_label"]({ name: s.item.author })}
         </span>
       {/if}
@@ -235,7 +235,7 @@
         <a class={btnBar} href={loginHref}>{m["topbar.login"]()}</a>
       {/if}
       {#if notice}
-        <span class="text-[0.9rem] {notice.kind === 'ok' ? 'text-[#4caf50]' : 'text-red-300'}">
+        <span class="text-[0.9rem] {notice.kind === 'ok' ? 'text-success' : 'text-error'}">
           {notice.text}
         </span>
       {/if}
@@ -245,8 +245,10 @@
       {#if canRename || canDelete}
         <div class="flex flex-col gap-4">
           {#if canRename}
-            <div class="rounded-lg border border-white-15 bg-black-20 p-3">
-              <div class="mb-2 text-[0.9rem] text-white-70">{m["shared.rename_section"]()}</div>
+            <div class="rounded-lg border border-border-subtle bg-canvas p-3">
+              <div class="mb-2 text-[0.9rem] text-text-secondary">
+                {m["shared.rename_section"]()}
+              </div>
               <div class="flex flex-wrap gap-2">
                 <input
                   class="{inputEditorBase} min-w-50 flex-1"
@@ -264,13 +266,13 @@
                   {m["shared.rename_button"]()}
                 </button>
               </div>
-              <p class="mt-2 text-[0.8rem] text-white-50">{m["shared.rename_hint"]()}</p>
+              <p class="mt-2 text-[0.8rem] text-text-secondary">{m["shared.rename_hint"]()}</p>
             </div>
           {/if}
           {#if canDelete}
             <div class="text-center">
               <button
-                class="{btnGhostMd} text-red-200/80 hover:bg-red-400/20 hover:text-red-200"
+                class="{btnGhostMd} text-error hover:bg-error-strong/20 hover:text-error"
                 type="button"
                 disabled={busy}
                 onclick={() => void doDelete()}
@@ -299,16 +301,16 @@
   <GlassPanel>
     <div class="py-6 text-center">
       {#if s?.phase === "login"}
-        <p class="text-[1rem] text-white-75">{m["shared.login_required"]()}</p>
+        <p class="text-[1rem] text-text-secondary">{m["shared.login_required"]()}</p>
         <a class="{btnPrimary} mt-4 inline-block" href={loginHref}>{m["topbar.login"]()}</a>
       {:else if s?.phase === "notfound"}
-        <p class="text-[1.05rem] text-red-300">{m["shared.not_found"]()}</p>
-        <p class="mt-2 text-[0.9rem] text-white-60">{m["shared.not_found_hint"]()}</p>
+        <p class="text-[1.05rem] text-error">{m["shared.not_found"]()}</p>
+        <p class="mt-2 text-[0.9rem] text-text-secondary">{m["shared.not_found_hint"]()}</p>
         <a class="link-accent mt-3 inline-block" href="/bms/table/shared/">
           {m["shared.back_to_list"]()}
         </a>
       {:else if s?.phase === "error"}
-        <p class="text-[1.05rem] text-red-300">
+        <p class="text-[1.05rem] text-error">
           {m["common.load_failed_with_error"]({
             error: s.loadError ?? m["common.unknown_error"](),
           })}

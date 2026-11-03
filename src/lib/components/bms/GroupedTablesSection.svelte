@@ -137,7 +137,7 @@
                 {g.tag1}
               </button>
               {#if g.subgroups.length > 0}
-                <span class="mx-1 text-white-40">|</span>
+                <span class="mx-1 text-text-secondary">|</span>
               {/if}
               {#each g.subgroups as sg (sg.tag2)}
                 <button
@@ -146,9 +146,7 @@
                   onclick={() => scrollToTag2(g.tag1, sg.tag2)}
                 >
                   {sg.tag2}
-                  <span
-                    class="rounded-[10px] bg-black-20 px-2 py-[0.1rem] text-[0.9rem] opacity-90"
-                  >
+                  <span class="rounded-[10px] bg-canvas px-2 py-[0.1rem] text-[0.9rem] opacity-90">
                     ({sg.items.length})
                   </span>
                 </button>
@@ -191,7 +189,7 @@
                 <tr>
                   <td
                     colspan={columnCount}
-                    class="border-b-2 border-white-10 bg-black-30 px-4 py-2"
+                    class="border-b-2 border-border-subtle bg-canvas-strong px-4 py-2"
                   >
                     <div class="flex items-center gap-3">
                       <Checkbox
@@ -210,7 +208,10 @@
                     id={`tag2-group-${slugifyTag(g.tag1)}-${slugifyTag(sg.tag2)}`}
                     class="scroll-mt-20"
                   >
-                    <td colspan={columnCount} class="border-b border-white-5 bg-white-5 px-4 py-2">
+                    <td
+                      colspan={columnCount}
+                      class="border-b border-border-subtle bg-surface-subtle px-4 py-2"
+                    >
                       <div class="flex items-center gap-2">
                         <Checkbox
                           ariaLabel={m["mirror.select_group_aria"]({ name: sg.tag2 })}
@@ -219,7 +220,7 @@
                           onchange={(v: boolean) => onTag2Change(v, sg)}
                         />
                         <h3 class="tag-accent-sm">{sg.tag2}</h3>
-                        <span class="text-[0.85rem] text-white-50">
+                        <span class="text-[0.85rem] text-text-secondary">
                           ({sg.items.length})
                         </span>
                       </div>

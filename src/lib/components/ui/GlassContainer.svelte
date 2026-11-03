@@ -49,7 +49,7 @@
   };
 
   const variantClass = $derived(
-    variant === "default" ? "bg-glass" : variant === "light" ? "bg-glass-light" : "bg-black-20"
+    variant === "default" ? "bg-glass" : variant === "light" ? "bg-glass-light" : "bg-canvas"
   );
 </script>
 

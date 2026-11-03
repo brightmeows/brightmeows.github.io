@@ -30,8 +30,8 @@
 <div
   class="flex items-center gap-1.5 rounded-full border-2 px-2.5 py-1 text-[0.85rem] font-semibold transition-all duration-200 {tone ===
   'level'
-    ? 'border-transparent text-white'
-    : 'border-white-20 bg-white-10 text-white-85'} {checked ? '' : 'opacity-60'}"
+    ? 'border-transparent text-text'
+    : 'border-border-control bg-surface text-text-secondary'} {checked ? '' : 'opacity-60'}"
   style={tone === "level" && color !== undefined ? `background-color:${color};` : undefined}
 >
   <Checkbox
@@ -51,7 +51,7 @@
     {label}
   </button>
   {#if count !== undefined}
-    <span class="rounded-[10px] bg-black-20 px-1.5 py-[0.1rem] text-[0.75rem] opacity-90">
+    <span class="rounded-[10px] bg-canvas px-1.5 py-[0.1rem] text-[0.75rem] opacity-90">
       {count}
     </span>
   {/if}

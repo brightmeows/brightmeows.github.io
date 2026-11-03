@@ -25,11 +25,11 @@
 
 {#snippet errorPane()}
   <div class="py-12 text-center">
-    <p class="m-0 text-[clamp(3rem,7vw,4.5rem)] leading-none font-extrabold text-white">
+    <p class="m-0 text-[clamp(3rem,7vw,4.5rem)] leading-none font-extrabold text-text">
       {page.status}
     </p>
     <h1 class="page-title mt-4 mb-3">{heading}</h1>
-    <p class="mx-auto mb-8 max-w-[30rem] text-white-70">{hint}</p>
+    <p class="mx-auto mb-8 max-w-[30rem] text-text-secondary">{hint}</p>
     <div class="flex flex-wrap justify-center gap-3">
       {#each exits as exit (exit.href)}
         <GlassButton href={exit.href} size="md">{exit.label()}</GlassButton>

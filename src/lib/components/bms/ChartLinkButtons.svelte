@@ -77,7 +77,7 @@
     const width = 208;
     const left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8));
     const top = Math.min(rect.bottom + 6, window.innerHeight - 260);
-    menuStyle = `inset:auto;left:${left}px;top:${Math.max(8, top)}px;background-color:#17142b;`;
+    menuStyle = `inset:auto;left:${left}px;top:${Math.max(8, top)}px;background-color:var(--ctp-mantle);`;
     menuOpen = true;
   }
 
@@ -128,7 +128,7 @@
 
 {#snippet downloadBadge()}
   <span
-    class="pointer-events-none absolute -right-1 -bottom-1 flex size-3.5 items-center justify-center rounded-full border border-white-20 bg-white-10 text-[#64b5f6]"
+    class="pointer-events-none absolute -right-1 -bottom-1 flex size-3.5 items-center justify-center rounded-full border border-border-control bg-surface text-accent"
     aria-hidden="true"
   >
     <svg
@@ -263,7 +263,7 @@
 
 {#if hiddenLinks.length > 0}
   <div
-    class="fixed z-2000 max-h-64 min-w-52 overflow-auto rounded-lg border border-white-20 bg-[#17142b] p-1 shadow-[0_10px_24px_rgba(0,0,0,0.45)] backdrop-blur-md"
+    class="fixed z-2000 max-h-64 min-w-52 overflow-auto rounded-lg border border-border-control bg-[var(--ctp-mantle)] p-1 shadow-[0_10px_24px_rgba(0,0,0,0.45)] backdrop-blur-md"
     style={menuStyle}
     bind:this={menuEl}
     role="menu"
@@ -271,7 +271,7 @@
   >
     {#each hiddenLinks as link (link.id)}
       <a
-        class="flex items-center gap-2 rounded-md px-2 py-1.5 text-[0.85rem] text-white-80 transition-colors hover:bg-white-10 hover:text-white"
+        class="flex items-center gap-2 rounded-md px-2 py-1.5 text-[0.85rem] text-text-secondary transition-colors hover:bg-surface hover:text-text"
         href={link.href}
         target="_blank"
         rel="noopener noreferrer"

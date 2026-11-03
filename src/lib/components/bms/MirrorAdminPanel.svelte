@@ -33,7 +33,7 @@
   let replaceFrom = $state("");
   let replaceTo = $state("");
 
-  const sectionTitle = "mb-2 text-[1rem] font-semibold text-white";
+  const sectionTitle = "mb-2 text-[1rem] font-semibold text-text";
 
   async function submitReplace(): Promise<void> {
     const ok = await onreplaceadd(replaceFrom.trim(), replaceTo.trim());
@@ -52,9 +52,9 @@
 
 <div>
   {#if overview === null && (overviewState === "idle" || overviewState === "loading")}
-    <div class="text-[0.95rem] text-white-70">{m["common.loading_data"]()}</div>
+    <div class="text-[0.95rem] text-text-secondary">{m["common.loading_data"]()}</div>
   {:else if overview === null}
-    <div class="flex flex-wrap items-center gap-3 text-[0.95rem] text-red-300">
+    <div class="flex flex-wrap items-center gap-3 text-[0.95rem] text-error">
       <span>{error ?? m["common.load_failed"]()}</span>
       <button class={btnGhost} type="button" onclick={onretry}>{m["common.retry"]()}</button>
     </div>
@@ -89,7 +89,7 @@
           </button>
         </div>
         {#if overview.replace.length > 0}
-          <ul class="mt-2 flex flex-col gap-1 text-[0.85rem] text-white-70">
+          <ul class="mt-2 flex flex-col gap-1 text-[0.85rem] text-text-secondary">
             {#each overview.replace as rule (rule.from)}
               <li class="flex flex-wrap items-center gap-2">
                 <span>{m["admin.replace_item"]({ from: rule.from, to: rule.to })}</span>
@@ -109,13 +109,13 @@
       <section>
         <h3 class={sectionTitle}>{m["admin.disabled_list"]()}</h3>
         {#if overview.disabled.length === 0}
-          <div class="text-[0.85rem] text-white-50">{m["admin.empty"]()}</div>
+          <div class="text-[0.85rem] text-text-secondary">{m["admin.empty"]()}</div>
         {:else}
-          <ul class="flex flex-col gap-1 text-[0.85rem] text-white-70">
+          <ul class="flex flex-col gap-1 text-[0.85rem] text-text-secondary">
             {#each overview.disabled as item (item.url)}
               <li class="flex flex-wrap items-center gap-2">
                 <span>
-                  {item.dir_name ?? item.url}{#if item.note}<span class="ml-1 text-white-50"
+                  {item.dir_name ?? item.url}{#if item.note}<span class="ml-1 text-text-secondary"
                       >{m["admin.note_wrap"]({ note: item.note })}</span
                     >{/if}
                 </span>
@@ -134,13 +134,14 @@
       <section>
         <h3 class={sectionTitle}>{m["admin.trash_heading"]({ count: overview.trash.length })}</h3>
         {#if overview.trash.length === 0}
-          <div class="text-[0.85rem] text-white-50">{m["admin.empty"]()}</div>
+          <div class="text-[0.85rem] text-text-secondary">{m["admin.empty"]()}</div>
         {:else}
-          <ul class="flex flex-col gap-1 text-[0.85rem] text-white-70">
+          <ul class="flex flex-col gap-1 text-[0.85rem] text-text-secondary">
             {#each overview.trash as item (item.trash_prefix)}
               <li class="flex flex-wrap items-center gap-2">
                 <span
-                  >{item.dir_name}<span class="ml-2 text-white-50">{formatTime(item.uploaded)}</span
+                  >{item.dir_name}<span class="ml-2 text-text-secondary"
+                    >{formatTime(item.uploaded)}</span
                   ></span
                 >
                 <button
@@ -158,16 +159,16 @@
       <section>
         <h3 class={sectionTitle}>{m["admin.audit_heading"]({ count: overview.audit.length })}</h3>
         {#if overview.audit.length === 0}
-          <div class="text-[0.85rem] text-white-50">{m["admin.empty"]()}</div>
+          <div class="text-[0.85rem] text-text-secondary">{m["admin.empty"]()}</div>
         {:else}
-          <ul class="flex flex-col gap-1 text-[0.85rem] text-white-70">
+          <ul class="flex flex-col gap-1 text-[0.85rem] text-text-secondary">
             {#each overview.audit as entry}
               <li>
-                <span class="text-white-50">{formatTime(entry.at)}</span>
-                <span class="ml-2 text-white-90">{entry.actor}</span>
-                <span class="ml-2 text-[#64b5f6]">{entry.action}</span>
+                <span class="text-text-secondary">{formatTime(entry.at)}</span>
+                <span class="ml-2 text-text">{entry.actor}</span>
+                <span class="ml-2 text-accent">{entry.action}</span>
                 <span class="ml-2">{entry.dir_name ?? entry.url ?? ""}</span>
-                {#if entry.detail}<span class="ml-2 text-white-50">{entry.detail}</span>{/if}
+                {#if entry.detail}<span class="ml-2 text-text-secondary">{entry.detail}</span>{/if}
               </li>
             {/each}
           </ul>

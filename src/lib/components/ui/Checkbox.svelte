@@ -60,8 +60,8 @@
       box-shadow 0.2s ease,
       opacity 0.2s ease;
     border-style: solid;
-    border-color: rgba(255, 255, 255, 0.15);
-    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--color-border-control);
+    background: var(--color-surface-subtle);
     outline: none;
   }
 
@@ -84,37 +84,37 @@
 
   /* 悬停（未选中时） */
   .checkbox-custom:hover:not(:checked):not(:indeterminate):not(:disabled) {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 255, 255, 0.3);
+    background: var(--color-surface);
+    border-color: var(--color-border-strong);
   }
 
   /* 选中态 */
   .checkbox-custom:checked {
-    background: #64b5f6;
-    border-color: #64b5f6;
+    background: var(--color-accent);
+    border-color: var(--color-accent);
   }
 
   /* 选中 + 悬停 */
   .checkbox-custom:checked:hover:not(:disabled) {
-    background: #42a5f5;
-    border-color: #42a5f5;
+    background: var(--color-accent-hover);
+    border-color: var(--color-accent-hover);
   }
 
   /* 半选态 */
   .checkbox-custom:indeterminate {
-    background: #64b5f6;
-    border-color: #64b5f6;
+    background: var(--color-accent);
+    border-color: var(--color-accent);
   }
 
   /* 半选 + 悬停 */
   .checkbox-custom:indeterminate:hover:not(:disabled) {
-    background: #42a5f5;
-    border-color: #42a5f5;
+    background: var(--color-accent-hover);
+    border-color: var(--color-accent-hover);
   }
 
   /* 聚焦环 */
   .checkbox-custom:focus-visible {
-    box-shadow: 0 0 0 2px rgba(100, 181, 246, 0.5);
+    box-shadow: 0 0 0 2px var(--color-focus);
   }
 
   /* 禁用态 */
@@ -134,7 +134,7 @@
   /* 勾号 */
   .checkbox-custom:checked::after {
     opacity: 1;
-    border: solid white;
+    border: solid var(--color-on-accent);
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
   }

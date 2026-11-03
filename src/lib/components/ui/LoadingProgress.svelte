@@ -34,7 +34,12 @@
 
 <style>
   .shimmer-bar {
-    background: linear-gradient(90deg, #4caf50 0%, #64b5f6 50%, #4caf50 100%);
+    background: linear-gradient(
+      90deg,
+      var(--color-success) 0%,
+      var(--color-accent) 50%,
+      var(--color-success) 100%
+    );
     background-size: 200% 100%;
     animation: shimmer 2s ease-in-out infinite;
   }
@@ -51,20 +56,20 @@
 
 {#if variant === "compact"}
   <div class="flex items-center gap-3 {className}">
-    <div class="h-2 flex-1 overflow-hidden rounded-md bg-white-10">
+    <div class="h-2 flex-1 overflow-hidden rounded-md bg-surface">
       <div
         class="h-full rounded-md {isIndeterminate ? 'shimmer-bar' : 'progress-fill'}"
         style="width:{isIndeterminate ? 100 : progress}%"
       ></div>
     </div>
-    <span class="text-[0.85rem] text-white-70">{message}</span>
+    <span class="text-[0.85rem] text-text-secondary">{message}</span>
   </div>
 {:else}
   <div class="glass-loading-container {className}">
     <div class="mb-6 flex items-center justify-between">
-      <h3 class="m-0 text-[1.5rem] text-white">{title}</h3>
+      <h3 class="m-0 text-[1.5rem] text-text">{title}</h3>
       {#if showPercentage && !isIndeterminate}
-        <div class="rounded-[20px] bg-accent/20 px-4 py-2 text-[1.2rem] font-bold text-accent">
+        <div class="rounded-[20px] bg-accent-soft px-4 py-2 text-[1.2rem] font-bold text-text">
           {displayPercent}%
         </div>
       {/if}
@@ -79,10 +84,10 @@
     </div>
 
     <div class="flex flex-col gap-2">
-      <span class="text-[0.9rem] text-white-60">{m["progress.current_step"]()}:</span>
-      <span class="font-medium text-white">{message}</span>
+      <span class="text-[0.9rem] text-text-secondary">{m["progress.current_step"]()}:</span>
+      <span class="font-medium text-text">{message}</span>
       {#if detail}
-        <span class="text-[0.85rem] text-white-50">{detail}</span>
+        <span class="text-[0.85rem] text-text-secondary">{detail}</span>
       {/if}
     </div>
   </div>

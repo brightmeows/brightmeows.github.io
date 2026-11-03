@@ -41,14 +41,12 @@
   --color-surface: var(--alpha-surface);
   --color-surface-strong: var(--alpha-surface-strong);
   --color-surface-emphasis: var(--alpha-surface-emphasis);
-  --color-surface-hover: var(--alpha-surface-hover);
 
   --color-canvas-subtle: var(--alpha-canvas-subtle);
   --color-canvas: var(--alpha-canvas);
   --color-canvas-strong: var(--alpha-canvas-strong);
 
   --color-border-subtle: var(--alpha-border-subtle);
-  --color-border: var(--alpha-border);
   --color-border-control: var(--alpha-border-control);
   --color-border-strong: var(--alpha-border-strong);
 
@@ -90,37 +88,6 @@
   --color-minir-hover-from: var(--ctp-teal);
   --color-minir-hover-to: var(--ctp-sky);
 
-  /* 旧渐变 token 仅保留到组件迁移完成，迁移后删除 */
-  --color-blue-from: #2196f3;
-  --color-blue-to: #1565c0;
-  --color-blue-hover-from: #42a5f5;
-  --color-blue-hover-to: #1976d2;
-
-  --color-orange-from: #ff9800;
-  --color-orange-to: #f57c00;
-  --color-orange-hover-from: #ffb74d;
-  --color-orange-hover-to: #ff9800;
-
-  --color-green-from: #4caf50;
-  --color-green-to: #2e7d32;
-  --color-green-hover-from: #66bb6a;
-  --color-green-hover-to: #388e3c;
-
-  --color-purple-from: #9c27b0;
-  --color-purple-to: #7b1fa2;
-  --color-purple-hover-from: #ba68c8;
-  --color-purple-hover-to: #9c27b0;
-
-  --color-brown-from: #795548;
-  --color-brown-to: #5d4037;
-  --color-brown-hover-from: #a1887f;
-  --color-brown-hover-to: #795548;
-
-  --color-cyan-from: #00bcd4;
-  --color-cyan-to: #0097a7;
-  --color-cyan-hover-from: #4dd0e1;
-  --color-cyan-hover-to: #00bcd4;
-
   /* 玻璃光照令牌：顶部内侧天光 + 底部内侧遮蔽，替代实线边框表达玻璃厚度；
      玻璃家族（glass-base 与 popover-glass）统一引用，与外阴影合成书写 */
   --glass-lighting: inset 0 1px 0 rgb(255 255 255 / 0.16), inset 0 -1px 0 rgb(0 0 0 / 0.35);
@@ -130,33 +97,6 @@
   --radius-glass-md: 14px;
   --radius-glass-lg: 18px;
   --radius-glass-xl: 20px;
-
-  /* 白色系与黑色系的透明度阶梯：原任意值修饰符（white-10 等）的同值令牌。
-     color-mix(in oklab, white N%, transparent) 与直写 rgb 同值，替换前后
-     渲染逐像素等价；类名即值（bg-white-10），不做语义归并——零视觉变化
-     约束下语义命名是假语义。只定义实际用到的档位，新档位先加令牌再用。 */
-  --color-white-5: rgb(255 255 255 / 0.05);
-  --color-white-8: rgb(255 255 255 / 0.08);
-  --color-white-10: rgb(255 255 255 / 0.1);
-  --color-white-15: rgb(255 255 255 / 0.15);
-  --color-white-20: rgb(255 255 255 / 0.2);
-  --color-white-25: rgb(255 255 255 / 0.25);
-  --color-white-30: rgb(255 255 255 / 0.3);
-  --color-white-35: rgb(255 255 255 / 0.35);
-  --color-white-40: rgb(255 255 255 / 0.4);
-  --color-white-45: rgb(255 255 255 / 0.45);
-  --color-white-50: rgb(255 255 255 / 0.5);
-  --color-white-55: rgb(255 255 255 / 0.55);
-  --color-white-60: rgb(255 255 255 / 0.6);
-  --color-white-65: rgb(255 255 255 / 0.65);
-  --color-white-70: rgb(255 255 255 / 0.7);
-  --color-white-75: rgb(255 255 255 / 0.75);
-  --color-white-80: rgb(255 255 255 / 0.8);
-  --color-white-85: rgb(255 255 255 / 0.85);
-  --color-white-90: rgb(255 255 255 / 0.9);
-  --color-black-10: rgb(0 0 0 / 0.1);
-  --color-black-20: rgb(0 0 0 / 0.2);
-  --color-black-30: rgb(0 0 0 / 0.3);
 }
 
 @layer base {
@@ -226,12 +166,10 @@
   --alpha-surface: rgb(128 135 162 / 0.12);
   --alpha-surface-strong: rgb(128 135 162 / 0.18);
   --alpha-surface-emphasis: rgb(128 135 162 / 0.26);
-  --alpha-surface-hover: rgb(128 135 162 / 0.22);
   --alpha-canvas-subtle: rgb(24 25 38 / 0.22);
   --alpha-canvas: rgb(24 25 38 / 0.32);
   --alpha-canvas-strong: rgb(24 25 38 / 0.45);
   --alpha-border-subtle: rgb(128 135 162 / 0.18);
-  --alpha-border: rgb(128 135 162 / 0.28);
   --alpha-border-control: rgb(184 192 224 / 0.6);
   --alpha-border-strong: rgb(184 192 224 / 0.75);
   --alpha-accent-soft: rgb(138 173 244 / 0.2);
@@ -279,12 +217,10 @@
   --alpha-surface: rgb(127 132 156 / 0.12);
   --alpha-surface-strong: rgb(127 132 156 / 0.18);
   --alpha-surface-emphasis: rgb(127 132 156 / 0.26);
-  --alpha-surface-hover: rgb(127 132 156 / 0.22);
   --alpha-canvas-subtle: rgb(17 17 27 / 0.22);
   --alpha-canvas: rgb(17 17 27 / 0.32);
   --alpha-canvas-strong: rgb(17 17 27 / 0.45);
   --alpha-border-subtle: rgb(127 132 156 / 0.18);
-  --alpha-border: rgb(127 132 156 / 0.28);
   --alpha-border-control: rgb(186 194 222 / 0.6);
   --alpha-border-strong: rgb(186 194 222 / 0.75);
   --alpha-accent-soft: rgb(137 180 250 / 0.2);

@@ -24,7 +24,7 @@
 
 {#if hasMd5(chart)}
   <IconButton
-    variant="orange"
+    variant="warning"
     href={bmsLinks.bmsScoreViewer}
     target="_blank"
     rel="noopener noreferrer"
@@ -33,7 +33,7 @@
     📊
   </IconButton>
   <IconButton
-    variant="blue"
+    variant="primary"
     href={bmsLinks.bmsIr}
     target="_blank"
     rel="noopener noreferrer"
@@ -44,7 +44,7 @@
         x="12"
         y="11"
         text-anchor="middle"
-        fill="white"
+        fill="currentColor"
         font-size="10"
         font-family="sans-serif"
         font-weight="700">BMS</text
@@ -53,7 +53,7 @@
         x="12"
         y="20.5"
         text-anchor="middle"
-        fill="white"
+        fill="currentColor"
         font-size="10"
         font-family="sans-serif"
         font-weight="700">-IR</text
@@ -63,7 +63,7 @@
 {/if}
 {#if hasSha256(chart)}
   <IconButton
-    variant="brown"
+    variant="mocha"
     href={bmsLinks.mocha}
     target="_blank"
     rel="noopener noreferrer"
@@ -72,7 +72,7 @@
     <img src="/assets/logo/mocha_logo.gif" alt="Mocha" class="h-6 w-6 object-contain" />
   </IconButton>
   <IconButton
-    variant="cyan"
+    variant="minir"
     href={bmsLinks.minir}
     target="_blank"
     rel="noopener noreferrer"

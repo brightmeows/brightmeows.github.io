@@ -414,7 +414,7 @@
 {#snippet titlePane()}
   <h1 id="bms-table-mirror" class="page-title mb-2 scroll-mt-5 text-center">{pageTitle}</h1>
 
-  <div class="mt-1 text-center text-[1.1rem] text-white-70 italic">
+  <div class="mt-1 text-center text-[1.1rem] text-text-secondary italic">
     {m["mirror.bms_hint_before"]()}
     <button class="link-accent" type="button" onclick={copyTables}>
       {m["common.click_copy"]()}
@@ -429,7 +429,7 @@
       {m["mirror.tutorial"]()}
     </a>
     {#if cb.copied}
-      <span class="ml-2 text-[#4caf50]">{m["common.copied"]()}</span>
+      <span class="ml-2 text-success">{m["common.copied"]()}</span>
     {/if}
   </div>
   <div class="mt-4">
@@ -455,8 +455,8 @@
       {#if admin.notice}
         <div
           class="text-center text-[0.9rem] {admin.notice.kind === 'ok'
-            ? 'text-[#4caf50]'
-            : 'text-red-300'}"
+            ? 'text-success'
+            : 'text-error'}"
         >
           {admin.notice.text}
         </div>
@@ -465,8 +465,8 @@
       <div class="flex flex-wrap items-center gap-2">
         <label
           class="flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-[0.35rem] text-[0.85rem] transition-colors duration-200 select-none {showProtectedOnly
-            ? 'border-[#ffd54f] bg-[#ffd54f]/20 text-[#ffd54f]'
-            : 'border-white-20 text-white-50 hover:border-white-40 hover:text-white-70'}"
+            ? 'border-warning bg-warning/20 text-warning'
+            : 'border-border-control text-text-secondary hover:border-border-strong hover:text-text-secondary'}"
         >
           <Checkbox
             size="sm"
@@ -479,8 +479,8 @@
         {#if auth.user !== null}
           <label
             class="flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-[0.35rem] text-[0.85rem] transition-colors duration-200 select-none {operationsMode
-              ? 'border-[#64b5f6] bg-[#64b5f6]/20 text-[#64b5f6]'
-              : 'border-white-20 text-white-50 hover:border-white-40 hover:text-white-70'}"
+              ? 'border-accent bg-accent-soft text-text'
+              : 'border-border-control text-text-secondary hover:border-border-strong hover:text-text-secondary'}"
           >
             <Checkbox
               size="sm"
@@ -494,8 +494,8 @@
         {#if isAdmin}
           <button
             class="cursor-pointer rounded-md border px-2 py-[0.35rem] text-[0.85rem] transition-colors duration-200 {adminPanelOpen
-              ? 'border-[#64b5f6]/60 bg-[#64b5f6]/20 text-[#64b5f6]'
-              : 'border-white-20 text-white-50 hover:border-white-40 hover:text-white-70'}"
+              ? 'border-accent/60 bg-accent-soft text-text'
+              : 'border-border-control text-text-secondary hover:border-border-strong hover:text-text-secondary'}"
             type="button"
             aria-expanded={adminPanelOpen}
             onclick={toggleAdminPanel}
@@ -505,7 +505,7 @@
         {/if}
       </div>
       {#if operationsMode}
-        <p class="text-[0.85rem] text-white-50">
+        <p class="text-[0.85rem] text-text-secondary">
           {m["mirror.operations_mode_hint"]()}
         </p>
       {/if}
@@ -520,7 +520,7 @@
         />
         {#if searchQuery.trim().length > 0}
           <button
-            class="absolute top-1/2 right-2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg border border-white-20 bg-white-10 p-0 text-[1.25rem] leading-none text-white transition-all duration-200 ease-in-out hover:bg-white-20"
+            class="absolute top-1/2 right-2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg border border-border-control bg-surface p-0 text-[1.25rem] leading-none text-text transition-all duration-200 ease-in-out hover:bg-surface-strong"
             type="button"
             aria-label={m["common.clear_search"]()}
             onclick={() => (searchQuery = "")}
@@ -530,7 +530,7 @@
         {/if}
       </div>
       {#if searchQuery.trim().length > 0 || showProtectedOnly}
-        <div class="text-[0.95rem] text-white-60">
+        <div class="text-[0.95rem] text-text-secondary">
           {m["common.matched"]({
             shown: protectedFilteredTables.length,
             total: tables.length,
@@ -563,15 +563,15 @@
           title={pageTitle}
         />
       {:else if listState.phase === "error"}
-        <div class="text-red-300">
+        <div class="text-error">
           {m["common.load_failed_with_error"]({ error: listState.message })}
         </div>
       {:else if listState.phase === "unavailable"}
-        <div class="text-red-300">
+        <div class="text-error">
           {m["common.load_failed_with_error"]({ error: m["common.unknown_error"]() })}
         </div>
       {:else if groupedByTags.length === 0}
-        <div class="text-white-70">
+        <div class="text-text-secondary">
           {showProtectedOnly ? m["mirror.no_match_protected"]() : m["mirror.no_match"]()}
         </div>
       {:else}

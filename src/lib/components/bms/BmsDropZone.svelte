@@ -149,8 +149,8 @@
   role="region"
   aria-label={m["editor.bms_drop_title"]()}
   class="rounded-lg border border-dashed px-4 py-4 transition-colors duration-200 {dragging
-    ? 'border-[#64b5f6] bg-[#64b5f6]/10'
-    : 'border-white-25 bg-black-10'}"
+    ? 'border-accent bg-accent/10'
+    : 'border-border-control bg-canvas-subtle'}"
   ondragover={(event) => {
     event.preventDefault();
     if (!disabled && !busy) dragging = true;
@@ -167,8 +167,8 @@
 >
   <div class="flex flex-wrap items-center gap-3">
     <div class="min-w-0 flex-1">
-      <div class="text-[0.9rem] text-white-75">{m["editor.bms_drop_title"]()}</div>
-      <div class="text-[0.82rem] text-white-50">{m["editor.bms_drop_hint"]()}</div>
+      <div class="text-[0.9rem] text-text-secondary">{m["editor.bms_drop_title"]()}</div>
+      <div class="text-[0.82rem] text-text-secondary">{m["editor.bms_drop_hint"]()}</div>
     </div>
     <button class={btnGhost} type="button" {disabled} onclick={() => fileInput?.click()}>
       {m["editor.bms_drop_button"]()}
@@ -188,11 +188,11 @@
     />
   </div>
   {#if busy}
-    <div class="mt-2 text-[0.85rem] text-[#90caf9]">
+    <div class="mt-2 text-[0.85rem] text-accent-light">
       {m["editor.bms_drop_busy"]({ done: progress.done, total: progress.total })}
     </div>
   {/if}
   {#if error !== null}
-    <div class="mt-2 text-[0.85rem] text-red-300">{error}</div>
+    <div class="mt-2 text-[0.85rem] text-error">{error}</div>
   {/if}
 </div>

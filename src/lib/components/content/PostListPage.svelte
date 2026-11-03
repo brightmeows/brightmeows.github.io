@@ -20,7 +20,7 @@
 
 {#snippet contentPane()}
   {#if posts.length === 0}
-    <div class="text-center text-white-70">{m["content.no_posts"]()}</div>
+    <div class="text-center text-text-secondary">{m["content.no_posts"]()}</div>
   {:else}
     <div class="flex flex-col gap-4">
       {#each posts as post (post.url)}
