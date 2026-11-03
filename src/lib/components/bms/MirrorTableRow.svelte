@@ -67,9 +67,10 @@
   </td>
   <td class="table-td-compact min-w-50 wrap-break-word">
     <strong
-      class="cursor-default"
+      class="cursor-context-menu"
       use:jsonPreview={{
         preview: mirrorPreview,
+        trigger: "contextmenu",
         options: {
           value: item,
           label: `${item.name ?? m["mirror.default_name"]()} JSON`,
