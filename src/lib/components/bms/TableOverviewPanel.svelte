@@ -3,10 +3,7 @@
 
   import HeaderFields from "./HeaderFields.svelte";
 
-  import DetailsPanel from "#lib/components/ui/DetailsPanel.svelte";
-  import { m } from "#lib/paraglide/messages.js";
-
-  /** 概览面板：查看态只读摘要，编辑态复用头部表单；默认折叠。 */
+  /** 概览内容：查看态只读摘要，编辑态复用头部表单；卡片显隐由页面管理。 */
   interface Props {
     editing: boolean;
     name: string;
@@ -36,14 +33,7 @@
   const extraJson = $derived(JSON.stringify(extraHeader, null, 2));
 </script>
 
-<DetailsPanel
-  id="overview"
-  class="scroll-mt-20"
-  summary={m["editor.header_section"]()}
-  hint={m["editor.header_hint"]()}
-  variant="plain"
-  defaultOpen={false}
->
+<div class="flex flex-col gap-4">
   <HeaderFields
     {editing}
     bind:name
@@ -60,4 +50,4 @@
       {@render management()}
     </div>
   {/if}
-</DetailsPanel>
+</div>

@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  import DetailsPanel from "#lib/components/ui/DetailsPanel.svelte";
   import { btnGhost, inputPanel } from "#lib/constants/ui-classes.js";
   import {
     fetchFetchStatus,
@@ -158,110 +157,103 @@
 </script>
 
 {#if auth.status === "ready"}
-  <DetailsPanel
-    class="scroll-mt-20"
-    summary={m["mirror.add_table"]()}
-    hint={m["mirror.add_table_hint"]()}
-    variant="plain"
-  >
-    <div class="flex flex-col gap-3">
-      <div class="text-[0.9rem] text-white-60">
-        {m["shared.cross_before"]()}
-        <a class="link-accent" href="/bms/table/shared/">{m["nav.shared"]()}</a>
-        {m["shared.cross_after"]()}
-      </div>
-      {#if user === null}
-        <div class="text-[0.95rem] text-white-75">
-          {m["mirror.login_hint"]()}
-        </div>
-      {:else}
-        <div class="flex flex-col gap-3">
-          <div class="flex justify-end">
-            <button class={btnGhost} type="button" onclick={() => (showRemoved = !showRemoved)}>
-              {m["mirror.removed_count"]({ count: removed.length })}
-            </button>
-          </div>
-
-          <form
-            class="flex flex-wrap items-center gap-2"
-            onsubmit={(event) => {
-              event.preventDefault();
-              if (preview !== null && !submitting) void doAdd();
-            }}
-          >
-            <input
-              class="{inputPanel} min-w-60 flex-1"
-              type="url"
-              bind:value={url}
-              placeholder={m["mirror.add_url_placeholder"]()}
-              aria-label={m["mirror.add_url_aria"]()}
-            />
-            <button
-              class={btnGhost}
-              type="button"
-              disabled={previewing || url.trim() === ""}
-              onclick={() => void doPreview()}
-            >
-              {previewing ? m["mirror.previewing"]() : m["mirror.preview"]()}
-            </button>
-            <button class={btnGhost} type="submit" disabled={submitting || preview === null}>
-              {submitting ? m["mirror.submitting"]() : m["mirror.submit"]()}
-            </button>
-          </form>
-
-          {#if previewError}
-            <div class="text-[0.9rem] text-amber-300">{previewError}</div>
-          {/if}
-          {#if preview}
-            <div class="text-[0.9rem] text-white-70">
-              {m["mirror.preview_result"]()}
-              <strong class="text-white">{preview.name || m["mirror.no_name"]()}</strong>
-              {preview.symbol ? m["mirror.preview_symbol"]({ symbol: preview.symbol }) : ""}{m[
-                "mirror.preview_hint"
-              ]()}
-            </div>
-          {/if}
-          {#if progress}
-            <div class="text-[0.9rem] text-[#64b5f6]">{progress}</div>
-          {/if}
-          {#if notice}
-            <div class="text-[0.9rem] {notice.kind === 'ok' ? 'text-[#4caf50]' : 'text-red-300'}">
-              {notice.text}
-            </div>
-          {/if}
-
-          {#if showRemoved}
-            <div class="border-t border-white-10 pt-3">
-              {#if removed.length === 0}
-                <div class="text-[0.9rem] text-white-60">{m["mirror.no_removed"]()}</div>
-              {:else}
-                <ul class="flex flex-col gap-2">
-                  {#each removed as record (record.dir_name)}
-                    <li
-                      class="flex flex-wrap items-center justify-between gap-2 text-[0.9rem] text-white-75"
-                    >
-                      <span>
-                        {record.dir_name}
-                        <span class="ml-2 text-white-50">{formatRemovedAt(record.removed_at)}</span>
-                      </span>
-                      <button
-                        class={btnGhost}
-                        type="button"
-                        disabled={restoring === record.dir_name}
-                        onclick={() => void doRestore(record.dir_name)}
-                      >
-                        {restoring === record.dir_name
-                          ? m["mirror.restoring"]()
-                          : m["mirror.restore"]()}
-                      </button>
-                    </li>
-                  {/each}
-                </ul>
-              {/if}
-            </div>
-          {/if}
-        </div>
-      {/if}
+  <div class="flex flex-col gap-3">
+    <div class="text-[0.9rem] text-white-60">
+      {m["shared.cross_before"]()}
+      <a class="link-accent" href="/bms/table/shared/">{m["nav.shared"]()}</a>
+      {m["shared.cross_after"]()}
     </div>
-  </DetailsPanel>
+    {#if user === null}
+      <div class="text-[0.95rem] text-white-75">
+        {m["mirror.login_hint"]()}
+      </div>
+    {:else}
+      <div class="flex flex-col gap-3">
+        <div class="flex justify-end">
+          <button class={btnGhost} type="button" onclick={() => (showRemoved = !showRemoved)}>
+            {m["mirror.removed_count"]({ count: removed.length })}
+          </button>
+        </div>
+
+        <form
+          class="flex flex-wrap items-center gap-2"
+          onsubmit={(event) => {
+            event.preventDefault();
+            if (preview !== null && !submitting) void doAdd();
+          }}
+        >
+          <input
+            class="{inputPanel} min-w-60 flex-1"
+            type="url"
+            bind:value={url}
+            placeholder={m["mirror.add_url_placeholder"]()}
+            aria-label={m["mirror.add_url_aria"]()}
+          />
+          <button
+            class={btnGhost}
+            type="button"
+            disabled={previewing || url.trim() === ""}
+            onclick={() => void doPreview()}
+          >
+            {previewing ? m["mirror.previewing"]() : m["mirror.preview"]()}
+          </button>
+          <button class={btnGhost} type="submit" disabled={submitting || preview === null}>
+            {submitting ? m["mirror.submitting"]() : m["mirror.submit"]()}
+          </button>
+        </form>
+
+        {#if previewError}
+          <div class="text-[0.9rem] text-amber-300">{previewError}</div>
+        {/if}
+        {#if preview}
+          <div class="text-[0.9rem] text-white-70">
+            {m["mirror.preview_result"]()}
+            <strong class="text-white">{preview.name || m["mirror.no_name"]()}</strong>
+            {preview.symbol ? m["mirror.preview_symbol"]({ symbol: preview.symbol }) : ""}{m[
+              "mirror.preview_hint"
+            ]()}
+          </div>
+        {/if}
+        {#if progress}
+          <div class="text-[0.9rem] text-[#64b5f6]">{progress}</div>
+        {/if}
+        {#if notice}
+          <div class="text-[0.9rem] {notice.kind === 'ok' ? 'text-[#4caf50]' : 'text-red-300'}">
+            {notice.text}
+          </div>
+        {/if}
+
+        {#if showRemoved}
+          <div class="border-t border-white-10 pt-3">
+            {#if removed.length === 0}
+              <div class="text-[0.9rem] text-white-60">{m["mirror.no_removed"]()}</div>
+            {:else}
+              <ul class="flex flex-col gap-2">
+                {#each removed as record (record.dir_name)}
+                  <li
+                    class="flex flex-wrap items-center justify-between gap-2 text-[0.9rem] text-white-75"
+                  >
+                    <span>
+                      {record.dir_name}
+                      <span class="ml-2 text-white-50">{formatRemovedAt(record.removed_at)}</span>
+                    </span>
+                    <button
+                      class={btnGhost}
+                      type="button"
+                      disabled={restoring === record.dir_name}
+                      onclick={() => void doRestore(record.dir_name)}
+                    >
+                      {restoring === record.dir_name
+                        ? m["mirror.restoring"]()
+                        : m["mirror.restore"]()}
+                    </button>
+                  </li>
+                {/each}
+              </ul>
+            {/if}
+          </div>
+        {/if}
+      </div>
+    {/if}
+  </div>
 {/if}

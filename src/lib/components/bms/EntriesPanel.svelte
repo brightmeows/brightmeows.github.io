@@ -11,20 +11,19 @@
     filterEntryIndices,
     groupEntryIndices,
     isUnassigned,
-    levelFilterFromSelection,
     parseLevelFilterOption,
     removeIndices,
     setIndices,
   } from "@brightmeows/bms/editor";
   import type { ChartData } from "@brightmeows/bms/format";
   import { levelSegmentColor } from "@brightmeows/bms/table";
+  import { tick } from "svelte";
 
   import ChartTableRow from "#lib/components/bms/ChartTableRow.svelte";
-  import DifficultyNav, { type DifficultyNavItem } from "#lib/components/bms/DifficultyNav.svelte";
   import EntryDetailForm from "#lib/components/bms/EntryDetailForm.svelte";
-  import DetailsPanel from "#lib/components/ui/DetailsPanel.svelte";
   import JsonPreview from "#lib/components/ui/JsonPreview.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
+  import ToggleJumpChip from "#lib/components/ui/ToggleJumpChip.svelte";
   import { btnGhost, btnPrimary, inputEditorMono } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { JsonPreviewHandle } from "#lib/types/ui.js";
@@ -53,6 +52,8 @@
     dataError?: string | null;
     onRetry?: (() => void | Promise<void>) | undefined;
     onChange?: (() => void) | undefined;
+    hiddenLevels?: Set<string>;
+    hideUnassigned?: boolean;
   }
 
   let {
@@ -69,9 +70,18 @@
     dataError = null,
     onRetry,
     onChange,
+    hiddenLevels = $bindable(new Set()),
+    hideUnassigned = $bindable(false),
   }: Props = $props();
 
   const BATCH_NONE = "__none__";
+
+  interface LevelNavItem {
+    level: string;
+    unassigned: boolean;
+    count: number;
+    color: string;
+  }
 
   let query = $state("");
   let selected = $state<Set<number>>(new Set());
@@ -86,28 +96,6 @@
   let bulkError = $state<string | null>(null);
   let notice = $state<string | null>(null);
   let chartPreview = $state<JsonPreviewHandle | undefined>();
-  /** 折叠的分组键（默认全部展开；键与 groupEntryIndices 的组标识一致）。 */
-  let collapsedGroups = $state<Record<string, boolean>>({});
-  /** 条目面板自己的等级筛选：查看态只跳转，编辑态勾选筛选。 */
-  let selectedLevels = $state<Set<string>>(new Set());
-  let includeUnassigned = $state(false);
-
-  const levelFilter = $derived(levelFilterFromSelection(selectedLevels, includeUnassigned));
-  const filteredIndices = $derived(filterEntryIndices(entries, { level: levelFilter, query }));
-  const groups = $derived(groupEntryIndices(entries, filteredIndices, levels));
-  const unassignedCount = $derived(countUnassigned(entries));
-  const selectedCount = $derived(selected.size);
-  const columnCount = $derived(editing ? 7 : 6);
-  const filtering = $derived(query.trim() !== "" || selectedLevels.size > 0 || includeUnassigned);
-  const hintApplicableCount = $derived(
-    entries.reduce((total, entry) => {
-      if (!isUnassigned(entry)) return total;
-      const hash = entryHashes(entry)[0];
-      const hint = hash === undefined ? undefined : levelHints[hash];
-      return hint !== undefined && hint.trim() !== "" ? total + 1 : total;
-    }, 0)
-  );
-
   const allLevels = $derived.by(() => {
     const seen = new Set<string>();
     const out: string[] = [];
@@ -122,15 +110,32 @@
       seen.add(level);
       out.push(level);
     }
-    if (editing) {
-      for (const level of selectedLevels) {
-        if (seen.has(level)) continue;
-        seen.add(level);
-        out.push(level);
-      }
-    }
     return out;
   });
+
+  const levelFilter = $derived(
+    hiddenLevels.size === 0 && !hideUnassigned
+      ? ({ kind: "all" } as const)
+      : ({
+          kind: "levels",
+          levels: allLevels.filter((level) => !hiddenLevels.has(level)),
+          unassigned: !hideUnassigned,
+        } as const)
+  );
+  const filteredIndices = $derived(filterEntryIndices(entries, { level: levelFilter, query }));
+  const groups = $derived(groupEntryIndices(entries, filteredIndices, levels));
+  const unassignedCount = $derived(countUnassigned(entries));
+  const selectedCount = $derived(selected.size);
+  const columnCount = $derived(editing ? 5 : 4);
+  const filtering = $derived(query.trim() !== "" || hiddenLevels.size > 0 || hideUnassigned);
+  const hintApplicableCount = $derived(
+    entries.reduce((total, entry) => {
+      if (!isUnassigned(entry)) return total;
+      const hash = entryHashes(entry)[0];
+      const hint = hash === undefined ? undefined : levelHints[hash];
+      return hint !== undefined && hint.trim() !== "" ? total + 1 : total;
+    }, 0)
+  );
 
   const levelCounts = $derived.by(() => {
     const counts = new Map<string, number>();
@@ -142,11 +147,11 @@
     return counts;
   });
 
-  const navItems = $derived.by<DifficultyNavItem[]>(() => {
-    const items: DifficultyNavItem[] = [];
+  const navItems = $derived.by<LevelNavItem[]>(() => {
+    const items: LevelNavItem[] = [];
     for (const [index, level] of allLevels.entries()) {
       const count = levelCounts.get(level) ?? 0;
-      if (count === 0 && !(editing && selectedLevels.has(level))) continue;
+      if (count === 0) continue;
       items.push({
         level,
         unassigned: false,
@@ -154,7 +159,7 @@
         color: levelSegmentColor(index, allLevels.length),
       });
     }
-    if (unassignedCount > 0 || (editing && includeUnassigned)) {
+    if (unassignedCount > 0) {
       items.push({
         level: "",
         unassigned: true,
@@ -193,10 +198,6 @@
     return entry as ChartData;
   }
 
-  function groupKey(level: string, unassigned: boolean): string {
-    return unassigned ? "__unassigned__" : level;
-  }
-
   function colorFor(level: string, unassigned: boolean): string {
     if (unassigned) return "#607d8b";
     const index = allLevels.indexOf(level);
@@ -204,34 +205,30 @@
   }
 
   function toggleLevel(level: string, checked: boolean): void {
-    const next = new Set(selectedLevels);
-    if (checked) next.add(level);
-    else next.delete(level);
-    selectedLevels = next;
+    const next = new Set(hiddenLevels);
+    if (checked) next.delete(level);
+    else next.add(level);
+    hiddenLevels = next;
   }
 
   function toggleUnassigned(checked: boolean): void {
-    includeUnassigned = checked;
+    hideUnassigned = !checked;
   }
 
-  function jumpToGroup(item: DifficultyNavItem): void {
-    const key = groupKey(item.level, item.unassigned);
-    const next = { ...collapsedGroups };
-    delete next[key];
-    collapsedGroups = next;
+  async function jumpToGroup(item: LevelNavItem): Promise<void> {
+    if (item.unassigned) {
+      hideUnassigned = false;
+    } else {
+      const next = new Set(hiddenLevels);
+      next.delete(item.level);
+      hiddenLevels = next;
+    }
+    await tick();
 
     const id = entryGroupAnchorId(item.level, item.unassigned);
     const element = document.getElementById(id) ?? document.getElementById("charts-list");
     element?.scrollIntoView({ behavior: "smooth", block: "start" });
     history.replaceState(null, "", `#${encodeURIComponent(id)}`);
-  }
-
-  function toggleGroupCollapsed(level: string, unassigned: boolean): void {
-    const key = groupKey(level, unassigned);
-    const next = { ...collapsedGroups };
-    if (next[key] === true) delete next[key];
-    else next[key] = true;
-    collapsedGroups = next;
   }
 
   $effect(() => {
@@ -251,8 +248,6 @@
     bulkText = "";
     bulkError = null;
     notice = null;
-    selectedLevels = new Set();
-    includeUnassigned = false;
   });
 
   function setSelected(index: number, checked: boolean): void {
@@ -378,37 +373,7 @@
   }
 </script>
 
-{#snippet headerActions()}
-  {#if loadState === "loaded" && unassignedCount > 0}
-    <span class="rounded-[10px] bg-amber-300/15 px-2 py-[0.1rem] text-[0.8rem] text-amber-200">
-      {m["editor.entries_unassigned_count"]({ count: unassignedCount })}
-    </span>
-  {/if}
-  {#if editing}
-    <button class={btnGhost} type="button" {disabled} onclick={startAdd}>
-      {m["editor.entries_add"]()}
-    </button>
-    <button
-      class={btnGhost}
-      type="button"
-      {disabled}
-      aria-expanded={batchOpen}
-      onclick={() => (batchOpen = !batchOpen)}
-    >
-      {m["editor.entries_batch_toggle"]()}
-    </button>
-  {/if}
-{/snippet}
-
-<DetailsPanel
-  id="charts-list"
-  class="scroll-mt-20"
-  summary={m["editor.entries_section"]()}
-  hint={loadState === "loaded" ? m["editor.entries_total"]({ count: entries.length }) : ""}
-  variant="plain"
-  collapsible={false}
-  actions={headerActions}
->
+<div class="flex flex-col gap-3">
   {#if loadState === "idle" || loadState === "loading"}
     <LoadingProgress
       title={m["table.loading_charts"]()}
@@ -429,7 +394,7 @@
       {/if}
     </div>
   {:else}
-    <div class="mb-3 flex flex-wrap items-center gap-2">
+    <div class="flex flex-wrap items-center gap-2">
       <input
         class="{inputEditorMono} max-w-64 flex-1"
         type="text"
@@ -442,25 +407,45 @@
           {m["common.matched"]({ shown: filteredIndices.length, total: entries.length })}
         </span>
       {/if}
+      {#if editing}
+        <div class="ml-auto flex flex-wrap gap-2">
+          <button class={btnGhost} type="button" {disabled} onclick={startAdd}>
+            {m["editor.entries_add"]()}
+          </button>
+          <button
+            class={btnGhost}
+            type="button"
+            {disabled}
+            aria-expanded={batchOpen}
+            onclick={() => (batchOpen = !batchOpen)}
+          >
+            {m["editor.entries_batch_toggle"]()}
+          </button>
+        </div>
+      {/if}
     </div>
 
     {#if navItems.length > 0}
-      <div class="mb-3">
-        <DifficultyNav
-          items={navItems}
-          {editing}
-          {symbol}
-          {selectedLevels}
-          {includeUnassigned}
-          onToggleLevel={toggleLevel}
-          onToggleUnassigned={toggleUnassigned}
-          onJump={jumpToGroup}
-        />
+      <div class="flex flex-wrap items-center gap-2">
+        {#each navItems as item (item.unassigned ? "__unassigned__" : item.level)}
+          <ToggleJumpChip
+            checked={item.unassigned ? !hideUnassigned : !hiddenLevels.has(item.level)}
+            label={item.unassigned
+              ? m["editor.entries_filter_unassigned"]()
+              : `${symbol}${item.level}`}
+            count={item.count}
+            tone="level"
+            color={item.color}
+            onToggle={(checked: boolean) =>
+              item.unassigned ? toggleUnassigned(checked) : toggleLevel(item.level, checked)}
+            onJump={() => void jumpToGroup(item)}
+          />
+        {/each}
       </div>
     {/if}
 
     {#if editing && batchOpen}
-      <div class="mb-3 rounded-lg border border-white-15 bg-black-20 p-3">
+      <div class="rounded-lg border border-white-15 bg-black-20 p-3">
         <div class="flex flex-wrap items-center gap-2">
           <span class="text-[0.85rem] text-white-60">
             {m["editor.entries_selected"]({ count: selectedCount })}
@@ -544,7 +529,7 @@
 
     {#if notice}
       <div
-        class="mb-3 rounded-lg border border-amber-300/40 bg-amber-300/10 px-3 py-2 text-[0.85rem] text-amber-200"
+        class="rounded-lg border border-amber-300/40 bg-amber-300/10 px-3 py-2 text-[0.85rem] text-amber-200"
       >
         {notice}
       </div>
@@ -552,7 +537,7 @@
 
     {#if editing && adding}
       {#key editKey}
-        <div class="mb-4">
+        <div>
           <EntryDetailForm
             entry={null}
             {levels}
@@ -565,12 +550,10 @@
     {/if}
 
     <div class="table-wrapper">
-      <table class="w-full min-w-225 table-fixed border-collapse">
+      <table class="w-full min-w-200 table-fixed border-collapse">
         <colgroup>
           {#if editing}<col class="w-10" />{/if}
-          <col class="w-24" />
-          <col class="w-40" />
-          <col class="w-24" />
+          <col class="w-52" />
           <col />
           <col />
           <col />
@@ -578,12 +561,8 @@
         <thead>
           <tr>
             {#if editing}<th class="table-th-compact px-2"></th>{/if}
-            <th class="table-th-compact">{m["table.th_level"]()}</th>
             <th class="table-th-compact text-center whitespace-nowrap">
-              {m["table.th_download"]()}
-            </th>
-            <th class="table-th-compact text-center whitespace-nowrap">
-              {m["table.th_site"]()}
+              {m["table.th_links"]()}
             </th>
             <th class="table-th-compact text-center whitespace-nowrap">
               {m["table.th_title"]()}
@@ -601,17 +580,10 @@
           {@const groupLabel = group.unassigned
             ? m["editor.entries_filter_unassigned"]()
             : `${symbol}${group.level}`}
-          {@const groupCollapsed =
-            collapsedGroups[groupKey(group.level, group.unassigned)] === true}
           <tbody id={entryGroupAnchorId(group.level, group.unassigned)} class="scroll-mt-5">
             <tr>
               <td colspan={columnCount} class="border-b-2 border-white-10 px-4 py-2">
-                <button
-                  class="flex cursor-pointer items-center gap-4 border-none bg-transparent p-0 text-left"
-                  type="button"
-                  aria-expanded={!groupCollapsed}
-                  onclick={() => toggleGroupCollapsed(group.level, group.unassigned)}
-                >
+                <div class="flex items-center gap-4">
                   <span
                     class="shadow-[0_2px_8px rgba(0,0,0,0.2)] rounded-[20px] px-6 py-2 text-[1.2rem] font-bold text-white"
                     style={`background-color:${groupColor};`}
@@ -621,65 +593,47 @@
                   <span class="text-[1.1rem] text-white-80">
                     {m["table.chart_count"]({ count: group.indices.length })}
                   </span>
-                  <svg
-                    class="size-4 flex-none text-white-50 transition-transform duration-200 {groupCollapsed
-                      ? ''
-                      : 'rotate-180'}"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
-                </button>
+                </div>
               </td>
             </tr>
-            {#if !groupCollapsed}
-              {#each group.indices as index (index)}
-                {@const entry = entries[index] ?? {}}
-                {@const levelHint =
-                  editing && isUnassigned(entry) && hintFor(entry) !== null
-                    ? m["editor.entry_level_hint"]({ level: hintFor(entry) ?? "" })
-                    : null}
-                <ChartTableRow
-                  chart={toChart(entry)}
-                  groupLevel={group.unassigned
-                    ? m["editor.entries_filter_unassigned"]()
-                    : group.level}
-                  symbol={group.unassigned ? "" : symbol}
-                  {groupColor}
-                  bundleUrl={resolvedBundleUrl(entry)}
-                  diffUrl={resolvedDiffUrl(entry)}
-                  {chartPreview}
-                  {levelHint}
-                  selectable={editing}
-                  selected={selected.has(index)}
-                  {disabled}
-                  onSelect={(checked: boolean) => setSelected(index, checked)}
-                  onEdit={editing ? () => startEdit(index) : undefined}
-                />
-                {#if editing && editingIndex === index}
-                  <tr>
-                    <td colspan={columnCount} class="table-td-compact">
-                      {#key editKey}
-                        <EntryDetailForm
-                          entry={entries[index] ?? null}
-                          {levels}
-                          {disabled}
-                          oncommit={commitDetail}
-                          oncancel={cancelDetail}
-                          ondelete={deleteEditing}
-                        />
-                      {/key}
-                    </td>
-                  </tr>
-                {/if}
-              {/each}
-            {/if}
+            {#each group.indices as index (index)}
+              {@const entry = entries[index] ?? {}}
+              {@const levelHint =
+                editing && isUnassigned(entry) && hintFor(entry) !== null
+                  ? m["editor.entry_level_hint"]({ level: hintFor(entry) ?? "" })
+                  : null}
+              <ChartTableRow
+                chart={toChart(entry)}
+                groupLevel={group.unassigned
+                  ? m["editor.entries_filter_unassigned"]()
+                  : group.level}
+                bundleUrl={resolvedBundleUrl(entry)}
+                diffUrl={resolvedDiffUrl(entry)}
+                {chartPreview}
+                {levelHint}
+                selectable={editing}
+                selected={selected.has(index)}
+                {disabled}
+                onSelect={(checked: boolean) => setSelected(index, checked)}
+                onEdit={editing ? () => startEdit(index) : undefined}
+              />
+              {#if editing && editingIndex === index}
+                <tr>
+                  <td colspan={columnCount} class="table-td-compact">
+                    {#key editKey}
+                      <EntryDetailForm
+                        entry={entries[index] ?? null}
+                        {levels}
+                        {disabled}
+                        oncommit={commitDetail}
+                        oncancel={cancelDetail}
+                        ondelete={deleteEditing}
+                      />
+                    {/key}
+                  </td>
+                </tr>
+              {/if}
+            {/each}
           </tbody>
         {/each}
         {#if groups.length === 0}
@@ -697,4 +651,4 @@
     </div>
     <JsonPreview bind:this={chartPreview} />
   {/if}
-</DetailsPanel>
+</div>

@@ -13,17 +13,15 @@
   import CourseRowEdit from "./CourseRowEdit.svelte";
   import CourseRowView from "./CourseRowView.svelte";
 
-  import DetailsPanel from "#lib/components/ui/DetailsPanel.svelte";
   import InlineEmpty from "#lib/components/ui/InlineEmpty.svelte";
   import { btnGhost, btnIconDanger } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
 
   /**
-   * 段位面板：查看态与编辑态共用组遍历、组标题与全宽课程行。
+   * 段位内容：查看态与编辑态共用组遍历、组标题与全宽课程行；卡片显隐由页面管理。
    * 查看态严格只读；编辑态在行内展开表单，一次只展开一行。
    */
   interface Props {
-    id?: string | undefined;
     editing: boolean;
     groups?: ResolvedCourseGroup[];
     model?: CourseModel;
@@ -32,12 +30,10 @@
     /** 查看态缺少模型形状时由页面传入；编辑态自动取 model.shape。 */
     nested?: boolean | undefined;
     disabled?: boolean;
-    initiallyCollapsed?: boolean;
     onChange?: (() => void) | undefined;
   }
 
   let {
-    id = undefined,
     editing,
     groups = [],
     model = $bindable(undefined),
@@ -45,7 +41,6 @@
     symbol = "",
     nested = undefined,
     disabled = false,
-    initiallyCollapsed = true,
     onChange,
   }: Props = $props();
 
@@ -122,16 +117,6 @@
   });
 
   const showGroups = $derived(nested ?? (editing ? model?.shape === "nested" : groups.length > 1));
-  const courseCount = $derived(
-    displayGroups.reduce((total, group) => total + group.items.length, 0)
-  );
-  const groupCount = $derived(displayGroups.length);
-  const countsHint = $derived(
-    showGroups
-      ? m["course.counts"]({ groups: groupCount, courses: courseCount })
-      : m["course.counts_flat"]({ courses: courseCount })
-  );
-
   function toggle(key: string): void {
     expandedKey = expandedKey === key ? null : key;
   }
@@ -199,14 +184,7 @@
   }
 </script>
 
-<DetailsPanel
-  {id}
-  class="scroll-mt-20"
-  summary={m["editor.course_section"]()}
-  hint={countsHint}
-  variant="plain"
-  defaultOpen={!initiallyCollapsed}
->
+<div class="flex flex-col gap-3">
   <div class="flex flex-col gap-3">
     <div class="flex flex-wrap items-center gap-2">
       <span class="text-[0.85rem] text-white-50">{m["editor.course_hint"]()}</span>
@@ -310,4 +288,4 @@
       {/each}
     {/if}
   </div>
-</DetailsPanel>
+</div>
