@@ -77,8 +77,41 @@ export const inputInline =
 export const inputPanel =
   "w-full rounded-xl border border-white-20 bg-black-20 px-4 py-2.5 text-white outline-none placeholder:text-white-50 focus:border-accent/60 focus:ring-2 focus:ring-accent/30";
 
+// ---- 搜索域输入与按钮（2026-11 自 search、batch、shared、mirror 四页本地类串
+// 收敛；视觉形态为白玻璃大圆角，与编辑器黑底输入家族分工不同） ----
+
+/** 搜索页大号输入框。 */
+export const inputSearchLg =
+  "w-full rounded-2xl border border-white-20 bg-white-10 px-6 py-4 text-[1.1rem] text-white outline-none placeholder:text-white-40 transition-colors focus:border-accent focus:bg-white-15 disabled:cursor-not-allowed disabled:opacity-40";
+/** 批量搜索大号文本域（等宽、可拉伸）。 */
+export const inputSearchMono =
+  "w-full resize-y rounded-2xl border border-white-20 bg-white-10 px-6 py-4 font-mono text-[1rem] leading-relaxed text-white outline-none placeholder:text-white-40 transition-colors focus:border-accent focus:bg-white-15 disabled:cursor-not-allowed disabled:opacity-40";
+/** 搜索提交图标按钮（宽高与布局类由页面追加）。 */
+export const btnSearchSubmit =
+  "flex shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-white-20 bg-white-10 text-[1.3rem] text-white transition-colors hover:bg-white-20 disabled:cursor-not-allowed disabled:opacity-40";
+/** 输入框内清空按钮（含悬浮定位，shared 与 mirror 列表共用）。 */
+export const btnInputClear =
+  "absolute top-1/2 right-2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg border border-white-20 bg-white-10 p-0 text-[1.25rem] leading-none text-white transition-all duration-200 ease-in-out hover:bg-white-20";
+
 // ---- 图表链接图标 ----
 
 /** 谱面行内的统一方形图标按钮（链接与“...”共用）。 */
 export const chartLinkIcon =
   "flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md border border-white-20 bg-white-10 text-white-80 transition-colors duration-200 hover:bg-white-20 hover:text-white focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:outline-none";
+// ---- 徽章（2026-11 自计数与 warning 徽章的本地复制收敛） ----
+
+/** 黑底小号计数徽章（等级行芯片）。 */
+export const badgeCountSm =
+  "rounded-glass-sm bg-black-20 px-1.5 py-[0.1rem] text-[0.75rem] opacity-90";
+/** 黑底标准计数徽章（分组标题行）。 */
+export const badgeCountMd =
+  "rounded-glass-sm bg-black-20 px-2 py-[0.1rem] text-[0.9rem] opacity-90";
+/** accent 底计数徽章（共享表条目数）。 */
+export const badgeAccentXs =
+  "rounded-glass-sm bg-accent/20 px-2 py-[0.1rem] text-[0.85rem] text-accent";
+/** warning 小号提示徽章。 */
+export const badgeWarningSm =
+  "inline-block rounded-md border border-warning/40 bg-warning/10 px-2 py-0.5 text-[0.75rem] text-warning";
+/** warning 标准提示徽章。 */
+export const badgeWarningMd =
+  "inline-block rounded-md border border-warning/40 bg-warning/10 px-2.5 py-0.5 text-[0.8rem] text-warning";
