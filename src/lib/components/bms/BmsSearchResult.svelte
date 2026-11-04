@@ -7,9 +7,9 @@
   import GlassContainer from "#lib/components/ui/GlassContainer.svelte";
   import GradientButton from "#lib/components/ui/GradientButton.svelte";
   import { btnGhostSm } from "#lib/constants/ui-classes.js";
-  import type { TableLoadState } from "#lib/data/api/bms-search.js";
   import type { SearchResult } from "#lib/data/api/search-aggregator.js";
   import { m } from "#lib/paraglide/messages.js";
+  import type { TableLoadState } from "#lib/types/bms-view.js";
   import { formatBytes } from "#lib/utils/infra/format.js";
   import { validateUrl } from "#lib/utils/infra/url.js";
   import { clipboardFieldFeedback } from "#lib/utils/ui/clipboard.svelte.js";
