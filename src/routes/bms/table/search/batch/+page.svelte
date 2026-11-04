@@ -285,7 +285,7 @@
     <div class="p-12 text-center">
       <div class="mb-4 text-[4rem]">⚠️</div>
       <h3 class="mb-4 text-error">{m["search.index_load_failed"]()}</h3>
-      <p class="my-6 rounded-[10px] border-l-4 border-error bg-[rgba(255,107,107,0.1)] p-4">
+      <p class="my-6 rounded-glass-sm border-l-4 border-error bg-[rgba(255,107,107,0.1)] p-4">
         {indexClient.errorMessage ?? m["common.unknown_error"]()}
       </p>
     </div>
@@ -300,7 +300,7 @@
             placeholder={placeholderText}
             disabled={isProcessing}
             rows="10"
-            class="w-full resize-y rounded-[16px] border border-white-20 bg-white-10 px-6 py-4 font-mono text-[1rem] leading-relaxed text-white placeholder-white-40 transition-colors outline-none focus:border-accent focus:bg-white-15 disabled:cursor-not-allowed disabled:opacity-40"
+            class="w-full resize-y rounded-2xl border border-white-20 bg-white-10 px-6 py-4 font-mono text-[1rem] leading-relaxed text-white placeholder-white-40 transition-colors outline-none focus:border-accent focus:bg-white-15 disabled:cursor-not-allowed disabled:opacity-40"
           ></textarea>
         </div>
         <div class="flex w-14 shrink-0 flex-col gap-3">
@@ -314,7 +314,7 @@
                 void performBatchSearch();
               }
             }}
-            class="flex h-14 flex-1 cursor-pointer items-center justify-center rounded-[16px] border border-white-20 bg-white-10 text-[1.3rem] text-white transition-colors hover:bg-white-20 disabled:cursor-not-allowed disabled:opacity-40"
+            class="flex h-14 flex-1 cursor-pointer items-center justify-center rounded-2xl border border-white-20 bg-white-10 text-[1.3rem] text-white transition-colors hover:bg-white-20 disabled:cursor-not-allowed disabled:opacity-40"
             aria-label={batchPhase === "loading-tables"
               ? m["common.cancel"]()
               : m["search.search"]()}
@@ -415,7 +415,7 @@
                   <span class="truncate font-mono text-[0.95rem]">{query}</span>
                 </span>
                 <span
-                  class="shrink-0 rounded-[6px] bg-white-10 px-2.5 py-1 text-[0.85rem] text-white-70"
+                  class="shrink-0 rounded-md bg-white-10 px-2.5 py-1 text-[0.85rem] text-white-70"
                 >
                   {m["batch.chart_count"]({ count: results.length })}
                 </span>

@@ -241,7 +241,7 @@
     <div class="p-12 text-center">
       <div class="mb-4 text-[4rem]">⚠️</div>
       <h3 class="mb-4 text-error">{m["search.index_load_failed"]()}</h3>
-      <p class="my-6 rounded-[10px] border-l-4 border-error bg-[rgba(255,107,107,0.1)] p-4">
+      <p class="my-6 rounded-glass-sm border-l-4 border-error bg-[rgba(255,107,107,0.1)] p-4">
         {indexClient.errorMessage ?? m["common.unknown_error"]()}
       </p>
     </div>
@@ -257,7 +257,7 @@
             onfocus={searchConverters.ensureLoaded}
             placeholder={m["search.input_placeholder"]()}
             disabled={isSearching}
-            class="w-full rounded-[16px] border border-white-20 bg-white-10 px-6 py-4 text-[1.1rem] text-white placeholder-white-40 transition-colors outline-none focus:border-accent focus:bg-white-15 disabled:cursor-not-allowed disabled:opacity-40"
+            class="w-full rounded-2xl border border-white-20 bg-white-10 px-6 py-4 text-[1.1rem] text-white placeholder-white-40 transition-colors outline-none focus:border-accent focus:bg-white-15 disabled:cursor-not-allowed disabled:opacity-40"
           />
         </div>
         <button
@@ -270,7 +270,7 @@
               void performSearch();
             }
           }}
-          class="flex w-14 shrink-0 cursor-pointer items-center justify-center rounded-[16px] border border-white-20 bg-white-10 text-[1.3rem] text-white transition-colors hover:bg-white-20 disabled:cursor-not-allowed disabled:opacity-40"
+          class="flex w-14 shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-white-20 bg-white-10 text-[1.3rem] text-white transition-colors hover:bg-white-20 disabled:cursor-not-allowed disabled:opacity-40"
           aria-label={searchPhase === "loading-tables"
             ? m["search.cancel"]()
             : m["search.search"]()}

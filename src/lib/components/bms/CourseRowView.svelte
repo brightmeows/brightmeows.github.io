@@ -31,7 +31,7 @@
       </span>
       {#each course.constraint ?? [] as constraint (constraint)}
         <span
-          class="inline-block rounded-[6px] border border-warning/40 bg-warning/10 px-2 py-0.5 text-[0.75rem] text-warning"
+          class="inline-block rounded-md border border-warning/40 bg-warning/10 px-2 py-0.5 text-[0.75rem] text-warning"
         >
           {formatConstraint(constraint)}
         </span>
@@ -63,7 +63,7 @@
           <div class="flex flex-wrap gap-2">
             {#each course.constraint as constraint (constraint)}
               <span
-                class="inline-block rounded-[6px] border border-warning/40 bg-warning/10 px-2.5 py-0.5 text-[0.8rem] text-warning"
+                class="inline-block rounded-md border border-warning/40 bg-warning/10 px-2.5 py-0.5 text-[0.8rem] text-warning"
               >
                 {formatConstraint(constraint)}
               </span>
@@ -112,7 +112,7 @@
                     {/if}
                     {#if chart.level}
                       <span
-                        class="ml-1.5 inline-block rounded-[4px] bg-white-10 px-1.5 py-0.5 font-mono text-[0.75rem] text-white-60"
+                        class="ml-1.5 inline-block rounded-sm bg-white-10 px-1.5 py-0.5 font-mono text-[0.75rem] text-white-60"
                       >
                         {symbol}{chart.level}
                       </span>

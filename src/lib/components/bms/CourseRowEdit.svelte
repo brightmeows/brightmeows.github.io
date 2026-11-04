@@ -136,7 +136,7 @@
       </span>
       {#each course.constraints as constraint (constraint)}
         <span
-          class="inline-block rounded-[6px] border border-warning/40 bg-warning/10 px-2 py-0.5 text-[0.75rem] text-warning"
+          class="inline-block rounded-md border border-warning/40 bg-warning/10 px-2 py-0.5 text-[0.75rem] text-warning"
         >
           {formatConstraint(constraint)}
         </span>

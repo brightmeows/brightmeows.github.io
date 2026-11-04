@@ -69,7 +69,7 @@
     <div class="mb-6 flex items-center justify-between">
       <h3 class="m-0 text-[1.5rem] text-white">{title}</h3>
       {#if showPercentage && !isIndeterminate}
-        <div class="rounded-[20px] bg-accent/20 px-4 py-2 text-[1.2rem] font-bold text-accent">
+        <div class="rounded-glass-xl bg-accent/20 px-4 py-2 text-[1.2rem] font-bold text-accent">
           {displayPercent}%
         </div>
       {/if}

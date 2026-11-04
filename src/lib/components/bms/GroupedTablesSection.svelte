@@ -147,7 +147,7 @@
                 >
                   {sg.tag2}
                   <span
-                    class="rounded-[10px] bg-black-20 px-2 py-[0.1rem] text-[0.9rem] opacity-90"
+                    class="rounded-glass-sm bg-black-20 px-2 py-[0.1rem] text-[0.9rem] opacity-90"
                   >
                     ({sg.items.length})
                   </span>

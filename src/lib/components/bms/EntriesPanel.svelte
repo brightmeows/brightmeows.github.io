@@ -585,7 +585,7 @@
               <td colspan={columnCount} class="border-b-2 border-white-10 px-4 py-2">
                 <div class="flex items-center gap-4">
                   <span
-                    class="shadow-[0_2px_8px rgba(0,0,0,0.2)] rounded-[20px] px-6 py-2 text-[1.2rem] font-bold text-white"
+                    class="shadow-[0_2px_8px rgba(0,0,0,0.2)] rounded-glass-xl px-6 py-2 text-[1.2rem] font-bold text-white"
                     style={`background-color:${groupColor};`}
                   >
                     {groupLabel}

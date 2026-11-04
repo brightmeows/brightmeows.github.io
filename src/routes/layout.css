@@ -217,12 +217,12 @@
 
   /* ===== 加载状态容器 ===== */
   .glass-loading-container {
-    @apply rounded-[15px] border-white-10 bg-black-20 p-8;
+    @apply rounded-glass-md border-white-10 bg-black-20 p-8;
   }
 
   /* ===== 表格样式 ===== */
   .table-glass {
-    @apply w-full table-fixed border-collapse overflow-hidden rounded-[10px] bg-white-5;
+    @apply w-full table-fixed border-collapse overflow-hidden rounded-glass-sm bg-white-5;
   }
 
   .table-th-glass {
@@ -279,7 +279,7 @@
 
   /* ===== 表格外层容器 ===== */
   .table-wrapper {
-    @apply overflow-x-auto rounded-[10px] border border-white-10 bg-black-20;
+    @apply overflow-x-auto rounded-glass-sm border border-white-10 bg-black-20;
   }
 
   /* ===== 蓝色强调链接 ===== */
@@ -294,23 +294,23 @@
 
   /* ===== 蓝色强调徽章 ===== */
   .tag-accent {
-    @apply rounded-[20px] bg-accent/30 px-6 py-2 text-[1.2rem] font-bold text-white;
+    @apply rounded-glass-xl bg-accent/30 px-6 py-2 text-[1.2rem] font-bold text-white;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   }
 
   .tag-accent-sm {
-    @apply rounded-[20px] bg-accent/30 px-5 py-1.5 text-[1rem] font-bold text-white;
+    @apply rounded-glass-xl bg-accent/30 px-5 py-1.5 text-[1rem] font-bold text-white;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   }
 
   /* ===== 错误信息块 ===== */
   .message-error {
-    @apply rounded-[10px] border-l-4 border-error bg-error/10 p-4 text-[0.9rem] text-error;
+    @apply rounded-glass-sm border-l-4 border-error bg-error/10 p-4 text-[0.9rem] text-error;
   }
 
   /* ===== 滚动导航标签 ===== */
   .tag-scroll {
-    @apply cursor-pointer rounded-[18px] bg-white-10 px-4 py-2 font-bold text-white opacity-80 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:opacity-90;
+    @apply cursor-pointer rounded-glass-lg bg-white-10 px-4 py-2 font-bold text-white opacity-80 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:opacity-90;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   }
 
@@ -326,7 +326,7 @@
 
   /* ===== 深色卡片 ===== */
   .card-dark {
-    @apply rounded-[10px] bg-black-20 px-4 py-3;
+    @apply rounded-glass-sm bg-black-20 px-4 py-3;
   }
 
   /* ===== 已复制状态徽章 ===== */

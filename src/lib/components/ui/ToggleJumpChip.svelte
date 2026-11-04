@@ -51,7 +51,7 @@
     {label}
   </button>
   {#if count !== undefined}
-    <span class="rounded-[10px] bg-black-20 px-1.5 py-[0.1rem] text-[0.75rem] opacity-90">
+    <span class="rounded-glass-sm bg-black-20 px-1.5 py-[0.1rem] text-[0.75rem] opacity-90">
       {count}
     </span>
   {/if}

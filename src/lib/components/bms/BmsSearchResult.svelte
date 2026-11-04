@@ -57,7 +57,7 @@
           type="button"
           onclick={() => void cb.copy("md5", result.md5!)}
           title={cb.copiedField === "md5" ? m["common.copied"]() : `MD5: ${result.md5}`}
-          class="cursor-pointer rounded-[6px] px-2 py-1 text-[0.75rem] font-medium text-white transition-colors {cb.copiedField ===
+          class="cursor-pointer rounded-md px-2 py-1 text-[0.75rem] font-medium text-white transition-colors {cb.copiedField ===
           'md5'
             ? 'bg-success'
             : 'bg-[#607d8b] hover:bg-[#78909c]'}"
@@ -72,7 +72,7 @@
           title={cb.copiedField === "sha256"
             ? m["common.copied"]()
             : `SHA256: ${result.sha256.slice(0, 16)}...`}
-          class="cursor-pointer rounded-[6px] px-2 py-1 text-[0.75rem] font-medium text-white transition-colors {cb.copiedField ===
+          class="cursor-pointer rounded-md px-2 py-1 text-[0.75rem] font-medium text-white transition-colors {cb.copiedField ===
           'sha256'
             ? 'bg-success'
             : 'bg-[#607d8b] hover:bg-[#78909c]'}"
@@ -101,7 +101,7 @@
           <div class="min-w-0">
             <div class="flex items-center gap-3">
               <span
-                class="inline-block rounded-[8px] bg-success/20 px-3 py-1 text-[0.9rem] font-bold text-success"
+                class="inline-block rounded-lg bg-success/20 px-3 py-1 text-[0.9rem] font-bold text-success"
               >
                 {entry.symbol ?? ""}{entry.chart.level ?? "?"}
               </span>
