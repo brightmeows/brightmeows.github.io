@@ -179,7 +179,7 @@
         <span class="badge-copied">{m["common.copied_bang"]()}</span>
       {:else}
         <button
-          class="flex-none cursor-pointer rounded-md border border-white-20 bg-white-10 px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-white-80 transition-all duration-200 ease-in-out hover:bg-white-20 hover:text-white"
+          class="flex-none {btnGhostXs}"
           onclick={() => cb.copy("mirror", new URL(item.url, window.location.origin).toString())}
           aria-label={m["mirror.copy_mirror_aria"]()}
         >
@@ -205,7 +205,7 @@
           <span class="badge-copied">{m["common.copied_bang"]()}</span>
         {:else}
           <button
-            class="flex-none cursor-pointer rounded-md border border-white-20 bg-white-10 px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-white-80 transition-all duration-200 ease-in-out hover:bg-white-20 hover:text-white"
+            class="flex-none {btnGhostXs}"
             onclick={() => cb.copy("original", item.url_from!)}
             aria-label={m["mirror.copy_original_aria"]()}
           >

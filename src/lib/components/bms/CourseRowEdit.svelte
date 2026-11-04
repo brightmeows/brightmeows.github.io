@@ -13,6 +13,7 @@
   import CourseRow from "./CourseRow.svelte";
 
   import {
+    badgeWarningSm,
     btnGhost,
     btnGhostXs,
     btnIcon,
@@ -135,9 +136,7 @@
         {course.name || m["course.unnamed"]()}
       </span>
       {#each course.constraints as constraint (constraint)}
-        <span
-          class="inline-block rounded-md border border-warning/40 bg-warning/10 px-2 py-0.5 text-[0.75rem] text-warning"
-        >
+        <span class={badgeWarningSm}>
           {formatConstraint(constraint)}
         </span>
       {/each}

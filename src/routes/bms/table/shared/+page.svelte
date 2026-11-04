@@ -8,7 +8,7 @@
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import Checkbox from "#lib/components/ui/Checkbox.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
-  import { btnPrimaryLink } from "#lib/constants/ui-classes.js";
+  import { btnInputClear, btnPrimaryLink } from "#lib/constants/ui-classes.js";
   import { loadSharedTables, submitSharedDelete } from "#lib/data/api/shared-api.js";
   import { auth } from "#lib/data/store/auth-store.svelte.js";
   import { searchConverters } from "#lib/data/store/search-converters.svelte.js";
@@ -133,7 +133,7 @@
       />
       {#if searchQuery.trim().length > 0}
         <button
-          class="absolute top-1/2 right-2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg border border-white-20 bg-white-10 p-0 text-[1.25rem] leading-none text-white transition-all duration-200 ease-in-out hover:bg-white-20"
+          class={btnInputClear}
           type="button"
           aria-label={m["common.clear_search"]()}
           onclick={() => (searchQuery = "")}

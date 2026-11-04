@@ -12,7 +12,7 @@
   import Checkbox from "#lib/components/ui/Checkbox.svelte";
   import JsonPreview from "#lib/components/ui/JsonPreview.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
-  import { inputPanel } from "#lib/constants/ui-classes.js";
+  import { btnInputClear, inputPanel } from "#lib/constants/ui-classes.js";
   import {
     collapseAdminEdit,
     initialMirrorAdminState,
@@ -520,7 +520,7 @@
         />
         {#if searchQuery.trim().length > 0}
           <button
-            class="absolute top-1/2 right-2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg border border-white-20 bg-white-10 p-0 text-[1.25rem] leading-none text-white transition-all duration-200 ease-in-out hover:bg-white-20"
+            class={btnInputClear}
             type="button"
             aria-label={m["common.clear_search"]()}
             onclick={() => (searchQuery = "")}

@@ -1,5 +1,6 @@
 <script lang="ts">
   import Checkbox from "#lib/components/ui/Checkbox.svelte";
+  import { badgeCountSm } from "#lib/constants/ui-classes.js";
 
   /** 复合开关：复选框管显隐，标签按钮管跳转；卡片与等级共用。 */
   interface Props {
@@ -51,7 +52,7 @@
     {label}
   </button>
   {#if count !== undefined}
-    <span class="rounded-glass-sm bg-black-20 px-1.5 py-[0.1rem] text-[0.75rem] opacity-90">
+    <span class={badgeCountSm}>
       {count}
     </span>
   {/if}

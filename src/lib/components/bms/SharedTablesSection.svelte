@@ -5,6 +5,7 @@
   import SharedTableRow from "./SharedTableRow.svelte";
 
   import EmptyState from "#lib/components/ui/EmptyState.svelte";
+  import { badgeAccentXs } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
   import { slugifyTag } from "#lib/utils/mirror-tables.js";
 
@@ -50,9 +51,7 @@
           <div class="flex items-center gap-3">
             <span class="tag-accent">{group.author}</span>
             {#if group.isSelf}
-              <span
-                class="rounded-glass-sm bg-accent/20 px-2 py-[0.1rem] text-[0.85rem] text-accent"
-              >
+              <span class={badgeAccentXs}>
                 {m["shared.mine_badge"]()}
               </span>
             {/if}

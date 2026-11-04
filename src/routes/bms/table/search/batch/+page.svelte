@@ -8,6 +8,7 @@
   import EmptyState from "#lib/components/ui/EmptyState.svelte";
   import GradientButton from "#lib/components/ui/GradientButton.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
+  import { btnSearchSubmit, inputSearchMono } from "#lib/constants/ui-classes.js";
   import { createEpochGuard, runTableLoad } from "#lib/controllers/table-load.js";
   import type { CandidateEntry, QueryType, TableLoadState } from "#lib/data/api/bms-search.js";
   import {
@@ -300,8 +301,7 @@
             placeholder={placeholderText}
             disabled={isProcessing}
             rows="10"
-            class="w-full resize-y rounded-2xl border border-white-20 bg-white-10 px-6 py-4 font-mono text-[1rem] leading-relaxed text-white placeholder-white-40 transition-colors outline-none focus:border-accent focus:bg-white-15 disabled:cursor-not-allowed disabled:opacity-40"
-          ></textarea>
+            class={inputSearchMono}></textarea>
         </div>
         <div class="flex w-14 shrink-0 flex-col gap-3">
           <button
@@ -314,7 +314,7 @@
                 void performBatchSearch();
               }
             }}
-            class="flex h-14 flex-1 cursor-pointer items-center justify-center rounded-2xl border border-white-20 bg-white-10 text-[1.3rem] text-white transition-colors hover:bg-white-20 disabled:cursor-not-allowed disabled:opacity-40"
+            class="{btnSearchSubmit} h-14 flex-1"
             aria-label={batchPhase === "loading-tables"
               ? m["common.cancel"]()
               : m["search.search"]()}

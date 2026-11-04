@@ -4,7 +4,7 @@
 
   import CourseRow from "./CourseRow.svelte";
 
-  import { btnGhostXs } from "#lib/constants/ui-classes.js";
+  import { badgeWarningMd, badgeWarningSm, btnGhostXs } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
 
   /** 查看态段位行：摘要加可展开的只读详情。 */
@@ -30,9 +30,7 @@
         {course.name || m["course.unnamed"]()}
       </span>
       {#each course.constraint ?? [] as constraint (constraint)}
-        <span
-          class="inline-block rounded-md border border-warning/40 bg-warning/10 px-2 py-0.5 text-[0.75rem] text-warning"
-        >
+        <span class={badgeWarningSm}>
           {formatConstraint(constraint)}
         </span>
       {/each}
@@ -62,9 +60,7 @@
           <div class="mb-1 text-[0.8rem] text-white-60">{m["editor.course_constraint"]()}</div>
           <div class="flex flex-wrap gap-2">
             {#each course.constraint as constraint (constraint)}
-              <span
-                class="inline-block rounded-md border border-warning/40 bg-warning/10 px-2.5 py-0.5 text-[0.8rem] text-warning"
-              >
+              <span class={badgeWarningMd}>
                 {formatConstraint(constraint)}
               </span>
             {/each}

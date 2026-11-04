@@ -6,6 +6,7 @@
 
   import GlassContainer from "#lib/components/ui/GlassContainer.svelte";
   import GradientButton from "#lib/components/ui/GradientButton.svelte";
+  import { btnGhostSm } from "#lib/constants/ui-classes.js";
   import type { TableLoadState } from "#lib/data/api/bms-search.js";
   import type { SearchResult } from "#lib/data/api/search-aggregator.js";
   import { m } from "#lib/paraglide/messages.js";
@@ -193,11 +194,7 @@
             <span class="text-white-80">{loadState.name}</span>
             <span class="text-[0.8rem] text-error/70">{loadState.errorMessage}</span>
           </div>
-          <button
-            type="button"
-            onclick={() => onretry(entry.tableId)}
-            class="cursor-pointer rounded-md border border-white-20 bg-white-10 px-3 py-1 text-[0.8rem] text-white-80 transition-colors hover:bg-white-20"
-          >
+          <button type="button" onclick={() => onretry(entry.tableId)} class={btnGhostSm}>
             {m["common.retry"]()}
           </button>
         </div>

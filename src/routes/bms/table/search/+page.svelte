@@ -5,6 +5,7 @@
   import BmsSearchResult from "#lib/components/bms/BmsSearchResult.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import EmptyState from "#lib/components/ui/EmptyState.svelte";
+  import { btnSearchSubmit, inputSearchLg } from "#lib/constants/ui-classes.js";
   import { createEpochGuard, runTableLoad, waitingState } from "#lib/controllers/table-load.js";
   import type { CandidateEntry, TableLoadState } from "#lib/data/api/bms-search.js";
   import {
@@ -257,7 +258,7 @@
             onfocus={searchConverters.ensureLoaded}
             placeholder={m["search.input_placeholder"]()}
             disabled={isSearching}
-            class="w-full rounded-2xl border border-white-20 bg-white-10 px-6 py-4 text-[1.1rem] text-white placeholder-white-40 transition-colors outline-none focus:border-accent focus:bg-white-15 disabled:cursor-not-allowed disabled:opacity-40"
+            class={inputSearchLg}
           />
         </div>
         <button
@@ -270,7 +271,7 @@
               void performSearch();
             }
           }}
-          class="flex w-14 shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-white-20 bg-white-10 text-[1.3rem] text-white transition-colors hover:bg-white-20 disabled:cursor-not-allowed disabled:opacity-40"
+          class="{btnSearchSubmit} w-14"
           aria-label={searchPhase === "loading-tables"
             ? m["search.cancel"]()
             : m["search.search"]()}
