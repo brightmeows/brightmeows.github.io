@@ -7,10 +7,9 @@ description: 用于在 Satellite Skill Analyzer 3rd 添加新的 course。
 
 ## 数据源
 
-根据当前任务确定：
-
-- BMS数据：`D:\Codes\bms-table-mirror\tables\[stellabms.xyz] Satellite\data.json`
-- Header配置：`static/bms/table/satellite-skill-analyzer-3rd-preview/header.json`
+- BMS 曲库数据（只读查询源）：R2 权威源的对象 `tables/[stellabms.xyz] Satellite/data.json`，仓库不含派生数据。取用时先下载到本地临时文件：
+  `curl -s -o /tmp/satellite-data.json 'https://bms-table-mirror-r2.brightmeows.com/tables/%5Bstellabms.xyz%5D%20Satellite/data.json'`（对象键中的 `[`、`]` 与空格需百分号编码）
+- Header 配置（编辑目标，git 内）：`static/bms/table/satellite-skill-analyzer-3rd-preview/header.json`，改完随分支提交
 
 ## 添加步骤
 
@@ -30,7 +29,8 @@ description: 用于在 Satellite Skill Analyzer 3rd 添加新的 course。
 import json
 import sys
 sys.stdout.reconfigure(encoding='utf-8')
-data_path = "D:/Codes/bms-table-mirror/tables/[stellabms.xyz] Satellite/data.json"
+# 曲库已按“数据源”节的命令下载到本地
+data_path = "/tmp/satellite-data.json"
 with open(data_path, 'r', encoding='utf-8') as f:
     data = json.load(f)
 
