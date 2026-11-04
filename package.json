@@ -69,7 +69,6 @@
   },
   "imports": {
     "#posts/*": "./content/posts/*",
-    "#lib": "./src/lib/index.js",
     "#lib/*": "./src/lib/*"
   }
 }
