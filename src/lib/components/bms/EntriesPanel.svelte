@@ -147,16 +147,19 @@
     return counts;
   });
 
+  // 分段配色按“实际有谱面的等级”依次取色：level_order 全集常含大量空等级，
+  // 若按全集编 index，空等级占掉的颜色箱会被跳过，中间色相（橙红等）上不了屏。
+  const visibleLevels = $derived(allLevels.filter((level) => (levelCounts.get(level) ?? 0) > 0));
+
   const navItems = $derived.by<LevelNavItem[]>(() => {
     const items: LevelNavItem[] = [];
-    for (const [index, level] of allLevels.entries()) {
+    for (const [index, level] of visibleLevels.entries()) {
       const count = levelCounts.get(level) ?? 0;
-      if (count === 0) continue;
       items.push({
         level,
         unassigned: false,
         count,
-        color: levelSegmentColor(index, allLevels.length),
+        color: levelSegmentColor(index, visibleLevels.length),
       });
     }
     if (unassignedCount > 0) {
@@ -200,8 +203,8 @@
 
   function colorFor(level: string, unassigned: boolean): string {
     if (unassigned) return "#607d8b";
-    const index = allLevels.indexOf(level);
-    return levelSegmentColor(index < 0 ? 0 : index, allLevels.length);
+    const index = visibleLevels.indexOf(level);
+    return levelSegmentColor(index < 0 ? 0 : index, visibleLevels.length);
   }
 
   function toggleLevel(level: string, checked: boolean): void {
