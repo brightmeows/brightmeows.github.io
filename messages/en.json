@@ -475,8 +475,6 @@
   "nav.self_sp": "Personal Tables (SP)",
   "nav.shared": "Shared Tables",
   "nav.table": "Difficulty Tables",
-  "panel.default": "Panel",
-  "panel.open": "Open {name}",
   "progress.current_step": "Current step",
   "progress.download_done": "Download complete",
   "progress.downloaded": "{bytes} downloaded",

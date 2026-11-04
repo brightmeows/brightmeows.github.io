@@ -16,9 +16,6 @@
     "src/**/*",
     "src/**/*.svelte",
     "scripts/**/*.ts",
-    "eslint.config.ts",
-    "prettier.config.ts",
-    "svelte.config.ts",
     "vite.config.ts",
     "vitest.config.ts",
     "vitest.parity.config.ts"

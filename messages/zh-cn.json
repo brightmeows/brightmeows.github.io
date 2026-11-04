@@ -475,8 +475,6 @@
   "nav.self_sp": "个人难度表（SP）",
   "nav.shared": "共享表",
   "nav.table": "难度表",
-  "panel.default": "面板",
-  "panel.open": "打开{name}",
   "progress.current_step": "当前步骤",
   "progress.download_done": "下载完成",
   "progress.downloaded": "已下载 {bytes}",
