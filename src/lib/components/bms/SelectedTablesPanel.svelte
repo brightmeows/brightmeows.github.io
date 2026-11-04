@@ -84,7 +84,7 @@
     out:fly={{ y: 24, opacity: 0, duration: 140, easing: cubicIn }}
   >
     <div
-      class="flex w-max flex-nowrap items-center gap-4 rounded-xl border border-white-20 bg-glass p-3 px-4 shadow-[0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur-[6px]"
+      class="flex w-max flex-nowrap items-center gap-4 rounded-xl bg-glass p-3 px-4 shadow-[var(--glass-lighting),0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur"
     >
       <Checkbox
         ariaLabel={m["common.select_all_aria"]()}

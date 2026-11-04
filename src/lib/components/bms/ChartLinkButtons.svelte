@@ -128,7 +128,7 @@
 
 {#snippet downloadBadge()}
   <span
-    class="pointer-events-none absolute -right-1 -bottom-1 flex size-3.5 items-center justify-center rounded-full border border-white-20 bg-white-10 text-[#64b5f6]"
+    class="pointer-events-none absolute -right-1 -bottom-1 flex size-3.5 items-center justify-center rounded-full border border-white-20 bg-white-10 text-accent"
     aria-hidden="true"
   >
     <svg
@@ -263,7 +263,7 @@
 
 {#if hiddenLinks.length > 0}
   <div
-    class="fixed z-2000 max-h-64 min-w-52 overflow-auto rounded-lg border border-white-20 bg-[#17142b] p-1 shadow-[0_10px_24px_rgba(0,0,0,0.45)] backdrop-blur-md"
+    class="popover-glass max-h-64 min-w-52 overflow-auto p-1"
     style={menuStyle}
     bind:this={menuEl}
     role="menu"

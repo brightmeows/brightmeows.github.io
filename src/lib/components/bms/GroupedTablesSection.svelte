@@ -7,6 +7,7 @@
   import DetailsPanel from "#lib/components/ui/DetailsPanel.svelte";
   import EmptyState from "#lib/components/ui/EmptyState.svelte";
   import ScrollSyncGroup from "#lib/components/ui/ScrollSyncGroup.svelte";
+  import { badgeCountMd } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { MirrorAdminUi, Tag1Group, Tag2Group } from "#lib/types/bms-view.js";
   import type { JsonPreviewHandle } from "#lib/types/ui.js";
@@ -146,9 +147,7 @@
                   onclick={() => scrollToTag2(g.tag1, sg.tag2)}
                 >
                   {sg.tag2}
-                  <span
-                    class="rounded-[10px] bg-black-20 px-2 py-[0.1rem] text-[0.9rem] opacity-90"
-                  >
+                  <span class={badgeCountMd}>
                     ({sg.items.length})
                   </span>
                 </button>

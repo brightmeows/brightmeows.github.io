@@ -235,7 +235,7 @@
         <a class={btnBar} href={loginHref}>{m["topbar.login"]()}</a>
       {/if}
       {#if notice}
-        <span class="text-[0.9rem] {notice.kind === 'ok' ? 'text-[#4caf50]' : 'text-red-300'}">
+        <span class="text-[0.9rem] {notice.kind === 'ok' ? 'text-success' : 'text-red-300'}">
           {notice.text}
         </span>
       {/if}

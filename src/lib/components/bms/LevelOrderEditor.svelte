@@ -88,7 +88,7 @@
         <li
           class="flex items-center gap-2 rounded-lg border border-white-10 bg-black-20 px-2 py-1.5 {dropIndex ===
           index
-            ? 'border-[#64b5f6]/60'
+            ? 'border-accent/60'
             : ''}"
           draggable={!disabled}
           ondragstart={(event) => {

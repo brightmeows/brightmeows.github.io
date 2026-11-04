@@ -289,7 +289,7 @@
           <span class="text-white-50">{m["table.reading"]()}</span>
         {/if}
         {#if cb.copied}
-          <span class="text-[#4caf50]">{m["common.copied"]()}</span>
+          <span class="text-success">{m["common.copied"]()}</span>
         {/if}
       {/if}
     </div>
@@ -373,7 +373,7 @@
     {#if model.notice !== null}
       <div
         class="rounded-lg border px-3 py-2 text-[0.85rem] {model.notice.kind === 'ok'
-          ? 'border-[#4caf50]/40 bg-[#4caf50]/10 text-[#a5d6a7]'
+          ? 'border-success/40 bg-success/10 text-[#a5d6a7]'
           : model.notice.kind === 'warn'
             ? 'border-amber-300/40 bg-amber-300/10 text-amber-200'
             : 'border-red-400/40 bg-red-400/10 text-red-200'}"

@@ -13,6 +13,7 @@
   import CourseRow from "./CourseRow.svelte";
 
   import {
+    badgeWarningSm,
     btnGhost,
     btnGhostXs,
     btnIcon,
@@ -135,9 +136,7 @@
         {course.name || m["course.unnamed"]()}
       </span>
       {#each course.constraints as constraint (constraint)}
-        <span
-          class="inline-block rounded-[6px] border border-warning/40 bg-warning/10 px-2 py-0.5 text-[0.75rem] text-warning"
-        >
+        <span class={badgeWarningSm}>
           {formatConstraint(constraint)}
         </span>
       {/each}
@@ -346,7 +345,7 @@
         </div>
 
         {#if pickerOpen}
-          <div class="mb-2 rounded-lg border border-[#64b5f6]/40 bg-[#64b5f6]/10 p-2">
+          <div class="mb-2 rounded-lg border border-accent/40 bg-accent/10 p-2">
             <div class="mb-2 flex items-center gap-2">
               <input
                 class="{inputEditorMono} flex-1"
@@ -434,7 +433,7 @@
                   />
                 </div>
                 <div class="mt-1.5 flex flex-wrap items-center gap-2">
-                  <span class="text-[0.78rem] {resolved ? 'text-[#4caf50]' : 'text-amber-300'}">
+                  <span class="text-[0.78rem] {resolved ? 'text-success' : 'text-amber-300'}">
                     {resolved
                       ? m["editor.course_chart_resolved"]()
                       : m["editor.course_chart_unresolved"]()}

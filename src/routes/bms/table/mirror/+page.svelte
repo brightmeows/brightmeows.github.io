@@ -12,7 +12,7 @@
   import Checkbox from "#lib/components/ui/Checkbox.svelte";
   import JsonPreview from "#lib/components/ui/JsonPreview.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
-  import { inputPanel } from "#lib/constants/ui-classes.js";
+  import { btnInputClear, inputPanel } from "#lib/constants/ui-classes.js";
   import {
     collapseAdminEdit,
     initialMirrorAdminState,
@@ -429,7 +429,7 @@
       {m["mirror.tutorial"]()}
     </a>
     {#if cb.copied}
-      <span class="ml-2 text-[#4caf50]">{m["common.copied"]()}</span>
+      <span class="ml-2 text-success">{m["common.copied"]()}</span>
     {/if}
   </div>
   <div class="mt-4">
@@ -455,7 +455,7 @@
       {#if admin.notice}
         <div
           class="text-center text-[0.9rem] {admin.notice.kind === 'ok'
-            ? 'text-[#4caf50]'
+            ? 'text-success'
             : 'text-red-300'}"
         >
           {admin.notice.text}
@@ -479,7 +479,7 @@
         {#if auth.user !== null}
           <label
             class="flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-[0.35rem] text-[0.85rem] transition-colors duration-200 select-none {operationsMode
-              ? 'border-[#64b5f6] bg-[#64b5f6]/20 text-[#64b5f6]'
+              ? 'border-accent bg-accent/20 text-accent'
               : 'border-white-20 text-white-50 hover:border-white-40 hover:text-white-70'}"
           >
             <Checkbox
@@ -494,7 +494,7 @@
         {#if isAdmin}
           <button
             class="cursor-pointer rounded-md border px-2 py-[0.35rem] text-[0.85rem] transition-colors duration-200 {adminPanelOpen
-              ? 'border-[#64b5f6]/60 bg-[#64b5f6]/20 text-[#64b5f6]'
+              ? 'border-accent/60 bg-accent/20 text-accent'
               : 'border-white-20 text-white-50 hover:border-white-40 hover:text-white-70'}"
             type="button"
             aria-expanded={adminPanelOpen}
@@ -520,7 +520,7 @@
         />
         {#if searchQuery.trim().length > 0}
           <button
-            class="absolute top-1/2 right-2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg border border-white-20 bg-white-10 p-0 text-[1.25rem] leading-none text-white transition-all duration-200 ease-in-out hover:bg-white-20"
+            class={btnInputClear}
             type="button"
             aria-label={m["common.clear_search"]()}
             onclick={() => (searchQuery = "")}

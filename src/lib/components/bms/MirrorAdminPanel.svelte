@@ -165,7 +165,7 @@
               <li>
                 <span class="text-white-50">{formatTime(entry.at)}</span>
                 <span class="ml-2 text-white-90">{entry.actor}</span>
-                <span class="ml-2 text-[#64b5f6]">{entry.action}</span>
+                <span class="ml-2 text-accent">{entry.action}</span>
                 <span class="ml-2">{entry.dir_name ?? entry.url ?? ""}</span>
                 {#if entry.detail}<span class="ml-2 text-white-50">{entry.detail}</span>{/if}
               </li>

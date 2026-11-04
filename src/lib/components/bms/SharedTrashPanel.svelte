@@ -88,7 +88,7 @@
         </button>
       </div>
       {#if notice}
-        <div class="text-[0.9rem] {notice.kind === 'ok' ? 'text-[#4caf50]' : 'text-red-300'}">
+        <div class="text-[0.9rem] {notice.kind === 'ok' ? 'text-success' : 'text-red-300'}">
           {notice.text}
         </div>
       {/if}
