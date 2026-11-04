@@ -377,7 +377,8 @@
   }
 
   // 只有“最长匹配前缀”所在的下拉才高亮：isActive 是前缀匹配，概览条目
-  // （/bms）会吞掉整个子树，self-sp/self-dp 是连字符路径、无法被自身更长的
+  // （/bms）会吞掉整个子树，个人表条目是更长前缀（/bms/table/shared/meow-sp
+  // 对 /bms/table/shared）、无法被自身更长的
   // 前缀条目命中，须按匹配长度归属，否则个人表页面下两个下拉同时高亮。
   function isActiveDropdown(item: NavDropdown): boolean {
     let owner: { id: string; len: number } | undefined;
