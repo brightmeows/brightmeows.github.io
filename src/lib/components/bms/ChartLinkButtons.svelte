@@ -263,7 +263,7 @@
 
 {#if hiddenLinks.length > 0}
   <div
-    class="fixed z-2000 max-h-64 min-w-52 overflow-auto rounded-lg border border-white-20 bg-[#17142b] p-1 shadow-[0_10px_24px_rgba(0,0,0,0.45)] backdrop-blur-md"
+    class="popover-glass max-h-64 min-w-52 overflow-auto p-1"
     style={menuStyle}
     bind:this={menuEl}
     role="menu"
