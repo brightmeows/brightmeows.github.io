@@ -289,6 +289,9 @@ export class IncrementalAggregator {
    * 由于 Aggregator 新实例下 preCreate 是第一个调用，不存在跨阶段冲突。
    */
   preCreate(candidates: CandidateEntry[]): SearchResult[] {
+    // 同表候选解析进同一结果组（如索引重复列出同一 md5）时只建一个占位，
+    // 重复项会让 UI 以 tableId 为键的 each 崩溃（each_key_duplicate）。
+    const seen = new Set<string>();
     for (const entry of candidates) {
       const { tableId, matchedKeys } = entry;
 
@@ -312,6 +315,9 @@ export class IncrementalAggregator {
       if (titleKey) partialChart.title = titleKey.key;
       if (artistKey) partialChart.artist = artistKey.key;
 
+      const seenKey = `${entry.tableId}:${result.id}`;
+      if (seen.has(seenKey)) continue;
+      seen.add(seenKey);
       result.appearances.push({
         tableId,
         tableName: tableId,
@@ -360,8 +366,14 @@ export class IncrementalAggregator {
     }
     this.processedEntries.delete(tableId);
 
-    // Phase 4 — 原子添加：一次性写入全部新 appearance
+    // Phase 4 — 原子添加：一次性写入全部新 appearance。
+    // 同表内多份条目解析进同一结果组（如表数据重复列出同一 md5）时只保留
+    // 首份：appearances 的语义是每表一条，重复项会让 UI 以 tableId 为键的
+    // each 崩溃（each_key_duplicate）。
+    const written = new Set<string>();
     for (const { result, chart } of batch) {
+      if (written.has(result.id)) continue;
+      written.add(result.id);
       result.appearances.push({ tableId, tableName, symbol, chart });
       this.trackProcessed(tableId, result.id);
     }

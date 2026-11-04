@@ -80,6 +80,21 @@ describe("IncrementalAggregator", () => {
   });
 
   describe("表数据替换与清理", () => {
+    it("同表两份同 md5 条目只产生一条 appearance", () => {
+      const agg = new IncrementalAggregator();
+      agg.addTable("t1", "表一", [
+        { md5: MD5_A, title: "Foo", level: "★10" },
+        { md5: MD5_A, title: "Foo", level: "★12" },
+      ]);
+      agg.addTable("t2", "表二", [{ md5: MD5_A }]);
+
+      const results = agg.allResults;
+      expect(results).toHaveLength(1);
+      const t1Appearances = results[0]?.appearances.filter((a) => a.tableId === "t1");
+      expect(t1Appearances).toHaveLength(1);
+      expect(results[0]?.appearances).toHaveLength(2);
+    });
+
     it("同表重载替换旧 appearance，不产生重复", () => {
       const agg = new IncrementalAggregator();
       agg.addTable("t1", "表一", [{ sha256: SHA_A }]);
@@ -122,6 +137,17 @@ describe("IncrementalAggregator", () => {
   });
 
   describe("preCreate 占位", () => {
+    it("同表两份相同 md5 的候选只产生一个占位，跨表不受影响", () => {
+      const agg = new IncrementalAggregator();
+      const results = agg.preCreate([
+        { tableId: "t1", matchedKeys: [{ key: MD5_A, source: "md5" }] },
+        { tableId: "t1", matchedKeys: [{ key: MD5_A, source: "md5" }] },
+        { tableId: "t2", matchedKeys: [{ key: MD5_A, source: "md5" }] },
+      ]);
+      expect(results).toHaveLength(1);
+      expect(results[0]?.appearances.map((a) => a.tableId)).toEqual(["t1", "t2"]);
+    });
+
     it("占位 appearance 被 addTable 真实数据替换且不重复", () => {
       const agg = new IncrementalAggregator();
       agg.preCreate([{ tableId: "t1", matchedKeys: [{ key: "Foo", source: "title" }] }]);
