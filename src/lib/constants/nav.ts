@@ -45,14 +45,14 @@ export const bmsServicesNav: NavDropdown = {
   ],
 };
 
-/** BMS 个人表下拉：自托管的个人难度表。 */
+/** BMS 个人表下拉：个人难度表（已迁入共享表体系，直链共享表地址）。 */
 export const bmsPersonalNav: NavDropdown = {
   id: "bms-personal",
   label: () => m["nav.bms_personal"](),
   href: "/bms/table",
   children: [
-    { href: "/bms/table/self-sp", label: () => m["nav.self_sp"]() },
-    { href: "/bms/table/self-dp", label: () => m["nav.self_dp"]() },
+    { href: "/bms/table/shared/meow-sp", label: () => m["nav.self_sp"]() },
+    { href: "/bms/table/shared/meow-dp", label: () => m["nav.self_dp"]() },
   ],
 };
 

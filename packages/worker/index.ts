@@ -43,6 +43,7 @@ import {
   type Locale,
 } from "./i18n.ts";
 import { handleInternal } from "./internal.ts";
+import { legacySelfTableRedirect } from "./legacy-self-tables.ts";
 import { MANIFEST_MAX_AGE, loadMergedManifest } from "./manifest.ts";
 import { ensureSchemaOnce } from "./schema.ts";
 import { getSharedAlias, getSharedRow, listSharedRows, sharedRowToItem } from "./store/shared.ts";
@@ -313,6 +314,11 @@ export default {
     }
     const sharedSlash = canonicalSlashRedirect(SHARED_ROOT, path, url.origin);
     if (sharedSlash !== null) return sharedSlash;
+
+    // 自托管个人表迁入共享表的遗留地址 301（见 legacy-self-tables.ts）；
+    // 旧 JSON 子路径不命中，落静态层 404
+    const legacy = legacySelfTableRedirect(path, url.origin, url.search);
+    if (legacy !== null) return legacy;
 
     // 静态树分发：共享资源（/_app、/assets，构建期已合并双语产物）按原样取，
     // 其余路径按语言映射到对应树；重定向 Location 若携带内部前缀则改写回干净路径
