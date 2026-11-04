@@ -42,8 +42,8 @@
   );
   const headerClass = $derived(
     plain
-      ? `flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-0 py-2.5 ${titleSize} text-white-85 transition-colors hover:text-white focus-visible:ring-2 focus-visible:ring-[#64b5f6]/40 focus-visible:outline-none`
-      : "flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 rounded-xl px-4 py-2.5 text-[0.95rem] text-white-85 transition-colors hover:bg-white-5 focus-visible:ring-2 focus-visible:ring-[#64b5f6]/40 focus-visible:outline-none [&::-webkit-details-marker]:hidden"
+      ? `flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-0 py-2.5 ${titleSize} text-white-85 transition-colors hover:text-white focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:outline-none`
+      : "flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 rounded-xl px-4 py-2.5 text-[0.95rem] text-white-85 transition-colors hover:bg-white-5 focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:outline-none [&::-webkit-details-marker]:hidden"
   );
   const staticHeaderClass = $derived(
     plain

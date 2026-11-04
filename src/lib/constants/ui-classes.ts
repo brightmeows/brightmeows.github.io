@@ -63,22 +63,22 @@ export const btnGradientOrange =
 
 /** 编辑器等宽输入框。 */
 export const inputEditorMono =
-  "w-full rounded-lg border border-white-20 bg-black-20 px-3 py-2 font-mono text-[0.85rem] text-white outline-none placeholder:text-white-40 focus:border-[#64b5f6]/60 focus:ring-1 focus:ring-[#64b5f6]/30 disabled:opacity-60";
+  "w-full rounded-lg border border-white-20 bg-black-20 px-3 py-2 font-mono text-[0.85rem] text-white outline-none placeholder:text-white-40 focus:border-accent/60 focus:ring-1 focus:ring-accent/30 disabled:opacity-60";
 /** 编辑器标准输入框。 */
 export const inputEditorBase =
-  "w-full rounded-lg border border-white-20 bg-black-20 px-3 py-2 text-[0.9rem] text-white outline-none placeholder:text-white-40 focus:border-[#64b5f6]/60 focus:ring-1 focus:ring-[#64b5f6]/30 disabled:opacity-60";
+  "w-full rounded-lg border border-white-20 bg-black-20 px-3 py-2 text-[0.9rem] text-white outline-none placeholder:text-white-40 focus:border-accent/60 focus:ring-1 focus:ring-accent/30 disabled:opacity-60";
 /** 编辑器大号输入框。 */
 export const inputEditorLg =
-  "w-full rounded-lg border border-white-20 bg-black-20 px-3 py-2 text-[0.95rem] text-white outline-none placeholder:text-white-40 focus:border-[#64b5f6]/60 focus:ring-1 focus:ring-[#64b5f6]/30 disabled:opacity-60";
+  "w-full rounded-lg border border-white-20 bg-black-20 px-3 py-2 text-[0.95rem] text-white outline-none placeholder:text-white-40 focus:border-accent/60 focus:ring-1 focus:ring-accent/30 disabled:opacity-60";
 /** 行内小输入框（无 ring）。 */
 export const inputInline =
-  "rounded-lg border border-white-20 bg-black-20 px-2 py-1.5 text-[0.9rem] text-white outline-none placeholder:text-white-40 focus:border-[#64b5f6]/60";
+  "rounded-lg border border-white-20 bg-black-20 px-2 py-1.5 text-[0.9rem] text-white outline-none placeholder:text-white-40 focus:border-accent/60";
 /** 面板输入框（大圆角）。 */
 export const inputPanel =
-  "w-full rounded-xl border border-white-20 bg-black-20 px-4 py-2.5 text-white outline-none placeholder:text-white-50 focus:border-[#64b5f6]/60 focus:ring-2 focus:ring-[#64b5f6]/30";
+  "w-full rounded-xl border border-white-20 bg-black-20 px-4 py-2.5 text-white outline-none placeholder:text-white-50 focus:border-accent/60 focus:ring-2 focus:ring-accent/30";
 
 // ---- 图表链接图标 ----
 
 /** 谱面行内的统一方形图标按钮（链接与“...”共用）。 */
 export const chartLinkIcon =
-  "flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md border border-white-20 bg-white-10 text-white-80 transition-colors duration-200 hover:bg-white-20 hover:text-white focus-visible:ring-2 focus-visible:ring-[#64b5f6]/40 focus-visible:outline-none";
+  "flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-md border border-white-20 bg-white-10 text-white-80 transition-colors duration-200 hover:bg-white-20 hover:text-white focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:outline-none";

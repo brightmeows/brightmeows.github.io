@@ -215,10 +215,10 @@
           </div>
         {/if}
         {#if progress}
-          <div class="text-[0.9rem] text-[#64b5f6]">{progress}</div>
+          <div class="text-[0.9rem] text-accent">{progress}</div>
         {/if}
         {#if notice}
-          <div class="text-[0.9rem] {notice.kind === 'ok' ? 'text-[#4caf50]' : 'text-red-300'}">
+          <div class="text-[0.9rem] {notice.kind === 'ok' ? 'text-success' : 'text-red-300'}">
             {notice.text}
           </div>
         {/if}

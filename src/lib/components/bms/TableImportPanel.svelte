@@ -170,7 +170,7 @@
   const tabButton = (active: boolean): string =>
     `cursor-pointer rounded-md border px-3 py-1.5 text-[0.85rem] transition-colors duration-200 ${
       active
-        ? "border-[#64b5f6]/60 bg-[#64b5f6]/20 text-[#64b5f6]"
+        ? "border-accent/60 bg-accent/20 text-accent"
         : "border-white-20 text-white-50 hover:border-white-40 hover:text-white-70"
     }`;
 </script>

@@ -429,7 +429,7 @@
       {m["mirror.tutorial"]()}
     </a>
     {#if cb.copied}
-      <span class="ml-2 text-[#4caf50]">{m["common.copied"]()}</span>
+      <span class="ml-2 text-success">{m["common.copied"]()}</span>
     {/if}
   </div>
   <div class="mt-4">
@@ -455,7 +455,7 @@
       {#if admin.notice}
         <div
           class="text-center text-[0.9rem] {admin.notice.kind === 'ok'
-            ? 'text-[#4caf50]'
+            ? 'text-success'
             : 'text-red-300'}"
         >
           {admin.notice.text}
@@ -479,7 +479,7 @@
         {#if auth.user !== null}
           <label
             class="flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-[0.35rem] text-[0.85rem] transition-colors duration-200 select-none {operationsMode
-              ? 'border-[#64b5f6] bg-[#64b5f6]/20 text-[#64b5f6]'
+              ? 'border-accent bg-accent/20 text-accent'
               : 'border-white-20 text-white-50 hover:border-white-40 hover:text-white-70'}"
           >
             <Checkbox
@@ -494,7 +494,7 @@
         {#if isAdmin}
           <button
             class="cursor-pointer rounded-md border px-2 py-[0.35rem] text-[0.85rem] transition-colors duration-200 {adminPanelOpen
-              ? 'border-[#64b5f6]/60 bg-[#64b5f6]/20 text-[#64b5f6]'
+              ? 'border-accent/60 bg-accent/20 text-accent'
               : 'border-white-20 text-white-50 hover:border-white-40 hover:text-white-70'}"
             type="button"
             aria-expanded={adminPanelOpen}

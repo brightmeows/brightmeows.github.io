@@ -156,13 +156,13 @@
         <div class="rounded-lg border border-white-15 bg-black-20 p-3">
           <div class="text-[0.85rem] text-white-50">{m["shared.id_preview_label"]()}</div>
           <div class="mt-1 flex flex-wrap items-center gap-2">
-            <code class="font-mono text-[0.95rem] break-all text-[#64b5f6]">{preview}</code>
+            <code class="font-mono text-[0.95rem] break-all text-accent">{preview}</code>
           </div>
           <div class="mt-2 text-[0.9rem]">
             {#if checkState === "checking"}
               <span class="text-white-60">{m["shared.id_checking"]()}</span>
             {:else if checkState === "available"}
-              <span class="text-[#4caf50]">{m["shared.id_available"]()}</span>
+              <span class="text-success">{m["shared.id_available"]()}</span>
             {:else if checkState === "aliased"}
               <span class="text-amber-300">{m["shared.id_was_aliased"]()}</span>
             {:else if checkState === "taken"}

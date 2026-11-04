@@ -128,7 +128,7 @@
 
 {#snippet downloadBadge()}
   <span
-    class="pointer-events-none absolute -right-1 -bottom-1 flex size-3.5 items-center justify-center rounded-full border border-white-20 bg-white-10 text-[#64b5f6]"
+    class="pointer-events-none absolute -right-1 -bottom-1 flex size-3.5 items-center justify-center rounded-full border border-white-20 bg-white-10 text-accent"
     aria-hidden="true"
   >
     <svg

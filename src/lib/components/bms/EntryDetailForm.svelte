@@ -98,8 +98,8 @@
   }
 </script>
 
-<section class="rounded-lg border border-[#64b5f6]/40 bg-[#64b5f6]/10 p-3">
-  <div class="mb-2 text-[0.9rem] text-[#90caf9]">
+<section class="rounded-lg border border-accent/40 bg-accent/10 p-3">
+  <div class="mb-2 text-[0.9rem] text-accent-light">
     {entry === null ? m["editor.entry_add_title"]() : m["editor.entry_edit_title"]()}
   </div>
 

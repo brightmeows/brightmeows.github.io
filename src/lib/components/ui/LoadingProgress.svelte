@@ -34,7 +34,12 @@
 
 <style>
   .shimmer-bar {
-    background: linear-gradient(90deg, #4caf50 0%, #64b5f6 50%, #4caf50 100%);
+    background: linear-gradient(
+      90deg,
+      var(--color-success) 0%,
+      var(--color-accent) 50%,
+      var(--color-success) 100%
+    );
     background-size: 200% 100%;
     animation: shimmer 2s ease-in-out infinite;
   }

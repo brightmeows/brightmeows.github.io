@@ -222,14 +222,14 @@
           <div class="flex items-center gap-3 text-[0.9rem]">
             {#if item.status === "loading"}
               <div
-                class="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-white-30 border-t-[#64b5f6]"
+                class="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-white-30 border-t-accent"
               ></div>
               <span class="text-white-60">{item.name}.json</span>
             {:else if item.status === "done"}
-              <span class="shrink-0 text-[#4caf50]">✓</span>
+              <span class="shrink-0 text-success">✓</span>
               <span class="text-white-80">{item.name}.json</span>
             {:else}
-              <span class="shrink-0 text-[#ff6b6b]">✗</span>
+              <span class="shrink-0 text-error">✗</span>
               <span class="text-white-50">{item.name}.json</span>
             {/if}
           </div>
@@ -240,8 +240,8 @@
     <!-- 索引加载失败 -->
     <div class="p-12 text-center">
       <div class="mb-4 text-[4rem]">⚠️</div>
-      <h3 class="mb-4 text-[#ff6b6b]">{m["search.index_load_failed"]()}</h3>
-      <p class="my-6 rounded-[10px] border-l-4 border-[#ff6b6b] bg-[rgba(255,107,107,0.1)] p-4">
+      <h3 class="mb-4 text-error">{m["search.index_load_failed"]()}</h3>
+      <p class="my-6 rounded-[10px] border-l-4 border-error bg-[rgba(255,107,107,0.1)] p-4">
         {indexClient.errorMessage ?? m["common.unknown_error"]()}
       </p>
     </div>
@@ -257,7 +257,7 @@
             onfocus={searchConverters.ensureLoaded}
             placeholder={m["search.input_placeholder"]()}
             disabled={isSearching}
-            class="w-full rounded-[16px] border border-white-20 bg-white-10 px-6 py-4 text-[1.1rem] text-white placeholder-white-40 transition-colors outline-none focus:border-[#64b5f6] focus:bg-white-15 disabled:cursor-not-allowed disabled:opacity-40"
+            class="w-full rounded-[16px] border border-white-20 bg-white-10 px-6 py-4 text-[1.1rem] text-white placeholder-white-40 transition-colors outline-none focus:border-accent focus:bg-white-15 disabled:cursor-not-allowed disabled:opacity-40"
           />
         </div>
         <button
@@ -279,7 +279,7 @@
             ✕
           {:else if isSearching}
             <div
-              class="h-5 w-5 animate-spin rounded-full border-2 border-white-30 border-t-[#64b5f6]"
+              class="h-5 w-5 animate-spin rounded-full border-2 border-white-30 border-t-accent"
             ></div>
           {:else}
             🔍

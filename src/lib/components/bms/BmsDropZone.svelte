@@ -149,7 +149,7 @@
   role="region"
   aria-label={m["editor.bms_drop_title"]()}
   class="rounded-lg border border-dashed px-4 py-4 transition-colors duration-200 {dragging
-    ? 'border-[#64b5f6] bg-[#64b5f6]/10'
+    ? 'border-accent bg-accent/10'
     : 'border-white-25 bg-black-10'}"
   ondragover={(event) => {
     event.preventDefault();
@@ -188,7 +188,7 @@
     />
   </div>
   {#if busy}
-    <div class="mt-2 text-[0.85rem] text-[#90caf9]">
+    <div class="mt-2 text-[0.85rem] text-accent-light">
       {m["editor.bms_drop_busy"]({ done: progress.done, total: progress.total })}
     </div>
   {/if}

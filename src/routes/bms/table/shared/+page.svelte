@@ -97,7 +97,7 @@
     {#if actionNotice}
       <div
         class="text-center text-[0.9rem] {actionNotice.kind === 'ok'
-          ? 'text-[#4caf50]'
+          ? 'text-success'
           : 'text-red-300'}"
       >
         {actionNotice.text}
@@ -125,7 +125,7 @@
 
     <div class="relative w-full">
       <input
-        class="w-full rounded-xl border border-white-20 bg-black-20 px-4 py-3 pr-12 text-white outline-none placeholder:text-white-50 focus:border-[#64b5f6]/60 focus:ring-2 focus:ring-[#64b5f6]/30"
+        class="w-full rounded-xl border border-white-20 bg-black-20 px-4 py-3 pr-12 text-white outline-none placeholder:text-white-50 focus:border-accent/60 focus:ring-2 focus:ring-accent/30"
         type="text"
         placeholder={m["shared.search_placeholder"]()}
         bind:value={searchQuery}

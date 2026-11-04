@@ -90,26 +90,26 @@
 
   /* 选中态 */
   .checkbox-custom:checked {
-    background: #64b5f6;
-    border-color: #64b5f6;
+    background: var(--color-accent);
+    border-color: var(--color-accent);
   }
 
   /* 选中 + 悬停 */
   .checkbox-custom:checked:hover:not(:disabled) {
-    background: #42a5f5;
-    border-color: #42a5f5;
+    background: var(--color-accent-hover);
+    border-color: var(--color-accent-hover);
   }
 
   /* 半选态 */
   .checkbox-custom:indeterminate {
-    background: #64b5f6;
-    border-color: #64b5f6;
+    background: var(--color-accent);
+    border-color: var(--color-accent);
   }
 
   /* 半选 + 悬停 */
   .checkbox-custom:indeterminate:hover:not(:disabled) {
-    background: #42a5f5;
-    border-color: #42a5f5;
+    background: var(--color-accent-hover);
+    border-color: var(--color-accent-hover);
   }
 
   /* 聚焦环 */
