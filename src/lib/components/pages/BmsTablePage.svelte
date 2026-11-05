@@ -15,14 +15,16 @@
   import CoursePanel from "#lib/components/bms/CoursePanel.svelte";
   import EntriesPanel from "#lib/components/bms/EntriesPanel.svelte";
   import LevelRefTable from "#lib/components/bms/LevelRefTable.svelte";
+  import TableDock from "#lib/components/bms/TableDock.svelte";
   import type { TableImportSectionProps } from "#lib/components/bms/TableImportSection.svelte";
   import TableIoPanel from "#lib/components/bms/TableIoPanel.svelte";
   import TableOverviewPanel from "#lib/components/bms/TableOverviewPanel.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import CardSwitcher, { type CardSwitchItem } from "#lib/components/ui/CardSwitcher.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
-  import { btnBar, btnGhostMd, btnPrimary, btnPrimaryLarge } from "#lib/constants/ui-classes.js";
+  import { btnPrimaryLarge } from "#lib/constants/ui-classes.js";
   import type { EditorNotice } from "#lib/controllers/editor.js";
+  import type { DockMode } from "#lib/controllers/table-dock.js";
   import {
     createTableModel,
     type TablePageCapabilities,
@@ -101,6 +103,16 @@
 
     goto(url, { shallow: true });
     isEdit = next === "edit";
+  }
+
+  /**
+   * dock 的模式切换：切换后滚回页首，让标题区与分区变化（导入区动态加载、
+   * CardSwitcher 分区增减）进入视口；reduced-motion 时瞬时跳转。
+   */
+  function handleDockSetMode(next: DockMode): void {
+    setMode(next);
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
   }
 
   // ---- 导入区按需加载（查看态不载入导入器包体） ----
@@ -234,11 +246,12 @@
   <title>{formatTitle(model.pageTitle)}</title>
 </svelte:head>
 
+<!-- mainClass 覆盖默认 pb-8：底部为操作 dock 的展开态留出空间 -->
 <PageShell
+  mainClass="m-0 mx-auto box-border w-full max-w-350 px-8 pt-24 pb-28"
   {tocItems}
   panes={[
     titlePane,
-    ...(model.pendingDraft !== null ? [draftBannerPane] : []),
     ...(model.headerLoadState === "loading"
       ? [headerLoadingPane]
       : model.headerLoadState === "error"
@@ -252,6 +265,18 @@
           ]),
   ]}
 />
+
+<!-- 底部操作 dock：模式切换、保存与动态状态自标题区迁入；ready 前不渲染 -->
+{#if model.ready}
+  <TableDock
+    {model}
+    mode={isEdit ? "edit" : "view"}
+    {createMode}
+    showSaveAsShared={saveAsShared !== "none"}
+    {editHint}
+    onSetMode={handleDockSetMode}
+  />
+{/if}
 
 {#snippet titlePane()}
   <div class="flex flex-col items-center gap-3 text-center">
@@ -294,40 +319,6 @@
       {/if}
     </div>
 
-    <div class="flex flex-wrap items-center justify-center gap-2">
-      {#if isEdit}
-        {#if !createMode}
-          <button class={btnBar} type="button" onclick={() => setMode("view")}>
-            {m["editor.view"]()}
-          </button>
-        {/if}
-        {#if model.ready && model.canSave}
-          <button
-            class={btnPrimary}
-            type="button"
-            disabled={model.busy}
-            onclick={() => void model.save()}
-          >
-            {model.saveLabel}
-          </button>
-        {/if}
-        {#if model.ready && saveAsShared !== "none"}
-          <button
-            class={btnGhostMd}
-            type="button"
-            disabled={model.busy}
-            onclick={() => void model.saveAsSharedNow()}
-          >
-            {m["editor.save_as_shared"]()}
-          </button>
-        {/if}
-      {:else if model.ready}
-        <button class={btnPrimary} type="button" title={editHint} onclick={() => setMode("edit")}>
-          {model.dirty ? m["editor.continue_edit"]() : m["editor.enter_table"]()}
-        </button>
-      {/if}
-    </div>
-
     {#if model.ready && actions}
       <div class="flex flex-wrap items-center justify-center gap-2">
         {@render actions()}
@@ -342,46 +333,6 @@
       </p>
     {/if}
 
-    {#if model.ready && model.dirty}
-      <div class="flex flex-wrap items-center justify-center gap-2">
-        <span class="text-amber-300">{m["editor.unsaved_badge"]()}</span>
-        {#if !isEdit && model.canSave}
-          <button
-            class={btnPrimary}
-            type="button"
-            disabled={model.busy}
-            onclick={() => void model.save()}
-          >
-            {model.saveLabel}
-          </button>
-        {/if}
-        <button
-          class={btnGhostMd}
-          type="button"
-          disabled={model.busy}
-          onclick={() => void model.discardEdits()}
-        >
-          {m["editor.discard_unsaved"]()}
-        </button>
-      </div>
-    {/if}
-
-    {#if isEdit && model.ready && model.draftStatusText !== ""}
-      <p class="text-[0.85rem] text-white-50">{model.draftStatusText}</p>
-    {/if}
-
-    {#if model.notice !== null}
-      <div
-        class="rounded-lg border px-3 py-2 text-[0.85rem] {model.notice.kind === 'ok'
-          ? 'border-success/40 bg-success/10 text-[#a5d6a7]'
-          : model.notice.kind === 'warn'
-            ? 'border-amber-300/40 bg-amber-300/10 text-amber-200'
-            : 'border-red-400/40 bg-red-400/10 text-red-200'}"
-      >
-        {model.notice.text}
-      </div>
-    {/if}
-
     <CardSwitcher
       items={cardItems}
       ariaLabel={m["table.sections"]()}
@@ -390,25 +341,6 @@
       onJump={(id) => void jumpToCard(id)}
     />
   </div>
-{/snippet}
-
-{#snippet draftBannerPane()}
-  {#if model.pendingDraft !== null}
-    <div class="py-2 text-center">
-      <p class="text-[1.05rem] text-amber-200">{m["editor.draft_found_title"]()}</p>
-      <p class="mx-auto mt-2 max-w-120 text-[0.9rem] text-white-65">
-        {m["editor.draft_found_desc"]({ time: model.formatClock(model.pendingDraft.savedAt) })}
-      </p>
-      <div class="mt-4 flex flex-wrap justify-center gap-3">
-        <button class={btnPrimary} type="button" onclick={model.restorePendingDraft}>
-          {m["editor.draft_restore"]()}
-        </button>
-        <button class={btnGhostMd} type="button" onclick={() => void model.discardPendingDraft()}>
-          {m["editor.draft_discard"]()}
-        </button>
-      </div>
-    </div>
-  {/if}
 {/snippet}
 
 {#snippet headerLoadingPane()}
