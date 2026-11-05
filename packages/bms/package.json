@@ -28,6 +28,10 @@
       "types": "./src/format.ts",
       "default": "./src/format.ts"
     },
+    "./hash-list": {
+      "types": "./src/hash-list.ts",
+      "default": "./src/hash-list.ts"
+    },
     "./header": {
       "types": "./src/header.ts",
       "default": "./src/header.ts"

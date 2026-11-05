@@ -28,9 +28,11 @@
     type EntryImportResult,
     type TableImportResult,
   } from "@brightmeows/bms/editor";
+  import { applyHashList, type HashListParseResult } from "@brightmeows/bms/hash-list";
   import { editorHeaderState } from "@brightmeows/bms/header";
 
   import BmsDropZone from "#lib/components/bms/BmsDropZone.svelte";
+  import HashListPanel from "#lib/components/bms/HashListPanel.svelte";
   import TableEntryImportPanel from "#lib/components/bms/TableEntryImportPanel.svelte";
   import TableImportPanel from "#lib/components/bms/TableImportPanel.svelte";
   import { m } from "#lib/paraglide/messages.js";
@@ -119,10 +121,30 @@
       }),
     });
   }
+
+  /** 哈希清单：在条目与段位行上双向补哈希（只补缺失，冲突保留）。 */
+  function handleHashList(parsed: HashListParseResult): void {
+    const applied = applyHashList(entries, courseModel, parsed.rows);
+    entries = applied.entries as ChartData[];
+    courseModel = applied.courseModel;
+    let text: string = m["editor.hashlist_done"]({
+      filled: applied.filled,
+      entries: applied.entryRows,
+      courses: applied.courseRows,
+      conflicts: applied.conflicts,
+      unmatched: applied.unmatched,
+    });
+    if (parsed.invalidLines > 0) {
+      text += " " + m["editor.hashlist_invalid"]({ count: parsed.invalidLines });
+    }
+    onChange();
+    onNotice({ kind: applied.filled > 0 ? "ok" : "warn", text });
+  }
 </script>
 
 <div class="flex flex-col gap-4">
   <BmsDropZone {entries} {disabled} onadd={handleDropAdd} />
   <TableEntryImportPanel {entries} {disabled} onapply={handleEntryImport} />
   <TableImportPanel {disabled} onapply={handleImport} />
+  <HashListPanel {disabled} onapply={handleHashList} />
 </div>
