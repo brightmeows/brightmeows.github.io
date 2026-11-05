@@ -50,7 +50,7 @@
         {#if canEdit}
           <a
             class={btnIconPlain}
-            href={`${item.url}edit/`}
+            href={`${item.url}?edit=1`}
             title={editLabel}
             aria-label={editLabel}
           >
