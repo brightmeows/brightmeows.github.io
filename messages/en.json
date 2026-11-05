@@ -294,6 +294,7 @@
   "editor.entry_import_apply": "Import selected",
   "editor.entry_import_done": "Imported {added} from {source}; skipped {skipped} duplicates.",
   "editor.entry_import_failed": "Failed to load the table: {detail}",
+  "editor.entry_import_fill_missing": "Fill all missing",
   "editor.entry_import_keep_level": "Keep source level",
   "editor.entry_import_loading": "Loading...",
   "editor.entry_import_no_sources": "No importable tables available.",

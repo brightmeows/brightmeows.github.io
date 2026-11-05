@@ -197,6 +197,22 @@
     selected = new Set();
   }
 
+  /** 整表补全：源表全部条目按哈希判重后一次追加，跳过重复。 */
+  function applyFillAll(): void {
+    if (selectedSource === null) return;
+    const { added, skipped } = splitNewEntries(entries, sourceEntries);
+    const prepared = added.map((item) => {
+      const copy = { ...item };
+      if (!keepLevel) delete copy.level;
+      return copy;
+    });
+    onapply({
+      added: prepared,
+      skipped,
+      sourceLabel: sourceName === "" ? selectedSource.id : sourceName,
+    });
+  }
+
   function shortHash(entry: Record<string, unknown>): string {
     return shortenHash(entryHashes(entry)[0] ?? "");
   }
@@ -272,6 +288,14 @@
           </span>
           <button class={btnGhost} type="button" {disabled} onclick={selectAllFiltered}>
             {m["editor.entries_select_filtered"]()}
+          </button>
+          <button
+            class={btnGhost}
+            type="button"
+            disabled={disabled || sourceEntries.length === 0}
+            onclick={applyFillAll}
+          >
+            {m["editor.entry_import_fill_missing"]()}
           </button>
           <button class={btnGhost} type="button" {disabled} onclick={clearSelection}>
             {m["editor.entries_clear_selection"]()}

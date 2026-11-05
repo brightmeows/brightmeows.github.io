@@ -294,6 +294,7 @@
   "editor.entry_import_apply": "导入所选",
   "editor.entry_import_done": "已从 {source} 导入 {added} 条；跳过 {skipped} 条重复。",
   "editor.entry_import_failed": "读取表失败：{detail}",
+  "editor.entry_import_fill_missing": "补全全部缺失",
   "editor.entry_import_keep_level": "保留来源等级",
   "editor.entry_import_loading": "加载中…",
   "editor.entry_import_no_sources": "没有可导入的表。",

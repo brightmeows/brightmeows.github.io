@@ -294,6 +294,7 @@
   "editor.entry_import_apply": "選択項目をインポート",
   "editor.entry_import_done": "{source} から {added} 件をインポート、{skipped} 件の重複をスキップ。",
   "editor.entry_import_failed": "表の読み込みに失敗しました：{detail}",
+  "editor.entry_import_fill_missing": "欠けている譜面をすべて追加",
   "editor.entry_import_keep_level": "元のレベルを保持",
   "editor.entry_import_loading": "読み込み中…",
   "editor.entry_import_no_sources": "インポートできる表がありません。",
