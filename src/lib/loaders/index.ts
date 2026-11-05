@@ -8,4 +8,4 @@
  */
 
 export { getHomePosts, getPostsByCategory } from "./posts";
-export { getBmsTableEntries, getBmsTables } from "./table-list";
+export { getBmsTableEntries, getBmsTables } from "./bms-tables";
