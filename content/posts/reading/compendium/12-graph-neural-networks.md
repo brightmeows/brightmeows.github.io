@@ -1236,3 +1236,7 @@ print(f"Update then rotate:\n{jnp.round(pos_new_then_rot, 4)}")
 print(f"\nRotate then update:\n{jnp.round(pos_new_from_rot, 4)}")
 print(f"\nEquivariant: {jnp.allclose(pos_new_then_rot, pos_new_from_rot, atol=1e-4)}")
 ```
+
+---
+
+> 本文是 Henry Ndubuaku 所著 [_Maths, CS & AI Compendium_](https://henryndubuaku.github.io/maths-cs-ai-compendium/) 对应章节的中文翻译，依据 [Apache License 2.0](/compendium/LICENSE) 发布，原文版权归作者所有。译文包含中文翻译与站点排版适配，如与[英文原文](https://github.com/HenryNdubuaku/maths-cs-ai-compendium)有出入，以原文为准。

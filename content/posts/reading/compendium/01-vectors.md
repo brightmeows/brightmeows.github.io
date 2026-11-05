@@ -648,3 +648,7 @@ print(f"b1 . v = {jnp.dot(P[:, 0], v)}  (5.0, not 2.5 -- b1 is not orthonormal)"
 e1 = jnp.array([1.0, 0.0])
 print(f"e1 . v = {jnp.dot(e1, v)}  (3.0, the first standard coordinate)")
 ```
+
+---
+
+> 本文是 Henry Ndubuaku 所著 [_Maths, CS & AI Compendium_](https://henryndubuaku.github.io/maths-cs-ai-compendium/) 对应章节的中文翻译，依据 [Apache License 2.0](/compendium/LICENSE) 发布，原文版权归作者所有。译文包含中文翻译与站点排版适配，如与[英文原文](https://github.com/HenryNdubuaku/maths-cs-ai-compendium)有出入，以原文为准。

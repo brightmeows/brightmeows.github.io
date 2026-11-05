@@ -3761,3 +3761,7 @@ void main() {
 ```
 
 1. 修改C++主机代码以对计算着色器进行基准测试：使用Vulkan时间戳查询或CPU端的栅栏来计时调度过程（不包括初始化阶段），并计算所达到的带宽（单位：GB/秒）。
+
+---
+
+> 本文是 Henry Ndubuaku 所著 [_Maths, CS & AI Compendium_](https://henryndubuaku.github.io/maths-cs-ai-compendium/) 对应章节的中文翻译，依据 [Apache License 2.0](/compendium/LICENSE) 发布，原文版权归作者所有。译文包含中文翻译与站点排版适配，如与[英文原文](https://github.com/HenryNdubuaku/maths-cs-ai-compendium)有出入，以原文为准。

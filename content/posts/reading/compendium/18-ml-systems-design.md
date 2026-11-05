@@ -1256,3 +1256,7 @@ Query image → Embedding Model (ViT/CLIP) → 512-dim vector → ANN Search →
 1. **迭代改进**（2-3分钟）：如果有更多时间和资源，你会对系统做哪些改进？这能体现你理解各种权衡关系，并能够合理分配优先级。
 
 - **面试官看重的要点**：结构化的思维方式（不会急于给出解决方案）、对权衡关系的理解（每个决策都有相应的成本）、实际开发经验（真正有过系统构建经验），以及沟通能力（能否清晰地阐述自己的设计思路）。
+
+---
+
+> 本文是 Henry Ndubuaku 所著 [_Maths, CS & AI Compendium_](https://henryndubuaku.github.io/maths-cs-ai-compendium/) 对应章节的中文翻译，依据 [Apache License 2.0](/compendium/LICENSE) 发布，原文版权归作者所有。译文包含中文翻译与站点排版适配，如与[英文原文](https://github.com/HenryNdubuaku/maths-cs-ai-compendium)有出入，以原文为准。

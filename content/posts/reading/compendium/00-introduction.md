@@ -327,3 +327,7 @@ tags: []
 **04 Transformer 与语言模型**：post-norm vs pre-norm（残差直通梯度，深模型训练稳定的关键）；FFN = 参数大头 + 知识键值记忆假说；位置编码三件套——正弦/学习的绝对编码、RoPE（二维子空间旋转，RₘᵀRₙ = Rₙ₋ₘ 推出“注意力分数只依赖相对位置”的漂亮证明）、ALiBi 线性距离惩罚；三大范式（BERT 双向 + MLM 的 80/10/10 掩码策略与 NSP（RoBERTa 证明可弃）、GPT 因果注意力 + CLM、T5/BART 文本到文本 + span corruption）；GPT-2 零样本 → GPT-3 上下文学习；PEFT 三方案（Adapter、LoRA 的 W + BA 低秩分解、Prefix tuning）；prompt 工程（zero/few-shot、CoT）；scaling laws（Kaplan 幂律 → Chinchilla 修正，N_opt ∝ C^0.5，“每参数约 20 token”法则）；MoE（门控 top-k、负载均衡辅助损失、专家并行 all-to-all）；评估体系占了半页——表面指标（EM、token 级 P/R/F1、BLEU 修正 n-gram 精度 + 短句惩罚、ROUGE 召回向、ROUGE-L 的 LCS、METEOR、ChrF 字符级）、语义指标（BERTScore、BLEURT、COMET 看得到源句）、LLM-as-judge（成对比较 + Elo 排名，位置偏差/冗长偏差/自一致性三坑）、数据污染与金丝雀串；基准地图（GLUE 饱和、MMLU/MMLU-Pro、HellaSwag、GSM8K/MATH/AIME、HumanEval 的 pass@k 公式、SWE-bench、GPQA、TruthfulQA/BBQ、MT-Bench、Chatbot Arena）。
 
 **03 图神经网络**：消息传递三步框架（消息 φ → 置换不变聚合 ⊕ → 更新 ψ，k 层看 k 跳邻域）；GCN 一行公式 H′ = σ(ÂHW)（谱卷积的一阶 Chebyshev 近似 + 自环 + 对称归一化防高度数节点支配）；GraphSAGE（邻域采样变归纳式，计算树限 10×10 与图大小无关）；GIN（WL 测试与表达能力上限，sum 聚合对多重集单射而 mean/max 不行——配了 [1,1,1,1] vs [2,2] 的反例）；过平滑（重复归一化邻接收敛到秩 1，GNN 只能浅、四种缓解手段）；图池化（readout 的 DeepSets 回收、DiffPool 软分配矩阵、TopKPool 硬选择）；异构图（R-GCN 每关系一个权重矩阵 + 基分解、HGT 类型化注意力、HAN 元路径双层注意力）；链接预测与知识图谱补全（TransE 平移、RotatE 旋转、ComplEx 复值）；三类任务（节点级/边级/图级）。
+
+---
+
+> 本文是 Henry Ndubuaku 所著 [_Maths, CS & AI Compendium_](https://henryndubuaku.github.io/maths-cs-ai-compendium/) 对应章节的中文翻译，依据 [Apache License 2.0](/compendium/LICENSE) 发布，原文版权归作者所有。译文包含中文翻译与站点排版适配，如与[英文原文](https://github.com/HenryNdubuaku/maths-cs-ai-compendium)有出入，以原文为准。

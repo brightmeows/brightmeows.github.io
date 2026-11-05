@@ -1206,7 +1206,7 @@ $$V^{*}(s) = \max_a \sum_{s'} P(s' \mid s, a) \left[ R(s, a) + \gamma \, V^{*}(s
 
 $$Q^{*}(s, a) = \sum_{s'} P(s' \mid s, a) \left[ R(s, a) + \gamma \max_{a'} Q^{*}(s', a') \right]$$
 
-- 一旦得到了$Q^{_}$，最优策略就很容易确定：只需始终选择Q值最高的动作即可：$\pi^{_}(s) = \arg\max_a Q^{*}(s, a)$。
+- 一旦得到了$Q^{*}$，最优策略就很容易确定：只需始终选择Q值最高的动作即可：$\pi^{*}(s) = \arg\max_a Q^{*}(s, a)$。
 
 - 当已知状态转移概率和奖励值（即完整的模型）时，可以使用**动态规划**方法来解决马尔可夫决策问题。**策略评估**则是通过反复应用贝尔曼方程，直到收敛，从而计算出给定策略对应的$V^\pi$值。**策略改进**则利用价值函数，通过贪婪策略来构建更好的策略：$\pi'(s) = \arg\max_a \sum_{s'} P(s' \mid s, a)[R(s,a) + \gamma V^\pi(s')]$。
 
@@ -1782,3 +1782,7 @@ for i in range(n_experts):
     usage = jnp.mean(gate_probs[:, i])
     print(f"  Expert {i}: {usage:.3f}")
 ```
+
+---
+
+> 本文是 Henry Ndubuaku 所著 [_Maths, CS & AI Compendium_](https://henryndubuaku.github.io/maths-cs-ai-compendium/) 对应章节的中文翻译，依据 [Apache License 2.0](/compendium/LICENSE) 发布，原文版权归作者所有。译文包含中文翻译与站点排版适配，如与[英文原文](https://github.com/HenryNdubuaku/maths-cs-ai-compendium)有出入，以原文为准。

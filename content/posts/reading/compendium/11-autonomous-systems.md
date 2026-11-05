@@ -319,7 +319,7 @@ $$T_i = \begin{bmatrix} \cos\theta_i & -\sin\theta_i \cos\alpha_i & \sin\theta_i
 
 - 完整的正运动学是所有关节变换矩阵的乘积：$T_{0 \to n} = T_1 T_2 \cdots T_n$。这是矩阵乘法，用于串联变换（第2章内容）：每个关节的变换依次作用，从而将坐标系从基座旋转并平移到末端执行器。
 
-- **逆运动学（IK）**则是相反的问题：给定期望的末端执行器姿态$\mathbf{x}^{_}$，寻找关节角度$\mathbf{q}$使得$f(\mathbf{q}) = \mathbf{x}^{_}$。这要困难得多，因为：
+- **逆运动学（IK）**则是相反的问题：给定期望的末端执行器姿态$\mathbf{x}^{*}$，寻找关节角度$\mathbf{q}$使得$f(\mathbf{q}) = \mathbf{x}^{*}$。这要困难得多，因为：
 
 - 映射关系是非线性的（涉及正弦和余弦函数）。
 - 可能存在多个解（不同的手臂构型可到达同一点）。
@@ -1446,3 +1446,7 @@ plt.suptitle("Shared Autonomy: Blending Human and Robot Control")
 plt.tight_layout()
 plt.show()
 ```
+
+---
+
+> 本文是 Henry Ndubuaku 所著 [_Maths, CS & AI Compendium_](https://henryndubuaku.github.io/maths-cs-ai-compendium/) 对应章节的中文翻译，依据 [Apache License 2.0](/compendium/LICENSE) 发布，原文版权归作者所有。译文包含中文翻译与站点排版适配，如与[英文原文](https://github.com/HenryNdubuaku/maths-cs-ai-compendium)有出入，以原文为准。

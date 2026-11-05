@@ -28,3 +28,7 @@ tags: []
 - 单细胞分析：scRNA-seq、细胞类型聚类、轨迹推断
 - 医学影像：放射学（CheXNet）、病理学（全切片图像）、分割（nnU-Net）
 - 临床自然语言处理：医学实体提取、临床试验匹配、电子健康记录
+
+---
+
+> 本文是 Henry Ndubuaku 所著 [_Maths, CS & AI Compendium_](https://henryndubuaku.github.io/maths-cs-ai-compendium/) 对应章节的中文翻译，依据 [Apache License 2.0](/compendium/LICENSE) 发布，原文版权归作者所有。译文包含中文翻译与站点排版适配，如与[英文原文](https://github.com/HenryNdubuaku/maths-cs-ai-compendium)有出入，以原文为准。

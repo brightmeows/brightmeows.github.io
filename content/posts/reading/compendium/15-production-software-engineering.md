@@ -1482,3 +1482,7 @@ preprocess >> train >> evaluate >> deploy
 - **Prefect**和**Dagster**：Airflow的现代替代品，具备更佳的开发体验、原生的Python API以及内置的数据血缘功能。
 
 - **何时需要编排**：当你的流水线包含2-3个以上步骤、按预定时间运行、涉及多个团队或服务，或需要自动从故障中恢复时，就需要使用编排工具。单脚本训练任务无需编排器；而每天从5个数据源获取数据、训练3个模型、评估后部署最佳模型的流水线则绝对需要编排工具。
+
+---
+
+> 本文是 Henry Ndubuaku 所著 [_Maths, CS & AI Compendium_](https://henryndubuaku.github.io/maths-cs-ai-compendium/) 对应章节的中文翻译，依据 [Apache License 2.0](/compendium/LICENSE) 发布，原文版权归作者所有。译文包含中文翻译与站点排版适配，如与[英文原文](https://github.com/HenryNdubuaku/maths-cs-ai-compendium)有出入，以原文为准。

@@ -1,0 +1,3 @@
+# 译文含 katex 公式（$...$ 与 $$ 块），oxfmt 的 markdown 处理会改写公式内容
+# （如 ^{*} 的星号被当强调标记规范化），故整目录排除在格式化之外。
+content/posts/reading/
