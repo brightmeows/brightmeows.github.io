@@ -8,7 +8,7 @@ tags: ["BMS"]
 # BMS 入门解说
 
 > 原文：BMSまとめ @wiki《BMS初心者向け解説》（页面显示 9/22 更新）
-> 来源：https://w.atwiki.jp/laser_bm/pages/13.html
+> 来源：<https://w.atwiki.jp/laser_bm/pages/13.html>
 > 译文日期：2026-09-22
 >
 > 说明：译文保留原文全部章节与超链接；日语专有名词与圈内黑话首次出现时附原文。

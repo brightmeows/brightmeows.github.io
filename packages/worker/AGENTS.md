@@ -14,31 +14,121 @@
 以下行为在代码中看似错误/死代码/遗漏，但均为故意。
 
 - **主站与跳转宿主** — Cloudflare Workers 是唯一主站（多语静态资源 + Worker，镜像表页面与 tables.json 运行时生成）；静态跳转宿主（GitHub/Codeberg Pages）已于 2026-10-31 全部退役；旧主机 301 由 Cloudflare Single Redirects 负责（见下条），Worker 只服务主站 apex。
-- **边缘语言分发在 Worker，内部前缀永不进 URL** — `assets.run_worker_first: true` 全量生效：每个请求先过 `index.ts`，镜像/写接口判定后，按 cookie（`PARAGLIDE_LOCALE`）→ Accept-Language → en 把非共享资源路径映射到 `build/_i18n/<locale>/`（zh-cn 与 ja 两棵内部树，`worker/i18n.ts`）；`/_app` 与 `/assets` 是构建期合并的多语共享树（`scripts/build-site.ts` 负责合并，三个 flavor 共用一个应用版本），按原样取。直接命中内部前缀的请求 301 回干净路径，静态层重定向的 Location 也会去前缀；SPA 外壳、单表页与 404 按语言取树，页面级 `textResponse` 走 `worker/i18n.ts` 的三语词表。API 错误体是 `{error, code, params?}`：`error` 恒为英文兑底（直连与日志可读），`code` 是 `api.*` 消息键（条目在 `messages/`，由 `pnpm check:i18n` 对齐），前端按当前语言翻译、自由文本透传。错误码只经 `@brightmeows/mirror/api` 的 `API_ERROR_CODES` 常量表引用：`failure` 的 code 参数收 `ApiErrorCode` 类型，Worker 源码里的 `code: "..."` 字面量被 `pnpm check:i18n` 视为漂移；响应构造以 `json<契约类型>` 标注，形状同出一处。
+- **边缘语言分发在 Worker，内部前缀永不进 URL** — `assets.run_worker_first: true` 全量生效。
+  - 每个请求先过 `index.ts`，镜像/写接口判定后，按 cookie（`PARAGLIDE_LOCALE`）→ Accept-Language → en 把非共享资源路径映射到 `build/_i18n/<locale>/`（zh-cn 与 ja 两棵内部树，`worker/i18n.ts`）。
+  - `/_app` 与 `/assets` 是构建期合并的多语共享树（`scripts/build-site.ts` 负责合并，三个 flavor 共用一个应用版本），按原样取。
+  - 直接命中内部前缀的请求 301 回干净路径，静态层重定向的 Location 也会去前缀。
+  - SPA 外壳、单表页与 404 按语言取树，页面级 `textResponse` 走 `worker/i18n.ts` 的三语词表。
+  - API 错误体是 `{error, code, params?}`：`error` 恒为英文兜底（直连与日志可读），`code` 是 `api.*` 消息键（条目在 `messages/`，由 `pnpm check:i18n` 对齐），前端按当前语言翻译、自由文本透传。
+  - 错误码只经 `@brightmeows/mirror/api` 的 `API_ERROR_CODES` 常量表引用：`failure` 的 code 参数收 `ApiErrorCode` 类型，Worker 源码里的 `code: "..."` 字面量被 `pnpm check:i18n` 视为漂移；响应构造以 `json<契约类型>` 标注，形状同出一处。
 - **API 只接受同源写请求** — 静态宿主已退役，不再承载应用；会话 cookie 为 host-only，写接口的 Origin 必须等于请求 origin（`checkSameOrigin`），不做跨源白名单。
 - **Worker 的 R2 基址与清单对象键经 vars 注入** — `wrangler.jsonc` 的 `vars` 只声明 `R2_BASE` 与 `R2_MANIFEST_OBJECT`，Worker 从 env 读取、不 import 配置文件；一致性由 `scripts/check-site-config.ts` 的第 5 条断言守住。DNS 记录是部署期外部状态。
-- **Cloudflare 凭据一律用账户级令牌（`cfat_` 前缀）** — CI 的 `CLOUDFLARE_API_TOKEN` 必须在 **Manage Account → Account API Tokens** 创建（服务主体），不能用 **My Profile → API Tokens** 的用户级令牌（`cfut_` 前缀）。用户级令牌与个人账号耦合：个人令牌列表里的清理动作会直接打断部署——实测一次临时 purge 令牌的撤销误删了部署令牌，`Deploy Site` 立刻报 `Invalid access token [code 9109]`，而且这条报错看起来像代码问题，容易误判。所需权限四项：`Workers / Individual Workers Editor`（**资源级**，scoped 到 `brightmeows-site`，2026-09-15 起可用，替代 legacy 的 `Account / Workers Scripts / Write`；实测足以完成 `wrangler deploy` 与 triggers 同步）、`Account / Workers R2 Storage / Read`（**必须账户级**：`config-drift` 读的桶 CORS policy 属桶配置，桶级权限（`Workers R2 Storage Bucket Item Read`）只覆盖对象，资源级在本用途实测报 `Authentication error`）、`Zone / Workers Routes / Write`（scoped 到 `brightmeows.com`，`wrangler.jsonc` 里 `custom_domain` 的绑定，见下条）、`Account / Account Settings / Read`（wrangler 读账户信息）；界面入口见 `workers/ci-cd/external-cicd/github-actions` 文档的 “Permission policies → Edit Cloudflare Workers”。`config-drift` 另用 `CLOUDFLARE_RULES_TOKEN`（`Zone / Single Redirect / Read` 加 `Zone / Zone / Read`，scoped 到 `brightmeows.com`、`brightmeows.cn`、`miyakomeow.site`），不复用部署令牌。一次性运维动作（如清边缘缓存）另用临时令牌或控制台操作，不要复用部署令牌。R2 的 S3 凭据（`R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY`/`R2_ENDPOINT`）来自 R2 页面的独立令牌（2026-09 核实为桶级的 `Workers R2 Storage Bucket Item Write`，已限定 `bms-table-mirror` 单桶，不能建删桶；rclone 的双向同步含删除目标端多余对象，在这套权限下长期正常），与部署令牌无关。
-- **`Workers Routes Write` 是部署的必需权限** — wrangler **每次部署都会同步 `wrangler.jsonc` 声明的 routes**，因此即使 `custom_domain` 早已配置正确，缺 Zone 级的 `Workers Routes Write` 仍会让部署在 `/zones/{id}/workers/routes` 上失败（实测报 `No access to the specified resource`），而且失败发生在 Worker 上传成功之后——线上代码已更新、站点正常，只有 CI 报红，容易误判为令牌整体失效。Cloudflare 博客称 “路由已配置时部署新版本不需要 zone 权限”，那只适用于成员角色，不适用于 wrangler 的实现，不要据此省掉这条权限。补权限用编辑令牌即可（编辑不改密钥，无需更新 Secret）。
-- **www、.cn 与旧域由 Cloudflare Single Redirects 接管** — 三个 zone 的 `http_request_dynamic_redirect` entrypoint 各有一条托管规则：`*.brightmeows.com`（排除 `bms-table-mirror-r2.brightmeows.com`）、`brightmeows.cn` 的 apex 加 wildcard、`miyakomeow.site` 的 apex 加 wildcard（排除 `bms-table-mirror-r2.miyakomeow.site`）；目标 `concat("https://brightmeows.com", http.request.uri.path)`，301，保留 query。规则放在每个 zone 最前面；`www.miyakomeow.site` 旧规则验证后删除。每个 zone 的通配 DNS 用 proxied `A * 192.0.2.1`，具体记录优先。Worker 只服务主站 apex，不参与旧主机 301。
-- **旧主机 301 的期望与只读检查** — `config/redirects.json` 记录三个 zone 的托管 ref/规则名、是否匹配 apex 与 R2 排除项；目标取 `config/site.json` 的 `origin`，状态 301，`preserve_query_string=true`。`scripts/check-redirect-rules.ts` 只读比对 Cloudflare `http_request_dynamic_redirect` entrypoint，按 `ref` 或规则名（`description`）识别托管规则；`CLOUDFLARE_RULES_TOKEN` 需要 `Zone / Dynamic URL Redirects / Read` 与 `Zone / Zone / Read`，scoped 到三个 zone，由 `config-drift.yml` 在配置变更的 PR、每周 schedule 与手动触发时跑。规则的实际应用在控制台或临时写令牌下人工完成，CI 不给写权限。
-- **GitHub Pages 的 Enforce HTTPS 刻意不开** — `github-pages.brightmeows.com` 的自定义域 DNS 指向 Cloudflare，GitHub 无法续期自己的 `Let's Encrypt` 证书（当前证书 2027-01-28 到期）；开启只会把失败推迟到证书到期。`https://brightmeows.github.io` 在 Java 17 / .NET HttpClient 下仍会断在 https 到 http；旧自定义主机的 https 链路不受影响。这是平台边界，不要用开启开关来假装修复。
+- **Cloudflare 凭据一律用账户级令牌（`cfat_` 前缀）** — CI 的 `CLOUDFLARE_API_TOKEN` 必须在 **Manage Account → Account API Tokens** 创建（服务主体），不能用 **My Profile → API Tokens** 的用户级令牌（`cfut_` 前缀）。
+  - 用户级令牌与个人账号耦合：个人令牌列表里的清理动作会直接打断部署——实测一次临时 purge 令牌的撤销误删了部署令牌，`Deploy Site` 立刻报 `Invalid access token [code 9109]`，而且这条报错看起来像代码问题，容易误判。
+  - 所需权限四项：
+    - `Workers / Individual Workers Editor`（**资源级**，scoped 到 `brightmeows-site`，2026-09-15 起可用，替代 legacy 的 `Account / Workers Scripts / Write`；实测足以完成 `wrangler deploy` 与 triggers 同步）；
+    - `Account / Workers R2 Storage / Read`（**必须账户级**：`config-drift` 读的桶 CORS policy 属桶配置，桶级权限（`Workers R2 Storage Bucket Item Read`）只覆盖对象，资源级在本用途实测报 `Authentication error`）；
+    - `Zone / Workers Routes / Write`（scoped 到 `brightmeows.com`，`wrangler.jsonc` 里 `custom_domain` 的绑定，见下条）；
+    - `Account / Account Settings / Read`（wrangler 读账户信息）。
+  - 界面入口见 `workers/ci-cd/external-cicd/github-actions` 文档的 “Permission policies → Edit Cloudflare Workers”。
+  - `config-drift` 另用 `CLOUDFLARE_RULES_TOKEN`（`Zone / Single Redirect / Read` 加 `Zone / Zone / Read`，scoped 到 `brightmeows.com`、`brightmeows.cn`、`miyakomeow.site`），不复用部署令牌。
+  - 一次性运维动作（如清边缘缓存）另用临时令牌或控制台操作，不要复用部署令牌。
+  - R2 的 S3 凭据（`R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY`/`R2_ENDPOINT`）来自 R2 页面的独立令牌（2026-09 核实为桶级的 `Workers R2 Storage Bucket Item Write`，已限定 `bms-table-mirror` 单桶，不能建删桶），与部署令牌无关。
+  - rclone 的双向同步含删除目标端多余对象，在这套权限下长期正常。
+- **`Workers Routes Write` 是部署的必需权限** — wrangler **每次部署都会同步 `wrangler.jsonc` 声明的 routes**。
+  - 即使 `custom_domain` 早已配置正确，缺 Zone 级的 `Workers Routes Write` 仍会让部署在 `/zones/{id}/workers/routes` 上失败（实测报 `No access to the specified resource`）。
+  - 失败发生在 Worker 上传成功之后——线上代码已更新、站点正常，只有 CI 报红，容易误判为令牌整体失效。
+  - Cloudflare 博客称 “路由已配置时部署新版本不需要 zone 权限”，那只适用于成员角色，不适用于 wrangler 的实现，不要据此省掉这条权限。
+  - 补权限用编辑令牌即可（编辑不改密钥，无需更新 Secret）。
+- **www、.cn 与旧域由 Cloudflare Single Redirects 接管** — 三个 zone 的 `http_request_dynamic_redirect` entrypoint 各有一条托管规则。
+  - `*.brightmeows.com`（排除 `bms-table-mirror-r2.brightmeows.com`）、`brightmeows.cn` 的 apex 加 wildcard、`miyakomeow.site` 的 apex 加 wildcard（排除 `bms-table-mirror-r2.miyakomeow.site`）。
+  - 目标 `concat("https://brightmeows.com", http.request.uri.path)`，301，保留 query。
+  - 规则放在每个 zone 最前面；`www.miyakomeow.site` 旧规则验证后删除。
+  - 每个 zone 的通配 DNS 用 proxied `A * 192.0.2.1`，具体记录优先。
+  - Worker 只服务主站 apex，不参与旧主机 301。
+- **旧主机 301 的期望与只读检查** — `config/redirects.json` 记录三个 zone 的托管 ref/规则名、是否匹配 apex 与 R2 排除项；目标取 `config/site.json` 的 `origin`，状态 301，`preserve_query_string=true`。
+  - `scripts/check-redirect-rules.ts` 只读比对 Cloudflare `http_request_dynamic_redirect` entrypoint，按 `ref` 或规则名（`description`）识别托管规则。
+  - `CLOUDFLARE_RULES_TOKEN` 需要 `Zone / Dynamic URL Redirects / Read` 与 `Zone / Zone / Read`，scoped 到三个 zone，由 `config-drift.yml` 在配置变更的 PR、每周 schedule 与手动触发时跑。
+  - 规则的实际应用在控制台或临时写令牌下人工完成，CI 不给写权限。
+- **浏览器侧取数依赖 R2 桶的 CORS policy** — 镜像表 viewer 与谱面搜索都在客户端直连 R2（`r2TableHeaderUrl()`/`r2TableDataUrl()`、`R2_INDEXES_BASE`）。
+  - bucket 未放行站点来源时，浏览器报 `Failed to fetch`（viewer）与“索引加载失败”（搜索），而 beatoraja 等原生客户端不受影响，容易误判为代码缺陷。
+  - **期望来源写在 `config/site.json` 的 `r2.corsOrigins`**（主站与本地端口；旧域过渡来源已于 2026-11 提前清理），线上值用 `R2_BUCKET=<桶名> node scripts/check-r2-cors.ts` 只读比对。
+  - policy 位置在 Cloudflare 控制台 R2 → 桶 → Settings → CORS Policy。
+  - 改域或新增来源时先改配置再同步线上（`config-drift.yml` 会在配置变更的 PR 上拦一次）。
+  - 验证：`curl -sI -H "Origin: https://brightmeows.com" <R2 header 地址> | rg -i access-control` 应出现 `access-control-allow-origin`。
+- **R2 自定义域的表数据边缘缓存由 zone 的 Cache Rules 承担** — `bms-table-mirror-r2.brightmeows.com` 上，表内容与搜索索引在 zone 的 `http_request_cache_settings` entrypoint 有一条规则。
+  - 规则体：`set_cache_settings`（eligible for cache，edge TTL 600 秒，browser TTL 600 秒）。
+  - 受影响路径：`/tables/*/header.json`、`/tables/*/data.json`、`/indexes/`。
+  - 覆盖对象：`tables.json`、`shared/`、`meta/` 由表达式排除。
+  - R2 对象本身没有 Cache-Control，JSON 不在 Cloudflare 默认缓存扩展名列表里——不配这条规则时客户端每次直连 R2（2026-10 实测 `cf-cache-status` 恒为 DYNAMIC），浏览器侧也没有缓存头（规则生效后响应带 `cache-control: max-age=600`）。
+  - 属外部状态、不进仓库断言：漏配是性能退化而非功能故障。
+  - **验证必须用 GET**（`curl -s -o /dev/null -D -` 连发两次，第二次应为 `HIT` 且有 `age`）：HEAD 请求不参与缓存查找与填充，`curl -I` 恒显示 DYNAMIC——2026-10 排查时曾被这一点误导（先怀疑了规则与表达式，实际机制一直有效）。
+- **旧客户端 UA 是否被拦由 zone 级 Browser Integrity Check 决定** — 实测 `Java/1.8.x`、`Python-urllib`、`libwww-perl` 在 r2.dev、R2 自定义域与 workers.dev 上一律 403（Cloudflare error 1010）。
+  - 根因是 Browser Integrity Check，不是 r2.dev 的特有策略。
+  - 本 zone 已关闭该开关（`browser_check = off`），因此 `bms-table-mirror-r2.brightmeows.com` 与站点对旧 UA 全部放行。
+  - r2.dev 已于 2026-09-19 关闭（API：`PUT /accounts/{id}/r2/buckets/{bucket}/domains/managed`，body `{"enabled":false}`）。
+  - 开关位置：控制台 zone → Security → Settings，或 `PATCH /zones/{id}/settings/browser_check`。
+- **GitHub Pages 的 Enforce HTTPS 刻意不开** — `github-pages.brightmeows.com` 的自定义域 DNS 指向 Cloudflare，GitHub 无法续期自己的 `Let's Encrypt` 证书（当前证书 2027-01-28 到期）；开启只会把失败推迟到证书到期。
+  - `https://brightmeows.github.io` 在 Java 17 / .NET HttpClient 下仍会断在 https 到 http；旧自定义主机的 https 链路不受影响。
+  - 这是平台边界，不要用开启开关来假装修复。
 - **镜像表单表页由 Worker 动态生成** — Worker 接管 `/bms/table/mirror/*`：单表页取站点 SPA 外壳并注入 `bmstable` meta；`tables.json` 由 R2 清单叠加 D1 用户层合成；共享表路由同构。静态宿主不再生成镜像页。
 - **清单兜底快照写在独立 Cache API 命名空间** — 快照必须走 `caches.open("mirror-manifest-snapshot")`，只在真正回源时刷新；写入失败静默忽略，不应反向影响主路径。
-- **清单合成的 CPU 成本已实测，不为它单独缓存** — 本地实测（Node，与 workerd 同为 V8；219KB 清单、444 张表加等规模用户层）：`JSON.parse` 约 0.6ms、`mergeTableList` 约 0.4ms、完整 `tables.json` 响应构造（parse 加 merge 加 transform 加 serialize）p50 约 2.3ms；对照线上 Worker CPU P99 为 9.6ms（免费计划上限 10ms），合成只占其中一部分。结论是不为合成单独引入缓存层（写接口的失效复杂度换不来这点收益）；监控触发条件：GraphQL Analytics 的 `workersInvocationsAdaptive`（`quantiles.cpuTimeP50/P99` 与 `errors`，近 7 天窗口）出现 1102 错误或 P99 持续越过 8ms 时再处理。
+- **清单合成的 CPU 成本已实测，不为它单独缓存** — 本地实测（Node，与 workerd 同为 V8；219KB 清单、444 张表加等规模用户层）：`JSON.parse` 约 0.6ms、`mergeTableList` 约 0.4ms、完整 `tables.json` 响应构造（parse 加 merge 加 transform 加 serialize）p50 约 2.3ms。
+  - 对照线上 Worker CPU P99 为 9.6ms（免费计划上限 10ms），合成只占其中一部分。
+  - 结论是不为合成单独引入缓存层（写接口的失效复杂度换不来这点收益）。
+  - 监控触发条件：GraphQL Analytics 的 `workersInvocationsAdaptive`（`quantiles.cpuTimeP50/P99` 与 `errors`，近 7 天窗口）出现 1102 错误或 P99 持续越过 8ms 时再处理。
 - **镜像表页面曾经是管线生成的静态 stub** — 2026-09 之前每张表有一份提交物；现全部由 Worker 运行时生成，不再入库。
 - **清单在主站读取侧合成，用户层存于 D1** — Worker 把 R2 清单与 D1 用户层合并后响应；用户层不可用时退化为纯管线清单。桶名与 D1 库名在 `wrangler.jsonc` 的绑定里入库。
-- **难度表导入链接与查看页是同一条 URL** — `/bms/table/mirror/<dir_name>/` 既是 beatoraja / BeMusicSeeker 的导入地址（beatoraja 对不以 `.json` 结尾的 URL 会当 HTML 页解析 `bmstable` meta，对 `.json` 结尾的 URL 直读 header），也是浏览器里的查看页；页面直接展示当前地址作为可导入链接（`BmsTablePage` 从地址栏取，带复制按钮）。`tables.json` 兼作 BeMusicSeeker 的难度表清单（超集字段）。旧的 `/bms/table/mirror/view/?t=…` 形态已于 2026-09 彻底移除：仓库中无对应路由，Worker 与静态产物都不提供，访问该路径得到 404。旧主机 301 只保证同协议 https 链：beatoraja 的 JRE 17 与 BeMusicSeeker 公开 fork 的 .NET HttpClient 都不跟跨协议 301；除 `https://brightmeows.github.io` 外的 https 旧自定义域可用，`https://brightmeows.github.io` 仍断在 https 到 http，所有 `http://` 旧链在 beatoraja 下不可用（BeMusicSeeker fork 的 http 到 https 可以走通）；原版 BeMusicSeeker 未验证，结论按公开 fork 源码。
-- **写接口在 `/api/*`，登录走 GitHub OAuth** — 会话是 HMAC 签名 cookie（30 天，HttpOnly/Secure/SameSite=Lax）；登录发起时可带 `return_to`（发起页路径，经 `safeReturnTo` 只收站内绝对路径），与 state 一起存入短效 cookie，登录成功后跳回发起页，缺省回落镜像列表页；写操作另做同源 Origin 校验，并消耗每日配额（每账号 10 次，按 UTC 日）。删除先写黑名单（可见性优先）再移入 `trash/<时间戳>/<dir_name>/`，作者可在 30 天内自助恢复（`TRASH_RETENTION_DAYS` 与工作流清理窗口同源）；用户层写入是 D1 的行级 upsert 与 delete（不再需要 ETag 乐观锁重试）；审计每次操作一行、限次按账号与日期一行，可直接查询聚合；主站运行时读 R2/D1，增删不触发部署。清单合成缓存（同 isolate 60 秒）在写操作后主动失效。Worker secrets：`GITHUB_OAUTH_CLIENT_ID` 与 `GITHUB_OAUTH_CLIENT_SECRET`（GitHub App 的用户授权凭据，登录用）、`SESSION_SECRET`、`GITHUB_APP_ID` / `GITHUB_APP_PRIVATE_KEY` / `GITHUB_APP_INSTALLATION_ID`（换 installation token 触发工作流）、`INTERNAL_API_TOKEN`（内部接口共享 token，与仓库 Actions secret 同名同值）。
-- **共享表接口（`/api/shared/*`）不限频，防线是持有上限与审计** — 端点：`create`/`save`/`rename`/`delete`/`restore`（POST，Origin 白名单 + 登录）与 `check-id`/`removed`（GET，需登录）。**刻意不调 `consumeOperation`**：镜像的每日 10 次配额不适用于共享表，因为整包保存是高频动作；替代防线是每人 3 张持有上限（`shared_tables` 行数，含 admin，回收站行在 `shared_trash` 不占名额、30 天后经 `purgeExpiredSharedTrash` 清理释放）、保存类审计折叠（见下）与 admin 删除权（可删不可编辑他人内容，权限判定在处理层，前端仅显隐）。`check-id` 同时返回 `wasAliased`（曾被分发的旧 id，认领时前端弹知情确认）。
-- **创建与改 id 的失败形态是刻意选的** — 创建按“D1 占位先行”：`shared_tables` 主键 INSERT（与撤销旧别名同批原子，冲突即 409 且别名不被误删）成功后才写 R2，R2 失败回滚删行——宁可留“可查询、可再次创建覆盖的空壳行”，不留“占着 id 的孤儿对象”。改 id 相反：先复制 R2 对象到新前缀（旧对象仍在，失败不伤现役表），再单批原子完成新行 + 别名 + 删旧行，D1 失败则清理已复制对象。别名一律单跳（改名时 `UPDATE shared_alias SET target=新id WHERE target=旧id`），旧地址 301 到最新 id，直到被他人认领（`insertSharedTable` 同批删别名）。
-- **共享表的保存审计按“表×日”折叠** — `audit` 表在 schema v3 加了 `count` 列，`writeFoldedAudit` 把同 actor/action/dir_name/UTC 日的重复行并成一行并累加 `count`（行的 `at` 别新到最近一次）；创建/删除/改 id 仍逐次记。这是“不限频”与“全操作入审计”两个决策相乘后的量控，不要改回逐次 INSERT，也不要因此给共享表重新加回配额。
-- **共享表清单纯 D1 合成，不读 R2** — `/bms/table/shared/tables.json` 的条目字段（name/symbol/entries/时间）全部来自 `shared_tables` 行，内容对象只在查看页与写操作时碰；同 isolate 60 秒内存缓存 + 响应边缘缓存 60 秒 + 写后 `invalidateSharedList`，页面内 `?t=` 穿透即时刷新，与镜像清单同一口径。对象键用原始 id（`shared/<id>/…`），公开 URL 才百分号编码。
+- **难度表导入链接与查看页是同一条 URL** — `/bms/table/mirror/<dir_name>/` 既是 beatoraja / BeMusicSeeker 的导入地址（beatoraja 对不以 `.json` 结尾的 URL 会当 HTML 页解析 `bmstable` meta，对 `.json` 结尾的 URL 直读 header），也是浏览器里的查看页。
+  - 页面直接展示当前地址作为可导入链接（`BmsTablePage` 从地址栏取，带复制按钮）。
+  - `tables.json` 兼作 BeMusicSeeker 的难度表清单（超集字段）。
+  - 旧的 `/bms/table/mirror/view/?t=…` 形态已于 2026-09 彻底移除：仓库中无对应路由，Worker 与静态产物都不提供，访问该路径得到 404。
+  - 旧主机 301 只保证同协议 https 链：beatoraja 的 JRE 17 与 BeMusicSeeker 公开 fork 的 .NET HttpClient 都不跟跨协议 301。
+  - 除 `https://brightmeows.github.io` 外的 https 旧自定义域可用，`https://brightmeows.github.io` 仍断在 https 到 http，所有 `http://` 旧链在 beatoraja 下不可用（BeMusicSeeker fork 的 http 到 https 可以走通）。
+  - 原版 BeMusicSeeker 未验证，结论按公开 fork 源码。
+- **写接口在 `/api/*`，登录走 GitHub OAuth** — 会话是 HMAC 签名 cookie（30 天，HttpOnly/Secure/SameSite=Lax）。
+  - 登录发起时可带 `return_to`（发起页路径，经 `safeReturnTo` 只收站内绝对路径），与 state 一起存入短效 cookie，登录成功后跳回发起页，缺省回落镜像列表页。
+  - 写操作另做同源 Origin 校验，并消耗每日配额（每账号 10 次，按 UTC 日）。
+  - 删除先写黑名单（可见性优先）再移入 `trash/<时间戳>/<dir_name>/`，作者可在 30 天内自助恢复（`TRASH_RETENTION_DAYS` 与工作流清理窗口同源）。
+  - 用户层写入是 D1 的行级 upsert 与 delete（不再需要 ETag 乐观锁重试）。
+  - 审计每次操作一行、限次按账号与日期一行，可直接查询聚合。
+  - 主站运行时读 R2/D1，增删不触发部署。清单合成缓存（同 isolate 60 秒）在写操作后主动失效。
+  - Worker secrets：
+    - `GITHUB_OAUTH_CLIENT_ID` 与 `GITHUB_OAUTH_CLIENT_SECRET`（GitHub App 的用户授权凭据，登录用）；
+    - `SESSION_SECRET`；
+    - `GITHUB_APP_ID` / `GITHUB_APP_PRIVATE_KEY` / `GITHUB_APP_INSTALLATION_ID`（换 installation token 触发工作流）；
+    - `INTERNAL_API_TOKEN`（内部接口共享 token，与仓库 Actions secret 同名同值）。
+- **共享表接口（`/api/shared/*`）不限频，防线是持有上限与审计** — 端点：`create`/`save`/`rename`/`delete`/`restore`（POST，Origin 白名单 + 登录）与 `check-id`/`removed`（GET，需登录）。
+  - **刻意不调 `consumeOperation`**：镜像的每日 10 次配额不适用于共享表，因为整包保存是高频动作。
+  - 替代防线是每人 3 张持有上限（`shared_tables` 行数，含 admin，回收站行在 `shared_trash` 不占名额、30 天后经 `purgeExpiredSharedTrash` 清理释放）、保存类审计折叠（见下）与 admin 删除权（可删不可编辑他人内容，权限判定在处理层，前端仅显隐）。
+  - `check-id` 同时返回 `wasAliased`（曾被分发的旧 id，认领时前端弹知情确认）。
+- **创建与改 id 的失败形态是刻意选的** — 创建按“D1 占位先行”：`shared_tables` 主键 INSERT（与撤销旧别名同批原子，冲突即 409 且别名不被误删）成功后才写 R2，R2 失败回滚删行——宁可留“可查询、可再次创建覆盖的空壳行”，不留“占着 id 的孤儿对象”。
+  - 改 id 相反：先复制 R2 对象到新前缀（旧对象仍在，失败不伤现役表），再单批原子完成新行 + 别名 + 删旧行，D1 失败则清理已复制对象。
+  - 别名一律单跳（改名时 `UPDATE shared_alias SET target=新id WHERE target=旧id`），旧地址 301 到最新 id，直到被他人认领（`insertSharedTable` 同批删别名）。
+- **共享表的保存审计按“表×日”折叠** — `audit` 表在 schema v3 加了 `count` 列，`writeFoldedAudit` 把同 actor/action/dir_name/UTC 日的重复行并成一行并累加 `count`（行的 `at` 别新到最近一次）；创建/删除/改 id 仍逐次记。
+  - 这是“不限频”与“全操作入审计”两个决策相乘后的量控，不要改回逐次 INSERT，也不要因此给共享表重新加回配额。
+- **共享表清单纯 D1 合成，不读 R2** — `/bms/table/shared/tables.json` 的条目字段（name/symbol/entries/时间）全部来自 `shared_tables` 行，内容对象只在查看页与写操作时碰。
+  - 同 isolate 60 秒内存缓存 + 响应边缘缓存 60 秒 + 写后 `invalidateSharedList`，页面内 `?t=` 穿透即时刷新，与镜像清单同一口径。
+  - 对象键用原始 id（`shared/<id>/…`），公开 URL 才百分号编码。
 - **触发单表抓取用 GitHub App** — Worker 的 `dispatch.ts` 用 App 私钥签 JWT、换 installation token，触发 `fetch-table.yml`；不再触发 deploy/mirror。
-- **GitHub 下载的私钥是 PKCS#1，Web Crypto 只吃 PKCS#8** — `pkcs1ToPkcs8` 用 DER 重包一层（版本号加 rsaEncryption 的 AlgorithmIdentifier），站长不必额外跑 openssl 转换；这层包装由 `packages/worker/dispatch.test.ts` 用“Web Crypto 生成密钥、反向拆包、再包回去应与原 DER 逐字节一致”验证（不依赖 node:crypto，与 Workers 运行环境同一套 API）。
-- **内部接口在 `/api/internal/*`，只给 GitHub Actions 与运维用** — 端点：`GET user-layer`（返回原始用户层的 6 类索引加 fetched，形状与旧 R2 对象一致，供管线算活跃表集合）、`POST fetch-result`（单表抓取回写结果与状态）、`POST backup-now`（立即执行一次用户层备份）。迁移期用过的 `POST migrate` 与 `POST purge-legacy-user` 已在 2026-09 收尾后删除。鉴权是 `Authorization: Bearer <INTERNAL_API_TOKEN>`（恒定时间比较）；未配置 token 时拒绝一切内部调用。之所以不让 Actions 直连 Cloudflare API：那需要把账户级数据库权限交给 GitHub，而这组端点只暴露固定能力。管线与抓取脚本共用 `scripts/internal-api.ts` 客户端（基址默认站点 origin，可用 `INTERNAL_API_BASE` 覆盖——本地指向 `wrangler dev` 时用得上）。
-- **用户层每天备份到 R2，恢复靠生成 SQL 人工执行** — `wrangler.jsonc` 的 `triggers.crons`（`30 18 * * *`，UTC）触发 Worker 的 `scheduled`，把用户层与最近 500 条审计导出成 `backup/user-layer-<日期>.json`，只保留最近 14 份（`packages/worker/backup.ts`）。D1 免费版的 Time Travel 只回溯 7 天，这份快照是更长期的退路。恢复流程：从 R2 取快照、`node scripts/restore-user-layer.ts --file=<快照> --out=restore.sql`、review SQL、`wrangler d1 execute brightmeows-user --remote --file=restore.sql`；快照里的审计段只作存档，恢复脚本不导入。恢复脚本的列名与 `packages/worker/schema.ts` 建表语句的一致性由 `scripts/restore-user-layer.test.ts` 机械校验。需要立即备份时调 `POST /api/internal/backup-now`。
+- **GitHub 下载的私钥是 PKCS#1，Web Crypto 只吃 PKCS#8** — `pkcs1ToPkcs8` 用 DER 重包一层（版本号加 rsaEncryption 的 AlgorithmIdentifier），站长不必额外跑 openssl 转换。
+  - 这层包装由 `packages/worker/dispatch.test.ts` 用“Web Crypto 生成密钥、反向拆包、再包回去应与原 DER 逐字节一致”验证（不依赖 node:crypto，与 Workers 运行环境同一套 API）。
+- **内部接口在 `/api/internal/*`，只给 GitHub Actions 与运维用** — 端点：`GET user-layer`（返回原始用户层的 6 类索引加 fetched，形状与旧 R2 对象一致，供管线算活跃表集合）、`POST fetch-result`（单表抓取回写结果与状态）、`POST backup-now`（立即执行一次用户层备份）。
+  - 迁移期用过的 `POST migrate` 与 `POST purge-legacy-user` 已在 2026-09 收尾后删除。
+  - 鉴权是 `Authorization: Bearer <INTERNAL_API_TOKEN>`（恒定时间比较）；未配置 token 时拒绝一切内部调用。
+  - 之所以不让 Actions 直连 Cloudflare API：那需要把账户级数据库权限交给 GitHub，而这组端点只暴露固定能力。
+  - 管线与抓取脚本共用 `scripts/internal-api.ts` 客户端（基址默认站点 origin，可用 `INTERNAL_API_BASE` 覆盖——本地指向 `wrangler dev` 时用得上）。
+- **用户层每天备份到 R2，恢复靠生成 SQL 人工执行** — `wrangler.jsonc` 的 `triggers.crons`（`30 18 * * *`，UTC）触发 Worker 的 `scheduled`。
+  - 备份把用户层与最近 500 条审计导出成 `backup/user-layer-<日期>.json`，只保留最近 14 份（`packages/worker/backup.ts`）。
+  - D1 免费版的 Time Travel 只回溯 7 天，这份快照是更长期的退路。
+  - 恢复流程：从 R2 取快照、`node scripts/restore-user-layer.ts --file=<快照> --out=restore.sql`、review SQL、`wrangler d1 execute brightmeows-user --remote --file=restore.sql`；快照里的审计段只作存档，恢复脚本不导入。
+  - 恢复脚本的列名与 `packages/worker/schema.ts` 建表语句的一致性由 `scripts/restore-user-layer.test.ts` 机械校验。
+  - 需要立即备份时调 `POST /api/internal/backup-now`。
 - **`wrangler dev` 的 `__scheduled` 端点在本项目不可用** — Worker 带 `assets` 配置，请求先被静态资源接管（返回站点的 404 页），`--test-scheduled` 拦不到。验证定时任务要走 `POST /api/internal/backup-now`（本地与线上都可用）。
-- **D1 的 schema 由 Worker 自持，不走 wrangler migrations** — `packages/worker/schema.ts` 用 `sql()` 把建表语句拼成单行、按 `SCHEMA_VERSION` 分步，经 `batch()` 原子执行（D1 的 `exec()` 按换行切分语句，跨行 SQL 会报 incomplete input）。首个请求前经 `ensureSchemaOnce` 初始化（isolate 内只跑一次，失败可重试）。这样 CI 的部署流程不需要 D1 权限，本地 `wrangler dev` 也能零配置建库；代价是加列要自己写升级步骤（追加到 `MIGRATION_STEPS` 并递增 `SCHEMA_VERSION`）。当前 `SCHEMA_VERSION = 3`：v3 建 `shared_tables`/`shared_alias`/`shared_trash` 并给 `audit` 加 `count` 列——`ALTER TABLE` 在版本步骤里安全，整批原子、失败回滚后可重跑。
+- **D1 的 schema 由 Worker 自持，不走 wrangler migrations** — `packages/worker/schema.ts` 用 `sql()` 把建表语句拼成单行、按 `SCHEMA_VERSION` 分步，经 `batch()` 原子执行（D1 的 `exec()` 按换行切分语句，跨行 SQL 会报 incomplete input）。
+  - 首个请求前经 `ensureSchemaOnce` 初始化（isolate 内只跑一次，失败可重试）。
+  - 这样 CI 的部署流程不需要 D1 权限，本地 `wrangler dev` 也能零配置建库；代价是加列要自己写升级步骤（追加到 `MIGRATION_STEPS` 并递增 `SCHEMA_VERSION`）。
+  - 当前 `SCHEMA_VERSION = 3`：v3 建 `shared_tables`/`shared_alias`/`shared_trash` 并给 `audit` 加 `count` 列——`ALTER TABLE` 在版本步骤里安全，整批原子、失败回滚后可重跑。
 - **D1 数据库需人工创建一次** — `wrangler d1 create brightmeows-user --location apac` 生成 `database_id` 并写进 `wrangler.jsonc`；Worker 无法自建库（binding 是部署期配置）。
 - **预览用轻量提取，刻意不引入 parse5** — `/api/tables/preview` 只做三步提取（JSON 页面、bmstable meta、header 文件名扫描）：完整回退链（管线的 `extractBmstableUrlHint`）在免费计划 10ms CPU 预算下解析大 HTML 有超限风险。预览失败不影响正式抓取（工作流用完整逻辑）。
 
@@ -46,4 +136,8 @@
 
 - **`packages/worker/` 按“路由、处理、数据”分三层** — `index.ts` 入口，`api.ts`/`admin.ts` 路由表，`handlers/` 处理，`store/` 数据；`auth.ts` 会话原语，`canonical-slash.ts`、`dispatch.ts`、`backup.ts`、`schema.ts`、`manifest.ts` 各管一块。
 - **本地 `pnpm dev` 不提供 mirror 动态路由** — 验证 mirror 行为用 `pnpm build && pnpm exec wrangler dev`（`localhost:8787` 已在桶 CORS 放行）。
-- **自托管个人表的旧地址由 Worker 静态映射 301（2026-11 迁移）** — `self-sp`/`self-dp` 已迁入共享表（新 id `meow-sp`/`meow-dp`），旧地址 `/bms/table/<旧名>/` 由 `legacy-self-tables.ts` 的两条硬编码映射 301（含无尾斜杠形态，透传 query），接线在静态树分发之前。共享表列表页并入 `/bms/table` 后，`/bms/table/shared`（含无尾斜杠形态）同样由 `legacy-shared-list.ts` 静态映射 301（子路径 `new/`、`[id]/`、`tables.json` 在 index.ts 既有分支先分流，不受影响）。两者刻意不走 shared_alias 或 Single Redirects：别名表只覆盖 `/bms/table/shared/` 根下的旧 id（这是跨体系迁移不是改 id），zone 级重定向则是外部状态、要控制台人工应用。旧 JSON 子路径直链刻意 404（无对外分发场景）。共享表日后改名时须同步更新映射目标为最终 id，否则与 shared_alias 叠成两跳。
+- **自托管个人表的旧地址由 Worker 静态映射 301（2026-11 迁移）** — `self-sp`/`self-dp` 已迁入共享表（新 id `meow-sp`/`meow-dp`），旧地址 `/bms/table/<旧名>/` 由 `legacy-self-tables.ts` 的两条硬编码映射 301（含无尾斜杠形态，透传 query），接线在静态树分发之前。
+  - 共享表列表页并入 `/bms/table` 后，`/bms/table/shared`（含无尾斜杠形态）同样由 `legacy-shared-list.ts` 静态映射 301（子路径 `new/`、`[id]/`、`tables.json` 在 index.ts 既有分支先分流，不受影响）。
+  - 两者刻意不走 shared_alias 或 Single Redirects：别名表只覆盖 `/bms/table/shared/` 根下的旧 id（这是跨体系迁移不是改 id），zone 级重定向则是外部状态、要控制台人工应用。
+  - 旧 JSON 子路径直链刻意 404（无对外分发场景）。
+  - 共享表日后改名时须同步更新映射目标为最终 id，否则与 shared_alias 叠成两跳。
