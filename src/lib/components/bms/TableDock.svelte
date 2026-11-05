@@ -1,4 +1,5 @@
 <script lang="ts">
+  import type { Snippet } from "svelte";
   import { onMount } from "svelte";
   import { cubicIn, cubicOut } from "svelte/easing";
   import { fly } from "svelte/transition";
@@ -21,7 +22,10 @@
    *   红/绿=notice、浅蓝=待恢复草稿，error/warn 额外以彩色短词提示），
    *   展开态是 340px 玻璃面板（窄屏回退全宽），面板头为同一状态标识，
    *   下方纵排承载模式切换、保存、另存、放弃、notice、草稿横幅与
-   *   自动保存时刻；
+   *   自动保存时刻；表整体操作（导出、查看原文、fork）与导入区以折叠段
+   *   收进面板（表操作查看态默认展开、编辑态默认收起；导入段默认收起，
+   *   空表自动展开一次，手动收起后本会话不再自动），导入段展开时面板
+   *   加宽到 480px；
    * - 收展由 controllers/table-dock 的状态机驱动：模式初值（编辑展开、
    *   查看收起）、滚动方向（下滑收起、上滑展开，累积阈值同顶栏）、
    *   距页底强制展开、键盘焦点冻结；busy 与待恢复草稿豁免滚动收起；
@@ -38,11 +42,24 @@
     showSaveAsShared: boolean;
     /** “编辑此表”按钮的悬停提示文案。 */
     editHint: string;
+    /** 表操作折叠段内容（导出、查看原文、fork）；缺省隐藏该段。 */
+    tableActions?: Snippet | undefined;
+    /** 导入折叠段内容（编辑态动态加载后传入）；缺省隐藏该段。 */
+    importSection?: Snippet | undefined;
     /** 模式切换回调：页面实现切换后的滚回页首。 */
     onSetMode: (next: DockMode) => void;
   }
 
-  let { model, mode, createMode, showSaveAsShared, editHint, onSetMode }: Props = $props();
+  let {
+    model,
+    mode,
+    createMode,
+    showSaveAsShared,
+    editHint,
+    tableActions = undefined,
+    importSection = undefined,
+    onSetMode,
+  }: Props = $props();
 
   /** 成功类 notice 的自动清除时延；warn 与 error 常驻到被下一次替换。 */
   const NOTICE_OK_TTL_MS = 8000;
@@ -74,11 +91,35 @@
   let lastScrollY = 0;
   let reduceMotion = $state(false);
 
+  // ---- 折叠段：表操作与导入 ----
+  let tableActionsOpen = $state(false);
+  let importOpen = $state(false);
+  /** 用户手动收起导入段后，本会话不再自动展开。 */
+  let importDismissed = $state(false);
+
   // 模式变化重置初值（挂载时同样执行一次，与初始化等价）
   $effect(() => {
     scrollState = createDockScrollState(mode);
     expansion = scrollState.expansion;
+    tableActionsOpen = mode === "view";
+    importOpen = false;
+    importDismissed = false;
   });
+
+  // 空表（新建/未导入）自动展开导入段一次，引导第一步操作
+  $effect(() => {
+    if (mode !== "edit" || importDismissed) return;
+    if (model.dataLoadState === "loaded" && model.entries.length === 0) importOpen = true;
+  });
+
+  function toggleTableActions(): void {
+    tableActionsOpen = !tableActionsOpen;
+  }
+
+  function toggleImport(): void {
+    importOpen = !importOpen;
+    if (!importOpen) importDismissed = true;
+  }
 
   // 成功类 notice 短暂展示后自动清除；期间被替换（引用不同）则不清除
   $effect(() => {
@@ -177,7 +218,9 @@
     out:fly={{ y: 24, opacity: 0, duration: reduceMotion ? 0 : 140, easing: cubicIn }}
   >
     <div
-      class="pointer-events-auto w-[340px] max-w-full rounded-xl bg-glass p-3 shadow-[var(--glass-lighting),0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur max-sm:w-full"
+      class="pointer-events-auto w-[340px] max-w-full rounded-xl bg-glass p-3 shadow-[var(--glass-lighting),0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur transition-[width] duration-200 max-sm:w-full {importOpen
+        ? 'sm:w-[480px]'
+        : 'sm:w-[340px]'}"
       onfocusin={handleFocusIn}
       onfocusout={handleFocusOut}
     >
@@ -306,6 +349,70 @@
           </button>
         {/if}
       </div>
+
+      {#if tableActions}
+        <div class="mt-3 border-t border-white-15 pt-2">
+          <button
+            class="flex w-full items-center justify-between gap-2 py-1 text-[0.85rem] text-white-70 transition-colors duration-150 hover:text-white"
+            type="button"
+            aria-expanded={tableActionsOpen}
+            onclick={toggleTableActions}
+          >
+            {m["editor.dock_table_actions"]()}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="size-4 transition-transform duration-200 {tableActionsOpen
+                ? 'rotate-180'
+                : ''}"
+              aria-hidden="true"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+          {#if tableActionsOpen}
+            <div class="mt-2 flex flex-col items-stretch gap-2">
+              {@render tableActions()}
+            </div>
+          {/if}
+        </div>
+      {/if}
+
+      {#if importSection}
+        <div class="mt-3 border-t border-white-15 pt-2">
+          <button
+            class="flex w-full items-center justify-between gap-2 py-1 text-[0.85rem] text-white-70 transition-colors duration-150 hover:text-white"
+            type="button"
+            aria-expanded={importOpen}
+            onclick={toggleImport}
+          >
+            {m["editor.import_section"]()}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="size-4 transition-transform duration-200 {importOpen ? 'rotate-180' : ''}"
+              aria-hidden="true"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+          {#if importOpen}
+            <div class="mt-2">
+              {@render importSection()}
+            </div>
+          {/if}
+        </div>
+      {/if}
 
       {#if editing && model.draftStatusText !== ""}
         <p class="mt-2 text-center text-[0.85rem] text-white-50">{model.draftStatusText}</p>

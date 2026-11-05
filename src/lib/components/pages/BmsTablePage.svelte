@@ -17,12 +17,11 @@
   import LevelRefTable from "#lib/components/bms/LevelRefTable.svelte";
   import TableDock from "#lib/components/bms/TableDock.svelte";
   import type { TableImportSectionProps } from "#lib/components/bms/TableImportSection.svelte";
-  import TableIoPanel from "#lib/components/bms/TableIoPanel.svelte";
   import TableOverviewPanel from "#lib/components/bms/TableOverviewPanel.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import CardSwitcher, { type CardSwitchItem } from "#lib/components/ui/CardSwitcher.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
-  import { btnPrimaryLarge } from "#lib/constants/ui-classes.js";
+  import { btnGhost, btnPrimaryLarge } from "#lib/constants/ui-classes.js";
   import type { EditorNotice } from "#lib/controllers/editor.js";
   import type { DockMode } from "#lib/controllers/table-dock.js";
   import {
@@ -143,14 +142,13 @@
     return () => window.removeEventListener("popstate", syncModeFromLocation);
   });
 
-  type CardId = "overview" | "course-list" | "level-ref" | "charts-list" | "import-export";
+  type CardId = "overview" | "course-list" | "level-ref" | "charts-list";
 
   let visibleCards = $state<Record<CardId, boolean>>({
     overview: false,
     "course-list": false,
     "level-ref": false,
     "charts-list": true,
-    "import-export": false,
   });
   let hiddenLevels = $state<Set<string>>(new Set());
   let hideUnassigned = $state(false);
@@ -184,11 +182,6 @@
       label: m["editor.entries_section"](),
       checked: visibleCards["charts-list"],
       count: model.entries.length,
-    },
-    {
-      id: "import-export",
-      label: isEdit ? m["editor.io_section"]() : m["editor.export_section"](),
-      checked: visibleCards["import-export"],
     },
   ]);
 
@@ -228,15 +221,6 @@
                 },
               ]
             : []),
-          ...(visibleCards["import-export"]
-            ? [
-                {
-                  id: "import-export",
-                  title: isEdit ? m["editor.io_section"]() : m["editor.export_section"](),
-                  href: "#import-export",
-                },
-              ]
-            : []),
         ]
       : []
   );
@@ -261,7 +245,6 @@
             ...(visibleCards["course-list"] ? [coursePane] : []),
             ...(visibleCards["level-ref"] && showLevelRefPane ? [levelRefPane] : []),
             ...(visibleCards["charts-list"] ? [chartsPane] : []),
-            ...(visibleCards["import-export"] ? [ioPane] : []),
           ]),
   ]}
 />
@@ -274,9 +257,69 @@
     {createMode}
     showSaveAsShared={saveAsShared !== "none"}
     {editHint}
+    {tableActions}
+    importSection={isEdit ? importSection : undefined}
     onSetMode={handleDockSetMode}
   />
 {/if}
+
+<!-- 表操作折叠段：导出、查看原文与 fork（fork 仅查看态；编辑态另存共享在按钮区） -->
+{#snippet tableActions()}
+  <button
+    class="{btnGhost} w-full"
+    type="button"
+    disabled={model.dataLoadState !== "loaded"}
+    onclick={() => model.exportTable("header")}
+  >
+    {m["editor.export_header"]()}
+  </button>
+  <button
+    class="{btnGhost} w-full"
+    type="button"
+    disabled={model.dataLoadState !== "loaded"}
+    onclick={() => model.exportTable("data")}
+  >
+    {m["editor.export_data"]()}
+  </button>
+  <button
+    class="{btnGhost} w-full"
+    type="button"
+    disabled={model.dataLoadState !== "loaded"}
+    onclick={() => model.exportTable("package")}
+  >
+    {m["editor.export_package"]()}
+  </button>
+  {#if headerUrl !== null}
+    <a
+      class="{btnGhost} w-full text-center"
+      href={headerUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      {m["table.view_header"]()}
+    </a>
+  {/if}
+  {#if model.dataFetchUrl !== null}
+    <a
+      class="{btnGhost} w-full text-center"
+      href={model.dataFetchUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      {m["table.view_data"]()}
+    </a>
+  {/if}
+  {#if !isEdit && saveAsShared === "same-origin"}
+    <button
+      class="{btnGhost} w-full"
+      type="button"
+      disabled={model.busy}
+      onclick={() => void model.saveAsSharedNow()}
+    >
+      {sharedMode ? m["shared.fork"]() : m["editor.save_as_shared"]()}
+    </button>
+  {/if}
+{/snippet}
 
 {#snippet titlePane()}
   <div class="flex flex-col items-center gap-3 text-center">
@@ -444,19 +487,6 @@
       onChange={model.markDirty}
       bind:hiddenLevels
       bind:hideUnassigned
-    />
-  </div>
-{/snippet}
-
-{#snippet ioPane()}
-  <div id="import-export" class="scroll-mt-20">
-    <TableIoPanel
-      editing={isEdit}
-      {headerUrl}
-      dataUrl={model.dataFetchUrl}
-      onExport={model.exportTable}
-      exportDisabled={model.dataLoadState !== "loaded"}
-      importSection={isEdit ? importSection : undefined}
     />
   </div>
 {/snippet}

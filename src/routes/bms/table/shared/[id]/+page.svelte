@@ -1,6 +1,6 @@
 <script lang="ts">
   import { draftStorageKey, type TableEditPayload } from "@brightmeows/bms/editor";
-  import { withLocalDataUrl, type SharedTableItem } from "@brightmeows/mirror/shared";
+  import type { SharedTableItem } from "@brightmeows/mirror/shared";
   import { sharedTablePath } from "@brightmeows/mirror/urls";
   import { onMount } from "svelte";
 
@@ -10,7 +10,7 @@
   import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
   import { r2SharedDataUrl, r2SharedHeaderUrl } from "#lib/constants/r2.js";
-  import { btnBar, btnGhostMd, btnPrimary, inputEditorBase } from "#lib/constants/ui-classes.js";
+  import { btnGhostMd, btnPrimary, inputEditorBase } from "#lib/constants/ui-classes.js";
   import {
     deleteSharedTable,
     initialSharedEditState,
@@ -34,7 +34,6 @@
   import { auth } from "#lib/data/store/auth-store.svelte.js";
   import { sharedNewSeed } from "#lib/data/store/shared-new.svelte.js";
   import { m } from "#lib/paraglide/messages.js";
-  import { downloadJsonFile } from "#lib/utils/infra/download.js";
   import { page } from "$app/state";
 
   /**
@@ -98,31 +97,6 @@
 
   async function conflictCheck(): Promise<string | undefined> {
     return sharedEditConflictBaseline(deps());
-  }
-
-  async function download(kind: "header" | "data"): Promise<void> {
-    notice = null;
-    try {
-      const headerRes = await fetch(r2SharedHeaderUrl(tableId));
-      if (!headerRes.ok) throw new Error(m["shared.download_failed"]());
-      const header = (await headerRes.json()) as Record<string, unknown>;
-      if (kind === "header") {
-        downloadJsonFile("header.json", withLocalDataUrl(header));
-        return;
-      }
-      const dataUrl =
-        typeof header.data_url === "string" && header.data_url !== ""
-          ? header.data_url
-          : r2SharedDataUrl(tableId);
-      const dataRes = await fetch(dataUrl);
-      if (!dataRes.ok) throw new Error(m["shared.download_failed"]());
-      downloadJsonFile("data.json", await dataRes.json());
-    } catch (error) {
-      notice = {
-        kind: "error",
-        text: error instanceof Error ? error.message : m["shared.download_failed"](),
-      };
-    }
   }
 
   async function doRename(): Promise<void> {
@@ -222,17 +196,6 @@
         <span class="text-[0.95rem] text-white-60">
           {m["shared.author_label"]({ name: s.item.author })}
         </span>
-      {/if}
-      {#if !isNew}
-        <button class={btnBar} type="button" onclick={() => void download("header")}>
-          {m["shared.download_header"]()}
-        </button>
-        <button class={btnBar} type="button" onclick={() => void download("data")}>
-          {m["shared.download_data"]()}
-        </button>
-      {/if}
-      {#if auth.status === "ready" && login === null}
-        <a class={btnBar} href={loginHref}>{m["topbar.login"]()}</a>
       {/if}
       {#if notice}
         <span class="text-[0.9rem] {notice.kind === 'ok' ? 'text-success' : 'text-red-300'}">
