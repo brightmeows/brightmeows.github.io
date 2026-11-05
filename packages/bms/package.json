@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./bms-ir": {
+      "types": "./src/bms-ir.ts",
+      "default": "./src/bms-ir.ts"
+    },
     "./constants": {
       "types": "./src/constants.ts",
       "default": "./src/constants.ts"

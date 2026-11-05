@@ -26,6 +26,8 @@
   interface Props {
     /** 编辑既有条目时传入原始条目；新增时为 null。 */
     entry: Record<string, unknown> | null;
+    /** 新增时预填的核心字段（如 bms-ir URL 提取的 md5）；缺省为空表单。 */
+    prefill?: Record<string, unknown> | undefined;
     levels: string[];
     disabled?: boolean;
     oncommit: (entry: Record<string, unknown>) => void;
@@ -34,20 +36,32 @@
     ondelete?: (() => void) | undefined;
   }
 
-  let { entry, levels, disabled = false, oncommit, oncancel, ondelete }: Props = $props();
+  let {
+    entry,
+    prefill = undefined,
+    levels,
+    disabled = false,
+    oncommit,
+    oncancel,
+    ondelete,
+  }: Props = $props();
 
   /** 初始快照：父级用 keyed 区块重挂载来切换编辑对象，这里无需响应 prop 变化。 */
-  function snapshot(value: Record<string, unknown> | null): {
+  function snapshot(
+    value: Record<string, unknown> | null,
+    seed: Record<string, unknown> | undefined
+  ): {
     core: Record<CoreEntryField, string>;
     custom: CustomFieldRow[];
   } {
+    const source = value ?? seed ?? {};
     return {
-      core: value === null ? coreFieldTexts({}) : coreFieldTexts(value),
+      core: coreFieldTexts(source),
       custom: value === null ? [] : customFieldRows(value),
     };
   }
 
-  const initial = untrack(() => snapshot(entry));
+  const initial = untrack(() => snapshot(entry, prefill));
 
   const FIELD_LABELS: Record<CoreEntryField, string> = {
     level: m["editor.f_level"](),
