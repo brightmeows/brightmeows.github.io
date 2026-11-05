@@ -11,6 +11,7 @@
 - `node scripts/fetch-table-once.ts --url=<表源> --request-id=<id> --out-dir=./out` — 单表抓取（复用管线抓取与命名逻辑）：数据目录供 `fetch-table` 工作流上传到 R2，抓取结果与状态经内部接口写进 D1
 - `pnpm test:parity` — 手动新旧实现对拍（用公开 R2 基线与归档工具 v0.4.2 的二进制，逐对象比对产物；`PARITY_LIMIT` 可只对拍前 N 张表）
 - `pnpm check:quotes` — 全量中文引号检查（扩展名与 `static/` 排除规则在 `package.json`，pre-commit 与 CI 共用）
+- `pnpm check:md` — markdownlint 全量检查（配置在 `.markdownlint.toml`，default 全规则、行宽 200；`content/` 文章因 CJK 软换行渲染约束关闭 MD013/MD025/MD033，分流写法在 `package.json`；pre-commit 与 CI 共用）
 - `R2_BUCKET=<桶名> node scripts/check-r2-cors.ts` — 与线上桶 CORS policy 比对（需 Cloudflare 凭据；只读）
 - `node scripts/check-redirect-rules.ts` — 与线上三个 zone 的旧主机 301 规则比对（需 `CLOUDFLARE_RULES_TOKEN`；只读）
 

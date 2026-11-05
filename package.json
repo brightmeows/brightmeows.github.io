@@ -27,7 +27,8 @@
     "check:redirects": "node scripts/check-redirect-rules.ts",
     "check:i18n": "node scripts/check-i18n-coverage.ts",
     "check:jsdoc": "node scripts/check-jsdoc.ts",
-    "check:quotes": "git ls-files -z -- '*.md' '*.svx' '*.ts' '*.svelte' '*.js' '*.py' '*.yml' '*.yaml' '*.json' '*.jsonc' '*.toml' '*.css' '*.html' ':(exclude)static/**' | xargs -0 -r python3 scripts/check-cn-quotes.py"
+    "check:quotes": "git ls-files -z -- '*.md' '*.svx' '*.ts' '*.svelte' '*.js' '*.py' '*.yml' '*.yaml' '*.json' '*.jsonc' '*.toml' '*.css' '*.html' ':(exclude)static/**' | xargs -0 -r python3 scripts/check-cn-quotes.py",
+    "check:md": "git ls-files -z -- '*.md' ':(exclude)content/**' ':(exclude)static/**' | xargs -0 -r markdownlint --config .markdownlint.toml && git ls-files -z -- 'content/**/*.md' | xargs -0 -r markdownlint --config .markdownlint.toml --disable MD013 MD025 MD033 --"
   },
   "dependencies": {
     "@brightmeows/bms": "workspace:*",
@@ -45,6 +46,7 @@
     "@types/node": "^26.6.6",
     "gray-matter": "^4.0.3",
     "katex": "^0.18.2",
+    "markdownlint-cli": "^0.50.0",
     "opencc-js": "^1.4.2",
     "oxfmt": "^0.75.0",
     "oxlint": "^1.90.0",
