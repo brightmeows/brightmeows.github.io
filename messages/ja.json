@@ -177,6 +177,7 @@
   "common.unknown_title": "タイトル不明",
   "content.category.blog": "ブログ",
   "content.category.notes": "雑記",
+  "content.category.reading": "読書",
   "content.no_posts": "記事はまだありません",
   "content.no_preview": "プレビューなし",
   "course.course_count": "{count} コース",

@@ -22,6 +22,11 @@ export const POST_CATEGORIES = [
     label: () => m["content.category.notes"](),
     featuredOnHome: false,
   },
+  {
+    id: "reading",
+    label: () => m["content.category.reading"](),
+    featuredOnHome: false,
+  },
 ] as const satisfies readonly PostCategory[];
 
 /** 注册表里的分类 id 联合类型。 */

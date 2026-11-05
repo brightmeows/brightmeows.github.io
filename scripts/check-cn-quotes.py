@@ -5,6 +5,9 @@
 
 - Markdown（.md/.svx）：扫描直引号、全角无向引号与直角引号；frontmatter、
   围栏代码块、行内代码与 HTML 标签中的引号是语法，跳过。
+  行内公式（$...$ 与 $$...$$）同样跳过：数学记号里的 ASCII 撇号是导数与
+  转置记号（如 $d'$、$W^T$），属于“引号即数据”，不是中文引述引号；
+  跨行的 $$ 块级公式整块跳过。
 - 代码与配置（其余受检类型）：只扫描直角引号与全角无向引号——它们在代码里
   几乎不可能是语法；ASCII 直引号在代码里是字符串与语法引号，不扫。
   （注释里的 ASCII 直引号无法与语法机械区分，留给人工约定。）
@@ -29,6 +32,7 @@ _MD_BAD_QUOTES = re.compile("[\u0022\u0027\uFF02\u300C\u300D\u300E\u300F]")
 _CODE_BAD_QUOTES = re.compile("[\uFF02\u300C\u300D\u300E\u300F]")
 _HTML_TAG = re.compile(r"<[^>]*>")
 _INLINE_CODE = re.compile(r"`[^`]*`")
+_INLINE_MATH = re.compile(r"\$\$[^$]+\$\$|\$[^$]+\$")
 _IGNORE_MARKER = "cn-quotes-ignore"
 _MARKDOWN_SUFFIXES = (".md", ".svx")
 
@@ -47,6 +51,7 @@ def check_file(path: str) -> int:
     markdown = path.endswith(_MARKDOWN_SUFFIXES)
     bad_quotes = _MD_BAD_QUOTES if markdown else _CODE_BAD_QUOTES
     in_code = False
+    in_math_block = False
     in_frontmatter = False
     violations = 0
     with open(path, encoding="utf-8") as fh:
@@ -64,9 +69,15 @@ def check_file(path: str) -> int:
                 if re.match(r"^(```|~~~)", line):
                     in_code = not in_code
                     continue
+                if re.match(r"^\s*\$\$\s*$", line):
+                    in_math_block = not in_math_block
+                    continue
+                if in_math_block:
+                    continue
                 if in_code:
                     continue
                 text = _INLINE_CODE.sub("", line)
+                text = _INLINE_MATH.sub("", text)
                 text = _HTML_TAG.sub("", text)
             else:
                 text = line

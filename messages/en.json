@@ -177,6 +177,7 @@
   "common.unknown_title": "Unknown title",
   "content.category.blog": "Blog",
   "content.category.notes": "Notes",
+  "content.category.reading": "Reading",
   "content.no_posts": "No posts yet",
   "content.no_preview": "No preview",
   "course.course_count": "{count} courses",
