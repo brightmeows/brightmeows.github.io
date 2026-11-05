@@ -189,6 +189,7 @@
   "editor.bms_drop_button": "选择文件",
   "editor.bms_drop_done": "已添加 {added} 条；跳过 {skipped} 条重复；{failed} 个文件失败。",
   "editor.bms_drop_hint": "拖入 .bms/.bme/.bml/.pms/.bmson 文件或整个文件夹；自动计算 MD5 与 SHA256 并解析头部字段，条目先落未指派。",
+  "editor.bms_drop_overlay_hint": "松开鼠标，导入到当前表",
   "editor.bms_drop_title": "拖拽本地 BMS 文件",
   "editor.bms_drop_unavailable": "当前浏览器环境不支持哈希计算。",
   "editor.bulk_apply": "应用",

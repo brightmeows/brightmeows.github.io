@@ -189,6 +189,7 @@
   "editor.bms_drop_button": "ファイルを選択",
   "editor.bms_drop_done": "{added} 件を追加、{skipped} 件の重複をスキップ、{failed} 件のファイルが失敗。",
   "editor.bms_drop_hint": ".bms/.bme/.bml/.pms/.bmson ファイルまたはフォルダーをドロップすると、MD5 と SHA256 を計算しヘッダー項目を解析します。エントリはまず未割り当てになります。",
+  "editor.bms_drop_overlay_hint": "離すと現在の表に取り込みます",
   "editor.bms_drop_title": "ローカルの BMS ファイルをドロップ",
   "editor.bms_drop_unavailable": "このブラウザー環境ではハッシュ計算を利用できません。",
   "editor.bulk_apply": "適用",

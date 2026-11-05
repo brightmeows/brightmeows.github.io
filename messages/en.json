@@ -189,6 +189,7 @@
   "editor.bms_drop_button": "Choose files",
   "editor.bms_drop_done": "Added {added}; skipped {skipped} duplicates; {failed} files failed.",
   "editor.bms_drop_hint": "Drop .bms/.bme/.bml/.pms/.bmson files or a folder; MD5 and SHA256 are computed and header fields parsed. Entries land unassigned.",
+  "editor.bms_drop_overlay_hint": "Release to import into this table",
   "editor.bms_drop_title": "Drop local BMS files",
   "editor.bms_drop_unavailable": "Hashing is unavailable in this browser context.",
   "editor.bulk_apply": "Apply",

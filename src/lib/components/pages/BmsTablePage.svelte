@@ -9,9 +9,11 @@
 </script>
 
 <script lang="ts">
+  import type { BmsDropResult } from "@brightmeows/bms/editor";
   import type { Component, Snippet } from "svelte";
   import { onMount, tick } from "svelte";
 
+  import BmsDropOverlay from "#lib/components/bms/BmsDropOverlay.svelte";
   import CoursePanel from "#lib/components/bms/CoursePanel.svelte";
   import EntriesPanel from "#lib/components/bms/EntriesPanel.svelte";
   import LevelRefTable from "#lib/components/bms/LevelRefTable.svelte";
@@ -112,6 +114,26 @@
     setMode(next);
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
+  }
+
+  /**
+   * 全页拖拽导入的追加处理：与导入折叠段拖拽区的追加逻辑一致
+   * （追加条目、合并文件等级建议、标记未保存并给出结果通知）。
+   */
+  function handlePageDrop(result: BmsDropResult): void {
+    if (result.added.length > 0) {
+      model.entries = [...model.entries, ...result.added];
+      model.levelHints = { ...model.levelHints, ...result.hints };
+    }
+    model.markDirty();
+    model.notice = {
+      kind: result.added.length > 0 ? "ok" : "warn",
+      text: m["editor.bms_drop_done"]({
+        added: result.added.length,
+        skipped: result.skipped,
+        failed: result.failed,
+      }),
+    };
   }
 
   // ---- 导入区按需加载（查看态不载入导入器包体） ----
@@ -260,6 +282,15 @@
     {tableActions}
     importSection={isEdit ? importSection : undefined}
     onSetMode={handleDockSetMode}
+  />
+{/if}
+
+<!-- 编辑态全页拖拽接收：与导入折叠段的拖拽区共用同一管线 -->
+{#if isEdit && model.ready}
+  <BmsDropOverlay
+    entries={model.entries}
+    disabled={model.busy || model.dataLoadState !== "loaded"}
+    onadd={handlePageDrop}
   />
 {/if}
 
