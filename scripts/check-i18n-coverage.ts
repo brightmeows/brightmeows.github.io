@@ -18,7 +18,7 @@
  * - `src/lib/constants/bms.ts`：LR2 领域约束标签（日文原词，数据级术语）
  * - `src/lib/loaders/post-metadata.ts`、`post-scanner.ts`、`src/lib/utils/content/categories.ts`：
  *   构建期内容诊断（仅开发者可见）
- * - `src/routes/bms/index.zh.md` / `index.ja.md`：按 locale 选用的中文/日文内容源
+ * - `src/routes/bms/index.md`：单份中文内容源（markdown 类内容不做三语适配）
  * - 行内含 `i18n-exempt` 标记：临时豁免逃生口
  *
  * 纯读、不联网、毫秒级，进 pre-commit 与 CI。用法：`node scripts/check-i18n-coverage.ts`
@@ -45,7 +45,7 @@ const EXEMPT_FILES: RegExp[] = [
   /^src\/lib\/loaders\/post-metadata\.ts$/,
   /^src\/lib\/loaders\/post-scanner\.ts$/,
   /^src\/lib\/utils\/content\/categories\.ts$/,
-  /^src\/routes\/bms\/index\.(?:zh|ja)\.md$/,
+  /^src\/routes\/bms\/index\.md$/,
   // 仓库文档与测试本就是中文/数据现场，非访客可见内容
   /(^|\/)AGENTS\.md$/,
   /\.test\.(ts|js|svelte)$/,
