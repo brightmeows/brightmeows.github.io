@@ -22,10 +22,11 @@
 </script>
 
 <script lang="ts">
-  import type {
-    BmsDropResult,
-    EntryImportResult,
-    TableImportResult,
+  import {
+    splitNewEntries,
+    type BmsDropResult,
+    type EntryImportResult,
+    type TableImportResult,
   } from "@brightmeows/bms/editor";
   import { editorHeaderState } from "@brightmeows/bms/header";
 
@@ -62,18 +63,32 @@
 
   function handleImport(result: TableImportResult): void {
     if (result.header !== null) applyImportedHeader(result.header);
-    if (result.data !== null) {
-      const imported = result.data.map((item) => ({ ...item }) as ChartData);
-      entries = result.dataMode === "append" ? [...entries, ...imported] : imported;
-    }
     const sourceLabel =
       result.source === "paste"
         ? m["editor.import_source_paste"]()
         : result.source === "file"
           ? m["editor.import_source_file"]()
           : m["editor.import_source_fork"]();
+    let noticeText: string;
+    if (result.data !== null) {
+      const imported = result.data.map((item) => ({ ...item }) as ChartData);
+      if (result.dataMode === "append") {
+        const { added, skipped } = splitNewEntries(entries, imported);
+        entries = [...entries, ...(added as ChartData[])];
+        noticeText = m["editor.import_dedup_done"]({
+          source: sourceLabel,
+          added: added.length,
+          skipped,
+        });
+      } else {
+        entries = imported;
+        noticeText = m["editor.import_done"]({ source: sourceLabel });
+      }
+    } else {
+      noticeText = m["editor.import_done"]({ source: sourceLabel });
+    }
     onChange();
-    onNotice({ kind: "ok", text: m["editor.import_done"]({ source: sourceLabel }) });
+    onNotice({ kind: "ok", text: noticeText });
   }
 
   function handleDropAdd(result: BmsDropResult): void {

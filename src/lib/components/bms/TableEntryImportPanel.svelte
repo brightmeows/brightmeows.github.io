@@ -4,6 +4,7 @@
     entryLabel,
     filterEntryIndices,
     setIndices,
+    splitNewEntries,
     shortenHash,
     toggleSelection,
     type EntryImportResult,
@@ -176,27 +177,23 @@
 
   function applySelection(): void {
     if (selected.size === 0 || selectedSource === null) return;
-    const knownHashes = new Set<string>();
-    for (const entry of entries) {
-      for (const hash of entryHashes(entry)) knownHashes.add(hash);
-    }
-    const added: Record<string, unknown>[] = [];
-    let skipped = 0;
     const ordered = [...selected].sort((a, b) => a - b);
+    const picked: Record<string, unknown>[] = [];
     for (const index of ordered) {
       const source = sourceEntries[index];
-      if (source === undefined) continue;
-      const hashes = entryHashes(source);
-      if (hashes.length === 0 || hashes.some((hash) => knownHashes.has(hash))) {
-        skipped += 1;
-        continue;
-      }
-      const copy = { ...source };
-      if (!keepLevel) delete copy.level;
-      for (const hash of hashes) knownHashes.add(hash);
-      added.push(copy);
+      if (source !== undefined) picked.push(source);
     }
-    onapply({ added, skipped, sourceLabel: sourceName === "" ? selectedSource.id : sourceName });
+    const { added, skipped } = splitNewEntries(entries, picked);
+    const prepared = added.map((item) => {
+      const copy = { ...item };
+      if (!keepLevel) delete copy.level;
+      return copy;
+    });
+    onapply({
+      added: prepared,
+      skipped,
+      sourceLabel: sourceName === "" ? selectedSource.id : sourceName,
+    });
     selected = new Set();
   }
 

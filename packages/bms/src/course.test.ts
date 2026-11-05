@@ -4,7 +4,6 @@ import {
   addCourseToGroup,
   addCourseToModel,
   addGroupToModel,
-  buildEntryHashSet,
   courseChartResolvedIn,
   courseHashIssue,
   emptyCourseModel,
@@ -16,6 +15,7 @@ import {
   serializeCourse,
   type EditableCourse,
 } from "./course.ts";
+import { buildEntryHashSet } from "./editor.ts";
 
 const course = (fields: Partial<EditableCourse> = {}): EditableCourse => ({
   name: "",

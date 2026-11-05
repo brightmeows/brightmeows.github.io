@@ -14,6 +14,7 @@
     parseLevelFilterOption,
     removeIndices,
     setIndices,
+    splitNewEntries,
   } from "@brightmeows/bms/editor";
   import type { ChartData } from "@brightmeows/bms/format";
   import { levelSegmentColor } from "@brightmeows/bms/table";
@@ -366,8 +367,17 @@
         return;
       }
     }
-    entries =
-      bulkMode === "append" ? [...entries, ...(parsed as Record<string, unknown>[])] : parsed;
+    if (bulkMode === "append") {
+      const { added, skipped } = splitNewEntries(entries, parsed as Record<string, unknown>[]);
+      entries = [...entries, ...added];
+      bulkText = "";
+      bulkOpen = false;
+      selected = new Set();
+      notice = m["editor.bulk_done"]({ added: added.length, skipped });
+      onChange?.();
+      return;
+    }
+    entries = parsed as Record<string, unknown>[];
     bulkText = "";
     bulkOpen = false;
     selected = new Set();
