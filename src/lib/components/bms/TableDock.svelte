@@ -17,9 +17,11 @@
 
   /**
    * 难度表页底部操作 dock：
-   * - 收起态是模式胶囊（模式图标加状态色点：琥珀=未保存、红/绿=notice、
-   *   浅蓝=待恢复草稿），展开态承载模式切换、保存、另存、放弃、
-   *   notice 提示、草稿横幅与自动保存时刻；
+   * - 常驻右下角：收起态是模式胶囊（图标加状态词与色点：琥珀=未保存、
+   *   红/绿=notice、浅蓝=待恢复草稿，error/warn 额外以彩色短词提示），
+   *   展开态是 340px 玻璃面板（窄屏回退全宽），面板头为同一状态标识，
+   *   下方纵排承载模式切换、保存、另存、放弃、notice、草稿横幅与
+   *   自动保存时刻；
    * - 收展由 controllers/table-dock 的状态机驱动：模式初值（编辑展开、
    *   查看收起）、滚动方向（下滑收起、上滑展开，累积阈值同顶栏）、
    *   距页底强制展开、键盘焦点冻结；busy 与待恢复草稿豁免滚动收起；
@@ -46,6 +48,23 @@
   const NOTICE_OK_TTL_MS = 8000;
 
   let editing = $derived(mode === "edit");
+
+  /** 面板头与收起胶囊共用的模式状态词。 */
+  let stateWord = $derived(
+    editing ? m["editor.dock_state_editing"]() : m["editor.dock_state_viewing"]()
+  );
+
+  /** 收起态与面板头上的 notice 短词（ok 类不提示，8 秒自动清除）。 */
+  let noticeWord = $derived.by(() => {
+    if (model.notice === null) return null;
+    if (model.notice.kind === "error") {
+      return { text: m["editor.dock_notice_error"](), cls: "text-red-300" };
+    }
+    if (model.notice.kind === "warn") {
+      return { text: m["editor.dock_notice_warn"](), cls: "text-amber-300" };
+    }
+    return null;
+  });
 
   // ---- 收展状态：滚动累积无需触发渲染，放普通变量；expansion 单独响应式 ----
   // svelte-ignore state_referenced_locally —— 初值取挂载时的模式；模式变化由下方 effect 重置
@@ -152,78 +171,61 @@
 
 {#if expansion === "expanded"}
   <div
-    class="pointer-events-none fixed inset-x-0 bottom-0 z-999 flex justify-center px-4 pb-4"
+    class="pointer-events-none fixed right-0 bottom-0 z-999 flex justify-end px-4 pb-4 max-sm:left-0 max-sm:justify-center max-sm:px-0"
     style="padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem)"
     in:fly={{ y: 24, opacity: 0, duration: reduceMotion ? 0 : 180, easing: cubicOut }}
     out:fly={{ y: 24, opacity: 0, duration: reduceMotion ? 0 : 140, easing: cubicIn }}
   >
     <div
-      class="pointer-events-auto w-full max-w-3xl rounded-xl bg-glass p-3 px-4 shadow-[var(--glass-lighting),0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur"
+      class="pointer-events-auto w-[340px] max-w-full rounded-xl bg-glass p-3 shadow-[var(--glass-lighting),0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur max-sm:w-full"
       onfocusin={handleFocusIn}
       onfocusout={handleFocusOut}
     >
-      <div class="flex flex-wrap items-center justify-center gap-2">
-        {#if editing}
-          {#if !createMode}
-            <button class={btnBar} type="button" onclick={() => onSetMode("view")}>
-              {m["editor.view"]()}
-            </button>
-          {/if}
-          {#if model.canSave}
-            <button
-              class={btnPrimary}
-              type="button"
-              disabled={model.busy}
-              onclick={() => void model.save()}
+      <div class="flex items-center justify-between gap-2 border-b border-white-15 pb-2">
+        <div class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          {#if editing}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="size-4 shrink-0 text-white-80"
+              aria-hidden="true"
             >
-              {model.saveLabel}
-            </button>
-          {/if}
-          {#if showSaveAsShared}
-            <button
-              class={btnGhostMd}
-              type="button"
-              disabled={model.busy}
-              onclick={() => void model.saveAsSharedNow()}
+              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+            </svg>
+          {:else}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="size-4 shrink-0 text-white-80"
+              aria-hidden="true"
             >
-              {m["editor.save_as_shared"]()}
-            </button>
+              <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
           {/if}
-        {:else}
-          <button
-            class={btnPrimary}
-            type="button"
-            title={editHint}
-            onclick={() => onSetMode("edit")}
-          >
-            {model.dirty ? m["editor.continue_edit"]() : m["editor.enter_table"]()}
-          </button>
-        {/if}
-
-        {#if model.dirty}
-          <span class="text-amber-300">{m["editor.unsaved_badge"]()}</span>
-          {#if !editing && model.canSave}
-            <button
-              class={btnPrimary}
-              type="button"
-              disabled={model.busy}
-              onclick={() => void model.save()}
-            >
-              {model.saveLabel}
-            </button>
+          <span class="text-[0.9rem] text-white-85">{stateWord}</span>
+          {#if model.dirty}
+            <span class="text-[0.8rem] text-amber-300">{m["editor.dock_state_unsaved"]()}</span>
           {/if}
-          <button
-            class={btnGhostMd}
-            type="button"
-            disabled={model.busy}
-            onclick={() => void model.discardEdits()}
-          >
-            {m["editor.discard_unsaved"]()}
-          </button>
-        {/if}
-
+          {#if noticeWord !== null}
+            <span class="text-[0.8rem] {noticeWord.cls}">{noticeWord.text}</span>
+          {/if}
+          {#each dockSignals as signal (signal.title)}
+            <span class="size-2 rounded-full {signal.color}" title={signal.title}></span>
+          {/each}
+        </div>
         <button
-          class="ml-1 p-1 text-white-60 transition-colors duration-150 hover:text-white"
+          class="p-1 text-white-60 transition-colors duration-150 hover:text-white"
           type="button"
           aria-label={m["editor.dock_collapse"]()}
           title={m["editor.dock_collapse"]()}
@@ -243,6 +245,66 @@
             <path d="m6 9 6 6 6-6" />
           </svg>
         </button>
+      </div>
+
+      <div class="mt-3 flex flex-col items-stretch gap-2">
+        {#if editing}
+          {#if !createMode}
+            <button class="{btnBar} w-full" type="button" onclick={() => onSetMode("view")}>
+              {m["editor.view"]()}
+            </button>
+          {/if}
+          {#if model.canSave}
+            <button
+              class="{btnPrimary} w-full"
+              type="button"
+              disabled={model.busy}
+              onclick={() => void model.save()}
+            >
+              {model.saveLabel}
+            </button>
+          {/if}
+          {#if showSaveAsShared}
+            <button
+              class="{btnGhostMd} w-full"
+              type="button"
+              disabled={model.busy}
+              onclick={() => void model.saveAsSharedNow()}
+            >
+              {m["editor.save_as_shared"]()}
+            </button>
+          {/if}
+        {:else}
+          <button
+            class="{btnPrimary} w-full"
+            type="button"
+            title={editHint}
+            onclick={() => onSetMode("edit")}
+          >
+            {model.dirty ? m["editor.continue_edit"]() : m["editor.enter_table"]()}
+          </button>
+        {/if}
+
+        {#if model.dirty}
+          {#if !editing && model.canSave}
+            <button
+              class="{btnPrimary} w-full"
+              type="button"
+              disabled={model.busy}
+              onclick={() => void model.save()}
+            >
+              {model.saveLabel}
+            </button>
+          {/if}
+          <button
+            class="{btnGhostMd} w-full"
+            type="button"
+            disabled={model.busy}
+            onclick={() => void model.discardEdits()}
+          >
+            {m["editor.discard_unsaved"]()}
+          </button>
+        {/if}
       </div>
 
       {#if editing && model.draftStatusText !== ""}
@@ -286,7 +348,7 @@
   </div>
 {:else}
   <button
-    class="fixed left-1/2 z-999 flex -translate-x-1/2 items-center gap-2 rounded-full bg-glass px-4 py-2 shadow-[var(--glass-lighting),0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur"
+    class="fixed right-4 z-999 flex items-center gap-2 rounded-full bg-glass px-3.5 py-2 shadow-[var(--glass-lighting),0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur"
     style="bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem)"
     type="button"
     aria-label={m["editor.dock_expand"]()}
@@ -326,6 +388,15 @@
         <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
         <circle cx="12" cy="12" r="3" />
       </svg>
+    {/if}
+    <span class="text-[0.85rem] whitespace-nowrap text-white-85">{stateWord}</span>
+    {#if model.dirty}
+      <span class="text-[0.8rem] whitespace-nowrap text-amber-300">
+        {m["editor.dock_state_unsaved"]()}
+      </span>
+    {/if}
+    {#if noticeWord !== null}
+      <span class="text-[0.8rem] whitespace-nowrap {noticeWord.cls}">{noticeWord.text}</span>
     {/if}
     {#each dockSignals as signal (signal.title)}
       <span class="size-2 rounded-full {signal.color}" title={signal.title}></span>

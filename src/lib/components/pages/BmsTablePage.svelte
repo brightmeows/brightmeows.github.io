@@ -246,9 +246,9 @@
   <title>{formatTitle(model.pageTitle)}</title>
 </svelte:head>
 
-<!-- mainClass 覆盖默认 pb-8：底部为操作 dock 的展开态留出空间 -->
+<!-- mainClass 覆盖默认 pb-8：底部为操作 dock 的右下角面板留出空间 -->
 <PageShell
-  mainClass="m-0 mx-auto box-border w-full max-w-350 px-8 pt-24 pb-28"
+  mainClass="m-0 mx-auto box-border w-full max-w-350 px-8 pt-24 pb-40"
   {tocItems}
   panes={[
     titlePane,
