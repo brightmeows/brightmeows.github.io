@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./bms-ir": {
+      "types": "./src/bms-ir.ts",
+      "default": "./src/bms-ir.ts"
+    },
     "./constants": {
       "types": "./src/constants.ts",
       "default": "./src/constants.ts"
@@ -23,6 +27,10 @@
     "./format": {
       "types": "./src/format.ts",
       "default": "./src/format.ts"
+    },
+    "./hash-list": {
+      "types": "./src/hash-list.ts",
+      "default": "./src/hash-list.ts"
     },
     "./header": {
       "types": "./src/header.ts",

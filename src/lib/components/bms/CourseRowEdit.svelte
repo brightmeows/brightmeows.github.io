@@ -3,12 +3,16 @@
   import {
     COURSE_CONSTRAINTS,
     TROPHY_NAMES,
-    buildEntryHashSet,
     courseChartResolvedIn,
     courseHashIssue,
     type EditableCourse,
   } from "@brightmeows/bms/course";
-  import { entryLabel, filterEntryIndices, moveItem } from "@brightmeows/bms/editor";
+  import {
+    buildEntryHashSet,
+    entryLabel,
+    filterEntryIndices,
+    moveItem,
+  } from "@brightmeows/bms/editor";
 
   import CourseRow from "./CourseRow.svelte";
 

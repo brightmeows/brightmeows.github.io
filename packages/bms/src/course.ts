@@ -231,18 +231,6 @@ export function courseChartHash(item: CourseChartItem): string {
   return (item.md5.trim() || item.sha256.trim()).toLowerCase();
 }
 
-/** 构建表内哈希集合（小写），供解析状态与标签查找共用。 */
-export function buildEntryHashSet(entries: readonly Record<string, unknown>[]): Set<string> {
-  const set = new Set<string>();
-  for (const entry of entries) {
-    for (const key of ["md5", "sha256"] as const) {
-      const value = entry[key];
-      if (typeof value === "string" && value.trim() !== "") set.add(value.trim().toLowerCase());
-    }
-  }
-  return set;
-}
-
 /** 段位谱面是否能在当前表内解析到。 */
 export function courseChartResolvedIn(
   hashSet: ReadonlySet<string>,

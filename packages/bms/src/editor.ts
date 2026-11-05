@@ -206,6 +206,42 @@ export function entryHashes(entry: Record<string, unknown>): string[] {
   return result;
 }
 
+/** 构建条目哈希集合（小写），供判重与段位解析状态共用。 */
+export function buildEntryHashSet(entries: readonly Record<string, unknown>[]): Set<string> {
+  const set = new Set<string>();
+  for (const entry of entries) {
+    for (const key of ["md5", "sha256"] as const) {
+      const value = entry[key];
+      if (typeof value === "string" && value.trim() !== "") set.add(value.trim().toLowerCase());
+    }
+  }
+  return set;
+}
+
+/**
+ * 从候选条目中挑出当前表没有的：任一哈希（md5/sha256，小写）命中即视为
+ * 重复并跳过，批内互重同样去重，无哈希条目跳过。粘贴/上传 append、跨表
+ * 整表补全、条目批量粘贴共用“跳过重复并报告”语义。
+ */
+export function splitNewEntries(
+  current: readonly Record<string, unknown>[],
+  incoming: readonly Record<string, unknown>[]
+): { added: Record<string, unknown>[]; skipped: number } {
+  const known = buildEntryHashSet(current);
+  const added: Record<string, unknown>[] = [];
+  let skipped = 0;
+  for (const item of incoming) {
+    const hashes = entryHashes(item);
+    if (hashes.length === 0 || hashes.some((hash) => known.has(hash))) {
+      skipped += 1;
+      continue;
+    }
+    for (const hash of hashes) known.add(hash);
+    added.push(item);
+  }
+  return { added, skipped };
+}
+
 /** 哈希展示截断：超过 16 位截断加省略号（两条 shortHash 的哈希选择链刻意保留在组件侧）。 */
 export function shortenHash(hash: string): string {
   return hash.length > 16 ? `${hash.slice(0, 16)}…` : hash;

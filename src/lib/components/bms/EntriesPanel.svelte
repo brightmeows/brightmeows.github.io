@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { extractBmsIrSongMd5 } from "@brightmeows/bms/bms-ir";
   import {
     assignHintLevels,
     assignLevel,
@@ -14,6 +15,8 @@
     parseLevelFilterOption,
     removeIndices,
     setIndices,
+    shortenHash,
+    splitNewEntries,
   } from "@brightmeows/bms/editor";
   import type { ChartData } from "@brightmeows/bms/format";
   import { levelSegmentColor } from "@brightmeows/bms/table";
@@ -87,6 +90,8 @@
   let selected = $state<Set<number>>(new Set());
   let editingIndex = $state<number | null>(null);
   let adding = $state(false);
+  let addUrl = $state("");
+  let addPrefill = $state<Record<string, unknown> | undefined>(undefined);
   let editKey = $state(0);
   let batchChoice = $state<string>(BATCH_NONE);
   let batchOpen = $state(false);
@@ -244,6 +249,8 @@
     if (editing) return;
     editingIndex = null;
     adding = false;
+    addUrl = "";
+    addPrefill = undefined;
     batchOpen = false;
     bulkOpen = false;
     selected = new Set();
@@ -291,10 +298,32 @@
     editKey += 1;
   }
 
-  function startAdd(): void {
+  function startAdd(prefill?: Record<string, unknown>): void {
     editingIndex = null;
+    addPrefill = prefill;
     adding = true;
     editKey += 1;
+  }
+
+  /** 从 bms-ir.org 谱面页 URL 提取 md5 预填新条目；哈希撞车时提示已存在。 */
+  function addFromUrl(): void {
+    const raw = addUrl.trim();
+    addUrl = "";
+    if (raw === "") return;
+    const parsed = extractBmsIrSongMd5(raw);
+    if (!parsed.ok) {
+      notice = m["editor.entry_bmsir_invalid"]();
+      return;
+    }
+    const duplicate = duplicateEntryLabel(entries, { md5: parsed.md5 }, null);
+    if (duplicate !== null) {
+      notice = m["editor.entry_duplicate_notice"]({
+        title: duplicate || m["editor.entry_unnamed"](),
+      });
+      return;
+    }
+    startAdd({ md5: parsed.md5 });
+    notice = m["editor.entry_bmsir_prefilled"]({ hash: shortenHash(parsed.md5) });
   }
 
   function cancelDetail(): void {
@@ -366,8 +395,17 @@
         return;
       }
     }
-    entries =
-      bulkMode === "append" ? [...entries, ...(parsed as Record<string, unknown>[])] : parsed;
+    if (bulkMode === "append") {
+      const { added, skipped } = splitNewEntries(entries, parsed as Record<string, unknown>[]);
+      entries = [...entries, ...added];
+      bulkText = "";
+      bulkOpen = false;
+      selected = new Set();
+      notice = m["editor.bulk_done"]({ added: added.length, skipped });
+      onChange?.();
+      return;
+    }
+    entries = parsed as Record<string, unknown>[];
     bulkText = "";
     bulkOpen = false;
     selected = new Set();
@@ -412,8 +450,19 @@
       {/if}
       {#if editing}
         <div class="ml-auto flex flex-wrap gap-2">
-          <button class={btnGhost} type="button" {disabled} onclick={startAdd}>
+          <button class={btnGhost} type="button" {disabled} onclick={() => startAdd()}>
             {m["editor.entries_add"]()}
+          </button>
+          <input
+            class="{inputEditorMono} max-w-72"
+            type="text"
+            bind:value={addUrl}
+            placeholder={m["editor.entry_bmsir_url_placeholder"]()}
+            {disabled}
+            onchange={addFromUrl}
+          />
+          <button class={btnGhost} type="button" {disabled} onclick={addFromUrl}>
+            {m["editor.entry_bmsir_add"]()}
           </button>
           <button
             class={btnGhost}
@@ -543,6 +592,7 @@
         <div>
           <EntryDetailForm
             entry={null}
+            prefill={addPrefill}
             {levels}
             {disabled}
             oncommit={commitDetail}

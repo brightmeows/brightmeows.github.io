@@ -8,6 +8,7 @@ import {
   assignHintLevels,
   assignLevel,
   buildCombinedPackage,
+  buildEntryHashSet,
   commitEntryEdit,
   coreFieldTexts,
   countUnassigned,
@@ -29,6 +30,7 @@ import {
   setIndices,
   shortenHash,
   shouldWarnOverwrite,
+  splitNewEntries,
   toggleSelection,
   valueToText,
 } from "./editor.ts";
@@ -401,5 +403,49 @@ describe("selection transitions", () => {
     expect(shortenHash("0123456789abcdef0123")).toBe("0123456789abcdef…");
     expect(shortenHash("0123456789abcdef")).toBe("0123456789abcdef");
     expect(shortenHash("")).toBe("");
+  });
+});
+
+describe("buildEntryHashSet", () => {
+  it("collects trimmed lowercase hashes and skips blanks", () => {
+    const set = buildEntryHashSet([
+      { md5: " ABC " },
+      { sha256: "def" },
+      { md5: "   " },
+      { title: "none" },
+    ]);
+    expect(set.has("abc")).toBe(true);
+    expect(set.has("def")).toBe(true);
+    expect(set.size).toBe(2);
+  });
+});
+
+describe("splitNewEntries", () => {
+  it("keeps only entries whose hashes are absent from the current table", () => {
+    const current = [{ md5: "a".repeat(32) }, { sha256: "b".repeat(64) }];
+    const incoming = [
+      { md5: "a".repeat(32), title: "dup-md5" },
+      { sha256: "b".repeat(64), title: "dup-sha256" },
+      { md5: "c".repeat(32), sha256: "d".repeat(64), title: "new" },
+    ];
+    const { added, skipped } = splitNewEntries(current, incoming);
+    expect(added).toEqual([{ md5: "c".repeat(32), sha256: "d".repeat(64), title: "new" }]);
+    expect(skipped).toBe(2);
+  });
+
+  it("dedupes within the incoming batch and skips hashless entries", () => {
+    const incoming = [{ md5: "e".repeat(32) }, { md5: "e".repeat(32) }, { title: "no-hash" }];
+    const { added, skipped } = splitNewEntries([], incoming);
+    expect(added).toEqual([{ md5: "e".repeat(32) }]);
+    expect(skipped).toBe(2);
+  });
+
+  it("matches hashes case-insensitively without mutating inputs", () => {
+    const current = [{ md5: "F".repeat(32) }];
+    const incoming = [{ md5: "f".repeat(32) }];
+    const { added, skipped } = splitNewEntries(current, incoming);
+    expect(added).toEqual([]);
+    expect(skipped).toBe(1);
+    expect(current[0]?.md5).toBe("F".repeat(32));
   });
 });
