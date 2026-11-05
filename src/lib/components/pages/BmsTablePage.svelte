@@ -116,6 +116,31 @@
     window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
   }
 
+  // ---- 键盘快捷键：Ctrl/Cmd+S 保存，Ctrl/Cmd+E 切换查看/编辑 ----
+  function isEditableTarget(target: EventTarget | null): boolean {
+    return (
+      target instanceof HTMLElement &&
+      (target.isContentEditable ||
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT")
+    );
+  }
+
+  function handleKeydown(event: KeyboardEvent): void {
+    if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return;
+    if (event.key === "s" || event.key === "S") {
+      if (!model.canSave || model.busy) return;
+      event.preventDefault();
+      void model.save();
+    } else if (event.key === "e" || event.key === "E") {
+      // 文本输入里 Ctrl/Cmd+E 是编辑器光标习惯，不抢
+      if (isEditableTarget(event.target)) return;
+      event.preventDefault();
+      handleDockSetMode(isEdit ? "view" : "edit");
+    }
+  }
+
   /**
    * 全页拖拽导入的追加处理：与导入折叠段拖拽区的追加逻辑一致
    * （追加条目、合并文件等级建议、标记未保存并给出结果通知）。
@@ -159,9 +184,13 @@
   onMount(() => {
     syncModeFromLocation();
     window.addEventListener("popstate", syncModeFromLocation);
+    window.addEventListener("keydown", handleKeydown);
     importUrl = `${window.location.origin}${window.location.pathname}`;
     void model.loadHeader();
-    return () => window.removeEventListener("popstate", syncModeFromLocation);
+    return () => {
+      window.removeEventListener("popstate", syncModeFromLocation);
+      window.removeEventListener("keydown", handleKeydown);
+    };
   });
 
   type CardId = "overview" | "course-list" | "level-ref" | "charts-list";
