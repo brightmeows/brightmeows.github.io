@@ -24,7 +24,8 @@ pre-commit run --all-files    # 手动触发全部 hooks
 
 Hooks：
 
-- `pnpm format:check`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`、`pnpm check:bms`、`pnpm check:worker`、`pnpm check:config`、`pnpm check:i18n`、`pnpm check:jsdoc`、`pnpm check:quotes`、`pnpm test`；
+- `pnpm format:check`、`pnpm check:md`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`、`pnpm check:bms`、`pnpm check:worker`、`pnpm check:config`；
+- `pnpm check:i18n`、`pnpm check:jsdoc`、`pnpm check:quotes`、`pnpm test`；
 - no-confusable-unicode、site-config、i18n-coverage、jsdoc-coverage、conventional-commit（commit-msg stage 校验提交信息）。
 
 ### 手动命令
@@ -192,6 +193,7 @@ Hooks：
 
 - **knip 与 rumdl** — 分别扫描未使用文件/依赖/导出与 markdown lint。
   - 评估结论：knip 需为刻意保留项配置豁免、rumdl 对当前 4 个源 md 收益有限，暂不引入。
+  - 2026-11 复审：代理文档与站内路由 md 的结构规则与行宽已由 markdownlint-cli 机械守住（`pnpm check:md`，content 排版自由豁免），rumdl 本身继续挂起，触发条件不变。
   - 2026-09 复跑过一次 knip：5 个“未使用文件”全是 SvelteKit 特殊文件与动态 import 的误报，9 个“未使用 devDependencies”是 SvelteX 的动态导入依赖（见上文），唯一真实发现（barrel 冗余导出）已通过移除 barrel 解决——维持不引入的结论。
   - 触发条件：代码库规模或 md 数量显著增长。
 

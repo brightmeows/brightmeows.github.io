@@ -1,0 +1,12 @@
+# markdownlint 配置：default = true 全规则，仅放宽 CJK 混排必需项。
+# 范围与分流见 package.json 的 check:md：代理文档与站内路由 md 用本配置；
+# content/ 文章是渲染给人看的（CommonMark 软换行会在 CJK 行缝插入可见空格，
+# 折行会劣化排版），MD013/MD025/MD033 在该目录由 check:md 显式关闭。
+
+default = true
+
+[MD013]
+line_length = 200 # CJK 混排与 URL 引用需要更宽的行
+code_blocks = false # 代码块内的长行不报错
+tables = false # 表格内容不折行
+heading_line_length = 80 # 标题保持简短
