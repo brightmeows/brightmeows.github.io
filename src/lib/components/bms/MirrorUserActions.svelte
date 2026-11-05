@@ -160,7 +160,7 @@
   <div class="flex flex-col gap-3">
     <div class="text-[0.9rem] text-white-60">
       {m["shared.cross_before"]()}
-      <a class="link-accent" href="/bms/table/shared/">{m["nav.shared"]()}</a>
+      <a class="link-accent" href="/bms/table">{m["nav.table"]()}</a>
       {m["shared.cross_after"]()}
     </div>
     {#if user === null}

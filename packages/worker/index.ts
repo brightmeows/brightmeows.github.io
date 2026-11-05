@@ -44,6 +44,7 @@ import {
 } from "./i18n.ts";
 import { handleInternal } from "./internal.ts";
 import { legacySelfTableRedirect } from "./legacy-self-tables.ts";
+import { legacySharedListRedirect } from "./legacy-shared-list.ts";
 import { MANIFEST_MAX_AGE, loadMergedManifest } from "./manifest.ts";
 import { ensureSchemaOnce } from "./schema.ts";
 import { getSharedAlias, getSharedRow, listSharedRows, sharedRowToItem } from "./store/shared.ts";
@@ -312,8 +313,10 @@ export default {
       // `new/` 是预渲染页，不在此分支：让它落入下方的静态树分发（带语言映射）
       return handleSharedPage(request, env, url, sharedView[1], locale);
     }
-    const sharedSlash = canonicalSlashRedirect(SHARED_ROOT, path, url.origin);
-    if (sharedSlash !== null) return sharedSlash;
+    // 共享表列表页已并入 /bms/table（见 legacy-shared-list.ts）：列表地址
+    // 301（含无尾斜杠形态），new/、[id]/、tables.json 已在上面分流
+    const legacyList = legacySharedListRedirect(path, url.origin, url.search);
+    if (legacyList !== null) return legacyList;
 
     // 自托管个人表迁入共享表的遗留地址 301（见 legacy-self-tables.ts）；
     // 旧 JSON 子路径不命中，落静态层 404
