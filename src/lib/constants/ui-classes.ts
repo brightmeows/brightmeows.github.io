@@ -49,6 +49,15 @@ export const btnIconPlain =
 export const btnIconDanger =
   "flex size-7 cursor-pointer items-center justify-center rounded-md text-red-200/80 transition-colors duration-200 hover:bg-red-400/20 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-50";
 
+// ---- 顶栏(圆形图标按钮与弹层菜单项,2026-11 自 TopBar 本地常量收敛) ----
+
+/** 顶栏圆形图标按钮(右胶囊的目录、回到顶部、主题、语言、账户)。 */
+export const topbarIcon =
+  "flex size-9 cursor-pointer items-center justify-center rounded-full text-white-60 transition-colors hover:bg-white-10 hover:text-white";
+/** 顶栏弹层菜单项(主题/语言/账户下拉与窄屏菜单的行)。 */
+export const topbarMenuItem =
+  "block rounded-xl px-3 py-2 text-left text-sm text-white-90 no-underline transition-colors duration-150 cursor-pointer hover:bg-white-10";
+
 // ---- 渐变按钮（2026-10 自 layout.css 的 .gradient-btn 全局类收敛，形态为
 // 面板行的标准尺寸；渐变色板 --color-*-from/to 单源在 layout.css 的 @theme） ----
 

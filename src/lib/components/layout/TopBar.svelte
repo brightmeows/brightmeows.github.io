@@ -3,6 +3,8 @@
   import { cubicOut } from "svelte/easing";
   import { fade, fly } from "svelte/transition";
 
+  import LanguageMenu from "./LanguageMenu.svelte";
+  import ThemeMenu from "./ThemeMenu.svelte";
   import TocPanel from "./TocPanel.svelte";
   import { consumeNavHoverSuppression, suppressNextNavHover } from "./topbar-nav-hover.js";
 
@@ -11,17 +13,15 @@
   import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
   import { popoverLayer } from "#lib/components/ui/popover-layer.js";
   import { topLevelNav, type NavDropdown, type NavItem } from "#lib/constants/nav.js";
+  import { topbarIcon, topbarMenuItem } from "#lib/constants/ui-classes.js";
   import { auth } from "#lib/data/store/auth-store.svelte.js";
-  import { theme } from "#lib/data/store/theme-store.svelte.js";
   import { m } from "#lib/paraglide/messages.js";
-  import { getLocale, setLocale } from "#lib/paraglide/runtime.js";
-  import type { TocItem } from "#lib/types/ui.js";
+  import type { TocItem, TopbarPanel } from "#lib/types/ui.js";
   import {
     computeAnchoredPanelPosition,
     type PanelAlign,
     type PanelPosition,
   } from "#lib/utils/ui/panel-position.js";
-  import type { ThemePreference } from "#lib/utils/ui/theme.js";
   import { hasScrolledPastViewport, isNearDocumentBottom } from "#lib/utils/ui/topbar-scroll.js";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
@@ -352,11 +352,27 @@
 
   // —— 数据 ——
 
-  const themeOptions: { value: ThemePreference; label: () => string }[] = [
-    { value: "light", label: () => m["topbar.theme_light"]() },
-    { value: "dark", label: () => m["topbar.theme_dark"]() },
-    { value: "system", label: () => m["topbar.theme_system"]() },
-  ];
+  // 右胶囊叶子菜单(主题/语言)的机制切片:面板 id 预绑定后下发给组件,
+  // 交互契约(悬停意图、钉住、定位、动画)仍由本文件统一承载。
+  function menuPanel(id: string): TopbarPanel {
+    return {
+      isOpen: () => panels.isOpen(id),
+      hover: triggerHoverHandlers(id, "right"),
+      onToggle: (event: Event) => togglePanel(id, "right", event),
+      positionStyle: () => panelPositionStyle(id),
+      panelHover: panelHoverHandlers(),
+      get in() {
+        return panelIn;
+      },
+      get out() {
+        return panelOut;
+      },
+      close: () => closePanels(),
+    };
+  }
+
+  const themePanel = menuPanel("theme");
+  const languagePanel = menuPanel("language");
 
   // 登录发起地址：同源 API，return_to 用站内路径回到发起页。
   let loginHref = $state("/api/auth/login");
@@ -395,28 +411,15 @@
 
   const linkBase =
     "rounded-lg px-3 py-2 text-sm no-underline transition-colors duration-150 cursor-pointer";
-  const menuItemClass =
-    "block rounded-xl px-3 py-2 text-left text-sm text-white-90 no-underline transition-colors duration-150 cursor-pointer hover:bg-white-10";
-  const iconButtonClass =
-    "flex size-9 cursor-pointer items-center justify-center rounded-full text-white-60 transition-colors hover:bg-white-10 hover:text-white";
   const loginButtonClass =
     "flex size-9 cursor-pointer items-center justify-center rounded-full bg-white-15 text-white transition-colors hover:bg-white-25";
   const pillClass = "pointer-events-auto rounded-2xl p-1.5";
-
-  // 语言菜单：三语自称固定（不随界面语言变化），顺序 ja → zh-cn → en。
-  // 文案仍走 messages，保持用户可见文本单一来源；label 延迟求值，
-  // 模块顶层不触碰 m（与 nav.ts 同一约定）。
-  const languages: { code: "en" | "zh-cn" | "ja"; label: () => string }[] = [
-    { code: "ja", label: () => m["topbar.lang_ja"]() },
-    { code: "zh-cn", label: () => m["topbar.lang_zh"]() },
-    { code: "en", label: () => m["topbar.lang_en"]() },
-  ];
 </script>
 
 <!-- 下拉子页条目，宽屏各导航下拉共用 -->
 {#snippet dropdownEntries(entries: NavItem[])}
   {#each entries as entry (entry.href)}
-    <a href={entry.href} class={menuItemClass} onclick={() => closePanels()}>{entry.label()}</a>
+    <a href={entry.href} class={topbarMenuItem} onclick={() => closePanels()}>{entry.label()}</a>
   {/each}
 {/snippet}
 
@@ -664,7 +667,7 @@
                 <div class="mx-2 my-1 border-t border-white-15"></div>
                 {#each topLevelNav as item, i (i)}
                   {#if !("children" in item)}
-                    <a href={item.href} class={menuItemClass} onclick={() => closePanels()}>
+                    <a href={item.href} class={topbarMenuItem} onclick={() => closePanels()}>
                       {item.label()}
                     </a>
                   {/if}
@@ -696,7 +699,7 @@
           <div class="relative">
             <button
               type="button"
-              class={iconButtonClass}
+              class={topbarIcon}
               title={m["toc.title"]()}
               aria-label={m["toc.title"]()}
               aria-expanded={panels.isOpen("toc")}
@@ -735,7 +738,7 @@
         {#if showBackToTop}
           <button
             type="button"
-            class={iconButtonClass}
+            class={topbarIcon}
             title={m["common.back_to_top"]()}
             aria-label={m["common.back_to_top"]()}
             onclick={scrollToTop}
@@ -758,147 +761,9 @@
           <div class="mx-1 h-5 w-px bg-white-15" aria-hidden="true"></div>
         {/if}
 
-        <div class="relative">
-          <button
-            type="button"
-            class={iconButtonClass}
-            title={m["topbar.theme"]()}
-            aria-label={m["topbar.theme"]()}
-            aria-expanded={panels.isOpen("theme")}
-            {...triggerHoverHandlers("theme", "right")}
-            onclick={(event) => togglePanel("theme", "right", event)}
-          >
-            {#if theme.preference === "light"}
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                class="size-5"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                aria-hidden="true"
-              >
-                <circle cx="12" cy="12" r="4" />
-                <path
-                  d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"
-                />
-              </svg>
-            {:else if theme.preference === "dark"}
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                class="size-5"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
-              </svg>
-            {:else}
-              <!-- 跟随系统：左半填充的半圆，与太阳/月亮同为圆形图标语言 -->
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                class="size-5"
-                fill="none"
-                aria-hidden="true"
-              >
-                <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2" />
-                <path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor" />
-              </svg>
-            {/if}
-          </button>
+        <ThemeMenu panel={themePanel} />
 
-          {#if panels.isOpen("theme")}
-            <div
-              use:popoverLayer
-              role="presentation"
-              class="fixed w-40"
-              style={panelPositionStyle("theme")}
-              {...panelHoverHandlers()}
-              in:fly={panelIn}
-              out:fly={panelOut}
-            >
-              <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
-                {#each themeOptions as option (option.value)}
-                  {@const active = theme.preference === option.value}
-                  <button
-                    type="button"
-                    class="{menuItemClass} flex w-full items-center justify-between {active
-                      ? 'font-semibold text-white'
-                      : ''}"
-                    aria-current={active ? "true" : undefined}
-                    onclick={() => {
-                      theme.setPreference(option.value);
-                      closePanels();
-                    }}
-                  >
-                    {option.label()}
-                  </button>
-                {/each}
-              </GlassPanel>
-            </div>
-          {/if}
-        </div>
-
-        <div class="relative">
-          <button
-            type="button"
-            class={iconButtonClass}
-            title={m["topbar.language"]()}
-            aria-label={m["topbar.language"]()}
-            aria-expanded={panels.isOpen("language")}
-            {...triggerHoverHandlers("language", "right")}
-            onclick={(event) => togglePanel("language", "right", event)}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              class="size-5"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              aria-hidden="true"
-            >
-              <circle cx="12" cy="12" r="9" />
-              <path
-                d="M3 12h18M12 3c2.5 2.6 3.9 5.7 3.9 9s-1.4 6.4-3.9 9c-2.5-2.6-3.9-5.7-3.9-9s1.4-6.4 3.9-9z"
-              />
-            </svg>
-          </button>
-
-          {#if panels.isOpen("language")}
-            <div
-              use:popoverLayer
-              role="presentation"
-              class="fixed w-40"
-              style={panelPositionStyle("language")}
-              {...panelHoverHandlers()}
-              in:fly={panelIn}
-              out:fly={panelOut}
-            >
-              <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
-                {#each languages as language (language.code)}
-                  {@const active = getLocale() === language.code}
-                  <button
-                    type="button"
-                    class="{menuItemClass} flex w-full items-center justify-between {active
-                      ? 'font-semibold text-white'
-                      : ''}"
-                    lang={language.code}
-                    aria-current={active ? "true" : undefined}
-                    onclick={() => {
-                      if (!active) setLocale(language.code);
-                      closePanels();
-                    }}
-                  >
-                    {language.label()}
-                  </button>
-                {/each}
-              </GlassPanel>
-            </div>
-          {/if}
-        </div>
+        <LanguageMenu panel={languagePanel} />
 
         <div class="relative">
           {#if auth.status === "ready" && auth.user === null}
@@ -914,7 +779,7 @@
             {@const user = auth.user}
             <button
               type="button"
-              class="{iconButtonClass} border-2 border-transparent hover:border-white-40"
+              class="{topbarIcon} border-2 border-transparent hover:border-white-40"
               aria-label={m["topbar.account_menu"]()}
               title={user.login}
               aria-expanded={panels.isOpen("user")}
@@ -957,7 +822,7 @@
                   {#if user.role === "admin"}
                     <a
                       href={resolve("/bms/table/mirror#mirror-admin")}
-                      class={menuItemClass}
+                      class={topbarMenuItem}
                       onclick={() => closePanels()}
                     >
                       {m["topbar.admin_panel"]()}
@@ -965,7 +830,7 @@
                   {/if}
                   <button
                     type="button"
-                    class="{menuItemClass} w-full"
+                    class="{topbarMenuItem} w-full"
                     onclick={() => void doLogout()}
                   >
                     {m["topbar.logout"]()}
