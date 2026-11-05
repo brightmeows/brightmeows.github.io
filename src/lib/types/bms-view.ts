@@ -37,6 +37,22 @@ export interface LoadProgressEvent {
 
 export type ProgressCallback = (event: LoadProgressEvent) => void;
 
+/** 表加载状态 — discriminated union，每个变体仅携带该阶段相关字段 */
+export type TableLoadState =
+  | { status: "waiting"; tableId: string }
+  | { status: "loading-header"; tableId: string; name: string }
+  | {
+      status: "loading-data";
+      tableId: string;
+      name: string;
+      progress: number;
+      bytesLoaded: number;
+      bytesTotal: number;
+    }
+  | { status: "parsing"; tableId: string; name: string }
+  | { status: "done"; tableId: string; name: string }
+  | { status: "error"; tableId: string; name: string; errorMessage: string };
+
 /** 元数据覆盖的可编辑字段（留空表示不覆盖该项）。 */
 export interface MirrorMetaFields {
   name?: string | undefined;

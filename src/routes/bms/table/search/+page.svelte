@@ -7,7 +7,7 @@
   import EmptyState from "#lib/components/ui/EmptyState.svelte";
   import { btnSearchSubmit, inputSearchLg } from "#lib/constants/ui-classes.js";
   import { createEpochGuard, runTableLoad, waitingState } from "#lib/controllers/table-load.js";
-  import type { CandidateEntry, TableLoadState } from "#lib/data/api/bms-search.js";
+  import type { CandidateEntry } from "#lib/data/api/bms-search.js";
   import {
     detectQueryType,
     loadTableHeader,
@@ -18,6 +18,7 @@
   import { searchConverters } from "#lib/data/store/search-converters.svelte.js";
   import { SearchIndexClient } from "#lib/data/store/search-index-client.svelte.js";
   import { m } from "#lib/paraglide/messages.js";
+  import type { TableLoadState } from "#lib/types/bms-view.js";
   import { buildSearchNeedles } from "#lib/utils/mirror-tables.js";
 
   // 搜索索引 Worker：创建、索引加载状态与消息协议封装在共享客户端里

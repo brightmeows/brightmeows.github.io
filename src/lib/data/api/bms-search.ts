@@ -63,22 +63,6 @@ export type WorkerMessage = WorkerIndexProgress | WorkerReady | WorkerSearchResu
 /** 查询类型 */
 export type QueryType = "md5" | "sha256" | "text";
 
-/** 表加载状态 — discriminated union，每个变体仅携带该阶段相关字段 */
-export type TableLoadState =
-  | { status: "waiting"; tableId: string }
-  | { status: "loading-header"; tableId: string; name: string }
-  | {
-      status: "loading-data";
-      tableId: string;
-      name: string;
-      progress: number;
-      bytesLoaded: number;
-      bytesTotal: number;
-    }
-  | { status: "parsing"; tableId: string; name: string }
-  | { status: "done"; tableId: string; name: string }
-  | { status: "error"; tableId: string; name: string; errorMessage: string };
-
 /** 智能检测查询类型 */
 export function detectQueryType(query: string): QueryType {
   const trimmed = query.trim().toLowerCase();
