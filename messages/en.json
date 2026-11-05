@@ -178,6 +178,8 @@
   "content.category.blog": "Blog",
   "content.category.notes": "Notes",
   "content.category.reading": "Reading",
+  "content.reading.chapter_count": "{count} translated chapters",
+  "content.reading.compendium_desc": "Chinese translation of the open textbook Maths, CS & AI Compendium by Henry Ndubuaku, with a reading guide and study paths.",
   "content.no_posts": "No posts yet",
   "content.no_preview": "No preview",
   "course.course_count": "{count} courses",

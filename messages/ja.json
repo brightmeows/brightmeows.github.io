@@ -178,6 +178,8 @@
   "content.category.blog": "ブログ",
   "content.category.notes": "雑記",
   "content.category.reading": "読書",
+  "content.reading.chapter_count": "{count} 翻訳章",
+  "content.reading.compendium_desc": "Henry Ndubuaku のオープン教科書『Maths, CS & AI Compendium』の中国語翻訳。読書ガイドと学習パス付き。",
   "content.no_posts": "記事はまだありません",
   "content.no_preview": "プレビューなし",
   "course.course_count": "{count} コース",

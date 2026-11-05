@@ -178,6 +178,8 @@
   "content.category.blog": "博客",
   "content.category.notes": "杂记",
   "content.category.reading": "阅读",
+  "content.reading.chapter_count": "{count} 篇译文",
+  "content.reading.compendium_desc": "Henry Ndubuaku 开源教材《Maths, CS & AI Compendium》的全书中文翻译，含导读与学习路线。",
   "content.no_posts": "暂无文章",
   "content.no_preview": "暂无预览",
   "course.course_count": "{count} 门课程",
