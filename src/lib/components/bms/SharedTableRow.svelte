@@ -3,6 +3,8 @@
 
   import { btnIconDanger, btnIconPlain } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
+  import { getLocale } from "#lib/paraglide/runtime.js";
+  import { formatRelativeTime } from "#lib/utils/infra/date.js";
 
   interface Props {
     item: SharedTableItem;
@@ -24,9 +26,7 @@
   const editLabel = $derived(m["shared.edit_aria"]({ name: label }));
 
   function formatUpdatedAt(value: string): string {
-    const at = Date.parse(value);
-    if (!Number.isFinite(at)) return value;
-    return new Date(at).toLocaleString();
+    return formatRelativeTime(value, getLocale());
   }
 </script>
 
@@ -42,7 +42,7 @@
     {m["shared.entries_count"]({ count: item.entries })}
   </td>
   <td class="table-td-glass wrap-break-word whitespace-nowrap text-white-60">
-    {formatUpdatedAt(item.updated_at)}
+    <span title={item.updated_at}>{formatUpdatedAt(item.updated_at)}</span>
   </td>
   {#if canEdit || canDelete}
     <td class="table-td-glass px-2">

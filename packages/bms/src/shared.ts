@@ -71,6 +71,50 @@ export function filterMineOnly(
   return groups.filter((group) => group.isSelf);
 }
 
+/** 列表排序键：default 保持清单顺序（自己置顶+最新更新），其余按所选键。 */
+export type SharedSortKey = "default" | "updated" | "entries" | "name";
+
+/** 名称比较器：数字感知、大小写不敏感（运行时 locale，客户端排序使用）。 */
+const SHARED_NAME_COLLATOR = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
+
+function compareItemByKey(a: SharedTableItem, b: SharedTableItem, key: SharedSortKey): number {
+  if (key === "updated") {
+    // updated_at 是 ISO 字符串，字典序即时间序
+    return a.updated_at < b.updated_at ? 1 : a.updated_at > b.updated_at ? -1 : 0;
+  }
+  if (key === "entries") return b.entries - a.entries;
+  return SHARED_NAME_COLLATOR.compare(a.name === "" ? a.id : a.name, b.name === "" ? b.id : b.name);
+}
+
+/**
+ * 双层排序：作者组间按组内条目聚合值比较，组内行按所选键比较；
+ * 自己置顶优先于任何排序键。default 原样返回（分组时已按清单序）。
+ * updated/entries 为降序，name 为升序。
+ */
+export function sortSharedGroups(
+  groups: SharedAuthorGroup[],
+  key: SharedSortKey
+): SharedAuthorGroup[] {
+  if (key === "default") return groups;
+  const sorted = groups.map((group) => ({
+    ...group,
+    items: [...group.items].sort((a, b) => compareItemByKey(a, b, key)),
+  }));
+  sorted.sort((a, b) => {
+    if (a.isSelf !== b.isSelf) return a.isSelf ? -1 : 1;
+    if (key === "name") return SHARED_NAME_COLLATOR.compare(a.author, b.author);
+    if (key === "entries") {
+      const aTotal = a.items.reduce((sum, item) => sum + item.entries, 0);
+      const bTotal = b.items.reduce((sum, item) => sum + item.entries, 0);
+      return bTotal - aTotal;
+    }
+    const aLatest = a.items[0]?.updated_at ?? "";
+    const bLatest = b.items[0]?.updated_at ?? "";
+    return aLatest < bLatest ? 1 : aLatest > bLatest ? -1 : 0;
+  });
+  return sorted;
+}
+
 /** level_order 编辑框：数组 → 每行一项的文本。 */
 export function levelOrderToText(value: unknown): string {
   if (!Array.isArray(value)) return "";
