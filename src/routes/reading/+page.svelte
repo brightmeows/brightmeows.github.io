@@ -17,7 +17,7 @@
 {#snippet contentPane()}
   <div class="flex flex-col gap-4">
     {#each data.books as book (book.id)}
-      <GlassCard href={book.href} hoverLift>
+      <GlassCard href={book.href}>
         <div class="mb-1 flex flex-wrap items-baseline justify-between gap-3">
           <div class="accent-title">{book.title}</div>
           <div class="text-[0.85rem] text-white-60">

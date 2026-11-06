@@ -4,6 +4,8 @@
   import TopBar from "./TopBar.svelte";
 
   import GlassContainer from "#lib/components/ui/GlassContainer.svelte";
+  import PointerFxCanvas from "#lib/components/ui/PointerFxCanvas.svelte";
+  import PressGlow from "#lib/components/ui/PressGlow.svelte";
   import StarryBackground from "#lib/components/ui/StarryBackground.svelte";
   import type { TocItem } from "#lib/types/ui.js";
 
@@ -18,6 +20,8 @@
 </script>
 
 <StarryBackground />
+<PointerFxCanvas />
+<PressGlow />
 <TopBar {tocItems} />
 <main class={mainClass ?? "m-0 mx-auto box-border w-full max-w-350 px-8 pt-24 pb-8"}>
   {#each panes as pane, i (i)}

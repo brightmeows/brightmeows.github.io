@@ -14,10 +14,6 @@
     padding?: "sm" | "md" | "lg";
     /** 圆角变体 */
     rounded?: "sm" | "md" | "lg" | "xl";
-    /** 悬停时是否上移 */
-    hoverLift?: boolean;
-    /** 点击时是否缩放 */
-    clickShrink?: boolean;
     /** 自定义样式对象 */
     style?: Record<string, string>;
     /** 链接打开方式 */
@@ -32,8 +28,6 @@
     class: className = "",
     padding = "md",
     rounded = "lg",
-    hoverLift = true,
-    clickShrink = true,
     style = {},
     target = undefined,
     rel = undefined,
@@ -63,9 +57,7 @@
     {rel}
     class="relative block text-white no-underline {sharedClasses} {paddingConfig[
       padding
-    ]} {roundedConfig[rounded]} {hoverLift ? 'hover:-translate-y-0.5' : ''} {clickShrink
-      ? 'active:translate-y-0 active:scale-95'
-      : ''} {className}"
+    ]} {roundedConfig[rounded]} {className}"
     style={styleToString(style)}
   >
     {#if children}
@@ -78,9 +70,7 @@
     tabindex="0"
     class="relative text-white {sharedClasses} {paddingConfig[padding]} {roundedConfig[
       rounded
-    ]} {hoverLift ? 'hover:-translate-y-0.5' : ''} {clickShrink
-      ? 'active:translate-y-0 active:scale-95'
-      : ''} {className}"
+    ]} {className}"
     style={styleToString(style)}
   >
     {#if children}
