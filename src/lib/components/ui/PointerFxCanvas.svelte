@@ -27,7 +27,7 @@
   /** 拖尾光点精灵的逻辑直径（px），绘制时按半径缩放 */
   const DOT_SPRITE_SIZE = 16;
   /** 涟漪白心光斑占圆环半径的比例 */
-  const RIPPLE_CORE_RATIO = 0.5;
+  const RIPPLE_CORE_RATIO = 0.55;
 
   /** 单帧渲染所需的场景句柄：画布上下文、配色与尺寸 */
   interface FxScene {
@@ -68,7 +68,7 @@
     );
     const base = `${accent.r}, ${accent.g}, ${accent.b}`;
     grad.addColorStop(0, `rgba(${base}, 1)`);
-    grad.addColorStop(0.45, `rgba(${base}, 0.55)`);
+    grad.addColorStop(0.45, `rgba(${base}, 0.85)`);
     grad.addColorStop(1, `rgba(${base}, 0)`);
     g.fillStyle = grad;
     g.fillRect(0, 0, sprite.width, sprite.height);
@@ -82,7 +82,7 @@
     const radius = rippleRadiusAt(ripple, now);
     const core = Math.max(radius * RIPPLE_CORE_RATIO, 1);
     const grad = ctx.createRadialGradient(ripple.x, ripple.y, 0, ripple.x, ripple.y, core);
-    grad.addColorStop(0, `rgba(255, 255, 255, ${(alpha * 0.9).toFixed(3)})`);
+    grad.addColorStop(0, `rgba(255, 255, 255, ${Math.min(alpha, 1).toFixed(3)})`);
     grad.addColorStop(1, "rgba(255, 255, 255, 0)");
     ctx.fillStyle = grad;
     ctx.beginPath();
@@ -90,7 +90,7 @@
     ctx.fill();
 
     ctx.strokeStyle = `rgba(${accentBase}, ${alpha.toFixed(3)})`;
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 2.5;
     ctx.beginPath();
     ctx.arc(ripple.x, ripple.y, radius, 0, Math.PI * 2);
     ctx.stroke();
