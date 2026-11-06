@@ -16,10 +16,6 @@
     size?: "sm" | "md" | "lg";
     /** 是否禁用 */
     disabled?: boolean;
-    /** 悬停时是否上移 */
-    hoverLift?: boolean;
-    /** 点击时是否缩放 */
-    clickShrink?: boolean;
     /** 自定义样式对象 */
     style?: Record<string, string>;
     /** 点击事件处理 */
@@ -37,8 +33,6 @@
     class: className = "",
     size = "md",
     disabled = false,
-    hoverLift = true,
-    clickShrink = true,
     style = {},
     onclick,
     target,
@@ -61,9 +55,7 @@
     {target}
     {rel}
     {onclick}
-    class="{sharedClasses} cursor-pointer {sizeConfig[size]} {hoverLift
-      ? 'hover:-translate-y-0.5'
-      : ''} {clickShrink ? 'active:translate-y-0 active:scale-95' : ''} {className}"
+    class="{sharedClasses} cursor-pointer {sizeConfig[size]} {className}"
     style={styleToString(style)}
   >
     {#if children}
@@ -75,9 +67,7 @@
     {type}
     {disabled}
     {onclick}
-    class="{sharedClasses} {sizeConfig[size]} {hoverLift && !disabled
-      ? 'hover:-translate-y-0.5'
-      : ''} {clickShrink && !disabled ? 'active:translate-y-0 active:scale-95' : ''} {className}"
+    class="{sharedClasses} {sizeConfig[size]} {className}"
     class:opacity-50={disabled}
     class:cursor-not-allowed={disabled}
     class:cursor-pointer={!disabled}
