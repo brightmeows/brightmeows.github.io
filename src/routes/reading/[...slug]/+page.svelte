@@ -6,4 +6,11 @@
   let { data }: { data: PageData } = $props();
 </script>
 
-<PostArticle title={data.post.title} date={data.post.date} component={data.component} />
+<PostArticle
+  title={data.post.title}
+  date={data.post.date}
+  component={data.component}
+  prev={data.prev}
+  next={data.next}
+  bookToc={data.bookToc}
+/>

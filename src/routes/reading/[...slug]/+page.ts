@@ -3,6 +3,7 @@ import type { Component } from "svelte";
 
 import type { PageLoad } from "./$types";
 
+import { m } from "#lib/paraglide/messages.js";
 import type { PostMetadata } from "#lib/types/post.js";
 import { extractDateFromSlug, EPOCH_DATE } from "#lib/utils/infra/date.js";
 import { formatTitle } from "#lib/utils/title.js";
@@ -26,6 +27,21 @@ export const load: PageLoad = async ({ params }) => {
     if (!importer) {
       throw new Error(`module not found: ${slug}`);
     }
+    // 全集按 order 排序，算出章间导航（prev/next）
+    const sorted = await Promise.all(
+      Object.entries(modules).map(async ([key, loadModule]) => {
+        const mod = await loadModule();
+        return {
+          slug: key.split("reading/")[1]?.replace(/\.md$/, "") ?? "",
+          order: mod.metadata?.order ?? Number.MAX_SAFE_INTEGER,
+          title: mod.metadata?.title ?? "",
+        };
+      })
+    );
+    sorted.sort((a, b) => a.order - b.order);
+    const index = sorted.findIndex((entry) => entry.slug === slug);
+    const prevEntry = index > 0 ? sorted[index - 1] : undefined;
+    const nextEntry = index >= 0 && index < sorted.length - 1 ? sorted[index + 1] : undefined;
     const post = await importer();
     const meta = post.metadata ?? {};
 
@@ -37,6 +53,21 @@ export const load: PageLoad = async ({ params }) => {
       post: { slug, title, date, order: meta.order },
       component: post.default,
       title: formatTitle(title),
+      prev: prevEntry
+        ? {
+            href: `/reading/${prevEntry.slug}/`,
+            label: m["content.reading.prev_chapter"](),
+            title: prevEntry.title,
+          }
+        : undefined,
+      next: nextEntry
+        ? {
+            href: `/reading/${nextEntry.slug}/`,
+            label: m["content.reading.next_chapter"](),
+            title: nextEntry.title,
+          }
+        : undefined,
+      bookToc: { href: "/reading/compendium/", label: m["content.reading.book_toc"]() },
     };
   } catch {
     // SvelteKit error() 是官方 404 模式，返回 never（内部 throw HttpError）

@@ -52,12 +52,22 @@
     }
   }
 
+  /** 外链插图懒加载：译文长文含数十张原图，避免首屏一次性拉取。 */
+  function lazyLoadImages(): void {
+    if (!container) return;
+    for (const img of container.querySelectorAll("img")) {
+      img.loading = "lazy";
+      img.decoding = "async";
+    }
+  }
+
   function scheduleEnsureHeadingAnchors(): void {
     if (scheduled) return;
     scheduled = true;
     requestAnimationFrame(() => {
       scheduled = false;
       ensureHeadingAnchors();
+      lazyLoadImages();
 
       if (location.hash.length > 1) {
         const id = decodeURIComponent(location.hash.slice(1));
@@ -100,7 +110,7 @@
     "[&_blockquote]:my-4 [&_blockquote]:border-l-4 [&_blockquote]:border-sky-300/50 [&_blockquote]:pl-4 [&_blockquote]:text-white-80 [&_blockquote]:italic",
     "[&_ol]:mb-4 [&_ol]:pl-6 [&_ul]:mb-4 [&_ul]:pl-6",
     "[&_li]:mb-2 [&_li]:text-white-90",
-    "[&_table]:mb-4 [&_table]:w-full [&_table]:border-collapse [&_table]:overflow-hidden [&_table]:rounded-lg [&_table]:bg-white-5",
+    "[&_table]:mb-4 [&_table]:block [&_table]:w-full [&_table]:border-collapse [&_table]:overflow-x-auto [&_table]:rounded-lg [&_table]:bg-white-5",
     "[&_th]:border [&_th]:border-white-10 [&_th]:bg-sky-300/20 [&_th]:px-3 [&_th]:py-3 [&_th]:text-left [&_th]:font-bold [&_th]:text-white",
     "[&_td]:border [&_td]:border-white-10 [&_td]:px-3 [&_td]:py-3 [&_td]:text-left",
     "[&_.katex]:text-[1.1em]",
