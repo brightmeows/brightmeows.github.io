@@ -1,5 +1,11 @@
 <script lang="ts">
-  import { filterMineOnly, filterSharedTables, groupSharedTables } from "@brightmeows/bms/shared";
+  import {
+    filterMineOnly,
+    filterSharedTables,
+    groupSharedTables,
+    sortSharedGroups,
+    type SharedSortKey,
+  } from "@brightmeows/bms/shared";
   import type { SharedTableItem } from "@brightmeows/mirror/shared";
   import { onMount, tick } from "svelte";
 
@@ -33,6 +39,7 @@
   let tables = $state<SharedTableItem[]>([]);
   let searchQuery = $state("");
   let mineOnly = $state(false);
+  let sortKey = $state<SharedSortKey>("default");
   let deletingId = $state<string | null>(null);
   let actionNotice = $state<{ kind: "ok" | "error"; text: string } | null>(null);
   let trashPanel = $state<{ refresh: () => Promise<void> } | undefined>(undefined);
@@ -42,7 +49,17 @@
 
   let searchNeedles = $derived(buildSearchNeedles(searchQuery, searchConverters.list));
   let matched = $derived(filterSharedTables(tables, searchNeedles));
-  let groups = $derived(filterMineOnly(groupSharedTables(matched, login), mineOnly, login));
+  let groups = $derived(
+    sortSharedGroups(filterMineOnly(groupSharedTables(matched, login), mineOnly, login), sortKey)
+  );
+
+  /** 排序键选项：value 是 SharedSortKey，label 走三语消息。 */
+  const sortOptions: { value: SharedSortKey; label: () => string }[] = [
+    { value: "default", label: m["shared.sort_default"] },
+    { value: "updated", label: m["shared.sort_updated"] },
+    { value: "entries", label: m["shared.sort_entries"] },
+    { value: "name", label: m["shared.sort_name"] },
+  ];
 
   async function loadTables(cacheBust = false): Promise<void> {
     try {
@@ -160,6 +177,23 @@
         })}
       </div>
     {/if}
+
+    <div class="flex flex-wrap items-center justify-center gap-2">
+      <span class="text-[0.85rem] text-white-50">{m["shared.sort_label"]()}</span>
+      {#each sortOptions as option (option.value)}
+        <button
+          class="rounded-md border px-2 py-[0.35rem] text-[0.85rem] transition-colors duration-200 select-none {sortKey ===
+          option.value
+            ? 'border-accent/60 bg-accent/15 text-accent'
+            : 'border-white-20 text-white-50 hover:border-white-40 hover:text-white-70'}"
+          type="button"
+          aria-pressed={sortKey === option.value}
+          onclick={() => (sortKey = option.value)}
+        >
+          {option.label()}
+        </button>
+      {/each}
+    </div>
 
     {#if loading}
       <div class="mt-6">

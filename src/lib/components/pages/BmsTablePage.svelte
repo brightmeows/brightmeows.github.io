@@ -9,20 +9,21 @@
 </script>
 
 <script lang="ts">
+  import type { BmsDropResult } from "@brightmeows/bms/editor";
   import type { Component, Snippet } from "svelte";
   import { onMount, tick } from "svelte";
 
+  import BmsDropOverlay from "#lib/components/bms/BmsDropOverlay.svelte";
   import CoursePanel from "#lib/components/bms/CoursePanel.svelte";
   import EntriesPanel from "#lib/components/bms/EntriesPanel.svelte";
   import LevelRefTable from "#lib/components/bms/LevelRefTable.svelte";
   import TableDock from "#lib/components/bms/TableDock.svelte";
   import type { TableImportSectionProps } from "#lib/components/bms/TableImportSection.svelte";
-  import TableIoPanel from "#lib/components/bms/TableIoPanel.svelte";
   import TableOverviewPanel from "#lib/components/bms/TableOverviewPanel.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import CardSwitcher, { type CardSwitchItem } from "#lib/components/ui/CardSwitcher.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
-  import { btnPrimaryLarge } from "#lib/constants/ui-classes.js";
+  import { btnGhost, btnPrimaryLarge } from "#lib/constants/ui-classes.js";
   import type { EditorNotice } from "#lib/controllers/editor.js";
   import type { DockMode } from "#lib/controllers/table-dock.js";
   import {
@@ -115,6 +116,53 @@
     window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
   }
 
+  // ---- 键盘快捷键：Ctrl/Cmd+S 保存，Ctrl/Cmd+E 切换查看/编辑 ----
+  function isEditableTarget(target: EventTarget | null): boolean {
+    return (
+      target instanceof HTMLElement &&
+      (target.isContentEditable ||
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT")
+    );
+  }
+
+  function handleKeydown(event: KeyboardEvent): void {
+    if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return;
+    if (event.key === "s" || event.key === "S") {
+      if (!model.canSave || model.busy) return;
+      event.preventDefault();
+      void model.save();
+    } else if (event.key === "e" || event.key === "E") {
+      // 文本输入里 Ctrl/Cmd+E 是编辑器光标习惯，不抢
+      if (isEditableTarget(event.target)) return;
+      // 创建态没有查看分支（表头尚不存在），不切走
+      if (createMode && isEdit) return;
+      event.preventDefault();
+      handleDockSetMode(isEdit ? "view" : "edit");
+    }
+  }
+
+  /**
+   * 全页拖拽导入的追加处理：与导入折叠段拖拽区的追加逻辑一致
+   * （追加条目、合并文件等级建议、标记未保存并给出结果通知）。
+   */
+  function handlePageDrop(result: BmsDropResult): void {
+    if (result.added.length > 0) {
+      model.entries = [...model.entries, ...result.added];
+      model.levelHints = { ...model.levelHints, ...result.hints };
+      model.markDirty();
+    }
+    model.notice = {
+      kind: result.added.length > 0 ? "ok" : "warn",
+      text: m["editor.bms_drop_done"]({
+        added: result.added.length,
+        skipped: result.skipped,
+        failed: result.failed,
+      }),
+    };
+  }
+
   // ---- 导入区按需加载（查看态不载入导入器包体） ----
   let ImportSection = $state<Component<TableImportSectionProps> | null>(null);
   async function ensureImportSection(): Promise<void> {
@@ -138,19 +186,22 @@
   onMount(() => {
     syncModeFromLocation();
     window.addEventListener("popstate", syncModeFromLocation);
+    window.addEventListener("keydown", handleKeydown);
     importUrl = `${window.location.origin}${window.location.pathname}`;
     void model.loadHeader();
-    return () => window.removeEventListener("popstate", syncModeFromLocation);
+    return () => {
+      window.removeEventListener("popstate", syncModeFromLocation);
+      window.removeEventListener("keydown", handleKeydown);
+    };
   });
 
-  type CardId = "overview" | "course-list" | "level-ref" | "charts-list" | "import-export";
+  type CardId = "overview" | "course-list" | "level-ref" | "charts-list";
 
   let visibleCards = $state<Record<CardId, boolean>>({
     overview: false,
     "course-list": false,
     "level-ref": false,
     "charts-list": true,
-    "import-export": false,
   });
   let hiddenLevels = $state<Set<string>>(new Set());
   let hideUnassigned = $state(false);
@@ -184,11 +235,6 @@
       label: m["editor.entries_section"](),
       checked: visibleCards["charts-list"],
       count: model.entries.length,
-    },
-    {
-      id: "import-export",
-      label: isEdit ? m["editor.io_section"]() : m["editor.export_section"](),
-      checked: visibleCards["import-export"],
     },
   ]);
 
@@ -228,15 +274,6 @@
                 },
               ]
             : []),
-          ...(visibleCards["import-export"]
-            ? [
-                {
-                  id: "import-export",
-                  title: isEdit ? m["editor.io_section"]() : m["editor.export_section"](),
-                  href: "#import-export",
-                },
-              ]
-            : []),
         ]
       : []
   );
@@ -246,9 +283,9 @@
   <title>{formatTitle(model.pageTitle)}</title>
 </svelte:head>
 
-<!-- mainClass 覆盖默认 pb-8：底部为操作 dock 的展开态留出空间 -->
+<!-- mainClass 覆盖默认 pb-8：底部为操作 dock 的右下角面板留出空间 -->
 <PageShell
-  mainClass="m-0 mx-auto box-border w-full max-w-350 px-8 pt-24 pb-28"
+  mainClass="m-0 mx-auto box-border w-full max-w-350 px-8 pt-24 pb-40"
   {tocItems}
   panes={[
     titlePane,
@@ -261,7 +298,6 @@
             ...(visibleCards["course-list"] ? [coursePane] : []),
             ...(visibleCards["level-ref"] && showLevelRefPane ? [levelRefPane] : []),
             ...(visibleCards["charts-list"] ? [chartsPane] : []),
-            ...(visibleCards["import-export"] ? [ioPane] : []),
           ]),
   ]}
 />
@@ -274,9 +310,78 @@
     {createMode}
     showSaveAsShared={saveAsShared !== "none"}
     {editHint}
+    {tableActions}
+    importSection={isEdit ? importSection : undefined}
     onSetMode={handleDockSetMode}
   />
 {/if}
+
+<!-- 编辑态全页拖拽接收：与导入折叠段的拖拽区共用同一管线 -->
+{#if isEdit && model.ready}
+  <BmsDropOverlay
+    entries={model.entries}
+    disabled={model.busy || model.dataLoadState !== "loaded"}
+    onadd={handlePageDrop}
+  />
+{/if}
+
+<!-- 表操作折叠段：导出、查看原文与 fork（fork 仅查看态；编辑态另存共享在按钮区） -->
+{#snippet tableActions()}
+  <button
+    class="{btnGhost} w-full"
+    type="button"
+    disabled={model.dataLoadState !== "loaded"}
+    onclick={() => model.exportTable("header")}
+  >
+    {m["editor.export_header"]()}
+  </button>
+  <button
+    class="{btnGhost} w-full"
+    type="button"
+    disabled={model.dataLoadState !== "loaded"}
+    onclick={() => model.exportTable("data")}
+  >
+    {m["editor.export_data"]()}
+  </button>
+  <button
+    class="{btnGhost} w-full"
+    type="button"
+    disabled={model.dataLoadState !== "loaded"}
+    onclick={() => model.exportTable("package")}
+  >
+    {m["editor.export_package"]()}
+  </button>
+  {#if headerUrl !== null}
+    <a
+      class="{btnGhost} w-full text-center"
+      href={headerUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      {m["table.view_header"]()}
+    </a>
+  {/if}
+  {#if model.dataFetchUrl !== null}
+    <a
+      class="{btnGhost} w-full text-center"
+      href={model.dataFetchUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      {m["table.view_data"]()}
+    </a>
+  {/if}
+  {#if !isEdit && saveAsShared === "same-origin"}
+    <button
+      class="{btnGhost} w-full"
+      type="button"
+      disabled={model.busy}
+      onclick={() => void model.saveAsSharedNow()}
+    >
+      {sharedMode ? m["shared.fork"]() : m["editor.save_as_shared"]()}
+    </button>
+  {/if}
+{/snippet}
 
 {#snippet titlePane()}
   <div class="flex flex-col items-center gap-3 text-center">
@@ -444,19 +549,6 @@
       onChange={model.markDirty}
       bind:hiddenLevels
       bind:hideUnassigned
-    />
-  </div>
-{/snippet}
-
-{#snippet ioPane()}
-  <div id="import-export" class="scroll-mt-20">
-    <TableIoPanel
-      editing={isEdit}
-      {headerUrl}
-      dataUrl={model.dataFetchUrl}
-      onExport={model.exportTable}
-      exportDisabled={model.dataLoadState !== "loaded"}
-      importSection={isEdit ? importSection : undefined}
     />
   </div>
 {/snippet}

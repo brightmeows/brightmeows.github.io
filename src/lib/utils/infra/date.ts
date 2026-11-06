@@ -26,3 +26,34 @@ export function extractDateFromSlug(slug: string): string | undefined {
 
 /** 无日期时的默认回退值 */
 export const EPOCH_DATE = "1970-01-01";
+
+/** 相对时间的单位分界（毫秒）：秒→分→时→天→周→月→年。 */
+const RELATIVE_UNITS: { limit: number; unit: Intl.RelativeTimeFormatUnit }[] = [
+  { limit: 60_000, unit: "second" },
+  { limit: 3_600_000, unit: "minute" },
+  { limit: 86_400_000, unit: "hour" },
+  { limit: 604_800_000, unit: "day" },
+  { limit: 2_592_000_000, unit: "week" },
+  { limit: 31_536_000_000, unit: "month" },
+  { limit: Number.POSITIVE_INFINITY, unit: "year" },
+];
+
+/**
+ * 把 ISO 时间戳格式化为相对时间（“3 天前”），经 Intl.RelativeTimeFormat
+ * 按 locale 输出；非法时间戳原样返回输入，未来时间按“刚刚”处理。
+ */
+export function formatRelativeTime(value: string, locale: string, now = Date.now()): string {
+  const at = Date.parse(value);
+  if (!Number.isFinite(at)) return value;
+  const delta = Math.max(0, now - at);
+  const fmt = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
+  let previousLimit = 0;
+  for (const { limit, unit } of RELATIVE_UNITS) {
+    if (delta < limit) {
+      const divisor = unit === "second" ? 1000 : previousLimit;
+      return fmt.format(-Math.floor(delta / divisor), unit);
+    }
+    previousLimit = limit;
+  }
+  return value;
+}

@@ -97,8 +97,8 @@
     if (result.added.length > 0) {
       entries = [...entries, ...(result.added as ChartData[])];
       levelHints = { ...levelHints, ...result.hints };
+      onChange();
     }
-    onChange();
     onNotice({
       kind: result.added.length > 0 ? "ok" : "warn",
       text: m["editor.bms_drop_done"]({

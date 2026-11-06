@@ -9,18 +9,25 @@ import {
   mirrorDirNameFromUrl,
   pageCount,
   paginate,
+  sortSharedGroups,
   sharedIdPreview,
   textToLevelOrder,
 } from "./shared.ts";
 
-function item(id: string, author: string, updatedAt = "2026-01-01", name = id): SharedTableItem {
+function item(
+  id: string,
+  author: string,
+  updatedAt = "2026-01-01",
+  name = id,
+  entries = 1
+): SharedTableItem {
   return {
     id,
     name,
     author,
     created_at: updatedAt,
     updated_at: updatedAt,
-    entries: 1,
+    entries,
     url: `/bms/table/shared/${id}/`,
   };
 }
@@ -80,6 +87,53 @@ describe("filterMineOnly", () => {
   it("未登录或未开启时原样返回", () => {
     expect(filterMineOnly(groups, true, null)).toBe(groups);
     expect(filterMineOnly(groups, false, "bob")).toBe(groups);
+  });
+});
+
+describe("sortSharedGroups", () => {
+  function makeGroups(): ReturnType<typeof groupSharedTables> {
+    return groupSharedTables(
+      [
+        item("alice-new", "alice", "2026-03-01", "Zeta"),
+        item("alice-old", "alice", "2026-01-01", "Alpha", 9),
+        item("bob-new", "bob", "2026-02-01", "beta", 2),
+      ],
+      null
+    );
+  }
+
+  it("default 原样返回", () => {
+    const groups = makeGroups();
+    expect(sortSharedGroups(groups, "default")).toBe(groups);
+  });
+
+  it("updated：组内按更新时间倒序，组间按组内最新更新倒序", () => {
+    const groups = sortSharedGroups(makeGroups(), "updated");
+    expect(groups.map((g) => g.author)).toEqual(["alice", "bob"]);
+    expect(groups[0]?.items.map((i) => i.id)).toEqual(["alice-new", "alice-old"]);
+  });
+
+  it("entries：组内按条目数降序，组间按条目总数降序", () => {
+    const groups = sortSharedGroups(makeGroups(), "entries");
+    expect(groups.map((g) => g.author)).toEqual(["alice", "bob"]);
+    expect(groups[0]?.items.map((i) => i.id)).toEqual(["alice-old", "alice-new"]);
+    // alice 共 10 条 > bob 共 2 条
+    expect(groups[1]?.items[0]?.id).toBe("bob-new");
+  });
+
+  it("name：组内按名称升序（空名回退 id），组间按作者名升序", () => {
+    const groups = sortSharedGroups(makeGroups(), "name");
+    expect(groups.map((g) => g.author)).toEqual(["alice", "bob"]);
+    expect(groups[0]?.items.map((i) => i.id)).toEqual(["alice-old", "alice-new"]);
+  });
+
+  it("自己的组置顶优先于排序键", () => {
+    const groups = groupSharedTables(
+      [item("a1", "alice", "2026-03-01"), item("b1", "bob", "2026-02-01")],
+      "bob"
+    );
+    const sorted = sortSharedGroups(groups, "updated");
+    expect(sorted[0]?.author).toBe("bob");
   });
 });
 
