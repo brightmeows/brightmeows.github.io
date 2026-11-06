@@ -52,12 +52,22 @@
     }
   }
 
+  /** 外链插图懒加载：译文长文含数十张原图，避免首屏一次性拉取。 */
+  function lazyLoadImages(): void {
+    if (!container) return;
+    for (const img of container.querySelectorAll("img")) {
+      img.loading = "lazy";
+      img.decoding = "async";
+    }
+  }
+
   function scheduleEnsureHeadingAnchors(): void {
     if (scheduled) return;
     scheduled = true;
     requestAnimationFrame(() => {
       scheduled = false;
       ensureHeadingAnchors();
+      lazyLoadImages();
 
       if (location.hash.length > 1) {
         const id = decodeURIComponent(location.hash.slice(1));
@@ -85,7 +95,7 @@
 <div
   bind:this={container}
   class={[
-    "markdown-content mx-auto max-w-[44rem] pr-7 pl-7 leading-relaxed text-white-90",
+    "markdown-content mx-auto max-w-4xl pr-7 pl-7 leading-relaxed text-white-90",
     "[&_h1]:relative [&_h1]:mt-10 [&_h1]:mb-4 [&_h1]:scroll-mt-24 [&_h1]:text-[clamp(2rem,3vw,2.5rem)] [&_h1]:leading-tight [&_h1]:font-extrabold [&_h1]:text-white [&_h1]:drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]",
     "[&_h2]:relative [&_h2]:mt-8 [&_h2]:mb-3 [&_h2]:scroll-mt-24 [&_h2]:text-[clamp(1.5rem,2.4vw,1.9rem)] [&_h2]:leading-snug [&_h2]:font-bold [&_h2]:text-white [&_h2]:drop-shadow-[0_2px_4px_rgba(0,0,0,0.35)]",
     "[&_h3]:relative [&_h3]:mt-5 [&_h3]:mb-2 [&_h3]:scroll-mt-24 [&_h3]:text-2xl [&_h3]:font-bold [&_h3]:text-white",
@@ -100,7 +110,7 @@
     "[&_blockquote]:my-4 [&_blockquote]:border-l-4 [&_blockquote]:border-sky-300/50 [&_blockquote]:pl-4 [&_blockquote]:text-white-80 [&_blockquote]:italic",
     "[&_ol]:mb-4 [&_ol]:pl-6 [&_ul]:mb-4 [&_ul]:pl-6",
     "[&_li]:mb-2 [&_li]:text-white-90",
-    "[&_table]:mb-4 [&_table]:w-full [&_table]:border-collapse [&_table]:overflow-hidden [&_table]:rounded-lg [&_table]:bg-white-5",
+    "[&_table]:mb-4 [&_table]:block [&_table]:w-full [&_table]:border-collapse [&_table]:overflow-x-auto [&_table]:rounded-lg [&_table]:bg-white-5",
     "[&_th]:border [&_th]:border-white-10 [&_th]:bg-sky-300/20 [&_th]:px-3 [&_th]:py-3 [&_th]:text-left [&_th]:font-bold [&_th]:text-white",
     "[&_td]:border [&_td]:border-white-10 [&_td]:px-3 [&_td]:py-3 [&_td]:text-left",
     "[&_.katex]:text-[1.1em]",

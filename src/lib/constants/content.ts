@@ -22,10 +22,20 @@ export const POST_CATEGORIES = [
     label: () => m["content.category.notes"](),
     featuredOnHome: false,
   },
+  {
+    id: "reading",
+    label: () => m["content.category.reading"](),
+    featuredOnHome: false,
+  },
 ] as const satisfies readonly PostCategory[];
 
 /** 注册表里的分类 id 联合类型。 */
 export type CategoryId = (typeof POST_CATEGORIES)[number]["id"];
+
+/** 阅读区的书表：分类内按 slug 首段分组，每组一本书。 */
+export const READING_BOOKS = {
+  compendium: "Maths-CS-AI Compendium",
+} as const satisfies Record<string, string>;
 
 /** 顶层保留路径：分类 id 不得占用，避免新分类覆盖既有路由。 */
 export const RESERVED_TOP_LEVEL_PATHS = ["bms", "api", "assets", "_app"] as const;
