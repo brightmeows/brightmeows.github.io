@@ -3,6 +3,7 @@ import type { Component } from "svelte";
 
 import type { PageLoad } from "./$types";
 
+import { READING_BOOKS } from "#lib/constants/content.js";
 import { m } from "#lib/paraglide/messages.js";
 import type { PostMetadata } from "#lib/types/post.js";
 import { extractDateFromSlug, EPOCH_DATE } from "#lib/utils/infra/date.js";
@@ -42,7 +43,9 @@ export const load: PageLoad = async ({ params }) => {
     const index = sorted.findIndex((entry) => entry.slug === slug);
     const prevEntry = index > 0 ? sorted[index - 1] : undefined;
     const nextEntry = index >= 0 && index < sorted.length - 1 ? sorted[index + 1] : undefined;
-    const bookId = slug.split("/")[0];
+    const bookId = slug.split("/")[0] ?? "";
+    const bookTitle =
+      bookId in READING_BOOKS ? READING_BOOKS[bookId as keyof typeof READING_BOOKS] : undefined;
     const post = await importer();
     const meta = post.metadata ?? {};
 
@@ -68,7 +71,17 @@ export const load: PageLoad = async ({ params }) => {
             title: nextEntry.title,
           }
         : undefined,
-      bookToc: { href: `/reading/${bookId}/`, label: m["content.reading.book_toc"]() },
+      chapters: bookTitle
+        ? {
+            bookHref: `/reading/${bookId}/`,
+            bookTitle,
+            items: sorted.map((entry) => ({
+              href: `/reading/${entry.slug}/`,
+              title: entry.title,
+              current: entry.slug === slug,
+            })),
+          }
+        : undefined,
     };
   } catch {
     // SvelteKit error() 是官方 404 模式，返回 never（内部 throw HttpError）

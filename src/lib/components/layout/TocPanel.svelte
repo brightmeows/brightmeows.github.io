@@ -16,11 +16,24 @@
   interface Props {
     items?: TocItem[];
     title?: string;
+    /** 是否渲染顶部标题行；侧栏分段宿主自带段头时传 false。 */
+    header?: boolean;
+    /** 是否给列表加 60vh 限高滚动（顶栏弹层宿主用）；侧栏等外部容器统一滚动时传 false。 */
+    constrained?: boolean;
+    /** 非锚点链接项的当前高亮 href（如侧栏章节列表的当前章）。 */
+    activeHref?: string | undefined;
     /** 标题跳转后的回调，用于关闭顶栏面板。 */
     onNavigate?: () => void;
   }
 
-  let { items = [], title = m["toc.title"](), onNavigate }: Props = $props();
+  let {
+    items = [],
+    title = m["toc.title"](),
+    header = true,
+    constrained = true,
+    activeHref,
+    onNavigate,
+  }: Props = $props();
 
   let activeId = $state<string | null>(null);
   let _scrollScheduled = false;
@@ -90,7 +103,11 @@
   }
 
   async function handleNavigate(item: FlatTocItem, event: MouseEvent): Promise<void> {
-    if (!item.href.startsWith("#")) return;
+    if (!item.href.startsWith("#")) {
+      // 章节（或未来其他页链接）项：放行为常规导航，仅保留“点链接收弹层”口径。
+      onNavigate?.();
+      return;
+    }
     event.preventDefault();
 
     const id = decodeURIComponent(item.href.slice(1));
@@ -128,20 +145,25 @@
   });
 </script>
 
-<div class="mb-3 flex items-center justify-between gap-3">
-  <div class="text-[0.95rem] font-semibold text-white-90">{title}</div>
-  <div class="text-[0.8rem] text-white-60">{flatItems.length}</div>
-</div>
+{#if header}
+  <div class="mb-3 flex items-center justify-between gap-3">
+    <div class="text-[0.95rem] font-semibold text-white-90">{title}</div>
+    <div class="text-[0.8rem] text-white-60">{flatItems.length}</div>
+  </div>
+{/if}
 
-<nav class="max-h-[calc(60vh-3rem)] overflow-auto pr-1" aria-label={title}>
+<nav
+  class={constrained ? "max-h-[calc(60vh-3rem)] overflow-auto pr-1" : "overflow-hidden pr-1"}
+  aria-label={title}
+>
   {#each flatItems as item (item.id)}
+    {@const itemId = item.href.startsWith("#") ? item.href.slice(1) : item.href}
+    {@const itemActive = item.href.startsWith("#") ? activeId === itemId : itemId === activeHref}
     <a
       href={item.href.startsWith("#") ? item.href : item.href || "/"}
       class={[
         "block rounded-lg py-2 pr-3 text-[0.9rem] leading-snug transition-colors",
-        activeId === (item.href.startsWith("#") ? item.href.slice(1) : item.id)
-          ? "bg-white-10 text-sky-200"
-          : "text-white-85 hover:bg-white-8 hover:text-white",
+        itemActive ? "bg-white-10 text-sky-200" : "text-white-85 hover:bg-white-8 hover:text-white",
       ].join(" ")}
       style={`padding-left: ${12 + item.depth * 14}px;`}
       onclick={(event) => void handleNavigate(item, event)}

@@ -40,6 +40,24 @@ export interface TocItem {
   children?: TocItem[];
 }
 
+/** 章节链接（正文页侧栏章节段与顶栏弹层章节导航共用）。 */
+export interface TocChapterLink {
+  href: string;
+  title: string;
+  /** 是否为当前章（侧栏静态高亮标记，区别于滚动推导的锚点高亮） */
+  current: boolean;
+}
+
+/** 正文页侧栏的书章节导航（reading 有；blog/notes 无章节数据不传）。 */
+export interface TocSidebarChapters {
+  /** 书目录页地址（章节段段头书名链接的目标） */
+  bookHref: string;
+  /** 书名（章节段段头文案） */
+  bookTitle: string;
+  /** 按 order 排序的章节 */
+  items: TocChapterLink[];
+}
+
 /**
  * 顶栏弹层机制切片:TopBar 把交互契约(悬停意图、点击钉住、top layer 定位、
  * 动画参数)预绑定到面板 id 后下发给叶子菜单组件;契约本身仍由 TopBar 承载。

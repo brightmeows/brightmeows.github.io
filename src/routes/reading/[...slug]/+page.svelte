@@ -12,5 +12,5 @@
   component={data.component}
   prev={data.prev}
   next={data.next}
-  bookToc={data.bookToc}
+  chapters={data.chapters}
 />
