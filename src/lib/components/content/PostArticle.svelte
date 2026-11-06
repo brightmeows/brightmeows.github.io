@@ -4,7 +4,14 @@
 
   import MarkdownContent from "#lib/components/content/MarkdownContent.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
-  import type { TocItem } from "#lib/types/ui.js";
+  import TocSidebar from "#lib/components/layout/TocSidebar.svelte";
+  import type { TocItem, TocSidebarChapters } from "#lib/types/ui.js";
+  import {
+    buildChapterTocItems,
+    readSidebarFlag,
+    TOC_SIDEBAR_COLLAPSED_KEY,
+    writeSidebarFlag,
+  } from "#lib/utils/ui/toc-sidebar.js";
   import { buildTocFromHeadings } from "#lib/utils/ui/toc.js";
 
   interface Props {
@@ -15,20 +22,52 @@
     prev?: { href: string; label: string; title: string } | undefined;
     /** 下一章 */
     next?: { href: string; label: string; title: string } | undefined;
-    /** 本书目录链接（与 prev/next 同区渲染） */
-    bookToc?: { href: string; label: string } | undefined;
+    /** 书章节导航（reading 专属；不传则侧栏只有标题段、弹层不含章节） */
+    chapters?: TocSidebarChapters | undefined;
   }
 
-  let { title, date, component, prev, next, bookToc }: Props = $props();
+  let { title, date, component, prev, next, chapters }: Props = $props();
+
+  /** 正文页两栏容器上限（侧栏 260 + 间距 40 + 正文卡 1000 + 页面左右 padding 64）。 */
+  const POST_ARTICLE_MAIN_CLASS = "m-0 mx-auto box-border w-full max-w-[1364px] px-8 pt-24 pb-8";
+
   let tocItems = $state<TocItem[]>([]);
+  let sidebarCollapsed = $state(false);
 
   onMount(async () => {
     await tick();
     tocItems = buildTocFromHeadings({ minLevel: 2, maxLevel: 6 });
+    sidebarCollapsed = readSidebarFlag(TOC_SIDEBAR_COLLAPSED_KEY, false);
   });
+
+  // 侧栏标题段与顶栏弹层用同一棵标题树；弹层在 reading 额外合并章节段（章节在前）。
+  let sidebarTocItems = $derived(
+    chapters ? [...buildChapterTocItems(chapters), ...tocItems] : tocItems
+  );
+
+  function collapseSidebar(): void {
+    sidebarCollapsed = true;
+    writeSidebarFlag(TOC_SIDEBAR_COLLAPSED_KEY, true);
+  }
+
+  function expandSidebar(): void {
+    sidebarCollapsed = false;
+    writeSidebarFlag(TOC_SIDEBAR_COLLAPSED_KEY, false);
+  }
 </script>
 
-<PageShell {tocItems} panes={[titlePane, contentPane]} />
+<PageShell
+  tocItems={sidebarTocItems}
+  mainClass={POST_ARTICLE_MAIN_CLASS}
+  panes={[titlePane, contentPane]}
+  sidebar={chapters || tocItems.length > 0 ? sidebarPane : undefined}
+  {sidebarCollapsed}
+  onExpandSidebar={expandSidebar}
+/>
+
+{#snippet sidebarPane()}
+  <TocSidebar {chapters} {tocItems} onCollapse={collapseSidebar} />
+{/snippet}
 
 {#snippet titlePane()}
   <h1 class="page-title mb-4">{title}</h1>
@@ -44,18 +83,8 @@
       <Content />
     {/if}
   </MarkdownContent>
-  {#if bookToc || prev || next}
+  {#if prev || next}
     <div class="mt-10 flex flex-col gap-4">
-      {#if bookToc}
-        <div class="text-center">
-          <a
-            class="text-[0.95rem] text-sky-300 no-underline transition-colors hover:text-sky-200"
-            href={bookToc.href}
-          >
-            {bookToc.label}
-          </a>
-        </div>
-      {/if}
       <div class="grid grid-cols-2 gap-4">
         {#if prev}
           <a
