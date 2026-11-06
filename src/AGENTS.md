@@ -49,6 +49,7 @@
   - 所有弹层（Home 资料卡、BMS 下拉、窄屏 Menu、目录、账户、主题、语言）都在鼠标悬停时展开：150ms 打开、250ms 关闭，移入面板保持；悬停已展开时第一次点击把面板钉住，指针离开不收起，第二次点击或外点/Escape 才收起；面板内链接点击即关闭。
   - 展开淡入并轻微下滑，150ms 开、100ms 收，`prefers-reduced-motion` 时关闭；顶栏自身的 150ms transform 过渡同样遵守减少动效偏好。
 - **内容正文页宽屏有左侧目录侧栏** — `PostArticle` 在视口 ≥1400px 时经 `PageShell` 的 `sidebar` snippet 渲染 `TocSidebar`（260px 列，正文卡全场景收窄到 1000px 居中）；窄屏整列隐藏，由顶栏目录弹层接管，正文行宽（`MarkdownContent` 的 max-w-4xl）不随布局变化。
+  - 侧栏本体包 `GlassPanel`（与顶栏弹层同构）：浮动内容面板（弹层、侧栏、抽屉等）一律用玻璃家族容器承载，不允许裸列表浮在星空背景上。
   - 侧栏两段：章节段（reading 专属，段头书名链接回书目录页，当前章按路由静态高亮，与滚动推导的锚点高亮并存于 `TocPanel` 的 `activeHref`）与本页目录段；两段各自折叠，折叠与整栏收缩状态都存 localStorage 的 `tocSidebar.*` 键（旗标逻辑在 `utils/ui/toc-sidebar`，配相邻测试）。
   - 侧栏头部收缩钮收起整列，收缩后左缘贴边把手展开（`PageShell` 的 `sidebarCollapsed`/`onExpandSidebar`）；收缩与折叠只在宽屏有语义，SSR 首帧视为未收缩。
   - reading 的章节数据由 `reading/[...slug]/+page.ts` 提供（`bookHref`/`bookTitle`/`items` 含 `current`，按 order 排序）；blog/notes 不传 `chapters` 即自动降级为纯标题段。
