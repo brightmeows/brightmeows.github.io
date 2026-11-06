@@ -3,13 +3,13 @@
 
   import { btnGhost } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
-  import {
-    collectDroppedFiles,
-    isHashingAvailable,
-    processBmsFiles,
-  } from "#lib/utils/infra/bms-drop.js";
+  import { isHashingAvailable, processBmsFiles } from "#lib/utils/infra/bms-drop.js";
 
-  /** 本地 BMS/BMSON 拖拽区：管线在 utils/infra/bms-drop，组件只管交互与展示。 */
+  /**
+   * 本地 BMS/BMSON 拖拽区：管线在 utils/infra/bms-drop。落点的解析统一由
+   * 页面级 BmsDropOverlay 处理（同一次拖放只有一个解析入口），本组件只管
+   * 区域视觉与文件选择按钮（移动端与键盘可达）。
+   */
   interface Props {
     /** 当前表已有条目（判重）。 */
     entries: readonly Record<string, unknown>[];
@@ -41,13 +41,6 @@
       busy = false;
     }
   }
-
-  async function handleDrop(event: DragEvent): Promise<void> {
-    dragging = false;
-    const dataTransfer = event.dataTransfer;
-    if (dataTransfer === null || disabled || busy) return;
-    await processFiles(await collectDroppedFiles(dataTransfer));
-  }
 </script>
 
 <div
@@ -67,7 +60,7 @@
   }}
   ondrop={(event) => {
     event.preventDefault();
-    void handleDrop(event);
+    dragging = false;
   }}
 >
   <div class="flex flex-wrap items-center gap-3">

@@ -136,6 +136,8 @@
     } else if (event.key === "e" || event.key === "E") {
       // 文本输入里 Ctrl/Cmd+E 是编辑器光标习惯，不抢
       if (isEditableTarget(event.target)) return;
+      // 创建态没有查看分支（表头尚不存在），不切走
+      if (createMode && isEdit) return;
       event.preventDefault();
       handleDockSetMode(isEdit ? "view" : "edit");
     }
@@ -149,8 +151,8 @@
     if (result.added.length > 0) {
       model.entries = [...model.entries, ...result.added];
       model.levelHints = { ...model.levelHints, ...result.hints };
+      model.markDirty();
     }
-    model.markDirty();
     model.notice = {
       kind: result.added.length > 0 ? "ok" : "warn",
       text: m["editor.bms_drop_done"]({

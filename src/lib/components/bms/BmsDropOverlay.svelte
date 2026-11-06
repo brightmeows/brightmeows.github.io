@@ -28,16 +28,21 @@
 
   const active = $derived(!disabled && !busy && depth > 0);
 
+  function isFileDrag(event: DragEvent): boolean {
+    return event.dataTransfer?.types.includes("Files") ?? false;
+  }
+
   function canAccept(event: DragEvent): boolean {
-    // 哈希不可用的环境不激活遮罩（错误提示由导入面板的拖拽区承担）
-    return !disabled && !busy && isHashingAvailable() && event.dataTransfer !== null;
+    // 只接文件拖拽；文本/链接拖拽放行给页面默认行为（哈希不可用的环境
+    // 不激活遮罩，错误提示由导入折叠段的拖拽区承担）
+    return !disabled && !busy && isHashingAvailable() && isFileDrag(event);
   }
 
   async function handleDrop(event: DragEvent): Promise<void> {
-    event.preventDefault();
     depth = 0;
     const dataTransfer = event.dataTransfer;
-    if (dataTransfer === null || disabled || busy) return;
+    if (!isFileDrag(event) || dataTransfer === null || disabled || busy) return;
+    event.preventDefault();
     busy = true;
     try {
       const files = await collectDroppedFiles(dataTransfer);

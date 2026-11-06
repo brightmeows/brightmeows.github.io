@@ -218,9 +218,10 @@
     out:fly={{ y: 24, opacity: 0, duration: reduceMotion ? 0 : 140, easing: cubicIn }}
   >
     <div
-      class="pointer-events-auto w-[340px] max-w-full rounded-xl bg-glass p-3 shadow-[var(--glass-lighting),0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur transition-[width] duration-200 max-sm:w-full {importOpen
+      class="pointer-events-auto max-h-full w-[340px] max-w-full overflow-y-auto rounded-xl bg-glass p-3 shadow-[var(--glass-lighting),0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur transition-[width] duration-200 max-sm:w-full {importOpen
         ? 'sm:w-[480px]'
         : 'sm:w-[340px]'}"
+      style="max-height: calc(100dvh - 2rem - env(safe-area-inset-bottom, 0px))"
       onfocusin={handleFocusIn}
       onfocusout={handleFocusOut}
     >
