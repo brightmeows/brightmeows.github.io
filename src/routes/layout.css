@@ -120,6 +120,12 @@
     @apply m-0 min-h-screen min-w-[320px];
   }
 
+  html {
+    /* 按钮泛光伪元素允许溢出按钮照亮邻组件：clip 兜底视口边缘的横向
+       滚动条（clip 不产生滚动容器，不影响 sticky 表头定位） */
+    overflow-x: clip;
+  }
+
   .page-title {
     @apply text-[clamp(2rem,3vw,2.5rem)] leading-[1.2] font-extrabold text-white;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
@@ -358,12 +364,17 @@
     opacity: 0;
   }
 
-  /* 悬停柔光：固定半径正圆锚定光标（不再用 closest-side），裁剪在按钮内、贴边呈弧不变形 */
+  /* 悬停泛光：以光标为中心的 400px 柔光圆（半径 200px），无亮核无边界感 */
   .press-glow-host::before {
+    left: calc(var(--cursor-x, 50%) - 200px);
+    top: calc(var(--cursor-y, 50%) - 200px);
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
     background: radial-gradient(
-      circle 72px at var(--cursor-x, 50%) var(--cursor-y, 50%),
-      rgb(255 255 255 / 0.35),
-      rgb(255 255 255 / 0.12) 55%,
+      closest-side,
+      rgb(255 255 255 / 0.26),
+      rgb(255 255 255 / 0.08) 60%,
       transparent
     );
     transition: opacity 0.15s ease-out;
@@ -373,12 +384,17 @@
     opacity: 1;
   }
 
-  /* 按压光斑：固定半径正圆从按压点亮起，松开后渐熄（光随指动的 Aero 触感） */
+  /* 按压泛光：按压点周围 320px 柔光圆（半径 160px）稍紧稍亮，松开渐熄 */
   .press-glow-host::after {
+    left: calc(var(--press-x, 50%) - 160px);
+    top: calc(var(--press-y, 50%) - 160px);
+    width: 320px;
+    height: 320px;
+    border-radius: 50%;
     background: radial-gradient(
-      circle 80px at var(--press-x, 50%) var(--press-y, 50%),
-      rgb(255 255 255 / 0.5),
-      rgb(255 255 255 / 0.14) 55%,
+      closest-side,
+      rgb(255 255 255 / 0.36),
+      rgb(255 255 255 / 0.12) 60%,
       transparent
     );
     transition: opacity 0.45s ease-out;
