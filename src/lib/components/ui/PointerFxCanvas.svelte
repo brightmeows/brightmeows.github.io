@@ -2,37 +2,40 @@
   import { onMount } from "svelte";
 
   import {
-    FALLBACK_ACCENT,
-    capTrailPoints,
+    HEAD_ALPHA,
+    HEAD_FADE_MS,
+    HEAD_RADIUS,
+    capSparks,
     createRipple,
-    createTrailPoint,
+    createSpark,
+    createSplash,
     isTap,
-    parseHexColor,
     pruneRipples,
-    pruneTrail,
+    pruneSparks,
     rippleAlphaAt,
     rippleRadiusAt,
-    trailAlphaAt,
-    trailRadiusAt,
-    trailSpawnCount,
+    sparkAlphaAt,
+    sparkRadiusAt,
+    sparkSpawnCount,
+    updateSpark,
     type Ripple,
-    type Rgb,
-    type TrailPoint,
+    type Spark,
   } from "#lib/utils/ui/pointer-fx.js";
   import { findGlowHost } from "#lib/utils/ui/press-glow.js";
   import { clampDpr } from "#lib/utils/ui/starfield.js";
 
   /** 像素比上限：更高 dPR 只增加填充成本，视觉无损 */
   const MAX_DPR = 2;
-  /** 拖尾光点精灵的逻辑直径（px），绘制时按半径缩放 */
+  /** 精灵尘微粒精灵的逻辑直径（px），绘制时按半径缩放 */
   const DOT_SPRITE_SIZE = 16;
   /** 涟漪白心光斑占圆环半径的比例 */
   const RIPPLE_CORE_RATIO = 0.55;
+  /** 单帧时长上限（秒）：标签页恢复后的首帧防跳变 */
+  const MAX_DT = 0.05;
 
-  /** 单帧渲染所需的场景句柄：画布上下文、配色与尺寸 */
+  /** 单帧渲染所需的场景句柄：画布上下文与尺寸 */
   interface FxScene {
     ctx: CanvasRenderingContext2D;
-    accentBase: string;
     dotSprite: HTMLCanvasElement;
     width: number;
     height: number;
@@ -40,19 +43,24 @@
 
   /** 指针特效引擎状态：粒子序列与指针跟踪 */
   interface FxEngine {
-    trail: TrailPoint[];
+    sparks: Spark[];
     ripples: Ripple[];
     /** 撒点间距的跨事件累计余量（px） */
     remainder: number;
     lastX: number;
     lastY: number;
     hasLast: boolean;
+    /** 最近一次移动时刻（ms）：光标亮核的存留渐熄依据 */
+    lastMoveAt: number;
+    /** 平滑后的指针速度（px/s），微粒继承这份速度 */
+    pointerVx: number;
+    pointerVy: number;
     /** 触屏待定 tap：pointerup 时按位移与时长确认 */
     pendingTap: { x: number; y: number; at: number; skipGlow: boolean } | null;
   }
 
-  /** 构建拖尾光点精灵：accent 径向渐变的离屏小画布。 */
-  function createDotSprite(accent: Rgb, scale: number): HTMLCanvasElement {
+  /** 构建精灵尘微粒精灵：纯白径向渐变的离屏小画布。 */
+  function createDotSprite(scale: number): HTMLCanvasElement {
     const sprite = document.createElement("canvas");
     sprite.width = Math.ceil(DOT_SPRITE_SIZE * scale);
     sprite.height = Math.ceil(DOT_SPRITE_SIZE * scale);
@@ -66,18 +74,17 @@
       sprite.height / 2,
       sprite.width / 2
     );
-    const base = `${accent.r}, ${accent.g}, ${accent.b}`;
-    grad.addColorStop(0, `rgba(${base}, 1)`);
-    grad.addColorStop(0.45, `rgba(${base}, 0.85)`);
-    grad.addColorStop(1, `rgba(${base}, 0)`);
+    grad.addColorStop(0, "rgba(255, 255, 255, 1)");
+    grad.addColorStop(0.45, "rgba(255, 255, 255, 0.85)");
+    grad.addColorStop(1, "rgba(255, 255, 255, 0)");
     g.fillStyle = grad;
     g.fillRect(0, 0, sprite.width, sprite.height);
     return sprite;
   }
 
-  /** 绘制一枚涟漪：白心光斑加淡蓝圆环。 */
+  /** 绘制一枚涟漪：白心光斑加白色圆环。 */
   function drawRipple(scene: FxScene, ripple: Ripple, now: number): void {
-    const { ctx, accentBase } = scene;
+    const { ctx } = scene;
     const alpha = rippleAlphaAt(ripple, now);
     const radius = rippleRadiusAt(ripple, now);
     const core = Math.max(radius * RIPPLE_CORE_RATIO, 1);
@@ -89,66 +96,90 @@
     ctx.arc(ripple.x, ripple.y, core, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.strokeStyle = `rgba(${accentBase}, ${alpha.toFixed(3)})`;
+    ctx.strokeStyle = `rgba(255, 255, 255, ${alpha.toFixed(3)})`;
     ctx.lineWidth = 2.5;
     ctx.beginPath();
     ctx.arc(ripple.x, ripple.y, radius, 0, Math.PI * 2);
     ctx.stroke();
   }
 
-  /** 清屏并绘制全部拖尾光点与涟漪。 */
-  function renderFx(scene: FxScene, trail: TrailPoint[], ripples: Ripple[], now: number): void {
+  /** 清屏并绘制精灵尘、涟漪与光标亮核。 */
+  function renderFx(
+    scene: FxScene,
+    sparks: Spark[],
+    ripples: Ripple[],
+    now: number,
+    head: { x: number; y: number; alpha: number } | null
+  ): void {
     const { ctx } = scene;
     ctx.clearRect(0, 0, scene.width, scene.height);
-    for (const point of trail) {
-      ctx.globalAlpha = trailAlphaAt(point, now);
-      const d = trailRadiusAt(point, now) * 2;
-      ctx.drawImage(scene.dotSprite, point.x - d / 2, point.y - d / 2, d, d);
+    for (const spark of sparks) {
+      ctx.globalAlpha = Math.max(sparkAlphaAt(spark, now), 0);
+      const d = sparkRadiusAt(spark, now) * 2;
+      ctx.drawImage(scene.dotSprite, spark.x - d / 2, spark.y - d / 2, d, d);
+    }
+    for (const ripple of ripples) drawRipple(scene, ripple, now);
+    if (head && head.alpha > 0) {
+      ctx.globalAlpha = head.alpha;
+      const d = HEAD_RADIUS * 2.4;
+      ctx.drawImage(scene.dotSprite, head.x - d / 2, head.y - d / 2, d, d);
     }
     ctx.globalAlpha = 1;
-    for (const ripple of ripples) drawRipple(scene, ripple, now);
   }
 
   function createFxEngine(): FxEngine {
     return {
-      trail: [],
+      sparks: [],
       ripples: [],
       remainder: 0,
       lastX: 0,
       lastY: 0,
       hasLast: false,
+      lastMoveAt: 0,
+      pointerVx: 0,
+      pointerVy: 0,
       pendingTap: null,
     };
   }
 
   /** 清空粒子与指针跟踪（detach 与偏好切换时用）。 */
   function resetFxEngine(engine: FxEngine): void {
-    engine.trail = [];
+    engine.sparks = [];
     engine.ripples = [];
     engine.remainder = 0;
     engine.lastX = 0;
     engine.lastY = 0;
     engine.hasLast = false;
+    engine.lastMoveAt = 0;
+    engine.pointerVx = 0;
+    engine.pointerVy = 0;
     engine.pendingTap = null;
   }
 
-  /** 指针移动推进拖尾；返回本次是否撒了新点。触屏拖动是浏览手势（滚动），不画拖尾。 */
-  function advanceTrail(engine: FxEngine, event: PointerEvent): boolean {
+  /** 指针移动推进精灵尘：按撒点间距沿线段补微粒，微粒继承平滑后的指针速度。返回是否撒了新点。触屏拖动是浏览手势（滚动），不撒尘。 */
+  function advanceSparks(engine: FxEngine, event: PointerEvent, now: number): boolean {
     if (event.pointerType === "touch") return false;
     let spawned = false;
     if (engine.hasLast) {
-      const advance = trailSpawnCount(
-        engine.remainder,
-        Math.hypot(event.clientX - engine.lastX, event.clientY - engine.lastY)
-      );
+      const dtMs = Math.max(now - engine.lastMoveAt, 1);
+      const dx = event.clientX - engine.lastX;
+      const dy = event.clientY - engine.lastY;
+      const newVx = (dx / dtMs) * 1000;
+      const newVy = (dy / dtMs) * 1000;
+      // 与上一帧速度做混合，抑制单事件抖动
+      engine.pointerVx = engine.pointerVx * 0.5 + newVx * 0.5;
+      engine.pointerVy = engine.pointerVy * 0.5 + newVy * 0.5;
+      const advance = sparkSpawnCount(engine.remainder, Math.hypot(dx, dy));
       engine.remainder = advance.remainder;
       for (let i = 0; i < advance.count; i++) {
         const t = (i + 1) / advance.count;
-        engine.trail.push(
-          createTrailPoint(
-            engine.lastX + (event.clientX - engine.lastX) * t,
-            engine.lastY + (event.clientY - engine.lastY) * t,
-            performance.now()
+        engine.sparks.push(
+          createSpark(
+            engine.lastX + dx * t,
+            engine.lastY + dy * t,
+            engine.pointerVx,
+            engine.pointerVy,
+            now
           )
         );
       }
@@ -157,6 +188,7 @@
     engine.lastX = event.clientX;
     engine.lastY = event.clientY;
     engine.hasLast = true;
+    engine.lastMoveAt = now;
     return spawned;
   }
 
@@ -194,7 +226,7 @@
 
   /** 按墙钟清理到期粒子。 */
   function pruneFx(engine: FxEngine, now: number): void {
-    engine.trail = capTrailPoints(pruneTrail(engine.trail, now));
+    engine.sparks = capSparks(pruneSparks(engine.sparks, now));
     engine.ripples = pruneRipples(engine.ripples, now);
   }
 
@@ -233,21 +265,16 @@
     if (!ctxOrNull) return;
     const ctx: CanvasRenderingContext2D = ctxOrNull;
 
-    const accent: Rgb =
-      parseHexColor(
-        getComputedStyle(document.documentElement).getPropertyValue("--color-accent")
-      ) ?? FALLBACK_ACCENT;
-
     const scene: FxScene = {
       ctx,
-      accentBase: `${accent.r}, ${accent.g}, ${accent.b}`,
-      dotSprite: createDotSprite(accent, 1),
+      dotSprite: createDotSprite(1),
       width: window.innerWidth,
       height: window.innerHeight,
     };
     const engine = createFxEngine();
     let detachListeners: (() => void) | null = null;
     let frameId: number | null = null;
+    let lastFrame: number | null = null;
     let attached = false;
 
     function setupCanvas(): void {
@@ -257,26 +284,37 @@
       canvas.width = Math.round(scene.width * dpr);
       canvas.height = Math.round(scene.height * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      scene.dotSprite = createDotSprite(accent, dpr);
+      scene.dotSprite = createDotSprite(dpr);
     }
 
     function spawnRipple(x: number, y: number): void {
-      engine.ripples.push(createRipple(x, y, performance.now()));
+      const now = performance.now();
+      engine.ripples.push(createRipple(x, y, now));
+      engine.sparks.push(...createSplash(x, y, now));
       ensureFrame();
     }
 
     function render(): void {
       frameId = null;
       const now = performance.now();
+      const dt = lastFrame === null ? 0.016 : Math.min((now - lastFrame) / 1000, MAX_DT);
+      lastFrame = now;
       pruneFx(engine, now);
-      renderFx(scene, engine.trail, engine.ripples, now);
-      if (engine.trail.length > 0 || engine.ripples.length > 0) {
+      for (const spark of engine.sparks) updateSpark(spark, dt);
+      const headLife = engine.hasLast ? 1 - (now - engine.lastMoveAt) / HEAD_FADE_MS : 0;
+      const head =
+        headLife > 0 ? { x: engine.lastX, y: engine.lastY, alpha: HEAD_ALPHA * headLife } : null;
+      renderFx(scene, engine.sparks, engine.ripples, now, head);
+      if (engine.sparks.length > 0 || engine.ripples.length > 0 || head !== null) {
         frameId = requestAnimationFrame(render);
       }
     }
 
     function ensureFrame(): void {
-      if (frameId === null) frameId = requestAnimationFrame(render);
+      if (frameId === null) {
+        lastFrame = null;
+        frameId = requestAnimationFrame(render);
+      }
     }
 
     function stopFrame(): void {
@@ -284,10 +322,11 @@
         cancelAnimationFrame(frameId);
         frameId = null;
       }
+      lastFrame = null;
     }
 
     function onPointerMove(event: PointerEvent): void {
-      if (advanceTrail(engine, event)) ensureFrame();
+      if (advanceSparks(engine, event, performance.now())) ensureFrame();
     }
 
     function onPointerDown(event: PointerEvent): void {
@@ -308,7 +347,7 @@
       // 粒子时刻按墙钟推进：隐藏时停帧即可，恢复后到期粒子直接被清理
       if (document.hidden) {
         stopFrame();
-      } else if (engine.trail.length > 0 || engine.ripples.length > 0) {
+      } else if (engine.sparks.length > 0 || engine.ripples.length > 0 || engine.hasLast) {
         ensureFrame();
       }
     }
@@ -358,6 +397,6 @@
   });
 </script>
 
-<!-- 指针特效画布：置顶覆盖全站，只承载叠加光效，不参与事件命中 -->
-<canvas bind:this={canvasRef} class="pointer-events-none fixed top-0 left-0 z-1100 h-full w-full">
+<!-- 指针特效画布：夹在星空与内容之间（同为 z-0，DOM 顺序在后），光效从玻璃面板下透出，不参与事件命中；不带 sky-canvas 类以免盖住真星空 -->
+<canvas bind:this={canvasRef} class="pointer-events-none fixed top-0 left-0 z-0 h-full w-full">
 </canvas>
