@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  RIPPLE_DURATION_MS,
   RIPPLE_MAX_RADIUS,
   RIPPLE_PEAK_ALPHA,
   TAP_MAX_DISTANCE,
   TAP_MAX_DURATION_MS,
+  TRAIL_LIFE_MS,
   TRAIL_PEAK_ALPHA,
   TRAIL_RADIUS,
   TRAIL_SPAWN_DISTANCE,
@@ -37,7 +39,7 @@ describe("createTrailPoint", () => {
     expect(point.x).toBe(10 - 1.5);
     expect(point.y).toBe(20 - 1.5);
     expect(point.born).toBe(1000);
-    expect(point.life).toBeCloseTo(440);
+    expect(point.life).toBeCloseTo(TRAIL_LIFE_MS * 0.8);
     expect(point.size).toBeCloseTo(TRAIL_RADIUS * 0.8);
   });
 
@@ -45,7 +47,7 @@ describe("createTrailPoint", () => {
     const point = createTrailPoint(10, 20, 1000, seqRng([1]));
     expect(point.x).toBe(10 + 1.5);
     expect(point.y).toBe(20 + 1.5);
-    expect(point.life).toBeCloseTo(660);
+    expect(point.life).toBeCloseTo(TRAIL_LIFE_MS * 1.2);
     expect(point.size).toBeCloseTo(TRAIL_RADIUS * 1.2);
   });
 });
@@ -66,43 +68,43 @@ describe("trailSpawnCount", () => {
     expect(trailSpawnCount(0, TRAIL_SPAWN_DISTANCE * 2 + 4)).toEqual({ remainder: 4, count: 2 });
   });
 
-  it("余量跨事件累计：余 17 再走 2 即撒一颗", () => {
-    expect(trailSpawnCount(17, 2)).toEqual({ remainder: 1, count: 1 });
+  it("余量跨事件累计：余差 1 再走 2 即撒一颗", () => {
+    expect(trailSpawnCount(TRAIL_SPAWN_DISTANCE - 1, 2)).toEqual({ remainder: 1, count: 1 });
   });
 });
 
 describe("trailProgress / isTrailAlive", () => {
-  const point = { x: 0, y: 0, born: 1000, life: 500, size: 2 };
+  const point = { x: 0, y: 0, born: 1000, life: TRAIL_LIFE_MS, size: 2 };
 
   it("出生时进度为 0，寿命终点为 1，越界后继续增长", () => {
     expect(trailProgress(point, 1000)).toBe(0);
-    expect(trailProgress(point, 1500)).toBe(1);
-    expect(trailProgress(point, 1600)).toBe(1.2);
+    expect(trailProgress(point, 1000 + TRAIL_LIFE_MS)).toBe(1);
+    expect(trailProgress(point, 1000 + TRAIL_LIFE_MS * 1.2)).toBe(1.2);
   });
 
   it("寿命内存活，终点即判死", () => {
-    expect(isTrailAlive(point, 1499)).toBe(true);
-    expect(isTrailAlive(point, 1500)).toBe(false);
+    expect(isTrailAlive(point, 1000 + TRAIL_LIFE_MS - 1)).toBe(true);
+    expect(isTrailAlive(point, 1000 + TRAIL_LIFE_MS)).toBe(false);
   });
 });
 
 describe("trailAlphaAt / trailRadiusAt", () => {
-  const point = { x: 0, y: 0, born: 1000, life: 500, size: TRAIL_RADIUS };
+  const point = { x: 0, y: 0, born: 1000, life: TRAIL_LIFE_MS, size: TRAIL_RADIUS };
 
   it("出生时取峰值透明度，寿命终点归零", () => {
     expect(trailAlphaAt(point, 1000)).toBeCloseTo(TRAIL_PEAK_ALPHA);
-    expect(trailAlphaAt(point, 1500)).toBe(0);
+    expect(trailAlphaAt(point, 1000 + TRAIL_LIFE_MS)).toBe(0);
   });
 
   it("透明度单调衰减且中途低于线性中点（先快后慢）", () => {
-    const mid = trailAlphaAt(point, 1250);
+    const mid = trailAlphaAt(point, 1000 + TRAIL_LIFE_MS / 2);
     expect(mid).toBeLessThan(TRAIL_PEAK_ALPHA / 2);
     expect(trailAlphaAt(point, 1300)).toBeLessThan(trailAlphaAt(point, 1200));
   });
 
   it("半径随寿命收缩到四成", () => {
     expect(trailRadiusAt(point, 1000)).toBeCloseTo(TRAIL_RADIUS);
-    expect(trailRadiusAt(point, 1500)).toBeCloseTo(TRAIL_RADIUS * 0.4);
+    expect(trailRadiusAt(point, 1000 + TRAIL_LIFE_MS)).toBeCloseTo(TRAIL_RADIUS * 0.6);
   });
 });
 
@@ -126,24 +128,26 @@ describe("pruneTrail / capTrailPoints", () => {
 
 describe("涟漪生命周期", () => {
   const ripple = createRipple(5, 6, 1000);
+  const half = RIPPLE_DURATION_MS / 2;
+  const end = RIPPLE_DURATION_MS;
 
   it("圆环半径 easeOutCubic 扩散：起点 0、终点最大值、中点快于线性", () => {
     expect(rippleRadiusAt(ripple, 1000)).toBe(0);
-    expect(rippleRadiusAt(ripple, 1175)).toBeGreaterThan(RIPPLE_MAX_RADIUS / 2);
-    expect(rippleRadiusAt(ripple, 1350)).toBe(RIPPLE_MAX_RADIUS);
+    expect(rippleRadiusAt(ripple, 1000 + half)).toBeGreaterThan(RIPPLE_MAX_RADIUS / 2);
+    expect(rippleRadiusAt(ripple, 1000 + end)).toBe(RIPPLE_MAX_RADIUS);
   });
 
   it("透明度从峰值线性淡出到 0", () => {
     expect(rippleAlphaAt(ripple, 1000)).toBeCloseTo(RIPPLE_PEAK_ALPHA);
-    expect(rippleAlphaAt(ripple, 1175)).toBeCloseTo(RIPPLE_PEAK_ALPHA / 2);
-    expect(rippleAlphaAt(ripple, 1350)).toBe(0);
+    expect(rippleAlphaAt(ripple, 1000 + half)).toBeCloseTo(RIPPLE_PEAK_ALPHA / 2);
+    expect(rippleAlphaAt(ripple, 1000 + end)).toBe(0);
   });
 
   it("生命周期内存活，终点即判死；prune 只留存活项", () => {
-    expect(isRippleAlive(ripple, 1349)).toBe(true);
-    expect(isRippleAlive(ripple, 1350)).toBe(false);
-    expect(pruneRipples([ripple], 1350)).toEqual([]);
-    expect(pruneRipples([ripple], 1100)).toEqual([ripple]);
+    expect(isRippleAlive(ripple, 1000 + end - 1)).toBe(true);
+    expect(isRippleAlive(ripple, 1000 + end)).toBe(false);
+    expect(pruneRipples([ripple], 1000 + end)).toEqual([]);
+    expect(pruneRipples([ripple], 1000 + 100)).toEqual([ripple]);
   });
 });
 

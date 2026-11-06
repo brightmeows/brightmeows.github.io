@@ -362,8 +362,8 @@
   .press-glow-host::before {
     background: radial-gradient(
       closest-side at var(--cursor-x, 50%) var(--cursor-y, 50%),
-      rgb(255 255 255 / 0.16),
-      color-mix(in oklab, var(--color-accent) 18%, transparent) 55%,
+      rgb(255 255 255 / 0.3),
+      color-mix(in oklab, var(--color-accent) 30%, transparent) 55%,
       transparent
     );
     transition: opacity 0.15s ease-out;
@@ -377,16 +377,16 @@
   .press-glow-host::after {
     background: radial-gradient(
       circle 80px at var(--press-x, 50%) var(--press-y, 50%),
-      rgb(255 255 255 / 0.3),
-      color-mix(in oklab, var(--color-accent) 32%, transparent) 55%,
+      rgb(255 255 255 / 0.5),
+      color-mix(in oklab, var(--color-accent) 48%, transparent) 55%,
       transparent
     );
-    transition: opacity 0.3s ease-out;
+    transition: opacity 0.45s ease-out;
   }
 
   .press-glow-host:active::after {
     opacity: 1;
-    transition-duration: 0.06s;
+    transition-duration: 0.04s;
   }
 
   /* 禁用控件不出光效 */
