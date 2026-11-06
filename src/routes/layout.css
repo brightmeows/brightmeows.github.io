@@ -358,12 +358,12 @@
     opacity: 0;
   }
 
-  /* 悬停柔光：光标跟随的 spotlight，悬停期间常亮 */
+  /* 悬停柔光：固定半径正圆锚定光标（不再用 closest-side），裁剪在按钮内、贴边呈弧不变形 */
   .press-glow-host::before {
     background: radial-gradient(
-      closest-side at var(--cursor-x, 50%) var(--cursor-y, 50%),
-      rgb(255 255 255 / 0.3),
-      color-mix(in oklab, var(--color-accent) 30%, transparent) 55%,
+      circle 72px at var(--cursor-x, 50%) var(--cursor-y, 50%),
+      rgb(255 255 255 / 0.35),
+      rgb(255 255 255 / 0.12) 55%,
       transparent
     );
     transition: opacity 0.15s ease-out;
@@ -373,12 +373,12 @@
     opacity: 1;
   }
 
-  /* 按压光斑：从按压点亮起，松开后渐熄（光随指动的 Aero 触感） */
+  /* 按压光斑：固定半径正圆从按压点亮起，松开后渐熄（光随指动的 Aero 触感） */
   .press-glow-host::after {
     background: radial-gradient(
       circle 80px at var(--press-x, 50%) var(--press-y, 50%),
       rgb(255 255 255 / 0.5),
-      color-mix(in oklab, var(--color-accent) 48%, transparent) 55%,
+      rgb(255 255 255 / 0.14) 55%,
       transparent
     );
     transition: opacity 0.45s ease-out;
