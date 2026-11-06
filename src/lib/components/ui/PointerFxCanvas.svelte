@@ -22,16 +22,15 @@
     type Spark,
   } from "#lib/utils/ui/pointer-fx.js";
   import { findGlowHost } from "#lib/utils/ui/press-glow.js";
-  import { clampDpr } from "#lib/utils/ui/starfield.js";
 
-  /** 像素比上限：更高 dPR 只增加填充成本，视觉无损 */
-  const MAX_DPR = 2;
   /** 精灵尘微粒精灵的逻辑直径（px），绘制时按半径缩放 */
   const DOT_SPRITE_SIZE = 16;
   /** 涟漪白心光斑占圆环半径的比例 */
   const RIPPLE_CORE_RATIO = 0.55;
   /** 单帧时长上限（秒）：标签页恢复后的首帧防跳变 */
   const MAX_DT = 0.05;
+  /** 泛光柔化系数：画布按此比例降采样渲染，显示放大后光点融成连续光雾 */
+  const GLOW_RES = 0.35;
 
   /** 单帧渲染所需的场景句柄：画布上下文与尺寸 */
   interface FxScene {
@@ -278,13 +277,13 @@
     let attached = false;
 
     function setupCanvas(): void {
-      const dpr = clampDpr(window.devicePixelRatio || 1, MAX_DPR);
       scene.width = window.innerWidth;
       scene.height = window.innerHeight;
-      canvas.width = Math.round(scene.width * dpr);
-      canvas.height = Math.round(scene.height * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      scene.dotSprite = createDotSprite(dpr);
+      // 降采样渲染：光点在低分辨率下绘制，显示放大后融成无点光雾
+      canvas.width = Math.round(scene.width * GLOW_RES);
+      canvas.height = Math.round(scene.height * GLOW_RES);
+      ctx.setTransform(GLOW_RES, 0, 0, GLOW_RES, 0, 0);
+      scene.dotSprite = createDotSprite(GLOW_RES);
     }
 
     function spawnRipple(x: number, y: number): void {
