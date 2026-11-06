@@ -69,6 +69,8 @@ def check_file(path: str) -> int:
                 if re.match(r"^(```|~~~)", line):
                     in_code = not in_code
                     continue
+                if in_code:
+                    continue
                 if re.match(r"^\s*\$\$\s*$", line):
                     in_math_block = not in_math_block
                     continue

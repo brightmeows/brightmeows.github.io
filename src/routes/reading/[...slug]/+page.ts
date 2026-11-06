@@ -42,6 +42,7 @@ export const load: PageLoad = async ({ params }) => {
     const index = sorted.findIndex((entry) => entry.slug === slug);
     const prevEntry = index > 0 ? sorted[index - 1] : undefined;
     const nextEntry = index >= 0 && index < sorted.length - 1 ? sorted[index + 1] : undefined;
+    const bookId = slug.split("/")[0];
     const post = await importer();
     const meta = post.metadata ?? {};
 
@@ -67,7 +68,7 @@ export const load: PageLoad = async ({ params }) => {
             title: nextEntry.title,
           }
         : undefined,
-      bookToc: { href: "/reading/compendium/", label: m["content.reading.book_toc"]() },
+      bookToc: { href: `/reading/${bookId}/`, label: m["content.reading.book_toc"]() },
     };
   } catch {
     // SvelteKit error() 是官方 404 模式，返回 never（内部 throw HttpError）
