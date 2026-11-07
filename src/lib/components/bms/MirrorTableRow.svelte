@@ -67,7 +67,6 @@
   </td>
   <td class="table-td-compact min-w-50 wrap-break-word">
     <strong
-      class="cursor-context-menu"
       use:jsonPreview={{
         preview: mirrorPreview,
         trigger: "contextmenu",

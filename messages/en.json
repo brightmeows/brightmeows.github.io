@@ -154,7 +154,6 @@
   "common.diff": "Diff",
   "common.edit": "Edit",
   "common.json_hint_mouse": "Right-click to view JSON",
-  "common.json_hint_touch": "Long-press to view JSON",
   "common.load_failed": "Load failed",
   "common.load_failed_with_error": "Failed to load: {error}",
   "common.loading_data": "Loading data...",
