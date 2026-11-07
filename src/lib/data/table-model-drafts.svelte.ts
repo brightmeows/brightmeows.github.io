@@ -131,8 +131,9 @@ export function createDraftLifecycle(deps: DraftLifecycleDeps) {
   }
 
   // 草稿不可用时退回离页警告（草稿可用时无警告，防误关由草稿承担）。
-  const draftGuardActive = $derived(
-    dirty && (draftStatus === "unavailable" || draftStatus === "quota" || draftStatus === "error")
+  const draftGuardActive = $derived.by(
+    () =>
+      dirty && (draftStatus === "unavailable" || draftStatus === "quota" || draftStatus === "error")
   );
   $effect(() => {
     if (!draftGuardActive) return;

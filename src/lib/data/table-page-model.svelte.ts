@@ -112,8 +112,8 @@ export function createTableModel(input: TableModelInput) {
   const groups = $derived(groupChartsByLevel(entries));
   const tableStats = $derived(computeTableStats(groups));
   const courseGroups = $derived(resolveCourses(headerRecord.course, entries));
-  const canSave = $derived(onSave !== undefined && canWrite);
-  const saveLabel = $derived(
+  const canSave = $derived.by(() => onSave !== undefined && canWrite);
+  const saveLabel = $derived.by(() =>
     busy ? m["editor.saving"]() : createMode ? m["editor.create_shared"]() : m["editor.save"]()
   );
   const pageTitle = $derived(
