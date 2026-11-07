@@ -7,6 +7,8 @@
     dustAlphaAt,
     dustRadiusAt,
     dustSpawnCount,
+    glowAlpha,
+    glowRadius,
     pruneDust,
     updateDust,
     type Dust,
@@ -20,6 +22,8 @@
   const MAX_DPR = 2;
   /** resize 防抖等待（ms）：吸收移动端地址栏伸缩的高频触发 */
   const RESIZE_DEBOUNCE_MS = 150;
+  /** 可点元素清单：与 layout.css 的光标接线共用同一口径，改动需两处同步 */
+  const HOVER_TARGET_SELECTOR = 'a, button, [role="button"], select, summary, label';
 
   /** 指针跟踪与尘粒序列的引擎状态 */
   interface TrailEngine {
@@ -30,6 +34,8 @@
     lastY: number;
     hasLast: boolean;
     lastMoveAt: number;
+    /** 是否悬停在可点元素上：悬停散光伴影的开关 */
+    hoverInteractive: boolean;
     /** 平滑后的指针速度（px/s），尘粒继承这份速度 */
     pointerVx: number;
     pointerVy: number;
@@ -44,6 +50,7 @@
       lastY: 0,
       hasLast: false,
       lastMoveAt: 0,
+      hoverInteractive: false,
       pointerVx: 0,
       pointerVy: 0,
     };
@@ -106,9 +113,9 @@
     engine.lastMoveAt = now;
   }
 
-  // 爪印精灵尘拖尾画布：夹在星空与内容之间（同为 z-0，DOM 序在后），尘粒
-  // 飞过玻璃面板时被 backdrop-blur 磨砂，光从玻璃下透出；不参与事件命中，
-  // 不带 sky-canvas 类以免盖住真星空底色
+  // 星光光标与精灵尘拖尾画布：夹在星空与内容之间（同为 z-0，DOM 序在后），
+  // 尘粒与悬停伴影飞过玻璃面板时被 backdrop-blur 磨砂，光从玻璃下透出；
+  // 不参与事件命中，不带 sky-canvas 类以免盖住真星空底色
   let canvasRef: HTMLCanvasElement | null = null;
 
   onMount(() => {
@@ -140,10 +147,27 @@
 
     const engine = createEngine();
 
-    /** 清屏重画：先按墙钟清理到期尘粒，再逐粒绘制。 */
+    /** 清屏重画：伴影垫底，再按墙钟清理到期尘粒并逐粒绘制。 */
     function render(now: number): void {
       engine.dust = capDust(pruneDust(engine.dust, now));
       ctx.clearRect(0, 0, width, height);
+      if (engine.hasLast && engine.hoverInteractive) {
+        const radius = glowRadius(now);
+        const grad = ctx.createRadialGradient(
+          engine.lastX,
+          engine.lastY,
+          0,
+          engine.lastX,
+          engine.lastY,
+          radius
+        );
+        grad.addColorStop(0, `rgba(255, 255, 255, ${glowAlpha(now).toFixed(3)})`);
+        grad.addColorStop(1, "rgba(255, 255, 255, 0)");
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(engine.lastX, engine.lastY, radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
       for (const d of engine.dust) {
         const alpha = dustAlphaAt(d, now);
         if (alpha <= 0) continue;
@@ -170,6 +194,11 @@
       advanceDust(engine, event, performance.now());
     }
 
+    function handleHover(event: PointerEvent): void {
+      engine.hoverInteractive =
+        event.target instanceof Element && event.target.closest(HOVER_TARGET_SELECTOR) !== null;
+    }
+
     function handleResize(): void {
       if (resizeTimer !== null) clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
@@ -190,12 +219,14 @@
     }
 
     window.addEventListener("pointermove", handleMove, { passive: true });
+    window.addEventListener("pointerover", handleHover, { passive: true });
     window.addEventListener("resize", handleResize);
     document.addEventListener("visibilitychange", handleVisibility);
     animationId = requestAnimationFrame(frame);
 
     return () => {
       window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerover", handleHover);
       window.removeEventListener("resize", handleResize);
       document.removeEventListener("visibilitychange", handleVisibility);
       if (resizeTimer !== null) clearTimeout(resizeTimer);
