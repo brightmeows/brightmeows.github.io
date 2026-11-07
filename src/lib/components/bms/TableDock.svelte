@@ -124,6 +124,7 @@
     return {
       busy: model.busy,
       draftPending: model.pendingDraft !== null,
+      undoPending: model.notice?.action !== undefined,
       nearBottom: isNearDocumentBottom(
         window.scrollY,
         window.innerHeight,
@@ -144,6 +145,14 @@
   function toggleExpansion(): void {
     scrollState = toggleDockExpansion(scrollState);
     expansion = scrollState.expansion;
+  }
+
+  /** 执行通知附带动作（撤销删除）并关闭通知；动作闭包负责回写内容与脏标记。 */
+  function runNoticeAction(): void {
+    const action = model.notice?.action;
+    if (action === undefined) return;
+    model.notice = null;
+    action.run();
   }
 
   function handleFocusIn(event: FocusEvent): void {
@@ -217,6 +226,14 @@
         dot: "bg-accent-light",
         text: "text-accent-light",
         title: m["editor.draft_found_title"](),
+      });
+    }
+    if (model.notice !== null && model.notice.action !== undefined) {
+      signals.push({
+        word: m["editor.dock_undo_pending"](),
+        dot: "bg-success",
+        text: "text-success",
+        title: model.notice.text,
       });
     }
     return signals;
@@ -456,6 +473,13 @@
               : 'border-error/40 bg-error/10 text-error'}"
         >
           {model.notice.text}
+          {#if model.notice.action !== undefined}
+            <div class="mt-2 flex justify-center">
+              <button class={btnGhostMd} type="button" onclick={runNoticeAction}>
+                {model.notice.action.label}
+              </button>
+            </div>
+          {/if}
         </div>
       {/if}
     </div>

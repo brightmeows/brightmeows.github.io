@@ -3,6 +3,8 @@
 
   import HeaderFields from "./HeaderFields.svelte";
 
+  import type { EditorNotice } from "#lib/controllers/editor.js";
+
   /** 概览内容：查看态只读摘要，编辑态复用头部表单；卡片显隐由页面管理。 */
   interface Props {
     editing: boolean;
@@ -15,6 +17,8 @@
     disabled?: boolean;
     management?: Snippet | undefined;
     onChange?: (() => void) | undefined;
+    /** 页面通知通道（等级删除的撤销通知直通模型 notice）。 */
+    onNotice?: ((notice: EditorNotice) => void) | undefined;
   }
 
   let {
@@ -28,6 +32,7 @@
     disabled = false,
     management,
     onChange,
+    onNotice = undefined,
   }: Props = $props();
 
   const extraJson = $derived(JSON.stringify(extraHeader, null, 2));
@@ -44,6 +49,7 @@
     {extraJson}
     {disabled}
     onchange={onChange}
+    onnotice={onNotice}
   />
   {#if editing && management && !disabled}
     <div class="mt-6">

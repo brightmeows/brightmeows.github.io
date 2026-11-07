@@ -24,6 +24,7 @@
     btnIconDanger,
     inputEditorMono,
   } from "#lib/constants/ui-classes.js";
+  import type { EditorNotice } from "#lib/controllers/editor.js";
   import { m } from "#lib/paraglide/messages.js";
 
   /** 编辑态段位行：摘要、行头操作与展开后的全宽表单。 */
@@ -39,6 +40,8 @@
     onMoveUp: () => void;
     onMoveDown: () => void;
     onChange: () => void;
+    /** 页面通知通道（撤销删除等带动作的通知直通模型 notice）。 */
+    onNotice?: ((notice: EditorNotice) => void) | undefined;
   }
 
   let {
@@ -53,6 +56,7 @@
     onMoveUp,
     onMoveDown,
     onChange,
+    onNotice = undefined,
   }: Props = $props();
 
   const PICKER_LIMIT = 20;
@@ -97,8 +101,20 @@
   }
 
   function removeTrophy(index: number): void {
+    const snapshot = course.trophies;
     course.trophies = course.trophies.filter((_, i) => i !== index);
     notify();
+    onNotice?.({
+      kind: "ok",
+      text: m["editor.course_trophy_remove_done"](),
+      action: {
+        label: m["editor.undo_action"](),
+        run: () => {
+          course.trophies = snapshot;
+          notify();
+        },
+      },
+    });
   }
 
   function addChartRow(md5: string, sha256: string, levelText: string): void {

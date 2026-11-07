@@ -25,6 +25,8 @@ export interface DockGuards {
   busy: boolean;
   /** 存在待恢复草稿：下滑不收起。 */
   draftPending: boolean;
+  /** 存在待撤销动作（如刚删除条目）：下滑不收起。 */
+  undoPending: boolean;
   /** 距文档底部不足唤出阈值：强制展开。 */
   nearBottom: boolean;
   /** 键盘焦点在 dock 内：冻结收展。 */
@@ -73,8 +75,8 @@ export function applyDockScroll(
     return { expansion: "expanded", accumulatedDown: 0, accumulatedUp: 0 };
   }
 
-  // busy 与待恢复草稿只豁免“滚动收起”这一个方向，展开方向照常。
-  const collapseBlocked = guards.busy || guards.draftPending;
+  // busy、待恢复草稿与待撤销动作只豁免“滚动收起”这一个方向，展开方向照常。
+  const collapseBlocked = guards.busy || guards.draftPending || guards.undoPending;
 
   if (state.expansion === "expanded") {
     if (delta > 0) {

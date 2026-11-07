@@ -68,9 +68,17 @@ export function decideNewTableDraft(
 // ---- 保存编排（闸门与并发检查先行，提交随后；busy 时序由两段拆分保持） ----
 
 /** 编辑器保存结果里统一的通知形状（与页面 notice 状态同构）。 */
+export interface EditorNoticeAction {
+  /** 动作按钮文案（如“撤销”）。 */
+  label: string;
+  run: () => void;
+}
+
 export interface EditorNotice {
   kind: "ok" | "warn" | "error";
   text: string;
+  /** 附加动作（如删除后的撤销）；dock notice 区渲染按钮，ok 类 8 秒过期即撤销窗口。 */
+  action?: EditorNoticeAction | undefined;
 }
 
 export type EditorSavePlan =

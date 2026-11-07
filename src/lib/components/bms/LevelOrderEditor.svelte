@@ -3,6 +3,7 @@
   import { levelOrderToText, textToLevelOrder } from "@brightmeows/bms/shared";
 
   import { btnGhost, btnIcon, inputEditorBase } from "#lib/constants/ui-classes.js";
+  import type { EditorNotice } from "#lib/controllers/editor.js";
   import { m } from "#lib/paraglide/messages.js";
 
   /**
@@ -13,9 +14,16 @@
     levels: string[];
     disabled?: boolean;
     onchange?: (() => void) | undefined;
+    /** 页面通知通道（撤销删除等带动作的通知直通模型 notice）。 */
+    onnotice?: ((notice: EditorNotice) => void) | undefined;
   }
 
-  let { levels = $bindable([]), disabled = false, onchange }: Props = $props();
+  let {
+    levels = $bindable([]),
+    disabled = false,
+    onchange,
+    onnotice = undefined,
+  }: Props = $props();
 
   let textMode = $state(false);
   let textValue = $state("");
@@ -36,7 +44,19 @@
   }
 
   function handleRemove(index: number): void {
+    const snapshot = levels;
+    const label = levels[index] ?? "";
     commit(removeLevelAt(levels, index));
+    onnotice?.({
+      kind: "ok",
+      text: m["editor.level_order_remove_done"]({ level: label }),
+      action: {
+        label: m["editor.undo_action"](),
+        run: () => {
+          commit(snapshot);
+        },
+      },
+    });
   }
 
   function startTextMode(): void {

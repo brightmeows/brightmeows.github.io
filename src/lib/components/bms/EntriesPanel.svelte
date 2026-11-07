@@ -1,6 +1,7 @@
 <script lang="ts">
   import { extractBmsIrSongMd5 } from "@brightmeows/bms/bms-ir";
   import {
+    captureEntryRemoval,
     assignHintLevels,
     assignLevel,
     countUnassigned,
@@ -13,6 +14,7 @@
     groupEntryIndices,
     isUnassigned,
     parseLevelFilterOption,
+    restoreEntryRemoval,
     removeIndices,
     setIndices,
     shortenHash,
@@ -58,6 +60,8 @@
     dataError?: string | null;
     onRetry?: (() => void | Promise<void>) | undefined;
     onChange?: (() => void) | undefined;
+    /** 页面通知通道（撤销删除等带动作的通知直通模型 notice）。 */
+    onNotice?: ((notice: EditorNotice) => void) | undefined;
     hiddenLevels?: Set<string>;
     hideUnassigned?: boolean;
   }
@@ -76,6 +80,7 @@
     dataError = null,
     onRetry,
     onChange,
+    onNotice = undefined,
     hiddenLevels = $bindable(new Set()),
     hideUnassigned = $bindable(false),
   }: Props = $props();
@@ -289,13 +294,25 @@
 
   function deleteSelected(): void {
     if (selected.size === 0) return;
-    if (!window.confirm(m["editor.entries_batch_delete_confirm"]({ count: selected.size }))) return;
-    entries = removeIndices(entries, [...selected]);
+    const indices = [...selected];
+    const snapshot = captureEntryRemoval(entries, indices);
+    entries = removeIndices(entries, indices);
     selected = new Set();
     editingIndex = null;
     adding = false;
     notice = null;
     onChange?.();
+    onNotice?.({
+      kind: "ok",
+      text: m["editor.entries_deleted_notice"]({ count: indices.length }),
+      action: {
+        label: m["editor.undo_action"](),
+        run: () => {
+          entries = restoreEntryRemoval(entries, snapshot);
+          onChange?.();
+        },
+      },
+    });
   }
 
   function startEdit(index: number): void {
@@ -370,12 +387,23 @@
     const entry = entries[index];
     if (entry === undefined) return;
     const label = entryLabel(entry) || m["editor.entry_unnamed"]();
-    if (!window.confirm(m["editor.entry_delete_confirm"]({ title: label }))) return;
+    const snapshot = captureEntryRemoval(entries, [index]);
     entries = removeIndices(entries, [index]);
     selected = new Set();
     if (editingIndex === index) editingIndex = null;
     notice = null;
     onChange?.();
+    onNotice?.({
+      kind: "ok",
+      text: m["editor.entry_deleted_notice"]({ title: label }),
+      action: {
+        label: m["editor.undo_action"](),
+        run: () => {
+          entries = restoreEntryRemoval(entries, snapshot);
+          onChange?.();
+        },
+      },
+    });
   }
 
   function deleteEditing(): void {
