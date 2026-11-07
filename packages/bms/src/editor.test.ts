@@ -16,6 +16,7 @@ import {
   draftStorageKey,
   duplicateEntryLabel,
   encodeLevelFilterOption,
+  entryGroupAnchorId,
   entryHashes,
   filterEntryIndices,
   groupEntryIndices,
@@ -376,6 +377,15 @@ describe("draft helpers", () => {
     expect(shouldWarnOverwrite("2026-01-02T00:00:00Z", "2026-01-01T00:00:00Z")).toBe(false);
     expect(shouldWarnOverwrite(undefined, "2026-01-02T00:00:00Z")).toBe(false);
     expect(shouldWarnOverwrite("2026-01-02T00:00:00Z", undefined)).toBe(false);
+  });
+});
+
+describe("entryGroupAnchorId", () => {
+  it("uses a collision-free fixed id for the unassigned group", () => {
+    expect(entryGroupAnchorId("novice", false)).toBe("entry-group-novice");
+    expect(entryGroupAnchorId("unassigned", false)).toBe("entry-group-unassigned");
+    expect(entryGroupAnchorId("ignored", true)).toBe("entry-group:unassigned");
+    expect(entryGroupAnchorId("unassigned", false)).not.toBe(entryGroupAnchorId("", true));
   });
 });
 

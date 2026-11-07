@@ -405,10 +405,11 @@ export function filterEntryIndices(
 
 /**
  * 条目分组的滚动锚点 id：目录子项与表格组头共用（等级值经百分号编码隔离特殊字符，
- * 未指派组用固定 id）。
+ * 未指派组用带冒号的固定 id——冒号在 encodeURIComponent 输出中必为 %3A，
+ * 与字面名为 unassigned 的等级值编码结果不会相撞）。
  */
 export function entryGroupAnchorId(level: string, unassigned: boolean): string {
-  return unassigned ? "entry-group-unassigned" : `entry-group-${encodeURIComponent(level)}`;
+  return unassigned ? "entry-group:unassigned" : `entry-group-${encodeURIComponent(level)}`;
 }
 
 /** 条目等级分组：组的等级值，或未指派组的标记与全部下标。 */
