@@ -29,22 +29,22 @@ export interface Rgb {
 }
 
 /** 拖尾撒点间距（px）：指针每累计移动该距离补一颗光点 */
-export const TRAIL_SPAWN_DISTANCE = 12;
+export const TRAIL_SPAWN_DISTANCE = 18;
 /** 拖尾光点基准寿命（ms），逐点带随机抖动 */
-export const TRAIL_LIFE_MS = 900;
+export const TRAIL_LIFE_MS = 550;
 /** 拖尾光点峰值透明度 */
-export const TRAIL_PEAK_ALPHA = 0.75;
+export const TRAIL_PEAK_ALPHA = 0.35;
 /** 拖尾光点基准出生半径（px） */
-export const TRAIL_RADIUS = 4.5;
+export const TRAIL_RADIUS = 2.2;
 /** 拖尾光点数量上限：异常高频移动下的画布循环护栏 */
-export const TRAIL_MAX_POINTS = 120;
+export const TRAIL_MAX_POINTS = 96;
 
 /** 涟漪生命周期（ms） */
-export const RIPPLE_DURATION_MS = 450;
+export const RIPPLE_DURATION_MS = 350;
 /** 涟漪圆环最大半径（px） */
-export const RIPPLE_MAX_RADIUS = 48;
+export const RIPPLE_MAX_RADIUS = 32;
 /** 涟漪峰值透明度（圆环与白心光斑共用基准） */
-export const RIPPLE_PEAK_ALPHA = 0.55;
+export const RIPPLE_PEAK_ALPHA = 0.35;
 
 /** 触屏点按判定的最大位移（px）：超过视为拖动滚动，不产生涟漪 */
 export const TAP_MAX_DISTANCE = 12;
@@ -100,10 +100,10 @@ export function trailAlphaAt(point: TrailPoint, now: number): number {
   return TRAIL_PEAK_ALPHA * (1 - t) ** 1.5;
 }
 
-/** 光点当前半径：随寿命收缩到六成。 */
+/** 光点当前半径：随寿命收缩到四成。 */
 export function trailRadiusAt(point: TrailPoint, now: number): number {
   const t = Math.min(Math.max(trailProgress(point, now), 0), 1);
-  return point.size * (1 - 0.4 * t);
+  return point.size * (1 - 0.6 * t);
 }
 
 /** 清理到期光点，返回存活序列。 */
