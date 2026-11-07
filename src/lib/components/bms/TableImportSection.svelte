@@ -35,6 +35,8 @@
   import HashListPanel from "#lib/components/bms/HashListPanel.svelte";
   import TableEntryImportPanel from "#lib/components/bms/TableEntryImportPanel.svelte";
   import TableImportPanel from "#lib/components/bms/TableImportPanel.svelte";
+  import { requestConfirm } from "#lib/components/ui/confirm-dialog.svelte.js";
+  import { planImportApply } from "#lib/controllers/editor.js";
   import { m } from "#lib/paraglide/messages.js";
 
   let {
@@ -63,7 +65,18 @@
     extraHeader = state.extra;
   }
 
-  function handleImport(result: TableImportResult): void {
+  async function handleImport(result: TableImportResult): Promise<void> {
+    const plan = await planImportApply({
+      currentCount: entries.length,
+      incomingCount: result.data?.length ?? 0,
+      dataMode: result.dataMode,
+      hasHeader: result.header !== null,
+      confirm: requestConfirm,
+    });
+    if (plan.kind === "rejected") {
+      onNotice(plan.notice);
+      return;
+    }
     if (result.header !== null) applyImportedHeader(result.header);
     const sourceLabel =
       result.source === "paste"

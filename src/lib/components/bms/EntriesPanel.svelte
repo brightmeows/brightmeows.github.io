@@ -24,11 +24,13 @@
 
   import ChartTableRow from "#lib/components/bms/ChartTableRow.svelte";
   import EntryDetailForm from "#lib/components/bms/EntryDetailForm.svelte";
+  import { requestConfirm } from "#lib/components/ui/confirm-dialog.svelte.js";
   import JsonPreview from "#lib/components/ui/JsonPreview.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
   import ToggleJumpChip from "#lib/components/ui/ToggleJumpChip.svelte";
   import { btnGhost, btnPrimary, inputEditorMono } from "#lib/constants/ui-classes.js";
   import type { EditorNotice } from "#lib/controllers/editor.js";
+  import { planImportApply } from "#lib/controllers/editor.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { JsonPreviewHandle } from "#lib/types/ui.js";
   import { validateUrl } from "#lib/utils/infra/url.js";
@@ -380,7 +382,7 @@
     if (editingIndex !== null) removeEntry(editingIndex);
   }
 
-  function applyBulk(): void {
+  async function applyBulk(): Promise<void> {
     bulkError = null;
     let parsed: unknown;
     try {
@@ -418,6 +420,17 @@
       selected = new Set();
       notice = { kind: "ok", text: m["editor.bulk_done"]({ added: added.length, skipped }) };
       onChange?.();
+      return;
+    }
+    const plan = await planImportApply({
+      currentCount: entries.length,
+      incomingCount: parsed.length,
+      dataMode: "replace",
+      hasHeader: false,
+      confirm: requestConfirm,
+    });
+    if (plan.kind === "rejected") {
+      notice = plan.notice;
       return;
     }
     entries = parsed as Record<string, unknown>[];

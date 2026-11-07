@@ -22,6 +22,7 @@
   import TableOverviewPanel from "#lib/components/bms/TableOverviewPanel.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import CardSwitcher, { type CardSwitchItem } from "#lib/components/ui/CardSwitcher.svelte";
+  import ConfirmDialog from "#lib/components/ui/ConfirmDialog.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
   import { btnGhost, btnPrimaryLarge } from "#lib/constants/ui-classes.js";
   import type { EditorNotice } from "#lib/controllers/editor.js";
@@ -315,6 +316,9 @@
     onSetMode={handleDockSetMode}
   />
 {/if}
+
+<!-- 确认弹层：编辑域所有 requestConfirm 请求的渲染挂载点 -->
+<ConfirmDialog />
 
 <!-- 编辑态全页拖拽接收：与导入折叠段的拖拽区共用同一管线 -->
 {#if isEdit && model.ready}

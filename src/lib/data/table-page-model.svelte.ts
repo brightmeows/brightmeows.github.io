@@ -45,6 +45,8 @@ export interface TablePagePublish {
   onSave?: ((payload: TableEditPayload) => Promise<string | undefined>) | undefined;
   /** 保存前取当前线上 updated_at（共享表并发检查）。 */
   conflictCheck?: (() => Promise<string | undefined>) | undefined;
+  /** 确认对话框实现（并发覆盖与放弃修改）；缺省回退原生 confirm。 */
+  confirm?: ((message: string) => Promise<boolean>) | undefined;
   /** 另存为共享表：同源走草稿认领，none 隐藏入口。 */
   saveAsShared?: "same-origin" | "none" | undefined;
 }
@@ -90,6 +92,9 @@ export function createTableModel(input: TableModelInput) {
   const canWrite = $derived(Boolean(capabilities().canWrite ?? false));
   const createMode = $derived(capabilities().createMode ?? false);
   const seed = $derived(capabilities().seed);
+  const confirmGate = $derived(
+    publish().confirm ?? ((message: string) => Promise.resolve(window.confirm(message)))
+  );
 
   // ---- 模型（查看态与编辑态共享） ----
   let name = $state("");
@@ -204,7 +209,7 @@ export function createTableModel(input: TableModelInput) {
 
   /** 放弃未保存修改：删草稿并回载远端（新表回到种子态）。 */
   async function discardEdits(): Promise<void> {
-    if (!window.confirm(m["editor.discard_unsaved_confirm"]())) return;
+    if (!(await confirmGate(m["editor.discard_unsaved_confirm"]()))) return;
     await drafts.resetAfterDiscard();
     notice = null;
     levelHints = {};
@@ -219,7 +224,7 @@ export function createTableModel(input: TableModelInput) {
       entries,
       baselineUpdatedAt,
       conflictCheck,
-      confirm: (message) => window.confirm(message),
+      confirm: (message) => confirmGate(message),
     });
     if (plan.kind === "rejected") {
       notice = plan.notice;

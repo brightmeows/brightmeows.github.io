@@ -2,6 +2,7 @@
   import { draftStorageKey } from "@brightmeows/bms/editor";
 
   import BmsTablePage from "#lib/components/pages/BmsTablePage.svelte";
+  import { requestConfirm } from "#lib/components/ui/confirm-dialog.svelte.js";
   import EmptyState from "#lib/components/ui/EmptyState.svelte";
   import { r2TableDataUrl, r2TableHeaderUrl } from "#lib/constants/r2.js";
   import { m } from "#lib/paraglide/messages.js";
@@ -26,6 +27,6 @@
       dataUrlFallback: r2TableDataUrl(tableId),
       draftKey: draftStorageKey("mirror", tableId),
     }}
-    publish={{ saveAsShared: "same-origin" }}
+    publish={{ saveAsShared: "same-origin", confirm: requestConfirm }}
   />
 {/if}

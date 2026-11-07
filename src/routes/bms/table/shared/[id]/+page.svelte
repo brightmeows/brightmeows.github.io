@@ -6,6 +6,7 @@
 
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import BmsTablePage from "#lib/components/pages/BmsTablePage.svelte";
+  import { requestConfirm } from "#lib/components/ui/confirm-dialog.svelte.js";
   import EmptyState from "#lib/components/ui/EmptyState.svelte";
   import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
@@ -182,6 +183,7 @@
       onSave: s === null ? undefined : handleSave,
       conflictCheck,
       saveAsShared: isNew ? "none" : "same-origin",
+      confirm: requestConfirm,
     }}
     capabilities={{
       mode: "shared",

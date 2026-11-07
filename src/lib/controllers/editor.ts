@@ -86,7 +86,8 @@ export async function planEditorSave(deps: {
   entries: Record<string, unknown>[];
   baselineUpdatedAt: string | undefined;
   conflictCheck: (() => Promise<string | undefined>) | undefined;
-  confirm: (message: string) => boolean;
+  /** 确认实现：页面传弹层（Promise），单测可传同步假实现。 */
+  confirm: (message: string) => boolean | Promise<boolean>;
 }): Promise<EditorSavePlan> {
   const gate = decideLocalSaveGate(deps.header, deps.entries);
   if (gate.gate === "invalid_payload") {
@@ -105,7 +106,7 @@ export async function planEditorSave(deps: {
     const online = await deps.conflictCheck();
     if (
       shouldWarnOverwrite(deps.baselineUpdatedAt, online) &&
-      !deps.confirm(m["editor.save_conflict_confirm"]())
+      !(await deps.confirm(m["editor.save_conflict_confirm"]()))
     ) {
       return {
         kind: "rejected",
