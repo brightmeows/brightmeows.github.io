@@ -218,7 +218,7 @@
     out:fly={{ y: 24, opacity: 0, duration: reduceMotion ? 0 : 140, easing: cubicIn }}
   >
     <div
-      class="pointer-events-auto max-h-full w-[340px] max-w-full overflow-y-auto rounded-xl bg-glass p-3 shadow-[var(--glass-lighting),0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur transition-[width] duration-200 max-sm:w-full {importOpen
+      class="pointer-events-auto max-h-full w-[340px] max-w-full overflow-y-auto rounded-glass-lg bg-glass p-3 shadow-[var(--glass-lighting),0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur transition-[width] duration-200 max-sm:w-full {importOpen
         ? 'sm:w-[480px]'
         : 'sm:w-[340px]'}"
       style="max-height: calc(100dvh - 2rem - env(safe-area-inset-bottom, 0px))"
@@ -257,7 +257,7 @@
               <circle cx="12" cy="12" r="3" />
             </svg>
           {/if}
-          <span class="text-[0.9rem] text-white-85">{stateWord}</span>
+          <span class="text-[0.85rem] text-white-85">{stateWord}</span>
           {#if model.dirty}
             <span class="text-[0.8rem] text-amber-300">{m["editor.dock_state_unsaved"]()}</span>
           {/if}
