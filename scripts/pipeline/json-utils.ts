@@ -5,6 +5,10 @@
  * 深度排序后比较（bms-table-fetch 的 filesystem.rs）。
  */
 
+import { isRecord } from "../guards.ts";
+
+import type { JsonValue } from "./types.ts";
+
 // 需要匹配 Unicode Cc 类别（与 Rust `char::is_control()` 对齐），
 // 控制字符范围是刻意写进字符类的。
 // oxlint-disable-next-line no-control-regex
@@ -64,8 +68,8 @@ export function canonicalJson(value: unknown): string {
     const items = value.map((item) => canonicalJson(item)).sort(compareUtf8);
     return `[${items.join(",")}]`;
   }
-  if (typeof value === "object") {
-    const record = value as Record<string, unknown>;
+  if (isRecord(value)) {
+    const record = value;
     const entries: [string, string][] = Object.entries(record).map(([key, item]) => [
       key,
       canonicalJson(item),
@@ -84,4 +88,20 @@ export function jsonEquals(left: unknown, right: unknown): boolean {
 /** 深拷贝 JSON 值，避免改动调用方持有的对象。 */
 export function cloneJson<T>(value: T): T {
   return structuredClone(value);
+}
+
+/** 值为合法 JSON 值（递归校验数组与对象的全部成员）。 */
+export function isJsonValue(value: unknown): value is JsonValue {
+  if (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  ) {
+    return true;
+  }
+  if (Array.isArray(value)) {
+    return value.every(isJsonValue);
+  }
+  return isRecord(value) && Object.values(value).every(isJsonValue);
 }

@@ -1,18 +1,13 @@
 import { error } from "@sveltejs/kit";
-import type { Component } from "svelte";
 
 import type { PageLoad } from "./$types";
 
 import { READING_BOOKS } from "#lib/constants/content.js";
 import { m } from "#lib/paraglide/messages.js";
-import type { PostMetadata } from "#lib/types/post.js";
+import type { PostModule } from "#lib/types/post.js";
 import { extractDateFromSlug, EPOCH_DATE } from "#lib/utils/infra/date.js";
+import { lookup } from "#lib/utils/infra/object.js";
 import { formatTitle } from "#lib/utils/title.js";
-
-interface PostModule {
-  default: Component;
-  metadata?: Partial<PostMetadata>;
-}
 
 // slug 含书名子目录（compendium/<章>），动态 import 模板经 Vite 静态分析只展开
 // 单层 glob，匹配不到两级路径，因此改用显式 ** glob 展开全部分类内容。
@@ -44,8 +39,7 @@ export const load: PageLoad = async ({ params }) => {
     const prevEntry = index > 0 ? sorted[index - 1] : undefined;
     const nextEntry = index >= 0 && index < sorted.length - 1 ? sorted[index + 1] : undefined;
     const bookId = slug.split("/")[0] ?? "";
-    const bookTitle =
-      bookId in READING_BOOKS ? READING_BOOKS[bookId as keyof typeof READING_BOOKS] : undefined;
+    const bookTitle = lookup(READING_BOOKS, bookId);
     const post = await importer();
     const meta = post.metadata ?? {};
 

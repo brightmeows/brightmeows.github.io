@@ -5,17 +5,19 @@
  * 字节序追加（与旧实现里结构体字段加 BTreeMap 的序列化顺序一致）。
  */
 
-import { compareUtf8 } from "./json-utils.ts";
+import { isRecord } from "../guards.ts";
+
+import { compareUtf8, isJsonValue } from "./json-utils.ts";
 import type { JsonValue, TableInfo } from "./types.ts";
 
 const CORE_FIELDS = new Set(["name", "symbol", "url"]);
 
 /** 从列表条目或 info.json 构造 TableInfo；核心字段缺失或 URL 非法返回 null。 */
 export function tableInfoFromJson(value: unknown): TableInfo | null {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+  if (!isRecord(value)) {
     return null;
   }
-  const record = value as Record<string, unknown>;
+  const record = value;
   const name = record.name;
   const symbol = record.symbol;
   const url = record.url;
@@ -31,7 +33,7 @@ export function tableInfoFromJson(value: unknown): TableInfo | null {
   const extra: Record<string, JsonValue> = {};
   for (const [key, item] of Object.entries(record)) {
     if (!CORE_FIELDS.has(key)) {
-      extra[key] = item as JsonValue;
+      extra[key] = isJsonValue(item) ? item : null;
     }
   }
   return { name, symbol, url: normalized, extra };

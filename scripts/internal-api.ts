@@ -36,8 +36,14 @@ export interface InternalCallOptions {
   token?: string | undefined;
 }
 
-/** 调用内部接口并解析 JSON 响应；失败抛 InternalApiError。 */
-export async function callInternal<T>(path: string, options: InternalCallOptions = {}): Promise<T> {
+/**
+ * 调用内部接口并解析 JSON 响应（unknown 返回，调用方自行窄化）；
+ * 失败抛 InternalApiError。
+ */
+export async function callInternal(
+  path: string,
+  options: InternalCallOptions = {}
+): Promise<unknown> {
   const base = (options.base ?? internalApiBase()).replace(/\/+$/, "");
   const token = options.token ?? internalToken();
   const fetchImpl = options.fetchImpl ?? fetch;
@@ -66,5 +72,5 @@ export async function callInternal<T>(path: string, options: InternalCallOptions
       `内部接口 ${url} 返回 HTTP ${response.status}${detail === "" ? "" : `：${detail.slice(0, 200)}`}`
     );
   }
-  return (await response.json()) as T;
+  return await response.json();
 }

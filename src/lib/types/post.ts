@@ -1,3 +1,5 @@
+import type { Component } from "svelte";
+
 import type { CategoryId } from "#lib/constants/content.js";
 
 /**
@@ -24,4 +26,10 @@ export interface Post {
   date?: string | undefined;
   firstSentence: string;
   url: string;
+}
+
+/** SvelTeX 处理后的 Markdown 模块形状（动态 import 与 import.meta.glob 的目标类型）。 */
+export interface PostModule {
+  default: Component;
+  metadata?: Partial<PostMetadata>;
 }

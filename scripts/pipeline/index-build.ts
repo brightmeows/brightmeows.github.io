@@ -5,6 +5,8 @@
  * 只接受符合长度且全为十六进制的值；超长哈希记为告警（按表折叠）。
  */
 
+import { isRecord } from "../guards.ts";
+
 export interface LongHashWarning {
   count: number;
   sample: string;
@@ -36,21 +38,23 @@ export function extractChartItems(raw: string | null): unknown[] | null {
   }
   let root: unknown;
   try {
-    root = JSON.parse(raw) as unknown;
+    root = JSON.parse(raw);
   } catch {
     return null;
   }
   if (Array.isArray(root)) {
-    return root as unknown[];
+    const rootItems: unknown[] = root;
+    return rootItems;
   }
   if (typeof root !== "object" || root === null) {
     return null;
   }
-  const record = root as Record<string, unknown>;
+  const record = isRecord(root) ? root : {};
   for (const key of ["charts", "data", "songs"]) {
     const value = record[key];
     if (Array.isArray(value)) {
-      return value as unknown[];
+      const items: unknown[] = value;
+      return items;
     }
   }
   return null;
@@ -130,10 +134,10 @@ export function buildIndexes(entries: readonly IndexBuildInput[]): IndexBuildRes
       continue;
     }
     for (const item of items) {
-      if (typeof item !== "object" || item === null || Array.isArray(item)) {
+      if (!isRecord(item)) {
         continue;
       }
-      const record = item as Record<string, unknown>;
+      const record = item;
       insertString(result.title, record, "title", entry.dirName);
       insertString(result.artist, record, "artist", entry.dirName);
       insertHash(result.md5, result.longHashWarnings, record, "md5", 32, entry.dirName);

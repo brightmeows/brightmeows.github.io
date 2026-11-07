@@ -15,21 +15,22 @@ import type { DefaultTreeAdapterTypes } from "parse5";
 
 type Node = DefaultTreeAdapterTypes.Node;
 type Element = DefaultTreeAdapterTypes.Element;
+type TemplateNode = Node & { content: { childNodes: readonly Node[] } };
 
 function isElement(node: Node): node is Element {
   return "tagName" in node && "attrs" in node;
 }
 
+function isTemplate(node: Node): node is TemplateNode {
+  return node.nodeName === "template";
+}
+
 function childrenOf(node: Node): readonly Node[] {
-  const candidate = node as {
-    childNodes?: readonly Node[];
-    content?: { childNodes?: readonly Node[] };
-  };
-  if (candidate.childNodes !== undefined) {
-    return candidate.childNodes;
+  if ("childNodes" in node) {
+    return node.childNodes;
   }
-  if (candidate.content?.childNodes !== undefined) {
-    return candidate.content.childNodes;
+  if (isTemplate(node)) {
+    return node.content.childNodes;
   }
   return [];
 }

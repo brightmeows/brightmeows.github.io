@@ -3,6 +3,7 @@ import type { PageServerLoad } from "./$types";
 import { READING_BOOKS } from "#lib/constants/content.js";
 import { getPostsByCategory } from "#lib/loaders/index.js";
 import { m } from "#lib/paraglide/messages.js";
+import { lookup } from "#lib/utils/infra/object.js";
 import { formatTitle } from "#lib/utils/title.js";
 
 /** 书架条目：分类内按 slug 首段分组出的一本书。 */
@@ -31,7 +32,7 @@ export const load: PageServerLoad = () => {
   }
   const books: ReadingBook[] = [...groups.entries()].map(([id, list]) => ({
     id,
-    title: id in READING_BOOKS ? READING_BOOKS[id as keyof typeof READING_BOOKS] : id,
+    title: lookup(READING_BOOKS, id) ?? id,
     description: (bookDescriptions[id] ?? (() => ""))(),
     chapterCount: list.length,
     href: `/reading/${id}/`,

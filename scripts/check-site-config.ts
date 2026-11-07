@@ -18,6 +18,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+import { isRecord } from "./guards.ts";
 import { CONFIG_PATH, readSiteConfig, type SiteConfig } from "./site-config.ts";
 
 /**
@@ -106,15 +107,10 @@ export function versionSourceIssues(args: {
   if (pinned === "") {
     issues.push("缺少 .nvmrc：node 版本没有单一来源");
   }
-  const root =
-    typeof args.packageJson === "object" && args.packageJson !== null
-      ? (args.packageJson as Record<string, unknown>)
-      : {};
-  const devEngines = root.devEngines as { packageManager?: unknown } | undefined;
-  const manager =
-    typeof devEngines?.packageManager === "object" && devEngines.packageManager !== null
-      ? (devEngines.packageManager as { name?: unknown; version?: unknown })
-      : undefined;
+  const root = isRecord(args.packageJson) ? args.packageJson : {};
+  const devEngines = isRecord(root.devEngines) ? root.devEngines : undefined;
+  const pkgManager = devEngines?.packageManager;
+  const manager = isRecord(pkgManager) ? pkgManager : undefined;
   if (manager === undefined || manager.name !== "pnpm" || typeof manager.version !== "string") {
     issues.push(
       "package.json 缺少 devEngines.packageManager（name 为 pnpm、version 为范围）：pnpm 版本没有单一来源"

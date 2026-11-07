@@ -13,6 +13,8 @@
  * 退出码：0 一致；1 不一致或读取失败。凭据缺失按失败处理，不静默跳过。
  */
 
+import * as v from "valibot";
+
 import {
   checkZoneRules,
   normalizeLiveRules,
@@ -23,11 +25,12 @@ import { CONFIG_PATH, readSiteConfig } from "./site-config.ts";
 
 const API_BASE = "https://api.cloudflare.com/client/v4";
 
-interface CloudflareResponse {
-  result?: unknown;
-  success?: boolean;
-  errors?: unknown;
-}
+/** Cloudflare API 响应封套的形状（只取比对用到的字段）。 */
+const CloudflareResponseSchema = v.object({
+  result: v.optional(v.unknown()),
+  success: v.optional(v.boolean()),
+  errors: v.optional(v.unknown()),
+});
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -51,7 +54,7 @@ async function cfGet(token: string, apiPath: string): Promise<unknown> {
   if (!res.ok) {
     throw new Error(`Cloudflare API ${apiPath} 失败：${res.status}`);
   }
-  const body = (await res.json()) as CloudflareResponse;
+  const body = v.parse(CloudflareResponseSchema, await res.json());
   if (body.success === false) {
     throw new Error(`Cloudflare API ${apiPath} 返回失败：${JSON.stringify(body.errors ?? [])}`);
   }

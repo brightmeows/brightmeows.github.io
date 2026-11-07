@@ -9,6 +9,8 @@ import { createHash } from "node:crypto";
 
 import { parse as parseToml } from "smol-toml";
 
+import { isRecord } from "../guards.ts";
+
 export interface FileHashes {
   info: string;
   header: string;
@@ -49,26 +51,26 @@ export function parseStateToml(text: string): SyncState | null {
   } catch {
     return null;
   }
-  if (typeof root !== "object" || root === null || Array.isArray(root)) {
+  if (!isRecord(root)) {
     return null;
   }
-  const rootRecord = root as Record<string, unknown>;
+  const rootRecord = root;
   const global = rootRecord.global;
-  if (typeof global !== "object" || global === null || Array.isArray(global)) {
+  if (!isRecord(global)) {
     return null;
   }
-  const lastSync = readString(global as Record<string, unknown>, "last_sync");
+  const lastSync = readString(global, "last_sync");
   if (lastSync === null) {
     return null;
   }
   const tablesRecord = rootRecord.tables;
   const tables = new Map<string, TableState>();
-  if (typeof tablesRecord === "object" && tablesRecord !== null && !Array.isArray(tablesRecord)) {
-    for (const [url, value] of Object.entries(tablesRecord as Record<string, unknown>)) {
-      if (typeof value !== "object" || value === null || Array.isArray(value)) {
+  if (isRecord(tablesRecord)) {
+    for (const [url, value] of Object.entries(tablesRecord)) {
+      if (!isRecord(value)) {
         continue;
       }
-      const record = value as Record<string, unknown>;
+      const record = value;
       const lastCheck = readString(record, "last_check");
       const lastChange = readString(record, "last_change");
       const info = readString(record, "sha3_256_info");
