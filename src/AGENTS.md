@@ -16,6 +16,7 @@
   - 路由级 markdown（`bms/index.md`）2026-11 起收敛为单份中文源——markdown 类内容不做三语适配，en/ja flavor 同 URL 显示中文正文，页面骨架仍三语；内容正文与 frontmatter、注释、测试不翻。
   - 覆盖由 `pnpm check:i18n` 机械守住（三语 key 对称、占位符一致、引用存在、死 key、源码 CJK 残留、英文值漏翻；语言自称键豁免 en 值 CJK 扫描，豁免口径见 `scripts/check-i18n-coverage.ts` 头注）。
   - oxlint 的 `import/namespace` 因点号 key 必须计算访问而显式关停——key 存在性由 svelte-check 与该门槛兜住。
+- **Svelte 模板 HTML 注释单行或挪进 script 块** — i18n 的源码 CJK 残留扫描剥不掉多行 HTML 注释的续行，续行文本被当用户可见文案误报（DustTrailCanvas 曾两次触发）；说明性注释写在 script 块内（TS 注释不扫描）或压缩成单行。
 - **`vite.config.ts` 中 `server.fs.allow: ["content"]`** — Vite dev server 默认仅允许 `src/`、`.svelte-kit/`、`node_modules/` 内的文件被访问。
   - `content/` 不在其中，`import()` 请求会被拦截（404/403）。需要在 `vite.config.ts` 中显式添加。build 时无此限制。
 - **`static/_headers` 只对 Cloudflare 生效** — `/_app/immutable/*` 是 hash 命名的构建产物，设一年 `immutable` 缓存；`/*` 只加 `X-Content-Type-Options: nosniff` 与 `Referrer-Policy: strict-origin-when-cross-origin`。
