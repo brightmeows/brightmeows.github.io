@@ -44,7 +44,7 @@ export interface SharedCreateResult {
 /** 查询 id 是否可用（需登录）；带“曾被分发”提示。 */
 export async function fetchSharedCheckId(id: string): Promise<SharedCheckIdResult> {
   return narrowSharedCheckId(
-    await requestJson<unknown>(`/api/shared/check-id?id=${encodeURIComponent(id)}`),
+    await requestJson(`/api/shared/check-id?id=${encodeURIComponent(id)}`),
     id
   );
 }
@@ -52,7 +52,7 @@ export async function fetchSharedCheckId(id: string): Promise<SharedCheckIdResul
 /** 创建共享表（D1 占位后写 R2；冲突返回 409 的 id 已被占用）。 */
 export async function submitSharedCreate(payload: SharedPayloadBody): Promise<SharedCreateResult> {
   return narrowSharedCreate(
-    await requestJson<unknown>("/api/shared/create", {
+    await requestJson("/api/shared/create", {
       method: "POST",
       body: JSON.stringify(payload),
     }),
@@ -63,7 +63,7 @@ export async function submitSharedCreate(payload: SharedPayloadBody): Promise<Sh
 /** 整包保存（覆盖写 R2 + 更新 D1 元数据）。 */
 export async function submitSharedSave(payload: SharedPayloadBody): Promise<SharedSaveResult> {
   return narrowSharedSave(
-    await requestJson<unknown>("/api/shared/save", {
+    await requestJson("/api/shared/save", {
       method: "POST",
       body: JSON.stringify(payload),
     }),
@@ -74,7 +74,7 @@ export async function submitSharedSave(payload: SharedPayloadBody): Promise<Shar
 /** 改 id（旧地址 301 到新地址，直到被他人认领）。 */
 export async function submitSharedRename(id: string, newId: string): Promise<SharedCreateResult> {
   const renamed = narrowSharedRename(
-    await requestJson<unknown>("/api/shared/rename", {
+    await requestJson("/api/shared/rename", {
       method: "POST",
       body: JSON.stringify({ id, new_id: newId }),
     }),
@@ -87,7 +87,7 @@ export async function submitSharedRename(id: string, newId: string): Promise<Sha
 export async function submitSharedDelete(id: string): Promise<{ id: string }> {
   return {
     id: narrowSharedDelete(
-      await requestJson<unknown>("/api/shared/delete", {
+      await requestJson("/api/shared/delete", {
         method: "POST",
         body: JSON.stringify({ id }),
       }),
@@ -99,7 +99,7 @@ export async function submitSharedDelete(id: string): Promise<{ id: string }> {
 /** 从回收站恢复（超额拒绝）。 */
 export async function submitSharedRestore(id: string): Promise<SharedRestoreResult> {
   return narrowSharedRestore(
-    await requestJson<unknown>("/api/shared/restore", {
+    await requestJson("/api/shared/restore", {
       method: "POST",
       body: JSON.stringify({ id }),
     }),
@@ -109,7 +109,7 @@ export async function submitSharedRestore(id: string): Promise<SharedRestoreResu
 
 /** 自己的回收站列表（admin 看全部）。 */
 export async function fetchSharedRemoved(): Promise<SharedRemovedEntry[]> {
-  return narrowSharedRemoved(await requestJson<unknown>("/api/shared/removed"));
+  return narrowSharedRemoved(await requestJson("/api/shared/removed"));
 }
 
 /**
@@ -126,7 +126,27 @@ export async function loadSharedTables(
       loadFailed: (status) => m["shared.tables_load_failed"]({ status }),
       invalid: () => m["shared.tables_invalid"](),
     },
-    options
+    options,
+    isSharedTableItem
   );
   return data.map((item) => (item.id === "" ? item : { ...item, url: sharedTablePath(item.id) }));
+}
+
+function isSharedTableItem(value: unknown): value is SharedTableItem {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "id" in value &&
+    typeof value.id === "string" &&
+    "name" in value &&
+    typeof value.name === "string" &&
+    "author" in value &&
+    typeof value.author === "string" &&
+    "created_at" in value &&
+    typeof value.created_at === "string" &&
+    "updated_at" in value &&
+    typeof value.updated_at === "string" &&
+    "entries" in value &&
+    typeof value.entries === "number"
+  );
 }

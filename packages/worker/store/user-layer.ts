@@ -103,15 +103,15 @@ function toMetaOverride(row: Record<string, unknown>): MetaOverride {
   return result;
 }
 /** 读取单类索引；失败按空并记日志（清单可用优先于增删可见）。 */
-async function listRows(
+async function listRows<T>(
   env: Env,
   label: string,
   statement: string,
-  map: (row: Record<string, unknown>) => unknown
-): Promise<unknown[]> {
+  map: (row: Record<string, unknown>) => T
+): Promise<T[]> {
   try {
     const { results } = await env.MIRROR_DB.prepare(statement).all<Record<string, unknown>>();
-    return results.map(map).filter((item) => item !== null);
+    return results.map(map);
   } catch (error) {
     console.warn(`用户层读取失败：${label}`, error);
     return [];
@@ -120,72 +120,72 @@ async function listRows(
 
 /** 读取全部添加请求（一个请求一行，按提交时间排序）。 */
 export async function listAdded(env: Env): Promise<AddedEntry[]> {
-  return (await listRows(
+  return listRows<AddedEntry>(
     env,
     "added",
     "SELECT id, url, author, role, added_at FROM added ORDER BY added_at, id",
     toAddedEntry
-  )) as AddedEntry[];
+  );
 }
 
 /** 读取抓取结果：表进入合成清单的依据。 */
 export async function listFetched(env: Env): Promise<FetchedEntry[]> {
-  return (await listRows(
+  return listRows<FetchedEntry>(
     env,
     "fetched",
     "SELECT id, url, dir_name, name, symbol, fetched_at FROM fetched",
     toFetchedEntry
-  )) as FetchedEntry[];
+  );
 }
 
 /** 读取删除黑名单（可见性优先于清单，作者 30 天内可自助恢复）。 */
 export async function listRemoved(env: Env): Promise<RemovedEntry[]> {
-  return (await listRows(
+  return listRows<RemovedEntry>(
     env,
     "removed",
     "SELECT url, dir_name, author, role, removed_at, trash_prefix FROM removed ORDER BY removed_at",
     toRemovedEntry
-  )) as RemovedEntry[];
+  );
 }
 
 /** 读取禁用名单：命中条目从清单隐藏但保留在 R2。 */
 export async function listDisabled(env: Env): Promise<DisabledEntry[]> {
-  return (await listRows(
+  return listRows<DisabledEntry>(
     env,
     "disabled",
     "SELECT url, dir_name, author, disabled_at, note FROM disabled ORDER BY disabled_at",
     toDisabledEntry
-  )) as DisabledEntry[];
+  );
 }
 
 /** 读取替换规则：合成清单时把源 URL 条目改指目标 URL。 */
 export async function listReplaceRules(env: Env): Promise<ReplaceRuleEntry[]> {
-  return (await listRows(
+  return listRows<ReplaceRuleEntry>(
     env,
     "replace",
     "SELECT from_url, to_url, author, updated_at FROM replace_rules ORDER BY updated_at",
     toReplaceRuleEntry
-  )) as ReplaceRuleEntry[];
+  );
 }
 
 /** 读取授权名单：受保护表集合，写保护由处理层执行。 */
 export async function listAuthorized(env: Env): Promise<AuthorizedEntry[]> {
-  return (await listRows(
+  return listRows<AuthorizedEntry>(
     env,
     "authorized",
     "SELECT url, dir_name, author, authorized_at FROM authorized ORDER BY authorized_at",
     toAuthorizedEntry
-  )) as AuthorizedEntry[];
+  );
 }
 
 /** 读取元数据覆盖：名称、符号、标签与序号的展示层改写。 */
 export async function listMetaOverrides(env: Env): Promise<MetaOverride[]> {
-  return (await listRows(
+  return listRows<MetaOverride>(
     env,
     "meta",
     "SELECT url, name, symbol, tag1, tag2, tag_order, updated_at FROM meta_overrides ORDER BY updated_at",
     toMetaOverride
-  )) as MetaOverride[];
+  );
 }
 
 /** 读取完整用户层：合成清单与后台总览共用。 */

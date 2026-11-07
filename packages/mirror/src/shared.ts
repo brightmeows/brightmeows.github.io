@@ -148,12 +148,14 @@ export function checkSharedPayload(header: unknown, data: unknown): SharedPayloa
     return { ok: false, error: "data_too_large" };
   }
   if (data.length > SHARED_MAX_ENTRIES) return { ok: false, error: "too_many_entries" };
+  const records: Record<string, unknown>[] = [];
   for (const entry of data) {
     if (!isPlainObject(entry) || !hasChartIdentity(entry)) {
       return { ok: false, error: "entry_invalid" };
     }
+    records.push(entry);
   }
-  return { ok: true, header, data: data as Record<string, unknown>[] };
+  return { ok: true, header, data: records };
 }
 
 /**

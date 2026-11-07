@@ -1,5 +1,7 @@
 import type { DraftPayload } from "@brightmeows/bms/editor";
 
+import { isRecord } from "#lib/utils/infra/object.js";
+
 /**
  * 表编辑器草稿的 IndexedDB 存储：单快照、按表键隔离、结构克隆直存
  * （不做 JSON 文本序列化，避免大表在每次落盘时阻塞输入）。
@@ -26,9 +28,14 @@ function isQuotaError(error: unknown): boolean {
 }
 
 function isDraftRecord(value: unknown): value is DraftRecord {
-  if (typeof value !== "object" || value === null) return false;
-  const record = value as Record<string, unknown>;
-  return typeof record.key === "string" && typeof record.payload === "object";
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "key" in value &&
+    typeof value.key === "string" &&
+    "payload" in value &&
+    typeof value.payload === "object"
+  );
 }
 
 function openDatabase(): Promise<IDBDatabase | null> {
@@ -143,8 +150,8 @@ export function takeDraftClaim(now = Date.now()): DraftClaim | null {
   if (raw === null) return null;
   try {
     const parsed: unknown = JSON.parse(raw);
-    if (typeof parsed !== "object" || parsed === null) return null;
-    const record = parsed as Record<string, unknown>;
+    if (!isRecord(parsed)) return null;
+    const record = parsed;
     if (typeof record.sourceDraftKey !== "string" || typeof record.at !== "string") return null;
     const at = Date.parse(record.at);
     if (Number.isNaN(at) || now - at > CLAIM_TTL_MS) return null;

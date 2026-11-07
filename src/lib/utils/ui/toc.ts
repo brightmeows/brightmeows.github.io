@@ -10,6 +10,9 @@ interface HeadingInfo {
   level: number;
 }
 
+/** 树构建期的中间节点：比 TocItem 多 level，children 键类型收窄为同类节点。 */
+type TocNode = TocItem & { level: number; children: TocNode[] };
+
 export interface BuildTocFromHeadingsOptions {
   root?: ParentNode | null;
   minLevel?: number;
@@ -44,12 +47,9 @@ function collectHeadingInfo(root: ParentNode, minLevel: number, maxLevel: number
     .filter((v): v is HeadingInfo => v !== null);
 }
 
-function buildTreeFromHeadingInfo(
-  headingInfo: HeadingInfo[],
-  minLevel: number
-): (TocItem & { level: number })[] {
-  const rootItems: (TocItem & { level: number })[] = [];
-  const stack: { level: number; children: (TocItem & { level: number })[] }[] = [
+function buildTreeFromHeadingInfo(headingInfo: HeadingInfo[], minLevel: number): TocNode[] {
+  const rootItems: TocNode[] = [];
+  const stack: { level: number; children: TocNode[] }[] = [
     { level: minLevel - 1, children: rootItems },
   ];
 
@@ -60,7 +60,7 @@ function buildTreeFromHeadingInfo(
       stack.pop();
     }
     const parent = stack[stack.length - 1] ?? { level: minLevel - 1, children: rootItems };
-    const node: TocItem & { level: number } = {
+    const node: TocNode = {
       id: h.id,
       title: h.title,
       level: h.level,
@@ -69,22 +69,18 @@ function buildTreeFromHeadingInfo(
     parent.children.push(node);
     stack.push({
       level: h.level,
-      children: node.children as (TocItem & { level: number })[],
+      children: node.children,
     });
   }
 
   return rootItems;
 }
 
-function stripLevel(nodes: (TocItem & { level: number })[]): TocItem[] {
+function stripLevel(nodes: TocNode[]): TocItem[] {
   return nodes.map((n) => ({
     id: n.id,
     title: n.title,
-    ...(n.children && n.children.length > 0
-      ? {
-          children: stripLevel(n.children as (TocItem & { level: number })[]),
-        }
-      : {}),
+    ...(n.children.length > 0 ? { children: stripLevel(n.children) } : {}),
   }));
 }
 

@@ -110,7 +110,9 @@ function getFromStore<T>(db: IDBDatabase, store: string, key: IDBValidKey): Prom
   return new Promise<T | undefined>((resolve, reject) => {
     const tx = db.transaction(store, "readonly");
     const req = tx.objectStore(store).get(key);
-    req.onsuccess = () => resolve(req.result as T | undefined);
+    // IndexedDB 的 result 无类型化签名，泛型封装在此桥接（IDB API 固有边界）
+    // oxlint-disable-next-line typescript/no-unsafe-argument
+    req.onsuccess = () => resolve(req.result);
     req.addEventListener("error", () => reject(req.error ?? new Error(`IDB get ${store} failed`)));
   });
 }

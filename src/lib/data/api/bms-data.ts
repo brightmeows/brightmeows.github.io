@@ -1,9 +1,10 @@
-import type { ChartData, HeaderData } from "@brightmeows/bms/format";
+import type { ChartData } from "@brightmeows/bms/format";
 
 import { m } from "#lib/paraglide/messages.js";
 import type { ProgressCallback } from "#lib/types/bms-view.js";
 import { fetchStream } from "#lib/utils/infra/fetch-stream.js";
 import { formatBytes } from "#lib/utils/infra/format.js";
+import { isRecord } from "#lib/utils/infra/object.js";
 import { resolveUrl, resolveUrlAs } from "#lib/utils/infra/url.js";
 
 /**
@@ -13,9 +14,8 @@ export function fetchJsonp(url: string, timeoutMs = 10000): Promise<unknown> {
   return new Promise((resolve, reject) => {
     const callbackName = "jsonp_callback_" + Math.round(100000 * Math.random());
     const script = document.createElement("script");
-    const win = window as unknown as Record<string, unknown>;
     const cleanup = () => {
-      delete win[callbackName];
+      Reflect.deleteProperty(window, callbackName);
       if (script.parentNode) document.body.removeChild(script);
     };
     const timer = window.setTimeout(() => {
@@ -25,11 +25,11 @@ export function fetchJsonp(url: string, timeoutMs = 10000): Promise<unknown> {
     const requestUrl = resolveUrlAs(url);
     requestUrl.searchParams.set("callback", callbackName);
     script.src = requestUrl.toString();
-    win[callbackName] = (data: unknown) => {
+    Reflect.set(window, callbackName, (data: unknown) => {
       window.clearTimeout(timer);
       cleanup();
       resolve(data);
-    };
+    });
     script.addEventListener("error", () => {
       window.clearTimeout(timer);
       cleanup();
@@ -86,7 +86,7 @@ async function fetchWithProgress(url: string, onProgress?: ProgressCallback): Pr
 export async function fetchBmsHeader(
   headerUrl: string,
   onProgress?: ProgressCallback
-): Promise<HeaderData> {
+): Promise<Record<string, unknown>> {
   const headerUrlBase = resolveUrl(headerUrl);
 
   onProgress?.({ percent: 0, phase: "connecting", message: m["bmsdata.requesting_header"]() });
@@ -118,7 +118,7 @@ export async function fetchBmsHeader(
   }
 
   // 运行时校验：确保 header.json 是对象而非数组或其他类型
-  if (typeof data !== "object" || data === null || Array.isArray(data)) {
+  if (!isRecord(data)) {
     throw new Error(
       m["bmsdata.header_invalid_type"]({
         actual: Array.isArray(data) ? m["bmsdata.actual_array"]() : String(typeof data),
@@ -127,7 +127,7 @@ export async function fetchBmsHeader(
   }
 
   onProgress?.({ percent: 100, phase: "done", message: m["bmsdata.header_done"]() });
-  return data as HeaderData;
+  return data;
 }
 
 export interface FetchTableDataResult {
@@ -211,5 +211,7 @@ export async function fetchBmsTableData(
   }
 
   onProgress?.({ percent: 100, phase: "done", message: m["bmsdata.chart_done"]() });
+  // ChartData 全字段可选，元素级 schema 无信息增益；下游模型层按字段兜底
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   return { data: tableDataRaw as ChartData[], fetchUrl: finalDataUrl };
 }

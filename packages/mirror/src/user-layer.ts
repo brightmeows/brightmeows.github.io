@@ -328,10 +328,14 @@ export function mergeTableList(
 }
 
 function asRecord(value: unknown, context: string): Record<string, unknown> {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+  if (!isRecord(value)) {
     throw new TypeError(`${context} 应为对象`);
   }
-  return value as Record<string, unknown>;
+  return value;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function requiredString(record: Record<string, unknown>, key: string, context: string): string {

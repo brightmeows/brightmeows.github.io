@@ -10,7 +10,8 @@ export async function fetchSiteTableList<T>(
     loadFailed: (status: number) => string;
     invalid: () => string;
   },
-  options: { cacheBust?: boolean | undefined } = {}
+  options: { cacheBust?: boolean | undefined } = {},
+  isItem: (item: unknown) => item is T
 ): Promise<T[]> {
   const url = new URL(path, window.location.origin);
   if (options.cacheBust === true) {
@@ -21,8 +22,9 @@ export async function fetchSiteTableList<T>(
     throw new Error(messages.loadFailed(res.status));
   }
   const data: unknown = await res.json();
-  if (!Array.isArray(data)) {
+  const items: unknown[] = Array.isArray(data) ? data : [];
+  if (!items.every(isItem)) {
     throw new Error(messages.invalid());
   }
-  return data as T[];
+  return items.filter(isItem);
 }

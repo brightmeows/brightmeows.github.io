@@ -105,11 +105,21 @@ function textOf(value: unknown): string {
 
 /** 条目编辑：核心字段的值文本（空串表示清除该键）。 */
 export function coreFieldTexts(entry: Record<string, unknown>): Record<CoreEntryField, string> {
-  const result = {} as Record<CoreEntryField, string>;
-  for (const field of CORE_ENTRY_FIELDS) {
-    result[field] = textOf(entry[field]);
-  }
-  return result;
+  return {
+    level: textOf(entry.level),
+    title: textOf(entry.title),
+    artist: textOf(entry.artist),
+    md5: textOf(entry.md5),
+    sha256: textOf(entry.sha256),
+    url: textOf(entry.url),
+    url_diff: textOf(entry.url_diff),
+    name_diff: textOf(entry.name_diff),
+    url_pack: textOf(entry.url_pack),
+    name_pack: textOf(entry.name_pack),
+    comment: textOf(entry.comment),
+    org_md5: textOf(entry.org_md5),
+    mode: textOf(entry.mode),
+  } satisfies Record<CoreEntryField, string>;
 }
 
 /** 条目的非核心字段（自定义字段）编辑行；值为 JSON 文本。 */
@@ -539,10 +549,14 @@ export function buildCombinedPackage(
 
 /** 识别合并包结构；不是合并包时返回 null。 */
 export function parseCombinedPackage(raw: unknown): { header: unknown; data: unknown } | null {
-  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return null;
-  const record = raw as Record<string, unknown>;
+  if (!isRecord(raw)) return null;
+  const record = raw;
   if (!("header" in record) || !("data" in record)) return null;
   return { header: record.header, data: record.data };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 /** 草稿来源类型：镜像表、自托管表、共享表。 */

@@ -5,6 +5,8 @@
 
 import type { ApiErrorCode } from "@brightmeows/mirror/api";
 
+import { isRecord } from "./guards.ts";
+
 /** 构造响应时以契约类型标注（json<AddResponse>({...})），形状见 @brightmeows/mirror/api。 */
 export function json<T>(body: T, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -41,10 +43,10 @@ export async function readJsonBody(request: Request): Promise<Record<string, unk
   }
   try {
     const value: unknown = await request.json();
-    if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    if (!isRecord(value)) {
       return null;
     }
-    return value as Record<string, unknown>;
+    return value;
   } catch {
     return null;
   }

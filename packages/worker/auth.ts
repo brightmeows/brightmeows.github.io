@@ -9,6 +9,7 @@
 import type { UserRole } from "@brightmeows/mirror/user-layer";
 
 import { ADMIN_LOGIN, SESSION_COOKIE, SESSION_MAX_AGE_SECONDS, type Env } from "./env.ts";
+import { isRecord } from "./guards.ts";
 
 /** 会话负载。 */
 export interface Session {
@@ -139,10 +140,10 @@ export async function verifySessionToken(
   }
   try {
     const parsed = decodeJson(payload);
-    if (typeof parsed !== "object" || parsed === null) {
+    if (!isRecord(parsed)) {
       return null;
     }
-    const record = parsed as Record<string, unknown>;
+    const record = parsed;
     const login = record.login;
     const exp = record.exp;
     const role = record.role;

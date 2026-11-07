@@ -33,17 +33,25 @@ async function sha256Hex(bytes: Uint8Array): Promise<string> {
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+function isFileEntry(entry: FileSystemEntry): entry is FileSystemFileEntry {
+  return entry.isFile;
+}
+
+function isDirectoryEntry(entry: FileSystemEntry): entry is FileSystemDirectoryEntry {
+  return entry.isDirectory;
+}
+
 async function walkEntry(entry: FileSystemEntry, files: File[]): Promise<void> {
   if (files.length >= BMS_DROP_MAX_FILES) return;
-  if (entry.isFile) {
+  if (isFileEntry(entry)) {
     const file = await new Promise<File | null>((resolve) => {
-      (entry as FileSystemFileEntry).file(resolve, () => resolve(null));
+      entry.file(resolve, () => resolve(null));
     });
     if (file !== null) files.push(file);
     return;
   }
-  if (entry.isDirectory) {
-    const reader = (entry as FileSystemDirectoryEntry).createReader();
+  if (isDirectoryEntry(entry)) {
+    const reader = entry.createReader();
     // readEntries 按批返回，需重复读取直到空批
     for (;;) {
       const batch = await new Promise<FileSystemEntry[]>((resolve) => {

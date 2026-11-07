@@ -10,6 +10,7 @@
  */
 
 import { REPOSITORY, type Env } from "./env.ts";
+import { isRecord } from "./guards.ts";
 
 /** installation token 的提前刷新窗口（毫秒）。 */
 const TOKEN_REFRESH_MARGIN_MS = 5 * 60 * 1000;
@@ -138,7 +139,8 @@ async function getInstallationToken(env: Env, now: Date = new Date()): Promise<s
     console.warn(`换取 installation token 失败：HTTP ${response.status} ${note}`);
     throw new Error(`换取 installation token 失败（HTTP ${response.status}）`);
   }
-  const payload = (await response.json()) as { token?: unknown; expires_at?: unknown };
+  const payloadRaw: unknown = await response.json();
+  const payload = isRecord(payloadRaw) ? payloadRaw : {};
   if (typeof payload.token !== "string" || typeof payload.expires_at !== "string") {
     throw new Error("installation token 响应缺少 token 或 expires_at");
   }
