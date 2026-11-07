@@ -84,3 +84,10 @@ export interface MirrorAdminUi {
 }
 
 export type MirrorOverviewState = "idle" | "loading" | "ready" | "error";
+
+/** 深度只读视图：受控编辑组件用它接收可变域模型，写入经回调收口到属主组件。 */
+export type DeepReadonly<T> = T extends readonly (infer U)[]
+  ? readonly DeepReadonly<U>[]
+  : T extends object
+    ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
+    : T;

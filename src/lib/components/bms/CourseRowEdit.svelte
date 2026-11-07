@@ -25,10 +25,16 @@
     inputEditorMono,
   } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
+  import type { DeepReadonly } from "#lib/types/bms-view.js";
 
-  /** 编辑态段位行：摘要、行头操作与展开后的全宽表单。 */
+  /**
+   * 编辑态段位行：摘要、行头操作与展开后的全宽表单。
+   * 受控组件：course 以深度只读视图传入仅供渲染，写入统一经 onedit 上抛，
+   * 由 CoursePanel 执行并触发 onChange（漏标 dirty 在结构上不可能）。
+   */
   interface Props {
-    course: EditableCourse;
+    /** 只读视图：渲染用；写入经 onedit 收口（见文件头注）。 */
+    course: DeepReadonly<EditableCourse>;
     entries: Record<string, unknown>[];
     disabled: boolean;
     expanded: boolean;
@@ -38,7 +44,8 @@
     onDelete: () => void;
     onMoveUp: () => void;
     onMoveDown: () => void;
-    onChange: () => void;
+    /** 写入收口：mutator 拿到可写 course 原地修改，执行后由父级统一 onChange。 */
+    onedit: (mutate: (target: EditableCourse) => void) => void;
   }
 
   let {
@@ -52,7 +59,7 @@
     onDelete,
     onMoveUp,
     onMoveDown,
-    onChange,
+    onedit,
   }: Props = $props();
 
   const PICKER_LIMIT = 20;
@@ -77,47 +84,94 @@
     return { label: entryLabel(entry) || hash || m["editor.entry_unnamed"](), hash };
   }
 
-  function notify(): void {
-    onChange();
-  }
+  // mutator 形参统一命名 target（可写写入目标），避开与只读 prop course 的遮蔽
+  // （no-shadow）；写入后由 onedit 的执行方无条件触发 onChange。
 
   function toggleConstraint(value: string): void {
-    course.constraints = course.constraints.includes(value)
-      ? course.constraints.filter((item) => item !== value)
-      : [...course.constraints, value];
-    notify();
+    onedit((target) => {
+      target.constraints = target.constraints.includes(value)
+        ? target.constraints.filter((item) => item !== value)
+        : [...target.constraints, value];
+    });
   }
 
   function addTrophy(): void {
-    course.trophies = [
-      ...course.trophies,
-      { name: "goldmedal", missrateText: "", scorerateText: "", extra: {} },
-    ];
-    notify();
+    onedit((target) => {
+      target.trophies = [
+        ...target.trophies,
+        { name: "goldmedal", missrateText: "", scorerateText: "", extra: {} },
+      ];
+    });
+  }
+
+  function setTrophyName(index: number, name: string): void {
+    onedit((target) => {
+      const trophy = target.trophies[index];
+      if (trophy !== undefined) trophy.name = name;
+    });
+  }
+
+  function setTrophyMissrate(index: number, missrateText: string): void {
+    onedit((target) => {
+      const trophy = target.trophies[index];
+      if (trophy !== undefined) trophy.missrateText = missrateText;
+    });
+  }
+
+  function setTrophyScorerate(index: number, scorerateText: string): void {
+    onedit((target) => {
+      const trophy = target.trophies[index];
+      if (trophy !== undefined) trophy.scorerateText = scorerateText;
+    });
   }
 
   function removeTrophy(index: number): void {
-    course.trophies = course.trophies.filter((_, i) => i !== index);
-    notify();
+    onedit((target) => {
+      target.trophies = target.trophies.filter((_, i) => i !== index);
+    });
   }
 
   function addChartRow(md5: string, sha256: string, levelText: string): void {
-    course.charts = [...course.charts, { md5, sha256, levelText, extra: {} }];
-    notify();
+    onedit((target) => {
+      target.charts = [...target.charts, { md5, sha256, levelText, extra: {} }];
+    });
   }
 
   function addEmptyChart(): void {
     addChartRow("", "", "");
   }
 
+  function setChartMd5(index: number, md5: string): void {
+    onedit((target) => {
+      const chart = target.charts[index];
+      if (chart !== undefined) chart.md5 = md5;
+    });
+  }
+
+  function setChartSha256(index: number, sha256: string): void {
+    onedit((target) => {
+      const chart = target.charts[index];
+      if (chart !== undefined) chart.sha256 = sha256;
+    });
+  }
+
+  function setChartLevel(index: number, levelText: string): void {
+    onedit((target) => {
+      const chart = target.charts[index];
+      if (chart !== undefined) chart.levelText = levelText;
+    });
+  }
+
   function removeChart(index: number): void {
-    course.charts = course.charts.filter((_, i) => i !== index);
-    notify();
+    onedit((target) => {
+      target.charts = target.charts.filter((_, i) => i !== index);
+    });
   }
 
   function moveChart(index: number, delta: number): void {
-    course.charts = moveItem(course.charts, index, index + delta);
-    notify();
+    onedit((target) => {
+      target.charts = moveItem(target.charts, index, index + delta);
+    });
   }
 
   function openPicker(): void {
@@ -232,10 +286,10 @@
           type="text"
           value={course.name}
           placeholder={m["editor.course_name_placeholder"]()}
-          oninput={(event) => {
-            course.name = event.currentTarget.value;
-            notify();
-          }}
+          oninput={(event) =>
+            onedit((target) => {
+              target.name = event.currentTarget.value;
+            })}
           {disabled}
         />
       </label>
@@ -274,10 +328,7 @@
                   list="editor-trophy-names"
                   value={trophy.name}
                   placeholder={m["editor.course_trophy_name"]()}
-                  oninput={(event) => {
-                    trophy.name = event.currentTarget.value;
-                    notify();
-                  }}
+                  oninput={(event) => setTrophyName(index, event.currentTarget.value)}
                   {disabled}
                 />
                 <input
@@ -286,10 +337,7 @@
                   inputmode="decimal"
                   value={trophy.missrateText}
                   placeholder={m["editor.course_trophy_missrate"]()}
-                  oninput={(event) => {
-                    trophy.missrateText = event.currentTarget.value;
-                    notify();
-                  }}
+                  oninput={(event) => setTrophyMissrate(index, event.currentTarget.value)}
                   {disabled}
                 />
                 <input
@@ -298,10 +346,7 @@
                   inputmode="decimal"
                   value={trophy.scorerateText}
                   placeholder={m["editor.course_trophy_scorate"]()}
-                  oninput={(event) => {
-                    trophy.scorerateText = event.currentTarget.value;
-                    notify();
-                  }}
+                  oninput={(event) => setTrophyScorerate(index, event.currentTarget.value)}
                   {disabled}
                 />
                 <button
@@ -405,10 +450,7 @@
                     type="text"
                     value={chart.md5}
                     placeholder={m["editor.course_chart_md5"]()}
-                    oninput={(event) => {
-                      chart.md5 = event.currentTarget.value;
-                      notify();
-                    }}
+                    oninput={(event) => setChartMd5(index, event.currentTarget.value)}
                     {disabled}
                   />
                   <input
@@ -418,10 +460,7 @@
                     type="text"
                     value={chart.sha256}
                     placeholder={m["editor.course_chart_sha256"]()}
-                    oninput={(event) => {
-                      chart.sha256 = event.currentTarget.value;
-                      notify();
-                    }}
+                    oninput={(event) => setChartSha256(index, event.currentTarget.value)}
                     {disabled}
                   />
                   <input
@@ -429,10 +468,7 @@
                     type="text"
                     value={chart.levelText}
                     placeholder={m["editor.course_chart_level"]()}
-                    oninput={(event) => {
-                      chart.levelText = event.currentTarget.value;
-                      notify();
-                    }}
+                    oninput={(event) => setChartLevel(index, event.currentTarget.value)}
                     {disabled}
                   />
                 </div>
