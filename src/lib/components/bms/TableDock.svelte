@@ -125,6 +125,7 @@
       busy: model.busy,
       draftPending: model.pendingDraft !== null,
       undoPending: model.notice?.action !== undefined,
+      dirty: model.dirty,
       nearBottom: isNearDocumentBottom(
         window.scrollY,
         window.innerHeight,
@@ -486,7 +487,7 @@
   </div>
 {:else}
   <button
-    class="fixed right-4 z-999 flex items-center gap-2 rounded-full bg-glass px-3.5 py-2 shadow-[var(--glass-lighting),0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur"
+    class="fixed right-4 z-999 flex max-w-[calc(100vw-2rem)] items-center gap-2 overflow-hidden rounded-full bg-glass px-3.5 py-2 shadow-[var(--glass-lighting),0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur"
     style="bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem)"
     type="button"
     aria-label={m["editor.dock_expand"]()}
@@ -527,14 +528,14 @@
         <circle cx="12" cy="12" r="3" />
       </svg>
     {/if}
-    <span class="text-[0.85rem] whitespace-nowrap text-white-85">{stateWord}</span>
+    <span class="shrink-0 text-[0.85rem] whitespace-nowrap text-white-85">{stateWord}</span>
     {#each dockSignals as signal (signal.title)}
       <span
-        class="flex items-center gap-1 text-[0.8rem] whitespace-nowrap {signal.text}"
+        class="flex min-w-0 items-center gap-1 text-[0.8rem] {signal.text}"
         title={signal.title}
       >
         <span class="size-2 shrink-0 rounded-full {signal.dot}"></span>
-        {signal.word}
+        <span class="truncate">{signal.word}</span>
       </span>
     {/each}
   </button>

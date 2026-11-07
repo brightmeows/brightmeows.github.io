@@ -13,6 +13,7 @@ const openGuards = {
   busy: false,
   draftPending: false,
   undoPending: false,
+  dirty: false,
   nearBottom: false,
   keyboardFocus: false,
 };
@@ -97,6 +98,13 @@ describe("守卫与豁免", () => {
   it("存在待撤销动作时下滑不收起", () => {
     const state = createDockScrollState("edit");
     const next = applyDockScroll(state, 100, { ...openGuards, undoPending: true });
+    expect(next.expansion).toBe("expanded");
+    expect(next.accumulatedDown).toBe(0);
+  });
+
+  it("有未保存内容时下滑不收起", () => {
+    const state = createDockScrollState("edit");
+    const next = applyDockScroll(state, 100, { ...openGuards, dirty: true });
     expect(next.expansion).toBe("expanded");
     expect(next.accumulatedDown).toBe(0);
   });

@@ -8,7 +8,7 @@
     type CustomFieldRow,
     type EntryCommitError,
   } from "@brightmeows/bms/editor";
-  import { untrack } from "svelte";
+  import { onMount, untrack } from "svelte";
 
   import {
     btnDanger,
@@ -84,6 +84,12 @@
   let core = $state(initial.core);
   let custom = $state(initial.custom);
   let error = $state<{ code: EntryCommitError; detail: string | undefined } | null>(null);
+  let firstInput = $state<HTMLInputElement | undefined>(undefined);
+
+  // 展开即聚焦首字段：浏览器随焦点把表单滚进视口，替代行内展开的滚动定位
+  onMount(() => {
+    firstInput?.focus();
+  });
 
   const errorMessage = $derived.by(() => {
     if (error === null) return "";
@@ -104,6 +110,9 @@
         return m["editor.entry_custom_value_invalid"]({ key: error.detail ?? "" });
     }
   });
+
+  /** 孤儿等级：填写了 level_order 之外的值；非阻断警告，展示层提示分组表现。 */
+  const orphanLevel = $derived(core.level.trim() !== "" && !levels.includes(core.level.trim()));
 
   function handleSave(): void {
     const result = commitEntryEdit(entry ?? {}, { core, custom });
@@ -133,6 +142,7 @@
             value={core.level}
             oninput={(event) => (core.level = event.currentTarget.value)}
             {disabled}
+            bind:this={firstInput}
           />
         {:else}
           <input
@@ -142,6 +152,11 @@
             oninput={(event) => (core[field] = event.currentTarget.value)}
             {disabled}
           />
+        {/if}
+        {#if field === "level" && orphanLevel}
+          <p class="mt-1 text-[0.75rem] text-amber-300">
+            {m["editor.entry_level_orphan"]()}
+          </p>
         {/if}
       </label>
     {/each}

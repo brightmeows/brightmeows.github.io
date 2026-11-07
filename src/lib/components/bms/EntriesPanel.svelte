@@ -22,7 +22,7 @@
   } from "@brightmeows/bms/editor";
   import type { ChartData } from "@brightmeows/bms/format";
   import { levelSegmentColor } from "@brightmeows/bms/table";
-  import { tick } from "svelte";
+  import { onMount, tick } from "svelte";
 
   import ChartTableRow from "#lib/components/bms/ChartTableRow.svelte";
   import EntryDetailForm from "#lib/components/bms/EntryDetailForm.svelte";
@@ -30,7 +30,7 @@
   import JsonPreview from "#lib/components/ui/JsonPreview.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
   import ToggleJumpChip from "#lib/components/ui/ToggleJumpChip.svelte";
-  import { btnGhost, btnPrimary, inputEditorMono } from "#lib/constants/ui-classes.js";
+  import { btnGhost, btnGhostXs, btnPrimary, inputEditorMono } from "#lib/constants/ui-classes.js";
   import type { EditorNotice } from "#lib/controllers/editor.js";
   import { planImportApply } from "#lib/controllers/editor.js";
   import { m } from "#lib/paraglide/messages.js";
@@ -94,8 +94,10 @@
     color: string;
   }
 
+  let queryInput = $state("");
   let query = $state("");
   let selected = $state<Set<number>>(new Set());
+  let anchorIndex = $state<number | null>(null);
   let editingIndex = $state<number | null>(null);
   let adding = $state(false);
   let addUrl = $state("");
@@ -109,6 +111,17 @@
   let bulkError = $state<string | null>(null);
   let notice = $state<EditorNotice | null>(null);
   let chartPreview = $state<JsonPreviewHandle | undefined>();
+
+  let debounceTimer: ReturnType<typeof setTimeout> | undefined;
+
+  /** 搜索输入 150ms 防抖：每键触发的全表扫描与整树 diff 对大表有感知延迟。 */
+  function handleQueryInput(value: string): void {
+    queryInput = value;
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      query = queryInput;
+    }, 150);
+  }
   const allLevels = $derived.by(() => {
     const seen = new Set<string>();
     const out: string[] = [];
@@ -271,12 +284,39 @@
     notice = null;
   });
 
+  onMount(() => {
+    return () => {
+      clearTimeout(debounceTimer);
+    };
+  });
+
   function setSelected(index: number, checked: boolean): void {
     selected = setIndices(selected, [index], checked);
+    anchorIndex = index;
   }
 
   function selectAllFiltered(): void {
     selected = setIndices(selected, filteredIndices, true);
+  }
+
+  /** Shift 点击范围选择：以触发行的新状态填充 anchor 到触发行之间的连续区间。 */
+  function handleShiftRange(index: number): void {
+    if (anchorIndex === null) {
+      anchorIndex = index;
+      return;
+    }
+    const checked = selected.has(index);
+    const start = Math.min(anchorIndex, index);
+    const end = Math.max(anchorIndex, index);
+    const range = Array.from({ length: end - start + 1 }, (_, offset) => start + offset);
+    selected = setIndices(selected, range, checked);
+    anchorIndex = index;
+  }
+
+  /** 组内全选：编辑态组头的快捷入口。 */
+  function selectGroup(indices: readonly number[]): void {
+    selected = setIndices(selected, indices, true);
+    anchorIndex = null;
   }
 
   function clearSelection(): void {
@@ -495,7 +535,8 @@
       <input
         class="{inputEditorMono} max-w-64 flex-1"
         type="text"
-        bind:value={query}
+        value={queryInput}
+        oninput={(event) => handleQueryInput(event.currentTarget.value)}
         placeholder={m["editor.entries_search_placeholder"]()}
         {disabled}
       />
@@ -706,6 +747,16 @@
                   <span class="text-[1.1rem] text-white-80">
                     {m["table.chart_count"]({ count: group.indices.length })}
                   </span>
+                  {#if editing}
+                    <button
+                      class={btnGhostXs}
+                      type="button"
+                      {disabled}
+                      onclick={() => selectGroup(group.indices)}
+                    >
+                      {m["editor.entries_select_group"]()}
+                    </button>
+                  {/if}
                 </div>
               </td>
             </tr>
@@ -728,6 +779,7 @@
                 selected={selected.has(index)}
                 {disabled}
                 onSelect={(checked: boolean) => setSelected(index, checked)}
+                onShiftRange={() => handleShiftRange(index)}
                 onEdit={editing ? () => startEdit(index) : undefined}
               />
               {#if editing && editingIndex === index}

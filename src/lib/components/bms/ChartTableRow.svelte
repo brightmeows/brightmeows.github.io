@@ -19,6 +19,8 @@
     selected?: boolean;
     disabled?: boolean;
     onSelect?: ((checked: boolean) => void) | undefined;
+    /** 勾选 td 上带 Shift 的点击（范围选择的触发信号）。 */
+    onShiftRange?: (() => void) | undefined;
     /** 编辑态：标题列内的编辑入口。 */
     onEdit?: (() => void) | undefined;
     /** 编辑态：未指派条目的文件等级建议。 */
@@ -35,6 +37,7 @@
     selected = false,
     disabled = false,
     onSelect,
+    onShiftRange = undefined,
     onEdit,
     levelHint = null,
   }: Props = $props();
@@ -42,7 +45,12 @@
 
 <tr class="hover:bg-white-5">
   {#if selectable}
-    <td class="table-td-compact px-2">
+    <td
+      class="table-td-compact px-2"
+      onclick={(event) => {
+        if (event.shiftKey) onShiftRange?.();
+      }}
+    >
       <Checkbox
         size="sm"
         checked={selected}
