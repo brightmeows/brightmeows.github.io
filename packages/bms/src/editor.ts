@@ -141,6 +141,8 @@ export function customFieldRows(entry: Record<string, unknown>): CustomFieldRow[
 /** 条目编辑提交失败的稳定原因码（展示文案由组件层映射 i18n）。 */
 export type EntryCommitError =
   | "identity"
+  | "invalid_md5"
+  | "invalid_sha256"
   | "custom_key_empty"
   | "custom_key_duplicate"
   | "custom_key_core"
@@ -150,6 +152,10 @@ export interface EntryCommitInput {
   core: Record<CoreEntryField, string>;
   custom: CustomFieldRow[];
 }
+
+/** 身份哈希格式：MD5 为 32 位、SHA-256 为 64 位十六进制（大小写不敏感）。 */
+const MD5_PATTERN = /^[0-9a-f]{32}$/i;
+const SHA256_PATTERN = /^[0-9a-f]{64}$/i;
 
 export type EntryCommitResult =
   | { ok: true; entry: Record<string, unknown> }
@@ -168,6 +174,12 @@ export function commitEntryEdit(
   const sha256 = input.core.sha256.trim();
   if (md5 === "" && sha256 === "") {
     return { ok: false, error: "identity", detail: undefined };
+  }
+  if (md5 !== "" && !MD5_PATTERN.test(md5)) {
+    return { ok: false, error: "invalid_md5", detail: undefined };
+  }
+  if (sha256 !== "" && !SHA256_PATTERN.test(sha256)) {
+    return { ok: false, error: "invalid_sha256", detail: undefined };
   }
 
   const fields: Record<string, unknown> = {};
@@ -501,6 +513,37 @@ export function removeIndices(
 ): Record<string, unknown>[] {
   const targets = new Set(indices);
   return entries.filter((_, index) => !targets.has(index));
+}
+
+/** 条目删除的撤销快照：被删条目与其原下标。 */
+export interface EntryRemovalSnapshot {
+  removed: { index: number; entry: Record<string, unknown> }[];
+}
+
+/** 删除前捕获被删下标的条目快照；indices 顺序任意。 */
+export function captureEntryRemoval(
+  before: readonly Record<string, unknown>[],
+  indices: readonly number[]
+): EntryRemovalSnapshot {
+  const targets = new Set(indices);
+  const removed: { index: number; entry: Record<string, unknown> }[] = [];
+  for (const [index, entry] of before.entries()) {
+    if (targets.has(index)) removed.push({ index, entry });
+  }
+  return { removed };
+}
+
+/** 把快照条目按原下标升序插回当前数组，精确复原删除前状态（条目引用保持）。 */
+export function restoreEntryRemoval(
+  current: readonly Record<string, unknown>[],
+  snapshot: EntryRemovalSnapshot
+): Record<string, unknown>[] {
+  const next = [...current];
+  const ordered = [...snapshot.removed].sort((a, b) => a.index - b.index);
+  for (const { index, entry } of ordered) {
+    next.splice(index, 0, entry);
+  }
+  return next;
 }
 
 /** 交换位置：把第 from 项插到第 to 项位置；越界或同位时原样返回副本。 */

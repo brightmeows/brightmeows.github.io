@@ -160,3 +160,38 @@ export function planSaveAsShared(
   }
   return { kind: "claim" };
 }
+
+// ---- 导入应用（replace 与头部覆盖的确认闸门先行，应用随后） ----
+
+/** 导入应用计划：放行应用，或用户取消。 */
+export type ImportApplyPlan = { kind: "proceed" } | { kind: "rejected"; notice: EditorNotice };
+
+/**
+ * 导入应用闸门：目标表非空时，replace 覆盖数据或载荷携带头部（将替换表头
+ * 字段）都需要确认；空表与纯 append 直接放行。confirm 注入（页面传确认
+ * 弹层实现，单测传假实现）；确认文案按触发原因组装（覆盖计数、头部替换）。
+ */
+export async function planImportApply(deps: {
+  currentCount: number;
+  incomingCount: number;
+  dataMode: "append" | "replace";
+  hasHeader: boolean;
+  confirm: (message: string) => Promise<boolean>;
+}): Promise<ImportApplyPlan> {
+  if (deps.currentCount === 0) return { kind: "proceed" };
+  const reasons: string[] = [];
+  if (deps.dataMode === "replace") {
+    reasons.push(m["editor.import_replace_confirm"]({ count: deps.incomingCount }));
+  }
+  if (deps.hasHeader) {
+    reasons.push(m["editor.import_header_confirm"]());
+  }
+  if (reasons.length === 0) return { kind: "proceed" };
+  if (!(await deps.confirm(reasons.join("\n")))) {
+    return {
+      kind: "rejected",
+      notice: { kind: "warn", text: m["editor.import_replace_canceled"]() },
+    };
+  }
+  return { kind: "proceed" };
+}

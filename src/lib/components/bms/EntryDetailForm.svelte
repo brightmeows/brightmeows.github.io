@@ -90,6 +90,10 @@
     switch (error.code) {
       case "identity":
         return m["editor.entry_identity_required"]();
+      case "invalid_md5":
+        return m["editor.entry_md5_invalid"]();
+      case "invalid_sha256":
+        return m["editor.entry_sha256_invalid"]();
       case "custom_key_empty":
         return m["editor.entry_custom_key_empty"]();
       case "custom_key_duplicate":

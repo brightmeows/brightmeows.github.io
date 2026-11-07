@@ -9,6 +9,7 @@ import {
   assignLevel,
   buildCombinedPackage,
   buildEntryHashSet,
+  captureEntryRemoval,
   commitEntryEdit,
   coreFieldTexts,
   countUnassigned,
@@ -27,6 +28,7 @@ import {
   parseLevelFilterOption,
   removeIndices,
   removeLevelAt,
+  restoreEntryRemoval,
   setIndices,
   shortenHash,
   shouldWarnOverwrite,
@@ -88,34 +90,65 @@ describe("customFieldRows", () => {
 });
 
 describe("commitEntryEdit", () => {
+  const MD5 = "a".repeat(32);
+
   it("requires at least one identity hash", () => {
     const result = commitEntryEdit({}, { core: blankCore(), custom: [] });
     expect(result).toEqual({ ok: false, error: "identity", detail: undefined });
   });
 
+  it("rejects non-hexadecimal md5", () => {
+    const result = commitEntryEdit({}, { core: { ...blankCore(), md5: "xyz" }, custom: [] });
+    expect(result).toEqual({ ok: false, error: "invalid_md5", detail: undefined });
+  });
+
+  it("accepts 32-char hexadecimal md5 in mixed case", () => {
+    const result = commitEntryEdit(
+      {},
+      { core: { ...blankCore(), md5: "ABCDEF0123456789abcdef0123456789" }, custom: [] }
+    );
+    expect(result.ok).toBe(true);
+  });
+
+  it("rejects wrong-length sha256", () => {
+    const result = commitEntryEdit(
+      {},
+      { core: { ...blankCore(), sha256: "a".repeat(63) }, custom: [] }
+    );
+    expect(result).toEqual({ ok: false, error: "invalid_sha256", detail: undefined });
+  });
+
+  it("accepts 64-char hexadecimal sha256", () => {
+    const result = commitEntryEdit(
+      {},
+      { core: { ...blankCore(), sha256: "a".repeat(64) }, custom: [] }
+    );
+    expect(result.ok).toBe(true);
+  });
+
   it("trims core values and deletes empty keys", () => {
-    const core = { ...blankCore(), md5: "abc", title: " T ", comment: "x" };
-    const result = commitEntryEdit(entry({ md5: "abc", comment: "old", keep: 1 }), {
+    const core = { ...blankCore(), md5: MD5, title: " T ", comment: "x" };
+    const result = commitEntryEdit(entry({ md5: MD5, comment: "old", keep: 1 }), {
       core,
       custom: [{ key: "keep", valueText: "1" }],
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.entry).toEqual({ md5: "abc", title: "T", comment: "x", keep: 1 });
+    expect(result.entry).toEqual({ md5: MD5, title: "T", comment: "x", keep: 1 });
   });
 
   it("preserves untouched custom fields and deletes removed ones", () => {
-    const result = commitEntryEdit(entry({ md5: "abc", total: 480, judge: 3 }), {
-      core: { ...blankCore(), md5: "abc" },
+    const result = commitEntryEdit(entry({ md5: MD5, total: 480, judge: 3 }), {
+      core: { ...blankCore(), md5: MD5 },
       custom: [{ key: "total", valueText: "480" }],
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.entry).toEqual({ md5: "abc", total: 480 });
+    expect(result.entry).toEqual({ md5: MD5, total: 480 });
   });
 
   it("rejects core-field names, duplicates and empty keys in custom rows", () => {
-    const base = { core: { ...blankCore(), md5: "abc" }, custom: [] };
+    const base = { core: { ...blankCore(), md5: MD5 }, custom: [] };
     expect(commitEntryEdit({}, { ...base, custom: [{ key: "level", valueText: '"1"' }] })).toEqual({
       ok: false,
       error: "custom_key_core",
@@ -141,19 +174,19 @@ describe("commitEntryEdit", () => {
   });
 
   it("rejects invalid JSON values and empty text removes the key", () => {
-    const base = { core: { ...blankCore(), md5: "abc" }, custom: [] };
+    const base = { core: { ...blankCore(), md5: MD5 }, custom: [] };
     expect(commitEntryEdit({}, { ...base, custom: [{ key: "a", valueText: "{bad" }] })).toEqual({
       ok: false,
       error: "custom_value",
       detail: "a",
     });
-    const result = commitEntryEdit(entry({ md5: "abc", total: 1 }), {
+    const result = commitEntryEdit(entry({ md5: MD5, total: 1 }), {
       ...base,
       custom: [{ key: "total", valueText: "  " }],
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.entry).toEqual({ md5: "abc" });
+    expect(result.entry).toEqual({ md5: MD5 });
   });
 });
 
@@ -316,6 +349,37 @@ describe("duplicateEntryLabel", () => {
     expect(duplicateEntryLabel(entries, { sha256: "X" }, null)).toBe("S");
     expect(duplicateEntryLabel(entries, { md5: "abc" }, 0)).toBeNull();
     expect(duplicateEntryLabel(entries, { md5: "zzz" }, null)).toBeNull();
+  });
+});
+
+describe("captureEntryRemoval / restoreEntryRemoval", () => {
+  it("restores a single removal in place with identity preserved", () => {
+    const before = [entry({ md5: "a" }), entry({ md5: "b" }), entry({ md5: "c" })];
+    const snapshot = captureEntryRemoval(before, [1]);
+    const after = removeIndices(before, [1]);
+    const restored = restoreEntryRemoval(after, snapshot);
+    expect(restored).toEqual(before);
+    expect(restored[1]).toBe(before[1]);
+  });
+
+  it("restores multi-index out-of-order removals exactly", () => {
+    const before = [
+      entry({ md5: "a" }),
+      entry({ md5: "b" }),
+      entry({ md5: "c" }),
+      entry({ md5: "d" }),
+      entry({ md5: "e" }),
+    ];
+    const snapshot = captureEntryRemoval(before, [3, 0]);
+    const after = removeIndices(before, [0, 3]);
+    expect(restoreEntryRemoval(after, snapshot)).toEqual(before);
+  });
+
+  it("returns a copy for an empty snapshot", () => {
+    const current = [entry({ md5: "a" })];
+    const restored = restoreEntryRemoval(current, { removed: [] });
+    expect(restored).toEqual(current);
+    expect(restored).not.toBe(current);
   });
 });
 

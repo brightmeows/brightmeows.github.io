@@ -5,6 +5,7 @@ import {
   decideLocalSaveGate,
   decideNewTableDraft,
   planEditorSave,
+  planImportApply,
   planSaveAsShared,
 } from "./editor";
 
@@ -206,5 +207,77 @@ describe("planSaveAsShared", () => {
 
   it("合法载荷走认领", () => {
     expect(planSaveAsShared(header, entries)).toEqual({ kind: "claim" });
+  });
+});
+
+describe("planImportApply 导入应用闸门", () => {
+  const confirmNo = async (): Promise<boolean> => await Promise.resolve(false);
+
+  /** 记录确认文案并返回固定答案的假 confirm。 */
+  function captureConfirm(into: { message: string }, answer: boolean) {
+    return async (message: string): Promise<boolean> => {
+      into.message = message;
+      return await Promise.resolve(answer);
+    };
+  }
+
+  it("空表无论模式直接放行", async () => {
+    const plan = await planImportApply({
+      currentCount: 0,
+      incomingCount: 5,
+      dataMode: "replace",
+      hasHeader: true,
+      confirm: confirmNo,
+    });
+    expect(plan.kind).toBe("proceed");
+  });
+
+  it("纯 append 且无头部直接放行", async () => {
+    const plan = await planImportApply({
+      currentCount: 10,
+      incomingCount: 5,
+      dataMode: "append",
+      hasHeader: false,
+      confirm: confirmNo,
+    });
+    expect(plan.kind).toBe("proceed");
+  });
+
+  it("replace 覆盖非空表需确认，文案带覆盖计数", async () => {
+    const captured = { message: "" };
+    const plan = await planImportApply({
+      currentCount: 10,
+      incomingCount: 5,
+      dataMode: "replace",
+      hasHeader: false,
+      confirm: captureConfirm(captured, true),
+    });
+    expect(plan.kind).toBe("proceed");
+    expect(captured.message).toContain("5");
+  });
+
+  it("replace 覆盖非空表被取消时拒绝并携带通知", async () => {
+    const plan = await planImportApply({
+      currentCount: 10,
+      incomingCount: 5,
+      dataMode: "replace",
+      hasHeader: true,
+      confirm: confirmNo,
+    });
+    if (plan.kind !== "rejected") throw new Error("want rejected");
+    expect(plan.notice.kind).toBe("warn");
+  });
+
+  it("append 携带头部也需确认（表头字段将被替换）", async () => {
+    const captured = { message: "" };
+    const plan = await planImportApply({
+      currentCount: 3,
+      incomingCount: 0,
+      dataMode: "append",
+      hasHeader: true,
+      confirm: captureConfirm(captured, true),
+    });
+    expect(plan.kind).toBe("proceed");
+    expect(captured.message).not.toBe("");
   });
 });
