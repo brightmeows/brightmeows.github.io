@@ -105,12 +105,13 @@
   --color-black-30: rgb(0 0 0 / 0.3);
 }
 
-/* ===== 爪印光标 =====
-   CSS 原生替换系统指针：default 帧经继承覆盖全局，pointer 帧给可点元素。
-   重定义 cursor-pointer 工具类，站点既有的该类调用统一吃到爪印悬停帧；
+/* ===== 箭头光标 =====
+   CSS 原生替换系统指针：重制系统箭头轮廓，贴近原生形状与笔尖热点，
+   习惯与点击精确度零迁移。default 帧经继承覆盖全局，pointer 帧给可点
+   元素。重定义 cursor-pointer 工具类，站点既有的该类调用统一吃到悬停帧；
    cursor-not-allowed 等语义工具类不动，保持系统样式。 */
 @utility cursor-pointer {
-  cursor: var(--cursor-paw-pointer);
+  cursor: var(--cursor-pointer);
 }
 
 @layer base {
@@ -128,12 +129,12 @@
     @apply m-0 min-h-screen min-w-[320px];
   }
 
-  /* 爪印光标接线：default 帧经继承覆盖全局；pointer 帧直接指定给可点元素
+  /* 箭头光标接线：default 帧经继承覆盖全局；pointer 帧直接指定给可点元素
      与语义控件（盖过 UA 对链接与按钮的 auto 求值）；文本编辑面保留系统
      I-beam。放 base 层让 utilities 层的 disabled:cursor-not-allowed 仍能
      盖过这里。checkbox/radio/range/file 不在文本选择器内，保持继承帧。 */
   :root {
-    cursor: var(--cursor-paw-default);
+    cursor: var(--cursor-default);
   }
 
   a,
@@ -142,7 +143,7 @@
   select,
   summary,
   label {
-    cursor: var(--cursor-paw-pointer);
+    cursor: var(--cursor-pointer);
   }
 
   input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not(
@@ -180,20 +181,22 @@
   --glass-fallback: rgb(10 10 20 / 0.98);
 }
 
-/* 爪印光标令牌：白色爪印两帧加半透深色描边（亮底不丢）。令牌值是完整的
-   cursor 值：SVG 主选、PNG 回退（Safari 等不支持 SVG cursor 的浏览器）、
-   系统指针兜底；reduced-motion 时整组换回系统指针，与站点既有口径一致。 */
+/* 箭头光标令牌：白色箭头两帧加半透深色描边（亮底不丢），hotspot 定在
+   笔尖（2 1），点击精确度与系统箭头一致。令牌值是完整的 cursor 值：
+   SVG 主选、PNG 回退（Safari 等不支持 SVG cursor 的浏览器）、系统指针
+   兜底；悬停帧同形加深放大 31px；reduced-motion 时整组换回系统指针，
+   与站点既有口径一致。 */
 :root {
-  --cursor-paw-default:
-    url("/cursor/paw-default.svg") 14 6, url("/cursor/paw-default.png") 14 6, auto;
-  --cursor-paw-pointer:
-    url("/cursor/paw-pointer.svg") 16 7, url("/cursor/paw-pointer.png") 16 7, pointer;
+  --cursor-default:
+    url("/cursor/arrow-default.svg") 2 1, url("/cursor/arrow-default.png") 2 1, auto;
+  --cursor-pointer:
+    url("/cursor/arrow-pointer.svg") 2 1, url("/cursor/arrow-pointer.png") 2 1, pointer;
 }
 
 @media (prefers-reduced-motion: reduce) {
   :root {
-    --cursor-paw-default: auto;
-    --cursor-paw-pointer: pointer;
+    --cursor-default: auto;
+    --cursor-pointer: pointer;
   }
 }
 
