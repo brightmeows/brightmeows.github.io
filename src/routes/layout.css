@@ -199,7 +199,8 @@
     transition:
       background-color 0.3s ease,
       border-color 0.3s ease,
-      box-shadow 0.3s ease;
+      box-shadow 0.3s ease,
+      transform 0.3s ease;
   }
 
   .glass-shadow-sm {
@@ -309,7 +310,7 @@
 
   /* ===== 滚动导航标签 ===== */
   .tag-scroll {
-    @apply cursor-pointer rounded-glass-lg bg-white-10 px-4 py-2 font-bold text-white opacity-80 transition-all duration-300 ease-in-out hover:opacity-90;
+    @apply cursor-pointer rounded-glass-lg bg-white-10 px-4 py-2 font-bold text-white opacity-80 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:opacity-90;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   }
 
@@ -341,71 +342,5 @@
   /* ===== 空状态容器 ===== */
   .empty-state {
     @apply p-12 text-center;
-  }
-
-  /* ===== 按钮光效（Aero 风格按压光斑与悬停光标柔光） =====
-     宿主由 utils/ui/press-glow 的委托监听动态标记（全站 button、a 与
-     role=button 中的盒状控件），坐标经 CSS 变量传入：--press-x/--press-y
-     按压点，--cursor-x/--cursor-y 光标位置。光效是宿主的两层伪元素
-     渐变，不参与布局、不改组件尺寸。 */
-  .press-glow-host::before,
-  .press-glow-host::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    opacity: 0;
-  }
-
-  /* 悬停柔光：光标跟随的 spotlight，悬停期间常亮 */
-  .press-glow-host::before {
-    background: radial-gradient(
-      closest-side at var(--cursor-x, 50%) var(--cursor-y, 50%),
-      rgb(255 255 255 / 0.16),
-      color-mix(in oklab, var(--color-accent) 18%, transparent) 55%,
-      transparent
-    );
-    transition: opacity 0.15s ease-out;
-  }
-
-  .press-glow-host:hover::before {
-    opacity: 1;
-  }
-
-  /* 按压光斑：从按压点亮起，松开后渐熄（光随指动的 Aero 触感） */
-  .press-glow-host::after {
-    background: radial-gradient(
-      circle 80px at var(--press-x, 50%) var(--press-y, 50%),
-      rgb(255 255 255 / 0.3),
-      color-mix(in oklab, var(--color-accent) 32%, transparent) 55%,
-      transparent
-    );
-    transition: opacity 0.3s ease-out;
-  }
-
-  .press-glow-host:active::after {
-    opacity: 1;
-    transition-duration: 0.06s;
-  }
-
-  /* 禁用控件不出光效 */
-  .press-glow-host:disabled::before,
-  .press-glow-host:disabled::after,
-  .press-glow-host[aria-disabled="true"]::before,
-  .press-glow-host[aria-disabled="true"]::after {
-    display: none;
-  }
-
-  /* 减少动效：光效全禁，按压回退为无动画的静态亮度变化 */
-  @media (prefers-reduced-motion: reduce) {
-    .press-glow-host::before,
-    .press-glow-host::after {
-      display: none;
-    }
-
-    .press-glow-host:active:not(:disabled) {
-      filter: brightness(1.35);
-    }
   }
 }

@@ -25,6 +25,8 @@
     size?: "sm" | "md" | "lg";
     /** 是否禁用 */
     disabled?: boolean;
+    /** 悬停时是否上移 */
+    hoverLift?: boolean;
     /** 自定义样式对象 */
     style?: Record<string, string>;
     /** 点击事件处理 */
@@ -44,6 +46,7 @@
     class: className = "",
     size = "sm",
     disabled = false,
+    hoverLift = true,
     style = {},
     onclick,
     target,
@@ -71,6 +74,8 @@
         }
       : style
   );
+
+  const liftClass = $derived(hoverLift && !disabled ? "-translate-y-0.5" : "");
 </script>
 
 <style>
@@ -131,7 +136,9 @@
     {href}
     {target}
     {rel}
-    class="gradient-btn-base {variantClass} {sizeConfig[size]} {className}"
+    class="gradient-btn-base {variantClass} {sizeConfig[size]} {liftClass} {!disabled
+      ? 'active:translate-y-0 active:scale-95'
+      : ''} {className}"
     class:no-hover={disabled}
     style={styleToString(resolvedStyle)}
   >
@@ -144,7 +151,9 @@
     {type}
     {disabled}
     {onclick}
-    class="gradient-btn-base {variantClass} {sizeConfig[size]} {className}"
+    class="gradient-btn-base {variantClass} {sizeConfig[size]} {hoverLift && !disabled
+      ? 'hover:-translate-y-0.5'
+      : ''} {!disabled ? 'active:translate-y-0 active:scale-95' : ''} {className}"
     class:opacity-50={disabled}
     class:cursor-not-allowed={disabled}
     class:cursor-pointer={!disabled}

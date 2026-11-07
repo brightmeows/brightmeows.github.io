@@ -26,6 +26,10 @@
     class?: string;
     /** 是否禁用 */
     disabled?: boolean;
+    /** 悬停时是否放大 */
+    hoverScale?: boolean;
+    /** 点击时是否缩放 */
+    clickShrink?: boolean;
     /** 自定义样式对象 */
     style?: Record<string, string>;
     /** 点击事件处理 */
@@ -49,6 +53,8 @@
     size = "md",
     class: className = "",
     disabled = false,
+    hoverScale = true,
+    clickShrink = true,
     style = {},
     onclick,
     ariaLabel = m["iconbutton.default"](),
@@ -156,7 +162,9 @@
     {rel}
     aria-label={ariaLabel}
     {title}
-    class="icon-btn-base cursor-pointer {variantClass} {sizeConfig[size]} {className}"
+    class="icon-btn-base cursor-pointer {variantClass} {sizeConfig[size]} {hoverScale && !disabled
+      ? 'hover:scale-110'
+      : ''} {clickShrink && !disabled ? 'active:scale-95' : ''} {className}"
     class:no-hover={disabled}
     style={styleToString(resolvedStyle)}
   >
@@ -171,7 +179,9 @@
     {onclick}
     aria-label={ariaLabel}
     {title}
-    class="icon-btn-base {variantClass} {sizeConfig[size]} {className}"
+    class="icon-btn-base {variantClass} {sizeConfig[size]} {hoverScale && !disabled
+      ? 'hover:scale-110'
+      : ''} {clickShrink && !disabled ? 'active:scale-95' : ''} {className}"
     class:opacity-50={disabled}
     class:cursor-not-allowed={disabled}
     class:cursor-pointer={!disabled}
