@@ -18,11 +18,12 @@
 
   /**
    * 难度表页底部操作 dock：
-   * - 常驻右下角：收起态是模式胶囊（图标加状态词与色点：琥珀=未保存、
-   *   红/绿=notice、浅蓝=待恢复草稿，error/warn 额外以彩色短词提示），
-   *   展开态是 340px 玻璃面板（窄屏回退全宽），面板头为同一状态标识，
-   *   下方纵排承载模式切换、保存、另存、放弃、notice、草稿横幅与
-   *   自动保存时刻；表整体操作（导出、查看原文、fork）与导入区以折叠段
+   * - 常驻右下角：收起态是模式胶囊（图标加状态词；状态以“色点+短词”
+   *   成对提示：黄=未保存、橙=警告、红=错误、绿=完成、浅蓝=待恢复草稿，
+   *   悬停 title 保留完整 notice 文本），展开态是 340px 玻璃面板
+   *   （窄屏回退全宽），面板头为同一状态标识，下方纵排承载模式切换、
+   *   保存、另存、放弃、notice、草稿横幅与自动保存时刻；查看态编辑
+   *   按钮下内联进入编辑说明；表整体操作（导出、查看原文、fork）与导入区以折叠段
    *   收进面板（表操作查看态默认展开、编辑态默认收起；导入段默认收起，
    *   空表自动展开一次，手动收起后本会话不再自动），导入段展开时面板
    *   加宽到 480px；
@@ -40,7 +41,7 @@
     createMode: boolean;
     /** 是否显示“另存为我的共享表”。 */
     showSaveAsShared: boolean;
-    /** “编辑此表”按钮的悬停提示文案。 */
+    /** “编辑此表”按钮下方的内联说明文案。 */
     editHint: string;
     /** 表操作折叠段内容（导出、查看原文、fork）；缺省隐藏该段。 */
     tableActions?: Snippet | undefined;
@@ -70,18 +71,6 @@
   let stateWord = $derived(
     editing ? m["editor.dock_state_editing"]() : m["editor.dock_state_viewing"]()
   );
-
-  /** 收起态与面板头上的 notice 短词（ok 类不提示，8 秒自动清除）。 */
-  let noticeWord = $derived.by(() => {
-    if (model.notice === null) return null;
-    if (model.notice.kind === "error") {
-      return { text: m["editor.dock_notice_error"](), cls: "text-red-300" };
-    }
-    if (model.notice.kind === "warn") {
-      return { text: m["editor.dock_notice_warn"](), cls: "text-amber-300" };
-    }
-    return null;
-  });
 
   // ---- 收展状态：滚动累积无需触发渲染，放普通变量；expansion 单独响应式 ----
   // svelte-ignore state_referenced_locally —— 初值取挂载时的模式；模式变化由下方 effect 重置
@@ -186,25 +175,49 @@
     };
   });
 
-  // 收起态胶囊的状态色点：与展开态内容一一对应，多状态并存时全部显示
+  // 状态信号（收起胶囊与面板头共用）：色点加短词成对，点仅作词的项目符号，
+  // 多状态并存时全部显示；黄=未保存、橙=警告、红=错误、绿=完成、浅蓝=草稿
   let dockSignals = $derived.by(() => {
-    const signals: { color: string; title: string }[] = [];
+    const signals: { word: string; dot: string; text: string; title: string }[] = [];
     if (model.dirty) {
-      signals.push({ color: "bg-amber-300", title: m["editor.unsaved_badge"]() });
-    }
-    if (model.notice !== null) {
       signals.push({
-        color:
-          model.notice.kind === "error"
-            ? "bg-red-400"
-            : model.notice.kind === "ok"
-              ? "bg-success"
-              : "bg-amber-300",
-        title: model.notice.text,
+        word: m["editor.dock_state_unsaved"](),
+        dot: "bg-amber-300",
+        text: "text-amber-300",
+        title: m["editor.unsaved_badge"](),
       });
     }
+    if (model.notice !== null) {
+      if (model.notice.kind === "error") {
+        signals.push({
+          word: m["editor.dock_notice_error"](),
+          dot: "bg-error",
+          text: "text-error",
+          title: model.notice.text,
+        });
+      } else if (model.notice.kind === "warn") {
+        signals.push({
+          word: m["editor.dock_notice_warn"](),
+          dot: "bg-warning",
+          text: "text-warning-light",
+          title: model.notice.text,
+        });
+      } else {
+        signals.push({
+          word: m["editor.dock_notice_ok"](),
+          dot: "bg-success",
+          text: "text-success",
+          title: model.notice.text,
+        });
+      }
+    }
     if (model.pendingDraft !== null) {
-      signals.push({ color: "bg-accent-light", title: m["editor.draft_found_title"]() });
+      signals.push({
+        word: m["editor.dock_draft_pending"](),
+        dot: "bg-accent-light",
+        text: "text-accent-light",
+        title: m["editor.draft_found_title"](),
+      });
     }
     return signals;
   });
@@ -218,7 +231,7 @@
     out:fly={{ y: 24, opacity: 0, duration: reduceMotion ? 0 : 140, easing: cubicIn }}
   >
     <div
-      class="pointer-events-auto max-h-full w-[340px] max-w-full overflow-y-auto rounded-xl bg-glass p-3 shadow-[var(--glass-lighting),0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur transition-[width] duration-200 max-sm:w-full {importOpen
+      class="pointer-events-auto max-h-full w-[340px] max-w-full overflow-y-auto rounded-glass-lg bg-glass p-3 shadow-[var(--glass-lighting),0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur transition-[width] duration-200 max-sm:w-full {importOpen
         ? 'sm:w-[480px]'
         : 'sm:w-[340px]'}"
       style="max-height: calc(100dvh - 2rem - env(safe-area-inset-bottom, 0px))"
@@ -257,15 +270,12 @@
               <circle cx="12" cy="12" r="3" />
             </svg>
           {/if}
-          <span class="text-[0.9rem] text-white-85">{stateWord}</span>
-          {#if model.dirty}
-            <span class="text-[0.8rem] text-amber-300">{m["editor.dock_state_unsaved"]()}</span>
-          {/if}
-          {#if noticeWord !== null}
-            <span class="text-[0.8rem] {noticeWord.cls}">{noticeWord.text}</span>
-          {/if}
+          <span class="text-[0.85rem] text-white-85">{stateWord}</span>
           {#each dockSignals as signal (signal.title)}
-            <span class="size-2 rounded-full {signal.color}" title={signal.title}></span>
+            <span class="flex items-center gap-1 text-[0.8rem] {signal.text}" title={signal.title}>
+              <span class="size-2 shrink-0 rounded-full {signal.dot}"></span>
+              {signal.word}
+            </span>
           {/each}
         </div>
         <button
@@ -319,14 +329,10 @@
             </button>
           {/if}
         {:else}
-          <button
-            class="{btnPrimary} w-full"
-            type="button"
-            title={editHint}
-            onclick={() => onSetMode("edit")}
-          >
+          <button class="{btnPrimary} w-full" type="button" onclick={() => onSetMode("edit")}>
             {model.dirty ? m["editor.continue_edit"]() : m["editor.enter_table"]()}
           </button>
+          <p class="text-center text-[0.8rem] text-white-50">{editHint}</p>
         {/if}
 
         {#if model.dirty}
@@ -446,8 +452,8 @@
           'ok'
             ? 'border-success/40 bg-success/10 text-success'
             : model.notice.kind === 'warn'
-              ? 'border-amber-300/40 bg-amber-300/10 text-amber-200'
-              : 'border-red-400/40 bg-red-400/10 text-red-200'}"
+              ? 'border-warning/40 bg-warning/10 text-warning-light'
+              : 'border-error/40 bg-error/10 text-error'}"
         >
           {model.notice.text}
         </div>
@@ -498,16 +504,14 @@
       </svg>
     {/if}
     <span class="text-[0.85rem] whitespace-nowrap text-white-85">{stateWord}</span>
-    {#if model.dirty}
-      <span class="text-[0.8rem] whitespace-nowrap text-amber-300">
-        {m["editor.dock_state_unsaved"]()}
-      </span>
-    {/if}
-    {#if noticeWord !== null}
-      <span class="text-[0.8rem] whitespace-nowrap {noticeWord.cls}">{noticeWord.text}</span>
-    {/if}
     {#each dockSignals as signal (signal.title)}
-      <span class="size-2 rounded-full {signal.color}" title={signal.title}></span>
+      <span
+        class="flex items-center gap-1 text-[0.8rem] whitespace-nowrap {signal.text}"
+        title={signal.title}
+      >
+        <span class="size-2 shrink-0 rounded-full {signal.dot}"></span>
+        {signal.word}
+      </span>
     {/each}
   </button>
 {/if}
