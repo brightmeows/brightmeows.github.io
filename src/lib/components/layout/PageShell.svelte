@@ -3,6 +3,7 @@
 
   import TopBar from "./TopBar.svelte";
 
+  import DustTrailCanvas from "#lib/components/ui/DustTrailCanvas.svelte";
   import GlassContainer from "#lib/components/ui/GlassContainer.svelte";
   import StarryBackground from "#lib/components/ui/StarryBackground.svelte";
   import { m } from "#lib/paraglide/messages.js";
@@ -32,6 +33,7 @@
 </script>
 
 <StarryBackground />
+<DustTrailCanvas />
 <TopBar {tocItems} />
 <main class={mainClass ?? "m-0 mx-auto box-border w-full max-w-350 px-8 pt-24 pb-8"}>
   {#if sidebar}
