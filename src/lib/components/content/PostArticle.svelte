@@ -88,7 +88,7 @@
       <div class="grid grid-cols-2 gap-4">
         {#if prev}
           <a
-            class="block rounded-glass-md border border-white-10 bg-black-20 p-5 text-white no-underline transition-[background] duration-300 ease-out hover:bg-white-5"
+            class="block rounded-glass-md border border-white-10 bg-black-20 p-5 text-white no-underline transition-[transform,background] duration-300 ease-out hover:-translate-y-0.5 hover:bg-white-5"
             href={prev.href}
           >
             <div class="text-[0.85rem] text-white-60">{prev.label}</div>
@@ -99,7 +99,7 @@
         {/if}
         {#if next}
           <a
-            class="block rounded-glass-md border border-white-10 bg-black-20 p-5 text-right text-white no-underline transition-[background] duration-300 ease-out hover:bg-white-5"
+            class="block rounded-glass-md border border-white-10 bg-black-20 p-5 text-right text-white no-underline transition-[transform,background] duration-300 ease-out hover:-translate-y-0.5 hover:bg-white-5"
             href={next.href}
           >
             <div class="text-[0.85rem] text-white-60">{next.label}</div>

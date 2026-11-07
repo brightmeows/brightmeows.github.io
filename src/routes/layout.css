@@ -120,12 +120,6 @@
     @apply m-0 min-h-screen min-w-[320px];
   }
 
-  html {
-    /* 按钮泛光伪元素允许溢出按钮照亮邻组件：clip 兜底视口边缘的横向
-       滚动条（clip 不产生滚动容器，不影响 sticky 表头定位） */
-    overflow-x: clip;
-  }
-
   .page-title {
     @apply text-[clamp(2rem,3vw,2.5rem)] leading-[1.2] font-extrabold text-white;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
@@ -205,7 +199,8 @@
     transition:
       background-color 0.3s ease,
       border-color 0.3s ease,
-      box-shadow 0.3s ease;
+      box-shadow 0.3s ease,
+      transform 0.3s ease;
   }
 
   .glass-shadow-sm {
@@ -315,7 +310,7 @@
 
   /* ===== 滚动导航标签 ===== */
   .tag-scroll {
-    @apply cursor-pointer rounded-glass-lg bg-white-10 px-4 py-2 font-bold text-white opacity-80 transition-all duration-300 ease-in-out hover:opacity-90;
+    @apply cursor-pointer rounded-glass-lg bg-white-10 px-4 py-2 font-bold text-white opacity-80 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:opacity-90;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   }
 
@@ -347,81 +342,5 @@
   /* ===== 空状态容器 ===== */
   .empty-state {
     @apply p-12 text-center;
-  }
-
-  /* ===== 按钮光效（Aero 风格按压光斑与悬停光标柔光） =====
-     宿主由 utils/ui/press-glow 的委托监听动态标记（全站 button、a 与
-     role=button 中的盒状控件），坐标经 CSS 变量传入：--press-x/--press-y
-     按压点，--cursor-x/--cursor-y 光标位置。光效是宿主的两层伪元素
-     渐变，不参与布局、不改组件尺寸。 */
-  .press-glow-host::before,
-  .press-glow-host::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    opacity: 0;
-  }
-
-  /* 悬停泛光：以光标为中心的 400px 柔光圆（半径 200px），无亮核无边界感 */
-  .press-glow-host::before {
-    left: calc(var(--cursor-x, 50%) - 200px);
-    top: calc(var(--cursor-y, 50%) - 200px);
-    width: 400px;
-    height: 400px;
-    border-radius: 50%;
-    background: radial-gradient(
-      closest-side,
-      rgb(255 255 255 / 0.26),
-      rgb(255 255 255 / 0.08) 60%,
-      transparent
-    );
-    transition: opacity 0.15s ease-out;
-  }
-
-  .press-glow-host:hover::before {
-    opacity: 1;
-  }
-
-  /* 按压泛光：按压点周围 320px 柔光圆（半径 160px）稍紧稍亮，松开渐熄 */
-  .press-glow-host::after {
-    left: calc(var(--press-x, 50%) - 160px);
-    top: calc(var(--press-y, 50%) - 160px);
-    width: 320px;
-    height: 320px;
-    border-radius: 50%;
-    background: radial-gradient(
-      closest-side,
-      rgb(255 255 255 / 0.36),
-      rgb(255 255 255 / 0.12) 60%,
-      transparent
-    );
-    transition: opacity 0.45s ease-out;
-  }
-
-  .press-glow-host:active::after {
-    opacity: 1;
-    transition-duration: 0.04s;
-  }
-
-  /* 禁用控件不出光效 */
-  .press-glow-host:disabled::before,
-  .press-glow-host:disabled::after,
-  .press-glow-host[aria-disabled="true"]::before,
-  .press-glow-host[aria-disabled="true"]::after {
-    display: none;
-  }
-
-  /* 减少动效：光效全禁，按压回退为无动画的静态亮度变化 */
-  @media (prefers-reduced-motion: reduce) {
-    .press-glow-host::before,
-    .press-glow-host::after {
-      display: none;
-    }
-
-    .press-glow-host:active:not(:disabled) {
-      filter: brightness(1.35);
-    }
   }
 }
