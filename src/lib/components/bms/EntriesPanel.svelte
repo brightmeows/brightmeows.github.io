@@ -28,6 +28,7 @@
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
   import ToggleJumpChip from "#lib/components/ui/ToggleJumpChip.svelte";
   import { btnGhost, btnPrimary, inputEditorMono } from "#lib/constants/ui-classes.js";
+  import type { EditorNotice } from "#lib/controllers/editor.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { JsonPreviewHandle } from "#lib/types/ui.js";
   import { validateUrl } from "#lib/utils/infra/url.js";
@@ -99,7 +100,7 @@
   let bulkText = $state("");
   let bulkMode = $state<"append" | "replace">("append");
   let bulkError = $state<string | null>(null);
-  let notice = $state<string | null>(null);
+  let notice = $state<EditorNotice | null>(null);
   let chartPreview = $state<JsonPreviewHandle | undefined>();
   const allLevels = $derived.by(() => {
     const seen = new Set<string>();
@@ -189,7 +190,10 @@
     const result = assignHintLevels(entries, levelHints);
     if (result.assigned === 0) return;
     entries = result.entries;
-    notice = m["editor.entries_assign_hint_done"]({ count: result.assigned });
+    notice = {
+      kind: "ok",
+      text: m["editor.entries_assign_hint_done"]({ count: result.assigned }),
+    };
     onChange?.();
   }
 
@@ -312,18 +316,24 @@
     if (raw === "") return;
     const parsed = extractBmsIrSongMd5(raw);
     if (!parsed.ok) {
-      notice = m["editor.entry_bmsir_invalid"]();
+      notice = { kind: "error", text: m["editor.entry_bmsir_invalid"]() };
       return;
     }
     const duplicate = duplicateEntryLabel(entries, { md5: parsed.md5 }, null);
     if (duplicate !== null) {
-      notice = m["editor.entry_duplicate_notice"]({
-        title: duplicate || m["editor.entry_unnamed"](),
-      });
+      notice = {
+        kind: "warn",
+        text: m["editor.entry_duplicate_notice"]({
+          title: duplicate || m["editor.entry_unnamed"](),
+        }),
+      };
       return;
     }
     startAdd({ md5: parsed.md5 });
-    notice = m["editor.entry_bmsir_prefilled"]({ hash: shortenHash(parsed.md5) });
+    notice = {
+      kind: "ok",
+      text: m["editor.entry_bmsir_prefilled"]({ hash: shortenHash(parsed.md5) }),
+    };
   }
 
   function cancelDetail(): void {
@@ -342,7 +352,12 @@
     notice =
       duplicate === null
         ? null
-        : m["editor.entry_duplicate_notice"]({ title: duplicate || m["editor.entry_unnamed"]() });
+        : {
+            kind: "warn",
+            text: m["editor.entry_duplicate_notice"]({
+              title: duplicate || m["editor.entry_unnamed"](),
+            }),
+          };
     entries = next;
     adding = false;
     editingIndex = null;
@@ -401,7 +416,7 @@
       bulkText = "";
       bulkOpen = false;
       selected = new Set();
-      notice = m["editor.bulk_done"]({ added: added.length, skipped });
+      notice = { kind: "ok", text: m["editor.bulk_done"]({ added: added.length, skipped }) };
       onChange?.();
       return;
     }
@@ -581,9 +596,13 @@
 
     {#if notice}
       <div
-        class="rounded-lg border border-amber-300/40 bg-amber-300/10 px-3 py-2 text-[0.85rem] text-amber-200"
+        class="rounded-lg border px-3 py-2 text-[0.85rem] {notice.kind === 'ok'
+          ? 'border-success/40 bg-success/10 text-success'
+          : notice.kind === 'warn'
+            ? 'border-warning/40 bg-warning/10 text-warning-light'
+            : 'border-error/40 bg-error/10 text-error'}"
       >
-        {notice}
+        {notice.text}
       </div>
     {/if}
 

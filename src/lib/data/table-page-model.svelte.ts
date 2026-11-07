@@ -147,7 +147,8 @@ export function createTableModel(input: TableModelInput) {
 
   function markDirty(): void {
     drafts.markEdited();
-    notice = null;
+    // 编辑动作只清成功类提示；error 与 warn 常驻到被新通知替换，不被静默冲掉。
+    if (notice?.kind === "ok") notice = null;
   }
 
   /** 草稿内容套用到模型（草稿侧的落账在 createDraftLifecycle.restore）。 */
@@ -155,7 +156,7 @@ export function createTableModel(input: TableModelInput) {
     applyHeaderState(draft.header);
     entries = draft.data.map((item) => ({ ...item }));
     baselineUpdatedAt = draft.baselineUpdatedAt;
-    notice = null;
+    if (notice?.kind === "ok") notice = null;
   }
 
   function buildDraftPayload(): DraftPayload {
@@ -269,8 +270,6 @@ export function createTableModel(input: TableModelInput) {
         kind: "warn",
         text: m["editor.export_unassigned_warning"]({ count: unassignedCount }),
       };
-    } else if (notice?.kind === "warn") {
-      notice = null;
     }
   }
 
