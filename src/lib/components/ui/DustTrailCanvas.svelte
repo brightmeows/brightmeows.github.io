@@ -7,8 +7,6 @@
     dustAlphaAt,
     dustRadiusAt,
     dustSpawnCount,
-    glowAlpha,
-    glowRadius,
     pruneDust,
     updateDust,
     type Dust,
@@ -34,8 +32,6 @@
     lastY: number;
     hasLast: boolean;
     lastMoveAt: number;
-    /** 是否悬停在可点元素上：悬停散光伴影的开关 */
-    hoverInteractive: boolean;
     /** 平滑后的指针速度（px/s），尘粒继承这份速度 */
     pointerVx: number;
     pointerVy: number;
@@ -50,7 +46,6 @@
       lastY: 0,
       hasLast: false,
       lastMoveAt: 0,
-      hoverInteractive: false,
       pointerVx: 0,
       pointerVy: 0,
     };
@@ -114,10 +109,13 @@
   }
 
   // 星光光标与精灵尘拖尾画布：夹在星空与内容之间（同为 z-0，DOM 序在后），
-  // 尘粒与悬停伴影飞过玻璃面板时被 backdrop-blur 磨砂，光从玻璃下透出；
-  // 不参与事件命中，不带 sky-canvas 类以免盖住真星空底色
+  // 尘粒飞过玻璃面板时被 backdrop-blur 磨砂，光从玻璃下透出；不参与事件
+  // 命中，不带 sky-canvas 类以免盖住真星空底色
   let canvasRef: HTMLCanvasElement | null = null;
+  let haloRef: HTMLDivElement | null = null;
 
+  /** 是否悬停在可点元素上：呼吸光环的显隐开关 */
+  let haloVisible = $state(false);
   onMount(() => {
     const canvasOrNull = canvasRef;
     if (!canvasOrNull) return;
@@ -147,27 +145,10 @@
 
     const engine = createEngine();
 
-    /** 清屏重画：伴影垫底，再按墙钟清理到期尘粒并逐粒绘制。 */
+    /** 清屏重画：先按墙钟清理到期尘粒，再逐粒绘制。 */
     function render(now: number): void {
       engine.dust = capDust(pruneDust(engine.dust, now));
       ctx.clearRect(0, 0, width, height);
-      if (engine.hasLast && engine.hoverInteractive) {
-        const radius = glowRadius(now);
-        const grad = ctx.createRadialGradient(
-          engine.lastX,
-          engine.lastY,
-          0,
-          engine.lastX,
-          engine.lastY,
-          radius
-        );
-        grad.addColorStop(0, `rgba(255, 255, 255, ${glowAlpha(now).toFixed(3)})`);
-        grad.addColorStop(1, "rgba(255, 255, 255, 0)");
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(engine.lastX, engine.lastY, radius, 0, Math.PI * 2);
-        ctx.fill();
-      }
       for (const d of engine.dust) {
         const alpha = dustAlphaAt(d, now);
         if (alpha <= 0) continue;
@@ -192,11 +173,18 @@
 
     function handleMove(event: PointerEvent): void {
       advanceDust(engine, event, performance.now());
+      if (haloRef) {
+        haloRef.style.transform = `translate(${event.clientX}px, ${event.clientY}px)`;
+      }
     }
 
     function handleHover(event: PointerEvent): void {
-      engine.hoverInteractive =
+      haloVisible =
         event.target instanceof Element && event.target.closest(HOVER_TARGET_SELECTOR) !== null;
+    }
+
+    function handleLeave(): void {
+      haloVisible = false;
     }
 
     function handleResize(): void {
@@ -220,6 +208,7 @@
 
     window.addEventListener("pointermove", handleMove, { passive: true });
     window.addEventListener("pointerover", handleHover, { passive: true });
+    document.documentElement.addEventListener("mouseleave", handleLeave);
     window.addEventListener("resize", handleResize);
     document.addEventListener("visibilitychange", handleVisibility);
     animationId = requestAnimationFrame(frame);
@@ -227,6 +216,7 @@
     return () => {
       window.removeEventListener("pointermove", handleMove);
       window.removeEventListener("pointerover", handleHover);
+      document.documentElement.removeEventListener("mouseleave", handleLeave);
       window.removeEventListener("resize", handleResize);
       document.removeEventListener("visibilitychange", handleVisibility);
       if (resizeTimer !== null) clearTimeout(resizeTimer);
@@ -237,5 +227,49 @@
   });
 </script>
 
+<style>
+  /* 外层管显隐过渡与定位，内层管呼吸：两层分离避免 transform 互相覆盖 */
+  .cursor-halo {
+    opacity: 0;
+    transition: opacity 0.25s ease-out;
+  }
+
+  .cursor-halo-on {
+    opacity: 1;
+  }
+
+  .cursor-halo-ring {
+    position: absolute;
+    top: -18px;
+    left: -18px;
+    width: 36px;
+    height: 36px;
+    border: 1.5px solid rgba(255, 255, 255, 0.9);
+    border-radius: 9999px;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.25);
+    animation: halo-breath 1.6s ease-in-out infinite;
+  }
+
+  @keyframes halo-breath {
+    0%,
+    100% {
+      transform: scale(0.88);
+      opacity: 0.4;
+    }
+    50% {
+      transform: scale(1.12);
+      opacity: 1;
+    }
+  }
+</style>
+
 <canvas bind:this={canvasRef} class="pointer-events-none fixed top-0 left-0 z-0 h-full w-full">
 </canvas>
+
+<div
+  bind:this={haloRef}
+  class="cursor-halo pointer-events-none fixed top-0 left-0 z-[2500] size-0"
+  class:cursor-halo-on={haloVisible}
+>
+  <div class="cursor-halo-ring"></div>
+</div>
