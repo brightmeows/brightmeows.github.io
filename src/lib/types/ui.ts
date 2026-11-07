@@ -19,8 +19,6 @@ export interface JsonPreviewHandle {
     clientX: number,
     clientY: number
   ) => void | Promise<void>;
-  showHint: (text: string, anchor: HTMLElement) => void;
-  hideHint: () => void;
   scheduleHide: () => void;
   hideNow: () => void;
 }
