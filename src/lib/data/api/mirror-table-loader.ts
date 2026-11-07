@@ -24,7 +24,8 @@ export async function loadMirrorTables(
       loadFailed: (status) => m["mirror.tables_load_failed"]({ status }),
       invalid: () => m["mirror.tables_invalid"](),
     },
-    options
+    options,
+    isMirrorTableItem
   );
 
   return data.map((item) => {
@@ -32,4 +33,15 @@ export async function loadMirrorTables(
     if (!dir) return item;
     return { ...item, url: `/${baseRoute}/${dir}/` };
   });
+}
+
+function isMirrorTableItem(value: unknown): value is MirrorTableItem {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "name" in value &&
+    typeof value.name === "string" &&
+    "url" in value &&
+    typeof value.url === "string"
+  );
 }

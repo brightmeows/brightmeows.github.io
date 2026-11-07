@@ -39,13 +39,13 @@ export type { RemovedRecord };
 
 /** 读取登录态；未登录返回 null（区别于接口不可用的抛错）。 */
 export async function fetchCurrentUser(): Promise<CurrentUser | null> {
-  return narrowMe(await requestJson<unknown>("/api/me"));
+  return narrowMe(await requestJson("/api/me"));
 }
 
 /** 提交前预览：主站代抓 header 并返回表名与符号。 */
 export async function fetchPreview(url: string): Promise<PreviewResult> {
   return narrowPreview(
-    await requestJson<unknown>("/api/tables/preview", {
+    await requestJson("/api/tables/preview", {
       method: "POST",
       body: JSON.stringify({ url }),
     }),
@@ -56,7 +56,7 @@ export async function fetchPreview(url: string): Promise<PreviewResult> {
 /** 提交添加：入队并触发抓取工作流。 */
 export async function submitAdd(url: string): Promise<AddResult> {
   const result = narrowAdd(
-    await requestJson<unknown>("/api/tables/add", {
+    await requestJson("/api/tables/add", {
       method: "POST",
       body: JSON.stringify({ url }),
     }),
@@ -71,7 +71,7 @@ export async function submitAdd(url: string): Promise<AddResult> {
 /** 轮询添加请求状态。 */
 export async function fetchFetchStatus(requestId: string): Promise<FetchStatus> {
   const status = narrowFetchStatus(
-    await requestJson<unknown>(`/api/tables/status/${encodeURIComponent(requestId)}`),
+    await requestJson(`/api/tables/status/${encodeURIComponent(requestId)}`),
     requestId
   );
   if (status === null) {
@@ -85,13 +85,13 @@ export async function fetchFetchStatus(requestId: string): Promise<FetchStatus> 
 
 /** 列出自己 30 天内的删除记录（回收站视图）。 */
 export async function fetchRemoved(): Promise<RemovedRecord[]> {
-  return narrowRemovedEntries(await requestJson<unknown>("/api/tables/removed"));
+  return narrowRemovedEntries(await requestJson("/api/tables/removed"));
 }
 
 /** 删除一张表（进入回收站）。 */
 export async function submitDelete(dirName: string): Promise<DeleteResponse> {
   return narrowDelete(
-    await requestJson<unknown>("/api/tables/delete", {
+    await requestJson("/api/tables/delete", {
       method: "POST",
       body: JSON.stringify({ dir_name: dirName }),
     }),
@@ -102,7 +102,7 @@ export async function submitDelete(dirName: string): Promise<DeleteResponse> {
 /** 自助恢复自己删除的表（30 天内）。 */
 export async function submitRestore(dirName: string): Promise<RestoreResponse> {
   return narrowRestore(
-    await requestJson<unknown>("/api/tables/restore", {
+    await requestJson("/api/tables/restore", {
       method: "POST",
       body: JSON.stringify({ dir_name: dirName }),
     }),
@@ -112,5 +112,5 @@ export async function submitRestore(dirName: string): Promise<RestoreResponse> {
 
 /** 登出：清除会话 cookie。 */
 export async function submitLogout(): Promise<void> {
-  await requestJson<unknown>("/api/auth/logout", { method: "POST" });
+  await requestJson("/api/auth/logout", { method: "POST" });
 }

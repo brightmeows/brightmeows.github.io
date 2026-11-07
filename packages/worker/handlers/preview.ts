@@ -10,6 +10,7 @@ import type { PreviewResponse } from "@brightmeows/mirror/api";
 
 import { getSession } from "../auth.ts";
 import { PREVIEW_MAX_BYTES, PREVIEW_TIMEOUT_MS, PREVIEW_USER_AGENT, type Env } from "../env.ts";
+import { isRecord } from "../guards.ts";
 import { checkSameOrigin, failure, json, readJsonBody } from "../http.ts";
 
 async function fetchTextLimited(url: string): Promise<string> {
@@ -113,12 +114,12 @@ export async function handlePreview(request: Request, env: Env, now: Date): Prom
     } catch {
       return failure(422, "header is not valid JSON", { code: API_ERROR_CODES.headerInvalidJson });
     }
-    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    if (!isRecord(parsed)) {
       return failure(422, "header must be a JSON object", {
         code: API_ERROR_CODES.headerNotObject,
       });
     }
-    const record = parsed as Record<string, unknown>;
+    const record = parsed;
     return json<PreviewResponse>({
       url: pageUrl,
       headerUrl,

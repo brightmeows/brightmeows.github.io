@@ -18,6 +18,7 @@ import {
   sessionCookie,
 } from "../auth.ts";
 import { OAUTH_CALLBACK_PATH, OAUTH_STATE_COOKIE, PREVIEW_USER_AGENT, type Env } from "../env.ts";
+import { isRecord } from "../guards.ts";
 import { json } from "../http.ts";
 import { readOperationCount } from "../store/quota.ts";
 
@@ -63,10 +64,10 @@ function encodeStatePayload(payload: OAuthStatePayload): string {
 function decodeStatePayload(text: string): OAuthStatePayload | null {
   try {
     const value = decodeJson(text);
-    if (typeof value !== "object" || value === null) {
+    if (!isRecord(value)) {
       return null;
     }
-    const record = value as Record<string, unknown>;
+    const record = value;
     if (typeof record.state !== "string" || record.state === "") {
       return null;
     }
@@ -215,8 +216,9 @@ export async function handleCallback(
   if (!tokenResponse.ok) {
     return oauthError(`换取访问令牌失败（HTTP ${tokenResponse.status}）。`);
   }
-  const tokenBody = (await tokenResponse.json()) as { access_token?: unknown };
-  const accessToken = typeof tokenBody.access_token === "string" ? tokenBody.access_token : "";
+  const oauthRaw: unknown = await tokenResponse.json();
+  const oauthBody = isRecord(oauthRaw) ? oauthRaw : {};
+  const accessToken = typeof oauthBody.access_token === "string" ? oauthBody.access_token : "";
   if (accessToken === "") {
     return oauthError("换取访问令牌失败。");
   }
@@ -231,7 +233,8 @@ export async function handleCallback(
   if (!userResponse.ok) {
     return oauthError(`读取 GitHub 用户信息失败（HTTP ${userResponse.status}）。`);
   }
-  const user = (await userResponse.json()) as { login?: unknown };
+  const userRaw: unknown = await userResponse.json();
+  const user = isRecord(userRaw) ? userRaw : {};
   const login = typeof user.login === "string" ? user.login : "";
   if (login === "") {
     return oauthError("GitHub 账号缺少 login 字段。");

@@ -3,6 +3,7 @@ import type { ChartData } from "@brightmeows/bms/format";
 import { r2TableHeaderUrl, r2TableDataUrl } from "#lib/constants/r2.js";
 import { m } from "#lib/paraglide/messages.js";
 import { fetchStream } from "#lib/utils/infra/fetch-stream.js";
+import { isRecord } from "#lib/utils/infra/object.js";
 
 /** 搜索索引类型 */
 export type SearchIndex = Record<string, string[]>;
@@ -148,6 +149,8 @@ export async function loadFullTableData(
   if (!Array.isArray(parsed)) {
     throw new Error(m["search.chart_array_expected"]({ actual: typeof parsed }));
   }
+  // ChartData 全字段可选，元素级 schema 无信息增益；索引消费方按字段兜底
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   return parsed as ChartData[];
 }
 
@@ -173,17 +176,21 @@ export async function loadTableHeader(
   signal?: AbortSignal
 ): Promise<{ name: string; symbol: string | undefined } | null> {
   try {
-    const header = await fetchJson<{ name?: string; symbol?: string }>(r2TableHeaderUrl(tableId), {
+    const headerRaw = await fetchJson(r2TableHeaderUrl(tableId), {
       signal: signal ?? null,
     });
-    return { name: header.name ?? tableId, symbol: header.symbol };
+    const name =
+      isRecord(headerRaw) && typeof headerRaw.name === "string" ? headerRaw.name : tableId;
+    const symbol =
+      isRecord(headerRaw) && typeof headerRaw.symbol === "string" ? headerRaw.symbol : undefined;
+    return { name, symbol };
   } catch {
     return null;
   }
 }
 
-async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
+async function fetchJson(url: string, init?: RequestInit): Promise<unknown> {
   const res = await fetch(url, init);
   if (!res.ok) throw new Error(m["search.load_url_failed"]({ url, status: res.status }));
-  return (await res.json()) as T;
+  return await res.json();
 }

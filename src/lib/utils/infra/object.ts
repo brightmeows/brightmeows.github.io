@@ -14,3 +14,8 @@ export function lookup<K extends string, V>(record: Record<K, V>, key: string): 
   }
   return undefined;
 }
+
+/** 值为非数组的 JSON 对象。 */
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}

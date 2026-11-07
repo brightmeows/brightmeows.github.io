@@ -1,6 +1,7 @@
 import { m } from "#lib/paraglide/messages.js";
 import type { AsyncState } from "#lib/types/common.js";
 import { messageInputs, translateMessage } from "#lib/utils/i18n/i18n.js";
+import { isRecord } from "#lib/utils/infra/object.js";
 
 /**
  * 站点侧 API 传输层的单份实现：同源请求、凭据携带与错误封套翻译。
@@ -29,8 +30,9 @@ export function toFailure(error: unknown): AsyncFailure {
   };
 }
 
-/** 请求并解析 JSON 响应；非 2xx 时翻译错误封套（`{error, code, params?}`）后抛错。 */
-export async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
+/** 请求并解析 JSON 响应（unknown 返回，形状窄化交给 mirror/api 的窄化函数）；
+ * 非 2xx 时翻译错误封套（`{error, code, params?}`）后抛错。 */
+export async function requestJson(path: string, init?: RequestInit): Promise<unknown> {
   const headers = new Headers(init?.headers);
   if (!headers.has("content-type")) {
     headers.set("content-type", "application/json");
@@ -44,16 +46,18 @@ export async function requestJson<T>(path: string, init?: RequestInit): Promise<
     let message: string = m["common.request_failed"]({ status: response.status });
     let envelope = false;
     try {
-      const body = (await response.json()) as { error?: unknown; code?: unknown; params?: unknown };
-      envelope = typeof body.error === "string" || typeof body.code === "string";
-      const translated =
-        typeof body.code === "string"
-          ? translateMessage(body.code, messageInputs(body.params))
-          : null;
-      if (translated !== null) {
-        message = translated;
-      } else if (typeof body.error === "string" && body.error !== "") {
-        message = body.error;
+      const body: unknown = await response.json();
+      if (isRecord(body)) {
+        envelope = typeof body.error === "string" || typeof body.code === "string";
+        const translated =
+          typeof body.code === "string"
+            ? translateMessage(body.code, messageInputs(body.params))
+            : null;
+        if (translated !== null) {
+          message = translated;
+        } else if (typeof body.error === "string" && body.error !== "") {
+          message = body.error;
+        }
       }
     } catch {
       // 非 JSON 响应：沿用状态码文案
@@ -65,5 +69,5 @@ export async function requestJson<T>(path: string, init?: RequestInit): Promise<
     }
     throw new Error(message);
   }
-  return (await response.json()) as T;
+  return await response.json();
 }

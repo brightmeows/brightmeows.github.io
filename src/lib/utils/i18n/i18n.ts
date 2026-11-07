@@ -2,6 +2,9 @@ import { m } from "#lib/paraglide/messages.js";
 
 type MessageInputs = Record<string, string | number>;
 
+// paraglide 生成的 m 是具体键对象，动态 key（api.* 错误码）查表需要
+// index signature 视图；key 存在性由 check:i18n 的引用断言机械守住
+// oxlint-disable-next-line typescript/no-unsafe-type-assertion
 const messageTable = m as unknown as Record<string, (inputs?: MessageInputs) => string>;
 
 /**

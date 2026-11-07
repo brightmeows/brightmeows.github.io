@@ -11,6 +11,7 @@ import type { MirrorTableItem } from "@brightmeows/mirror/types";
 import { mergeTableList } from "@brightmeows/mirror/user-layer";
 
 import type { Env } from "./env.ts";
+import { isMirrorTableItemList } from "./guards.ts";
 import { loadUserLayer } from "./store/user-layer.ts";
 
 /** 清单响应的边缘缓存秒数：新增或删除的表最迟这个时间后可见。 */
@@ -70,7 +71,7 @@ async function loadSnapshot(key: Request): Promise<MirrorTableItem[] | null> {
     const cached = await cache.match(key);
     if (cached) {
       const parsed: unknown = await cached.json();
-      if (Array.isArray(parsed)) return parsed as MirrorTableItem[];
+      if (isMirrorTableItemList(parsed)) return parsed;
     }
   } catch {
     // 缓存不可用或快照损坏：按无快照处理
@@ -92,18 +93,18 @@ export async function loadManifest(
     const res = await fetch(url, { cf: { cacheTtl: MANIFEST_MAX_AGE, cacheEverything: true } });
     if (res.ok) {
       const parsed: unknown = await res.json();
-      if (Array.isArray(parsed)) {
+      if (isMirrorTableItemList(parsed)) {
         // 仅回源时刷新快照：命中边缘缓存时内容与快照一致，重复写只是浪费；
         // 有请求上下文时挂到 waitUntil，不占响应路径
         if (res.headers.get("cf-cache-status") !== "HIT") {
-          const snapshot = saveSnapshot(key, parsed as MirrorTableItem[]);
+          const snapshot = saveSnapshot(key, parsed);
           if (ctx === undefined) {
             await snapshot;
           } else {
             ctx.waitUntil(snapshot);
           }
         }
-        return parsed as MirrorTableItem[];
+        return parsed;
       }
     }
   } catch {

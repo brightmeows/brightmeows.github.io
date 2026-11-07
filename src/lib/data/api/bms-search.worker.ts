@@ -123,6 +123,8 @@ async function fetchSingleIndex(
     try {
       const resp = await fetch(url, { signal: signal ?? null });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      // SearchIndex 为深层映射结构，形状由索引生成管线保证；消费方按键取值兜底
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
       return (await resp.json()) as SearchIndex;
     } catch (err) {
       // AbortError：不重试，立刻返回

@@ -116,13 +116,16 @@ Hooks：
 - **复杂度三闸与 `no-unnecessary-condition` 已启用（2026-10）** — 三闸（complexity 15 / max-depth 4 / max-lines-per-function 150）按域在 overrides 棘轮放宽（Worker 30/5、bms 22/5、mirror 32、scripts 28、src 22/6）。
   - 极端文件（`routeApi` 39、`resolveGroup` 56、`createTableModel` 480 行）per-file 兜底。
   - 触碰重构后收紧回全局线并删除放宽块。
-  - `table-page-model.svelte.ts` 与 `table-model-drafts.svelte.ts` 的 no-unnecessary-condition 单文件 off。
-  - 原因：tsgolint 对页面模型族 `.svelte.ts` 的 `$derived` 链的类型视图把 boolean 收窄为 false 字面量（主链 svelte-check 同行 0 错误）。
-  - 解除条件见 .oxlintrc.json 注释。
-- **`typescript/no-unsafe-type-assertion` 挂起未启用** — 试跑命中 84 处（生产 75 / 测试 9，2026-10-18 复测）。
-  - 生产码集中在 scripts 管线、Worker handlers 与 data 层的 JSON 边界断言，逐处分流（type guard / 收窄 / schema 校验）需一轮以上专项；admin 响应簇已先行窄化分流（2026-10）。
-  - 启用前置：专项 PR 完成分流，测试区目录级忽略（构造数据兜底动机）与生产修复同批落地。
-  - 试跑方法：复制 .oxlintrc.json 追加 `"typescript/no-unsafe-type-assertion": "warn"` 后 `pnpm exec oxlint -c` 统计（trial 配置须放在仓内，放 /tmp 会断 JS 插件的相对解析）。
+- **`no-unsafe-type-assertion` 已启用（2026-11）** — 86 处存量分两批分流（构建期与脚本侧走 guards 与 valibot schema、运行时侧走谓词收窄）后随批启用为 error；测试区目录级忽略（构造数据兜底动机，`**/*.test.ts` override）。
+  - 行级豁免四处，各带理由注释：`bms-data.ts` 与 `bms-search.ts` 的
+    ChartData[]（全字段可选宽类型，元素级 schema 无信息增益，下游模型层
+    按字段兜底）、`bms-search.worker.ts` 的 SearchIndex（形状由索引生成
+    管线保证）、`i18n.ts` 的 paraglide 动态键查表（key 存在性由
+    check:i18n 守住）。
+  - 新增豁免先想 guard/schema 分流，豁免须带理由注释。
+  - 复测口径：trial 配置须放在仓内（/tmp 会断 JS 插件的相对解析）。
+- **`.svelte.ts` 布尔派生走 `$derived.by`** — tsgolint 对直写 `$derived(条件表达式)` 的宏返回类型视图误收窄（`$state(false)` 的字面量类型经直写宏读取泄漏同理），`no-unnecessary-condition` 误报恒真恒假；回调形态推断正确（上游 issue tsgolint#1344）。
+  - 主链 svelte-check 不受影响，类型正确性以主链为准。
 - **`lint` 带 `--deny-warnings` 与 `--report-unused-disable-directives`** — warn 同样导致失败；失效的 disable 指令会被检出。
 - **`check` 带 `--fail-on-warnings`** — Svelte 编译器与 a11y 警告按错误处理。
 - **架构边界由 `no-restricted-imports` 强制** — `$lib/loaders`（构建期 Node 层）只能从 `*.server.ts` 导入，客户端代码引用会在 lint 阶段失败。

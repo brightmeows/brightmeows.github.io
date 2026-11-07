@@ -7,6 +7,16 @@ import type {
   Trophy,
 } from "./format.ts";
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function stringifyArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const items: unknown[] = value;
+  return items.filter((item): item is string => typeof item === "string");
+}
+
 /**
  * 按难度等级分组
  */
@@ -83,8 +93,8 @@ export function resolveCourses(courseRaw: unknown, charts: ChartData[]): Resolve
     const rawCharts = raw.charts;
     if (Array.isArray(rawCharts)) {
       for (const item of rawCharts) {
-        if (item && typeof item === "object") {
-          const obj = item as Record<string, unknown>;
+        if (isRecord(item)) {
+          const obj = item;
           const md5 = typeof obj.md5 === "string" ? obj.md5 : undefined;
           const sha256 = typeof obj.sha256 === "string" ? obj.sha256 : undefined;
           if (md5 || sha256) {
@@ -147,15 +157,15 @@ export function resolveCourses(courseRaw: unknown, charts: ChartData[]): Resolve
     if (!Array.isArray(rawGroup)) continue;
     const resolvedGroup: Course[] = [];
     for (const rawCourse of rawGroup) {
-      if (!rawCourse || typeof rawCourse !== "object") continue;
-      const rc = rawCourse as Record<string, unknown>;
+      if (!isRecord(rawCourse)) continue;
+      const rc = rawCourse;
       const name = typeof rc.name === "string" ? rc.name : "";
       if (!name) continue;
       resolvedGroup.push({
         name,
-        constraint: Array.isArray(rc.constraint)
-          ? (rc.constraint as string[]).filter((c): c is string => typeof c === "string")
-          : undefined,
+        constraint: stringifyArray(rc.constraint),
+        // trophy 原样透传是冻结语义（元素不校验，段位渲染处回退）
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion
         trophy: Array.isArray(rc.trophy) ? (rc.trophy as Trophy[]) : undefined,
         charts: resolveCourse(rc),
       });

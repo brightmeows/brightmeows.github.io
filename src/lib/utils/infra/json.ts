@@ -8,12 +8,11 @@ export function formatJsonPreview(input: unknown, space = 2): string {
   try {
     return JSON.stringify(
       input,
-      (_key, v): unknown => {
+      (_key: string, v: unknown): unknown => {
         if (typeof v === "bigint") return v.toString();
         if (typeof v === "object" && v !== null) {
-          const obj = v as object;
-          if (seen.has(obj)) return "[Circular]";
-          seen.add(obj);
+          if (seen.has(v)) return "[Circular]";
+          seen.add(v);
         }
         return v;
       },

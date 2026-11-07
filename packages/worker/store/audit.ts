@@ -8,28 +8,28 @@ import type { Env } from "../env.ts";
 
 import { optionalText, text, toRole } from "./rows.ts";
 
+/** 审计动作字面量表（与 AuditEntry["action"] 联合同源，由 satisfies 锁定）。 */
+const AUDIT_ACTIONS = [
+  "add",
+  "remove",
+  "restore",
+  "authorize",
+  "deauthorize",
+  "disable",
+  "enable",
+  "replace",
+  "meta",
+  "migrate",
+  "shared_create",
+  "shared_save",
+  "shared_rename",
+  "shared_remove",
+  "shared_restore",
+] as const satisfies readonly AuditEntry["action"][];
+
 function toAuditEntry(row: Record<string, unknown>): AuditEntry | null {
-  const action = row.action;
-  if (
-    typeof action !== "string" ||
-    ![
-      "add",
-      "remove",
-      "restore",
-      "authorize",
-      "deauthorize",
-      "disable",
-      "enable",
-      "replace",
-      "meta",
-      "migrate",
-      "shared_create",
-      "shared_save",
-      "shared_rename",
-      "shared_remove",
-      "shared_restore",
-    ].includes(action)
-  ) {
+  const action = AUDIT_ACTIONS.find((candidate) => candidate === row.action);
+  if (action === undefined) {
     return null;
   }
   const url = optionalText(row.url);
@@ -40,7 +40,7 @@ function toAuditEntry(row: Record<string, unknown>): AuditEntry | null {
     at: text(row.at),
     actor: text(row.actor),
     role: toRole(row.role),
-    action: action as AuditEntry["action"],
+    action,
     ...(url === undefined ? {} : { url }),
     ...(dirName === undefined ? {} : { dir_name: dirName }),
     ...(detail === undefined ? {} : { detail }),
