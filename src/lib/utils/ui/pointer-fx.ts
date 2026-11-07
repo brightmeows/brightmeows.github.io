@@ -31,15 +31,15 @@ export interface Ripple {
 }
 
 /** 精灵尘撒点间距（px）：指针每累计移动该距离补一颗微粒 */
-export const SPARK_SPAWN_DISTANCE = 9;
+export const SPARK_SPAWN_DISTANCE = 12;
 /** 精灵尘基准寿命（ms），逐粒带随机抖动 */
 export const SPARK_LIFE_MS = 1000;
-/** 精灵尘峰值透明度（乘闪烁包络后为实际上限；降采样摊薄后需足额补能） */
-export const SPARK_PEAK_ALPHA = 1;
+/** 精灵尘峰值透明度（乘闪烁包络后为实际上限） */
+export const SPARK_PEAK_ALPHA = 0.85;
 /** 精灵尘基准出生半径（px） */
-export const SPARK_RADIUS = 3.6;
+export const SPARK_RADIUS = 3.2;
 /** 精灵尘数量上限：异常高频移动下的画布循环护栏 */
-export const SPARK_MAX = 160;
+export const SPARK_MAX = 140;
 /** 随机漂移幅度（px/s）：单轴取值范围为正负该值 */
 export const SPARK_DRIFT = 22;
 /** 指针速度继承比例：撒出的微粒带走指针速度的这一份额 */
@@ -47,9 +47,9 @@ export const SPARK_INHERIT = 0.18;
 /** 漂移速度的指数衰减系数（每秒） */
 export const SPARK_DAMPING = 1.8;
 /** 光标亮核半径（px） */
-export const HEAD_RADIUS = 6.5;
+export const HEAD_RADIUS = 5.5;
 /** 光标亮核峰值透明度 */
-export const HEAD_ALPHA = 1;
+export const HEAD_ALPHA = 0.85;
 /** 光标亮核停止移动后的存留时长（ms），期内渐熄 */
 export const HEAD_FADE_MS = 180;
 /** 点击迸溅微粒数 */
@@ -64,8 +64,8 @@ export const SPLASH_LIFE_MS = 700;
 export const RIPPLE_DURATION_MS = 450;
 /** 涟漪圆环最大半径（px） */
 export const RIPPLE_MAX_RADIUS = 48;
-/** 涟漪峰值透明度（圆环与白心光斑共用基准；降采样摊薄后需足额补能） */
-export const RIPPLE_PEAK_ALPHA = 0.7;
+/** 涟漪峰值透明度（圆环与白心光斑共用基准） */
+export const RIPPLE_PEAK_ALPHA = 0.55;
 
 /** 触屏点按判定的最大位移（px）：超过视为拖动滚动，不产生涟漪 */
 export const TAP_MAX_DISTANCE = 12;
