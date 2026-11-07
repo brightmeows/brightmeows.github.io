@@ -59,7 +59,6 @@
   </td>
   <td class="table-td-compact wrap-break-word">
     <strong
-      class="cursor-context-menu"
       use:jsonPreview={{
         preview: chartPreview,
         trigger: "contextmenu",

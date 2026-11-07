@@ -105,6 +105,16 @@
   --color-black-30: rgb(0 0 0 / 0.3);
 }
 
+/* ===== 星光光标 =====
+   CSS 原生替换系统指针：四芒星光点与星空背景、精灵尘拖尾同一叙事。
+   形态中心对称，热点定在星心，看哪点哪。default 帧经继承覆盖全局，
+   pointer 帧给可点元素。重定义 cursor-pointer 工具类，站点既有的该类
+   调用统一吃到悬停帧；
+   cursor-not-allowed 等语义工具类不动，保持系统样式。 */
+@utility cursor-pointer {
+  cursor: var(--cursor-pointer);
+}
+
 @layer base {
   :root {
     color-scheme: dark;
@@ -118,6 +128,30 @@
 
   body {
     @apply m-0 min-h-screen min-w-[320px];
+  }
+
+  /* 星光光标接线：default 帧经继承覆盖全局；pointer 帧直接指定给可点元素
+     与语义控件（盖过 UA 对链接与按钮的 auto 求值）；文本编辑面保留系统
+     I-beam。放 base 层让 utilities 层的 disabled:cursor-not-allowed 仍能
+     盖过这里。checkbox/radio/range/file 不在文本选择器内，保持继承帧。 */
+  :root {
+    cursor: var(--cursor-default);
+  }
+
+  a,
+  button,
+  [role="button"],
+  select,
+  summary,
+  label {
+    cursor: var(--cursor-pointer);
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not(
+      [type="reset"]
+    ):not([type="range"]):not([type="file"]),
+  textarea {
+    cursor: text;
   }
 
   .page-title {
@@ -146,6 +180,25 @@
   --color-background: #0a0a14;
   --gradient-sky: linear-gradient(180deg, #05050d, #0d0d1c 50%, #0a0a14);
   --glass-fallback: rgb(10 10 20 / 0.98);
+}
+
+/* 星光光标令牌：纯白四芒星两帧（无描边、无星核），hotspot 定在星心
+   （11 11 / 13 13），视觉重心即落点。令牌值是完整的 cursor 值：SVG 主选、
+   PNG 回退（Safari 等不支持 SVG cursor 的浏览器）、系统指针兜底；悬停帧
+   星芒放大 26px，悬停可点元素时的缓慢散光由拖尾画布的呼吸伴影承担；
+   reduced-motion 时整组换回系统指针，与站点既有口径一致。 */
+:root {
+  --cursor-default:
+    url("/cursor/star-default.svg") 11 11, url("/cursor/star-default.png") 11 11, auto;
+  --cursor-pointer:
+    url("/cursor/star-pointer.svg") 13 13, url("/cursor/star-pointer.png") 13 13, pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --cursor-default: auto;
+    --cursor-pointer: pointer;
+  }
 }
 
 /* 减少透明度偏好：玻璃家族停用背景模糊、底色换主题实色，光照保留（保持
