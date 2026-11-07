@@ -14,13 +14,6 @@ import {
   dustProgress,
   dustRadiusAt,
   dustSpawnCount,
-  GLOW_ALPHA_LOW,
-  GLOW_ALPHA_PEAK,
-  GLOW_PERIOD_MS,
-  GLOW_RADIUS,
-  GLOW_RADIUS_SWING,
-  glowAlpha,
-  glowRadius,
   isDustAlive,
   pruneDust,
   updateDust,
@@ -160,18 +153,5 @@ describe("pruneDust / capDust", () => {
   it("未超上限时原样返回", () => {
     const dust = [createDust(0, 0, 0, 0, 1, seqRng([0.5]))];
     expect(capDust(dust, DUST_MAX)).toBe(dust);
-  });
-});
-
-describe("glowRadius / glowAlpha", () => {
-  it("半径绕基准值缓慢缩放：四分之一周期达上界、四分之三周期达下界，随呼吸周期往复", () => {
-    expect(glowRadius(GLOW_PERIOD_MS / 4)).toBeCloseTo(GLOW_RADIUS * (1 + GLOW_RADIUS_SWING));
-    expect(glowRadius((3 * GLOW_PERIOD_MS) / 4)).toBeCloseTo(GLOW_RADIUS * (1 - GLOW_RADIUS_SWING));
-    expect(glowRadius(0)).toBeCloseTo(glowRadius(GLOW_PERIOD_MS));
-  });
-
-  it("透明度在峰值的低界比例与峰值之间摆动，与半径同相", () => {
-    expect(glowAlpha(GLOW_PERIOD_MS / 4)).toBeCloseTo(GLOW_ALPHA_PEAK);
-    expect(glowAlpha((3 * GLOW_PERIOD_MS) / 4)).toBeCloseTo(GLOW_ALPHA_PEAK * GLOW_ALPHA_LOW);
   });
 });
