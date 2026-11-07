@@ -13,6 +13,8 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { isRecord } from "./guards.ts";
+
 /** Worker 目标：hosts 必须与 wrangler.jsonc 的 routes 一致。 */
 export interface WorkerTarget {
   name: string;
@@ -61,10 +63,10 @@ function requireString(value: unknown, where: string): string {
 
 function parseTarget(value: unknown, index: number): WorkerTarget {
   const where = `targets[${index}]`;
-  if (typeof value !== "object" || value === null) {
+  if (!isRecord(value)) {
     throw new Error(`${where} 必须是对象`);
   }
-  const record = value as Record<string, unknown>;
+  const record = value;
   const name = requireString(record.name, `${where}.name`);
   if (record.kind === "worker") {
     if (!Array.isArray(record.hosts) || record.hosts.length === 0) {
@@ -81,10 +83,10 @@ function parseTarget(value: unknown, index: number): WorkerTarget {
 
 /** 解析并校验配置对象；任何缺失或非法字段都会抛出，不做静默兜底。 */
 export function parseSiteConfig(value: unknown, source = CONFIG_PATH): SiteConfig {
-  if (typeof value !== "object" || value === null) {
+  if (!isRecord(value)) {
     throw new Error(`配置不是对象：${source}`);
   }
-  const record = value as Record<string, unknown>;
+  const record = value;
   if (!Array.isArray(record.targets) || record.targets.length === 0) {
     throw new Error(`配置缺少 targets 数组：${source}`);
   }
@@ -94,10 +96,10 @@ export function parseSiteConfig(value: unknown, source = CONFIG_PATH): SiteConfi
     throw new Error(`targets 的 name 必须唯一：${source}`);
   }
   const r2 = record.r2;
-  if (typeof r2 !== "object" || r2 === null) {
+  if (!isRecord(r2)) {
     throw new Error(`配置缺少 r2 段：${source}`);
   }
-  const r2Record = r2 as Record<string, unknown>;
+  const r2Record = r2;
   const manifestObject = requireString(r2Record.manifestObject, "r2.manifestObject");
   if (manifestObject.startsWith("/")) {
     throw new Error(`r2.manifestObject 不应以斜杠开头：${manifestObject}`);

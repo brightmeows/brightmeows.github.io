@@ -5,15 +5,14 @@
  * 字段、谱面条目的额外字段），避免上游自定义字段抖动触发无意义写入。
  */
 
+import { isRecord } from "../guards.ts";
+
 const HEADER_FIELDS = ["name", "symbol", "data_url", "tag", "mode", "course", "level_order"];
 
 const CHART_FIELDS = ["md5", "sha256", "title", "artist", "url", "url_diff", "comment"];
 
 function asRecord(value: unknown): Record<string, unknown> | null {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
-    return null;
-  }
-  return value as Record<string, unknown>;
+  return isRecord(value) ? value : null;
 }
 
 /** header 比较口径：只保留核心字段。 */

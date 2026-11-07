@@ -29,6 +29,8 @@ import path from "node:path";
 
 import { API_ERROR_CODES } from "../packages/mirror/src/api.ts";
 
+import { isRecord } from "./guards.ts";
+
 /** 中日韩字符（表意文字 + 假名 + 谚文 + CJK 符号区）。
  *  必须带 `u` 标志：无 `u` 时按 UTF-16 码元匹配，范围端点比较会误伤 emoji。 */
 const CJK_PATTERN = /[぀-ヿ㐀-䶿一-鿿豈-﫿]/u;
@@ -63,13 +65,15 @@ export const LOCALES = ["en", "zh-cn", "ja"] as const;
 /** 解析并校验 messages JSON：必须是纯字符串值的对象。 */
 export function parseMessages(text: string): Messages {
   const data: unknown = JSON.parse(text);
-  if (typeof data !== "object" || data === null || Array.isArray(data)) {
+  if (!isRecord(data)) {
     throw new Error("messages JSON 必须是对象");
   }
+  const entries: [string, string][] = [];
   for (const [key, value] of Object.entries(data)) {
     if (typeof value !== "string") throw new Error(`消息 ${key} 的值必须是字符串`);
+    entries.push([key, value]);
   }
-  return data as Messages;
+  return Object.fromEntries(entries);
 }
 
 /** 断言 1：各语 key 集合以基准语（en）逐语对称。 */

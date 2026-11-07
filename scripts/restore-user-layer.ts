@@ -28,6 +28,8 @@ import {
   type UserLayer,
 } from "@brightmeows/mirror/user-layer";
 
+import { isRecord } from "./guards.ts";
+
 /** 各表的列顺序：与 packages/worker/schema.ts 的建表语句一一对应（有测试守着）。 */
 export const RESTORE_TABLES: Record<string, readonly string[]> = {
   added: ["id", "url", "author", "role", "added_at"],
@@ -41,10 +43,10 @@ export const RESTORE_TABLES: Record<string, readonly string[]> = {
 
 /** 快照里的 user-layer 段；键与 UserLayer 的字段一致。 */
 function parseLayer(value: unknown): UserLayer {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+  if (!isRecord(value)) {
     throw new Error("快照的 layer 段不是对象");
   }
-  const record = value as Record<string, unknown>;
+  const record = value;
   const list = <T>(key: string, parseItem: (item: unknown, context: string) => T): T[] => {
     const raw = record[key];
     if (raw === undefined || raw === null) return [];
@@ -146,10 +148,10 @@ function parseArgs(argv: string[]): { file: string; out: string | undefined } {
 function main(argv: string[]): void {
   const { file, out } = parseArgs(argv);
   const raw: unknown = JSON.parse(readFileSync(file, "utf8"));
-  if (typeof raw !== "object" || raw === null) {
+  if (!isRecord(raw)) {
     throw new Error("快照内容不是对象");
   }
-  const layer = parseLayer((raw as Record<string, unknown>).layer);
+  const layer = parseLayer(raw.layer);
   const sql = buildRestoreSql(layer);
   if (out === undefined) {
     process.stdout.write(sql);

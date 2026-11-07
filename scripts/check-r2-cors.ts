@@ -12,11 +12,9 @@
  * 退出码：0 一致；1 不一致或读取失败。凭据缺失按失败处理，不静默跳过。
  */
 
-import { CONFIG_PATH, readSiteConfig } from "./site-config.ts";
+import * as v from "valibot";
 
-interface CorsPolicy {
-  rules?: { allowed?: { origins?: string[] } }[];
-}
+import { CONFIG_PATH, readSiteConfig } from "./site-config.ts";
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -28,9 +26,20 @@ function requireEnv(name: string): string {
 
 /** 从 policy 里取出全部来源（多规则时取并集）。 */
 export function collectLiveOrigins(policy: unknown): string[] {
-  const rules = (policy as CorsPolicy).rules ?? [];
-  return [...new Set(rules.flatMap((rule) => rule.allowed?.origins ?? []))].sort();
+  const { rules } = v.parse(CorsPolicySchema, policy);
+  return [...new Set((rules ?? []).flatMap((rule) => rule.allowed?.origins ?? []))].sort();
 }
+
+/** 桶 CORS policy 的形状（只取比对用到的字段）。 */
+const CorsPolicySchema = v.object({
+  rules: v.optional(
+    v.array(
+      v.object({
+        allowed: v.optional(v.object({ origins: v.optional(v.array(v.string())) })),
+      })
+    )
+  ),
+});
 
 /** 比较期望与线上来源，返回面向人的差异描述。 */
 export function diffOrigins(expected: string[], live: string[]): string[] {
@@ -59,7 +68,7 @@ async function main(): Promise<void> {
   if (!res.ok) {
     throw new Error(`读取桶 CORS policy 失败：${res.status}（桶 ${bucket}）`);
   }
-  const body = (await res.json()) as { result?: unknown };
+  const body = v.parse(v.object({ result: v.optional(v.unknown()) }), await res.json());
   const live = collectLiveOrigins(body.result);
 
   const issues = diffOrigins([...config.r2.corsOrigins].sort(), live);

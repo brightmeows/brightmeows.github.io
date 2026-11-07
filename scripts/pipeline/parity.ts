@@ -16,6 +16,8 @@ import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 
+import { isRecord } from "../guards.ts";
+
 import { runPipeline } from "./engine.ts";
 import { describeError } from "./errors.ts";
 import { canonicalJson, compareUtf8 } from "./json-utils.ts";
@@ -95,7 +97,7 @@ function manifestEntries(manifest: unknown): BaselineEntry[] {
   }
   const entries: BaselineEntry[] = [];
   for (const item of manifest) {
-    const record = item as Record<string, unknown>;
+    const record = isRecord(item) ? item : {};
     const dirName = typeof record.dir_name === "string" ? record.dir_name : null;
     const url = typeof record.url === "string" ? record.url : null;
     if (dirName !== null && url !== null) {
@@ -137,9 +139,9 @@ async function prepareBaseline(
   );
   if (listText !== null) {
     const urls = new Set(entries.map((entry) => entry.url));
-    const listEntries = JSON.parse(listText) as unknown;
+    const listEntries: unknown = JSON.parse(listText);
     const selected = Array.isArray(listEntries)
-      ? listEntries.filter((item) => urls.has(String((item as Record<string, unknown>).url)))
+      ? listEntries.filter((item) => isRecord(item) && urls.has(String(item.url)))
       : listEntries;
     await writeFile(
       path.join(baseline, "lists", "DARKSABUN.json"),
@@ -289,8 +291,13 @@ export async function runParity(options: ParityOptions): Promise<ParityReport> {
     });
     rustOutput = `${result.stdout}\n${result.stderr}`;
   } catch (error) {
-    const failure = error as { stdout?: string; stderr?: string };
-    rustOutput = `${failure.stdout ?? ""}${failure.stderr ?? ""}`;
+    const failure = isRecord(error) ? error : {};
+    const asLogText = (value: unknown): string => {
+      if (typeof value === "string") return value;
+      if (value instanceof Uint8Array) return new TextDecoder().decode(value);
+      return "";
+    };
+    rustOutput = `${asLogText(failure.stdout)}${asLogText(failure.stderr)}`;
     log(`旧实现退出码非零（继续比对产物）：${describeError(error)}`);
   }
   const rustSeconds = ((Date.now() - startedRust) / 1000).toFixed(1);

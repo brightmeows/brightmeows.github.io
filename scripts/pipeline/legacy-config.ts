@@ -21,6 +21,8 @@ import type {
 } from "@brightmeows/mirror/user-layer";
 import { parse as parseToml } from "smol-toml";
 
+import { isRecord } from "../guards.ts";
+
 import { expectedDirName } from "./naming.ts";
 import { sha3_256Hex } from "./state.ts";
 import type { JsonValue, TableInfo } from "./types.ts";
@@ -47,10 +49,10 @@ export interface LegacyTableConfig {
 }
 
 function asRecord(value: unknown, context: string): Record<string, unknown> {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+  if (!isRecord(value)) {
     throw new TypeError(`${context} 应为对象`);
   }
-  return value as Record<string, unknown>;
+  return value;
 }
 
 function asString(value: unknown, context: string): string {
@@ -90,8 +92,8 @@ function toJsonValue(value: unknown, context: string): JsonValue {
   if (Array.isArray(value)) {
     return value.map((item, index) => toJsonValue(item, `${context}[${index}]`));
   }
-  if (typeof value === "object") {
-    const record = value as Record<string, unknown>;
+  if (isRecord(value)) {
+    const record = value;
     const result: Record<string, JsonValue> = {};
     for (const [key, item] of Object.entries(record)) {
       result[key] = toJsonValue(item, `${context}.${key}`);

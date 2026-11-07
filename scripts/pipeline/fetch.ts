@@ -7,6 +7,8 @@
  * data_url 相对 header 地址解析；data.json 必须是数组。
  */
 
+import { isRecord } from "../guards.ts";
+
 import { describeError } from "./errors.ts";
 import { requestHttp2, type HttpResponse } from "./http2-client.ts";
 import { parseJsonWithFallback, stripControlChars } from "./json-utils.ts";
@@ -142,10 +144,10 @@ export type HeaderQuery =
   | { kind: "url"; url: string; usedText: string };
 
 function asHeaderObject(value: unknown): Record<string, unknown> | null {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+  if (!isRecord(value)) {
     return null;
   }
-  const record = value as Record<string, unknown>;
+  const record = value;
   for (const key of ["name", "symbol", "data_url"]) {
     if (typeof record[key] !== "string") {
       return null;

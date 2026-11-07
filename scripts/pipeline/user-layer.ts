@@ -21,6 +21,7 @@ import {
   type UserLayer,
 } from "@brightmeows/mirror/user-layer";
 
+import { isRecord } from "../guards.ts";
 import { callInternal, internalToken } from "../internal-api.ts";
 
 export interface UserLayerLoadResult {
@@ -80,17 +81,17 @@ export async function loadUserLayer(
 
   let payload: Record<string, unknown>;
   try {
-    const parsed = await callInternal<unknown>("/api/internal/user-layer", {
+    const parsed = await callInternal("/api/internal/user-layer", {
       ...(options.base === undefined ? {} : { base: options.base }),
       ...(options.token === undefined ? {} : { token: options.token }),
       ...(options.fetchImpl === undefined ? {} : { fetchImpl: options.fetchImpl }),
       ...(options.timeoutMs === undefined ? {} : { timeoutMs: options.timeoutMs }),
     });
-    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    if (!isRecord(parsed)) {
       warnings.push("用户层接口返回的不是对象，按空处理");
       return { layer: emptyUserLayer(), warnings };
     }
-    payload = parsed as Record<string, unknown>;
+    payload = parsed;
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
     warnings.push(`${detail}，按空处理`);

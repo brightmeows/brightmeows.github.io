@@ -1,7 +1,14 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
+import * as v from "valibot";
+
 import type { TableEntry } from "#lib/types/bms-view.js";
+
+const HeaderSchema = v.object({
+  name: v.optional(v.string()),
+  symbol: v.optional(v.string()),
+});
 
 function resolveBase(baseDir?: string): string {
   return baseDir ?? join("static", "bms", "table");
@@ -27,10 +34,7 @@ export function getBmsTableEntries(baseDir?: string): TableEntry[] {
   return getBmsTables(dir).map((id) => {
     const headerPath = join(dir, id, "header.json");
     try {
-      const header = JSON.parse(readFileSync(headerPath, "utf-8")) as {
-        name?: string;
-        symbol?: string;
-      };
+      const header = v.parse(HeaderSchema, JSON.parse(readFileSync(headerPath, "utf-8")));
       return { id, name: header.name ?? id, symbol: header.symbol };
     } catch {
       return { id, name: id };
