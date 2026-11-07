@@ -182,11 +182,11 @@
   --glass-fallback: rgb(10 10 20 / 0.98);
 }
 
-/* 星光光标令牌：白色四芒星两帧加半透深色描边（亮底不丢），hotspot 定
-   在星心（11 11 / 13 13），视觉重心即落点。令牌值是完整的 cursor 值：
-   SVG 主选、PNG 回退（Safari 等不支持 SVG cursor 的浏览器）、系统指针
-   兜底；悬停帧星芒放大加深、中央亮核点亮（26px）；reduced-motion 时
-   整组换回系统指针，与站点既有口径一致。 */
+/* 星光光标令牌：纯白四芒星两帧（无描边、无星核），hotspot 定在星心
+   （11 11 / 13 13），视觉重心即落点。令牌值是完整的 cursor 值：SVG 主选、
+   PNG 回退（Safari 等不支持 SVG cursor 的浏览器）、系统指针兜底；悬停帧
+   星芒放大 26px，悬停可点元素时的缓慢散光由拖尾画布的呼吸伴影承担；
+   reduced-motion 时整组换回系统指针，与站点既有口径一致。 */
 :root {
   --cursor-default:
     url("/cursor/star-default.svg") 11 11, url("/cursor/star-default.png") 11 11, auto;

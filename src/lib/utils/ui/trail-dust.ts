@@ -122,3 +122,25 @@ export function pruneDust(dust: Dust[], now: number): Dust[] {
 export function capDust(dust: Dust[], max: number = DUST_MAX): Dust[] {
   return dust.length > max ? dust.slice(dust.length - max) : dust;
 }
+
+/** 悬停伴影呼吸周期（ms）：缓慢散光的完整明暗节奏 */
+export const GLOW_PERIOD_MS = 1600;
+/** 悬停伴影基准半径（px） */
+export const GLOW_RADIUS = 14;
+/** 伴影半径呼吸摆幅：半径绕基准值按此比例正弦缩放 */
+export const GLOW_RADIUS_SWING = 0.14;
+/** 悬停伴影峰值透明度：呼吸上界 */
+export const GLOW_ALPHA_PEAK = 0.18;
+/** 悬停伴影透明度低界比例：透明度在峰值的该比例与峰值之间摆动 */
+export const GLOW_ALPHA_LOW = 0.72;
+
+/** 悬停伴影当前半径：绕基准半径按呼吸周期缓慢缩放（缓慢大小变化）。 */
+export function glowRadius(now: number): number {
+  return GLOW_RADIUS * (1 + GLOW_RADIUS_SWING * Math.sin((2 * Math.PI * now) / GLOW_PERIOD_MS));
+}
+
+/** 悬停伴影当前透明度：与半径同相缓慢呼吸（散光明暗）。 */
+export function glowAlpha(now: number): number {
+  const breath = Math.sin((2 * Math.PI * now) / GLOW_PERIOD_MS);
+  return GLOW_ALPHA_PEAK * (GLOW_ALPHA_LOW + (1 - GLOW_ALPHA_LOW) * ((breath + 1) / 2));
+}
