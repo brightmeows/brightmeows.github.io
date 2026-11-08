@@ -90,6 +90,13 @@
     switch (error.code) {
       case "identity":
         return m["editor.entry_identity_required"]();
+      case "hash_format": {
+        const field = error.detail === "sha256" ? "SHA256" : "MD5";
+        return m["editor.entry_hash_invalid"]({
+          field,
+          length: error.detail === "sha256" ? 64 : 32,
+        });
+      }
       case "custom_key_empty":
         return m["editor.entry_custom_key_empty"]();
       case "custom_key_duplicate":

@@ -40,6 +40,8 @@ import {
 
 const entry = (fields: Record<string, unknown>): Record<string, unknown> => ({ ...fields });
 
+const MD5 = "d41d8cd98f00b204e9800998ecf8427e";
+
 function blankCore(): Record<CoreEntryField, string> {
   return {
     level: "",
@@ -120,28 +122,47 @@ describe("commitEntryEdit", () => {
   });
 
   it("trims core values and deletes empty keys", () => {
-    const core = { ...blankCore(), md5: "abc", title: " T ", comment: "x" };
-    const result = commitEntryEdit(entry({ md5: "abc", comment: "old", keep: 1 }), {
+    const core = { ...blankCore(), md5: MD5, title: " T ", comment: "x" };
+    const result = commitEntryEdit(entry({ md5: MD5, comment: "old", keep: 1 }), {
       core,
       custom: [{ key: "keep", valueText: "1" }],
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.entry).toEqual({ md5: "abc", title: "T", comment: "x", keep: 1 });
+    expect(result.entry).toEqual({ md5: MD5, title: "T", comment: "x", keep: 1 });
+  });
+
+  it("normalizes hashes to lowercase and rejects malformed ones", () => {
+    const result = commitEntryEdit(entry({}), {
+      core: { ...blankCore(), md5: " ABCDEF0123456789ABCDEF0123456789 " },
+      custom: [],
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.entry.md5).toBe("abcdef0123456789abcdef0123456789");
+
+    expect(commitEntryEdit({}, { core: { ...blankCore(), md5: "xyz" }, custom: [] })).toEqual({
+      ok: false,
+      error: "hash_format",
+      detail: "md5",
+    });
+    expect(
+      commitEntryEdit({}, { core: { ...blankCore(), sha256: "z".repeat(64) }, custom: [] })
+    ).toEqual({ ok: false, error: "hash_format", detail: "sha256" });
   });
 
   it("preserves untouched custom fields and deletes removed ones", () => {
-    const result = commitEntryEdit(entry({ md5: "abc", total: 480, judge: 3 }), {
-      core: { ...blankCore(), md5: "abc" },
+    const result = commitEntryEdit(entry({ md5: MD5, total: 480, judge: 3 }), {
+      core: { ...blankCore(), md5: MD5 },
       custom: [{ key: "total", valueText: "480" }],
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.entry).toEqual({ md5: "abc", total: 480 });
+    expect(result.entry).toEqual({ md5: MD5, total: 480 });
   });
 
   it("rejects core-field names, duplicates and empty keys in custom rows", () => {
-    const base = { core: { ...blankCore(), md5: "abc" }, custom: [] };
+    const base = { core: { ...blankCore(), md5: MD5 }, custom: [] };
     expect(commitEntryEdit({}, { ...base, custom: [{ key: "level", valueText: '"1"' }] })).toEqual({
       ok: false,
       error: "custom_key_core",
@@ -167,19 +188,19 @@ describe("commitEntryEdit", () => {
   });
 
   it("rejects invalid JSON values and empty text removes the key", () => {
-    const base = { core: { ...blankCore(), md5: "abc" }, custom: [] };
+    const base = { core: { ...blankCore(), md5: MD5 }, custom: [] };
     expect(commitEntryEdit({}, { ...base, custom: [{ key: "a", valueText: "{bad" }] })).toEqual({
       ok: false,
       error: "custom_value",
       detail: "a",
     });
-    const result = commitEntryEdit(entry({ md5: "abc", total: 1 }), {
+    const result = commitEntryEdit(entry({ md5: MD5, total: 1 }), {
       ...base,
       custom: [{ key: "total", valueText: "  " }],
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.entry).toEqual({ md5: "abc" });
+    expect(result.entry).toEqual({ md5: MD5 });
   });
 });
 

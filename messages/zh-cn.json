@@ -307,6 +307,7 @@
   "editor.entry_edit": "编辑条目",
   "editor.entry_edit_short": "编辑",
   "editor.entry_edit_title": "编辑条目",
+  "editor.entry_hash_invalid": "{field} 须为 {length} 位十六进制。",
   "editor.entry_identity_required": "md5 与 sha256 至少要填写一个。",
   "editor.entry_import_apply": "导入所选",
   "editor.entry_import_done": "已从 {source} 导入 {added} 条；跳过 {skipped} 条重复。",

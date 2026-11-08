@@ -307,6 +307,7 @@
   "editor.entry_edit": "Edit entry",
   "editor.entry_edit_short": "Edit",
   "editor.entry_edit_title": "Edit entry",
+  "editor.entry_hash_invalid": "{field} must be {length}-character hexadecimal.",
   "editor.entry_identity_required": "MD5 or SHA256 is required.",
   "editor.entry_import_apply": "Import selected",
   "editor.entry_import_done": "Imported {added} from {source}; skipped {skipped} duplicates.",

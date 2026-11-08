@@ -307,6 +307,7 @@
   "editor.entry_edit": "エントリを編集",
   "editor.entry_edit_short": "編集",
   "editor.entry_edit_title": "エントリを編集",
+  "editor.entry_hash_invalid": "{field} は {length} 桁の16進数で入力してください。",
   "editor.entry_identity_required": "md5 または sha256 が必要です。",
   "editor.entry_import_apply": "選択項目をインポート",
   "editor.entry_import_done": "{source} から {added} 件をインポート、{skipped} 件の重複をスキップ。",
