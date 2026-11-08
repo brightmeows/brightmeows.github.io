@@ -20,10 +20,12 @@ import {
   entryHashes,
   filterEntryIndices,
   groupEntryIndices,
+  hashFormatOk,
   isUnassigned,
   levelFilterFromSelection,
   levelOrderOf,
   moveItem,
+  normalizeHash,
   parseCombinedPackage,
   parseLevelFilterOption,
   removeIndices,
@@ -85,6 +87,29 @@ describe("customFieldRows", () => {
       { key: "judge", valueText: "3" },
       { key: "note", valueText: '"x"' },
     ]);
+  });
+});
+
+describe("hashFormatOk / normalizeHash", () => {
+  it("accepts fixed-length hexadecimal hashes case-insensitively", () => {
+    expect(hashFormatOk("md5", "a".repeat(32))).toBe(true);
+    expect(hashFormatOk("md5", "A".repeat(32))).toBe(true);
+    expect(hashFormatOk("sha256", "b".repeat(64))).toBe(true);
+    expect(hashFormatOk("sha256", "B".repeat(64))).toBe(true);
+  });
+
+  it("rejects wrong length or non-hex values, and tolerates empty input", () => {
+    expect(hashFormatOk("md5", "abc")).toBe(false);
+    expect(hashFormatOk("md5", "a".repeat(31))).toBe(false);
+    expect(hashFormatOk("md5", "g".repeat(32))).toBe(false);
+    expect(hashFormatOk("sha256", "b".repeat(63))).toBe(false);
+    expect(hashFormatOk("md5", "")).toBe(true);
+    expect(hashFormatOk("md5", "  ")).toBe(true);
+  });
+
+  it("normalizeHash trims and lowercases", () => {
+    expect(normalizeHash("  ABCDEF0123 ")).toBe("abcdef0123");
+    expect(normalizeHash("")).toBe("");
   });
 });
 

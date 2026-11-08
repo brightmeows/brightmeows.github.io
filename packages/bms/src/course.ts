@@ -4,7 +4,7 @@
  * charts/md5/sha256 归一到统一的编辑行，序列化时统一写为 `charts`。
  */
 
-import { moveItem } from "./editor.ts";
+import { hashFormatOk, moveItem } from "./editor.ts";
 
 /** 规范固定的 constraint 取值（未知值原样保留在模型里）。 */
 export const COURSE_CONSTRAINTS: readonly string[] = [
@@ -28,8 +28,8 @@ export function courseHashIssue(item: CourseChartItem): CourseHashIssue {
   const md5 = item.md5.trim();
   const sha256 = item.sha256.trim();
   if (md5 === "" && sha256 === "") return "missing";
-  if (md5 !== "" && !/^[0-9a-f]{32}$/iu.test(md5)) return "md5";
-  if (sha256 !== "" && !/^[0-9a-f]{64}$/iu.test(sha256)) return "sha256";
+  if (!hashFormatOk("md5", md5)) return "md5";
+  if (!hashFormatOk("sha256", sha256)) return "sha256";
   return "ok";
 }
 
