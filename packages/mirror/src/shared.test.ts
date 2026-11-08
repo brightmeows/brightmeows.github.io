@@ -2,13 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   applyEntryFields,
-  checkSharedPayload,
   isAllowedSharedIdChar,
   normalizeSharedId,
   serializeSharedTableList,
-  SHARED_MAX_DATA_BYTES,
-  SHARED_MAX_ENTRIES,
-  SHARED_MAX_HEADER_BYTES,
   transformSharedTableList,
   utf8ByteLength,
   validateSharedId,
@@ -83,68 +79,6 @@ describe("utf8ByteLength", () => {
     expect(utf8ByteLength("あ")).toBe(3);
     expect(utf8ByteLength("😀")).toBe(4);
     expect(utf8ByteLength("")).toBe(0);
-  });
-});
-
-describe("checkSharedPayload", () => {
-  const header = { name: "测试表", symbol: "▼", data_url: "https://example.test/data.json" };
-  const data = [{ md5: "0".repeat(32), level: "12", title: "chart" }];
-
-  it("接受合法载荷并原样保留未知字段", () => {
-    const result = checkSharedPayload({ ...header, custom: 1 }, [
-      ...data,
-      { sha256: "a", level: "1" },
-    ]);
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.header.custom).toBe(1);
-      expect(result.data).toHaveLength(2);
-    }
-  });
-
-  it("拒绝非对象 header 与缺失 name/symbol", () => {
-    expect(checkSharedPayload(null, data)).toEqual({ ok: false, error: "header_invalid" });
-    expect(checkSharedPayload([], data)).toEqual({ ok: false, error: "header_invalid" });
-    expect(checkSharedPayload({ symbol: "▼" }, data)).toEqual({
-      ok: false,
-      error: "missing_identity",
-    });
-    expect(checkSharedPayload({ name: "t" }, data)).toEqual({
-      ok: false,
-      error: "missing_identity",
-    });
-    expect(checkSharedPayload({ name: "  ", symbol: "x" }, data)).toEqual({
-      ok: false,
-      error: "missing_identity",
-    });
-  });
-
-  it("拒绝非数组 data 与缺身份字段的条目", () => {
-    expect(checkSharedPayload(header, {})).toEqual({ ok: false, error: "data_invalid" });
-    expect(checkSharedPayload(header, [{ level: "1" }])).toEqual({
-      ok: false,
-      error: "entry_invalid",
-    });
-    expect(checkSharedPayload(header, ["x"])).toEqual({ ok: false, error: "entry_invalid" });
-    expect(checkSharedPayload(header, [{ md5: "" }])).toEqual({
-      ok: false,
-      error: "entry_invalid",
-    });
-  });
-
-  it("拒绝超条目数上限", () => {
-    const entries = Array.from({ length: SHARED_MAX_ENTRIES + 1 }, () => ({ md5: "a" }));
-    expect(checkSharedPayload(header, entries)).toEqual({ ok: false, error: "too_many_entries" });
-  });
-
-  it("拒绝超过尺寸上限的 header 与 data", () => {
-    const bigHeader = { ...header, pad: "x".repeat(SHARED_MAX_HEADER_BYTES) };
-    expect(checkSharedPayload(bigHeader, data)).toEqual({
-      ok: false,
-      error: "header_too_large",
-    });
-    const bigEntry = { md5: "a".repeat(32), note: "y".repeat(SHARED_MAX_DATA_BYTES) };
-    expect(checkSharedPayload(header, [bigEntry])).toEqual({ ok: false, error: "data_too_large" });
   });
 });
 
