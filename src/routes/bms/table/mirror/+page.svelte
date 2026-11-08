@@ -180,7 +180,7 @@
     ];
   });
 
-  // 顶栏管理入口以 #mirror-admin 锚点落页：登录态就绪后展开管理区并滚动到位
+  // #mirror-admin 锚点落页（书签与历史链接）：登录态就绪后展开管理区并滚动到位
   $effect(() => {
     if (!isAdmin || currentHash !== "#mirror-admin") return;
     if (!visibleCards["mirror-list"]) {

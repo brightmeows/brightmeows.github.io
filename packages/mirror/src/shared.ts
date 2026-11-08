@@ -21,7 +21,7 @@ export const SHARED_MAX_DATA_BYTES = 10 * 1024 * 1024;
 export const SHARED_MAX_ENTRIES = 10_000;
 
 /** 每账号同时持有的共享表张数上限（回收站中的不占名额）。 */
-export const SHARED_MAX_TABLES_PER_USER = 3;
+export const SHARED_MAX_TABLES_PER_USER = 10;
 
 /** id 的码点长度上限。 */
 export const SHARED_MAX_ID_LENGTH = 32;
