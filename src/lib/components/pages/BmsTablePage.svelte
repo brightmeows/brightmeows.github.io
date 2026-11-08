@@ -385,7 +385,21 @@
 
 {#snippet titlePane()}
   <div class="flex flex-col items-center gap-3 text-center">
-    <h1 class="page-title m-0">{model.pageTitle}</h1>
+    <h1 class="page-title m-0 flex w-full justify-center">
+      {#if isEdit}
+        <input
+          class="w-full max-w-2xl rounded-md bg-transparent text-center outline-none [font:inherit] placeholder:text-white-30 focus-visible:ring-2 focus-visible:ring-accent/40"
+          type="text"
+          bind:value={model.name}
+          placeholder={model.pageTitle}
+          disabled={model.busy || model.dataLoadState !== "loaded"}
+          aria-label={m["editor.field_name"]()}
+          oninput={() => model.markDirty()}
+        />
+      {:else}
+        {model.pageTitle}
+      {/if}
+    </h1>
     {#if model.symbol.trim() !== ""}
       <div class="text-[1.1rem] text-white-70 italic">
         {m["table.symbol"]({ symbol: model.symbol })}
