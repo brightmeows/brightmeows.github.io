@@ -13,9 +13,11 @@
     filterEntryIndices,
     moveItem,
   } from "@brightmeows/bms/editor";
+  import type { Action } from "svelte/action";
 
   import CourseRow from "./CourseRow.svelte";
 
+  import DetailsPanel from "#lib/components/ui/DetailsPanel.svelte";
   import {
     badgeWarningSm,
     btnGhost,
@@ -26,11 +28,13 @@
   } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { DeepReadonly } from "#lib/types/bms-view.js";
+  import { createDragList, type DragItemOptions } from "#lib/utils/ui/dnd-list.svelte.js";
 
   /**
    * 编辑态段位行：摘要、行头操作与展开后的全宽表单。
    * 受控组件：course 以深度只读视图传入仅供渲染，写入统一经 onedit 上抛，
    * 由 CoursePanel 执行并触发 onChange（漏标 dirty 在结构上不可能）。
+   * 展开表单按名称、约束、奖杯、谱面、自定义分区，默认只开名称与谱面。
    */
   interface Props {
     /** 只读视图：渲染用；写入经 onedit 收口（见文件头注）。 */
@@ -40,6 +44,10 @@
     expanded: boolean;
     canMoveUp: boolean;
     canMoveDown: boolean;
+    /** 组内拖拽：行动作、本行扁平下标与落点下标；未传时不启用拖拽。 */
+    dragItem?: Action<HTMLElement, DragItemOptions> | undefined;
+    dragIndex?: number | undefined;
+    dragDropTargetIndex?: number | null | undefined;
     onToggle: () => void;
     onDelete: () => void;
     onMoveUp: () => void;
@@ -55,6 +63,9 @@
     expanded,
     canMoveUp,
     canMoveDown,
+    dragItem = undefined,
+    dragIndex = -1,
+    dragDropTargetIndex = null,
     onToggle,
     onDelete,
     onMoveUp,
@@ -66,6 +77,21 @@
 
   let pickerOpen = $state(false);
   let pickerQuery = $state("");
+
+  const rowDrag = $derived(
+    dragItem === undefined
+      ? undefined
+      : { item: dragItem, index: dragIndex, dropTargetIndex: dragDropTargetIndex, disabled }
+  );
+
+  const chartDnd = createDragList({
+    enabled: () => !disabled,
+    onMove: (from, to) => {
+      onedit((target) => {
+        target.charts = moveItem(target.charts, from, to);
+      });
+    },
+  });
 
   const knownHashes = $derived(buildEntryHashSet(entries));
   const pickerResults = $derived(
@@ -187,7 +213,13 @@
   }
 </script>
 
-<CourseRow {expanded}>
+<CourseRow
+  {expanded}
+  dragItem={rowDrag?.item}
+  dragIndex={rowDrag?.index}
+  dropTarget={rowDrag !== undefined && rowDrag.dropTargetIndex === rowDrag.index}
+  dragDisabled={rowDrag?.disabled ?? true}
+>
   {#snippet summary()}
     <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
       <span class="text-[1rem] font-semibold text-white">
@@ -212,6 +244,18 @@
   {/snippet}
 
   {#snippet actions()}
+    {#if dragItem !== undefined}
+      <span class="cursor-grab text-white-35" aria-hidden="true">
+        <svg class="size-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <circle cx="9" cy="6" r="1.6" />
+          <circle cx="15" cy="6" r="1.6" />
+          <circle cx="9" cy="12" r="1.6" />
+          <circle cx="15" cy="12" r="1.6" />
+          <circle cx="9" cy="18" r="1.6" />
+          <circle cx="15" cy="18" r="1.6" />
+        </svg>
+      </span>
+    {/if}
     <button class={btnGhostXs} type="button" aria-expanded={expanded} onclick={onToggle}>
       {expanded ? m["common.collapse"]() : m["common.edit"]()}
     </button>
@@ -294,8 +338,7 @@
         />
       </label>
 
-      <div>
-        <div class="mb-1 text-[0.8rem] text-white-60">{m["editor.course_constraint"]()}</div>
+      <DetailsPanel summary={m["editor.course_constraint"]()} variant="plain" sub={true}>
         <div class="flex flex-wrap gap-x-4 gap-y-1">
           {#each [...COURSE_CONSTRAINTS, ...course.constraints.filter((item) => !COURSE_CONSTRAINTS.includes(item))] as constraint (constraint)}
             <label class="flex cursor-pointer items-center gap-1.5 text-[0.85rem] text-white-75">
@@ -309,15 +352,14 @@
             </label>
           {/each}
         </div>
-      </div>
+      </DetailsPanel>
 
-      <div>
-        <div class="mb-1 flex items-center gap-2">
-          <span class="text-[0.8rem] text-white-60">{m["editor.course_trophy"]()}</span>
-          <button class="{btnGhost} ml-auto" type="button" {disabled} onclick={addTrophy}>
+      <DetailsPanel summary={m["editor.course_trophy"]()} variant="plain" sub={true}>
+        {#snippet actions()}
+          <button class={btnGhost} type="button" {disabled} onclick={addTrophy}>
             {m["editor.course_trophy_add"]()}
           </button>
-        </div>
+        {/snippet}
         {#if course.trophies.length > 0}
           <div class="flex flex-col gap-2">
             {#each course.trophies as trophy, index (index)}
@@ -377,13 +419,17 @@
         {:else}
           <p class="text-[0.85rem] text-white-50">{m["editor.course_trophy_empty"]()}</p>
         {/if}
-      </div>
+      </DetailsPanel>
 
-      <div>
-        <div class="mb-1 flex flex-wrap items-center gap-2">
-          <span class="text-[0.8rem] text-white-60">{m["editor.course_charts"]()}</span>
-          <span class="text-[0.78rem] text-white-40">{m["editor.course_charts_hint"]()}</span>
-          <div class="ml-auto flex gap-2">
+      <DetailsPanel
+        summary={m["editor.course_charts"]()}
+        hint={m["editor.course_charts_hint"]()}
+        defaultOpen={true}
+        variant="plain"
+        sub={true}
+      >
+        {#snippet actions()}
+          <div class="flex gap-2">
             <button class={btnGhost} type="button" {disabled} onclick={openPicker}>
               {m["editor.course_chart_pick"]()}
             </button>
@@ -391,7 +437,7 @@
               {m["editor.course_chart_add"]()}
             </button>
           </div>
-        </div>
+        {/snippet}
 
         {#if pickerOpen}
           <div class="mb-2 rounded-lg border border-accent/40 bg-accent/10 p-2">
@@ -441,8 +487,24 @@
             {#each course.charts as chart, index (index)}
               {@const issue = courseHashIssue(chart)}
               {@const resolved = courseChartResolvedIn(knownHashes, chart)}
-              <div class="rounded-lg border border-white-10 bg-black-10 p-2">
+              <div
+                use:chartDnd.item={{ index, disabled }}
+                class="rounded-lg border border-white-10 bg-black-10 p-2 {chartDnd.dropTargetIndex ===
+                index
+                  ? 'border-accent/60'
+                  : ''}"
+              >
                 <div class="flex flex-wrap items-center gap-2">
+                  <span class="cursor-grab text-white-35" aria-hidden="true">
+                    <svg class="size-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <circle cx="9" cy="6" r="1.6" />
+                      <circle cx="15" cy="6" r="1.6" />
+                      <circle cx="9" cy="12" r="1.6" />
+                      <circle cx="15" cy="12" r="1.6" />
+                      <circle cx="9" cy="18" r="1.6" />
+                      <circle cx="15" cy="18" r="1.6" />
+                    </svg>
+                  </span>
                   <input
                     class="{inputEditorMono} min-w-52 flex-1 {issue === 'md5'
                       ? 'border-red-400/60'
@@ -556,7 +618,7 @@
         {:else}
           <p class="text-[0.85rem] text-white-50">{m["editor.course_charts_empty"]()}</p>
         {/if}
-      </div>
+      </DetailsPanel>
 
       {#if Object.keys(course.extra).length > 0}
         <details class="rounded-md border border-white-10 p-2">

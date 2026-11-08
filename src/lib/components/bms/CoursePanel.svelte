@@ -3,6 +3,7 @@
     addCourseToGroup,
     addGroupToModel,
     moveCourseInModel,
+    moveCourseToIndex,
     removeCourseFromModel,
     removeGroupFromModel,
     type CourseModel,
@@ -16,6 +17,7 @@
   import InlineEmpty from "#lib/components/ui/InlineEmpty.svelte";
   import { btnGhost, btnIconDanger } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
+  import { createDragList } from "#lib/utils/ui/dnd-list.svelte.js";
 
   /**
    * 段位内容：查看态与编辑态共用组遍历、组标题与全宽课程行；卡片显隐由页面管理。
@@ -117,6 +119,65 @@
   });
 
   const showGroups = $derived(nested ?? (editing ? model?.shape === "nested" : groups.length > 1));
+
+  /** 组前课程数前缀和：行内课程下标换算全局扁平下标（拖拽行标识）。 */
+  const groupOffsets = $derived.by(() => {
+    const offsets: number[] = [];
+    let acc = 0;
+    if (editing && model !== undefined) {
+      for (const group of model.groups) {
+        offsets.push(acc);
+        acc += group.courses.length;
+      }
+    } else {
+      for (const group of groups) {
+        offsets.push(acc);
+        acc += group.length;
+      }
+    }
+    return offsets;
+  });
+
+  /** 扁平下标到组与组内位置的映射；拖拽限定同组换位。 */
+  const coursePositions = $derived.by(() => {
+    const map = new Map<number, { groupIndex: number; courseIndex: number }>();
+    let flat = 0;
+    if (editing && model !== undefined) {
+      model.groups.forEach((group, groupIndex) => {
+        group.courses.forEach((_, courseIndex) => {
+          map.set(flat, { groupIndex, courseIndex });
+          flat += 1;
+        });
+      });
+    }
+    return map;
+  });
+
+  const dnd = createDragList({
+    enabled: () => editing && !disabled,
+    canDrop: (from, to) => {
+      const source = coursePositions.get(from);
+      const target = coursePositions.get(to);
+      return (
+        source !== undefined && target !== undefined && source.groupIndex === target.groupIndex
+      );
+    },
+    onMove: (from, to) => {
+      const source = coursePositions.get(from);
+      const target = coursePositions.get(to);
+      if (
+        model === undefined ||
+        source === undefined ||
+        target === undefined ||
+        source.groupIndex !== target.groupIndex
+      ) {
+        return;
+      }
+      model = moveCourseToIndex(model, source.groupIndex, source.courseIndex, target.courseIndex);
+      onChange?.();
+    },
+  });
+
   function toggle(key: string): void {
     expandedKey = expandedKey === key ? null : key;
   }
@@ -263,6 +324,7 @@
                   onToggle={() => toggle(item.key)}
                 />
               {:else}
+                {@const flatIndex = (groupOffsets[group.groupIndex] ?? 0) + item.courseIndex}
                 <CourseRowEdit
                   course={item.course}
                   {entries}
@@ -270,6 +332,9 @@
                   expanded={expandedKey === item.key}
                   canMoveUp={item.courseIndex > 0}
                   canMoveDown={item.courseIndex < group.items.length - 1}
+                  dragItem={dnd.item}
+                  dragIndex={flatIndex}
+                  dragDropTargetIndex={dnd.dropTargetIndex}
                   onToggle={() => toggle(item.key)}
                   onDelete={() => removeCourse(group.groupIndex, item.courseIndex)}
                   onMoveUp={() => moveCourse(group.groupIndex, item.courseIndex, -1)}
