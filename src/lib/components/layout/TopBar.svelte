@@ -23,7 +23,6 @@
     type PanelPosition,
   } from "#lib/utils/ui/panel-position.js";
   import { hasScrolledPastViewport, isNearDocumentBottom } from "#lib/utils/ui/topbar-scroll.js";
-  import { resolve } from "$app/paths";
   import { page } from "$app/state";
 
   interface Props {
@@ -815,19 +814,7 @@
                 <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
                   <div class="px-3 py-2">
                     <div class="truncate text-sm font-medium text-white">{user.login}</div>
-                    <div class="mt-0.5 text-sm text-white-70">
-                      {m["topbar.remaining"]({ count: user.remaining })}
-                    </div>
                   </div>
-                  {#if user.role === "admin"}
-                    <a
-                      href={resolve("/bms/table/mirror#mirror-admin")}
-                      class={topbarMenuItem}
-                      onclick={() => closePanels()}
-                    >
-                      {m["topbar.admin_panel"]()}
-                    </a>
-                  {/if}
                   <button
                     type="button"
                     class="{topbarMenuItem} w-full"

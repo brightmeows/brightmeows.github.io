@@ -169,7 +169,11 @@
       </div>
     {:else}
       <div class="flex flex-col gap-3">
-        <div class="flex justify-end">
+        <div class="flex items-center justify-between gap-2">
+          <!-- 配额只在此页消耗（添加/恢复/删除），展示随写操作实时刷新 -->
+          <div class="text-[0.9rem] text-white-60">
+            {m["mirror.remaining"]({ count: user.remaining })}
+          </div>
           <button class={btnGhost} type="button" onclick={() => (showRemoved = !showRemoved)}>
             {m["mirror.removed_count"]({ count: removed.length })}
           </button>
