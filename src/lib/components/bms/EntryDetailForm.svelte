@@ -5,10 +5,12 @@
     coreFieldTexts,
     customFieldRows,
     normalizeHash,
+    valueToText,
     type CoreEntryField,
     type CustomFieldRow,
     type EntryCommitError,
   } from "@brightmeows/bms/editor";
+  import { BMS_FILE_EXTENSIONS, isBmsFileName, type ImportedBmsEntry } from "@brightmeows/bms/file";
   import { untrack } from "svelte";
 
   import DetailsPanel from "#lib/components/ui/DetailsPanel.svelte";
@@ -20,6 +22,7 @@
     inputEditorMono,
   } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
+  import { decodeBmsFile, isHashingAvailable } from "#lib/utils/infra/bms-drop.js";
 
   /**
    * 条目详情编辑：核心字段加自定义字段键值行。自定义值按 JSON 文本编辑
@@ -114,6 +117,85 @@
   let custom = $state(initial.custom);
   let error = $state<{ code: EntryCommitError; detail: string | undefined } | null>(null);
 
+  // 文件反查：按钮选择或拖入 BMS 文件，哈希覆盖、文本字段只补空、等级建议待采纳
+  let fileInput = $state<HTMLInputElement | null>(null);
+  let fileBusy = $state(false);
+  let fileDragOver = $state(false);
+  let fileError = $state("");
+  let fileLevelHint = $state<string | null>(null);
+
+  const fileAccept = BMS_FILE_EXTENSIONS.join(",");
+
+  function isFileDrag(event: DragEvent): boolean {
+    return event.dataTransfer?.types.includes("Files") ?? false;
+  }
+
+  function entryText(value: unknown): string {
+    return typeof value === "string" ? value : "";
+  }
+
+  /** 反查结果回填：哈希无条件覆盖；文本字段只补空；total 仅补缺失的自定义行。 */
+  function applyDecoded(decoded: ImportedBmsEntry): void {
+    const decodedEntry = decoded.entry;
+    core.md5 = normalizeHash(entryText(decodedEntry.md5));
+    core.sha256 = normalizeHash(entryText(decodedEntry.sha256));
+    if (core.title === "") core.title = entryText(decodedEntry.title);
+    if (core.artist === "") core.artist = entryText(decodedEntry.artist);
+    if (core.comment === "") core.comment = entryText(decodedEntry.comment);
+    if (core.url === "") core.url = entryText(decodedEntry.url);
+    const total = decodedEntry.total;
+    if (typeof total === "number") {
+      const existing = custom.find((row) => row.key === "total");
+      if (existing === undefined) custom.push({ key: "total", valueText: valueToText(total) });
+      else if (existing.valueText.trim() === "") existing.valueText = valueToText(total);
+    }
+    fileLevelHint = decoded.levelHint === "" ? null : decoded.levelHint;
+  }
+
+  async function readBmsFile(file: File): Promise<void> {
+    if (fileBusy || disabled) return;
+    fileBusy = true;
+    fileError = "";
+    const decoded = isHashingAvailable() ? await decodeBmsFile(file) : null;
+    fileBusy = false;
+    if (decoded === null) {
+      fileError = m["editor.entry_file_failed"]();
+      return;
+    }
+    applyDecoded(decoded);
+  }
+
+  function adoptLevelHint(): void {
+    if (fileLevelHint === null) return;
+    core.level = fileLevelHint;
+    fileLevelHint = null;
+  }
+
+  async function onFileChosen(event: Event): Promise<void> {
+    const input = event.currentTarget;
+    if (!(input instanceof HTMLInputElement)) return;
+    const file = input.files?.[0];
+    input.value = "";
+    if (file === undefined) return;
+    await readBmsFile(file);
+  }
+
+  function sectionDragEnter(event: DragEvent): void {
+    if (disabled || !isFileDrag(event)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    fileDragOver = true;
+  }
+
+  function sectionDrop(event: DragEvent): void {
+    if (disabled || !isFileDrag(event)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    fileDragOver = false;
+    const file = [...(event.dataTransfer?.files ?? [])].find((item) => isBmsFileName(item.name));
+    if (file !== undefined) void readBmsFile(file);
+  }
+
   const errorMessage = $derived.by(() => {
     if (error === null) return "";
     switch (error.code) {
@@ -148,9 +230,48 @@
   }
 </script>
 
-<section class="rounded-lg border border-accent/40 bg-accent/10 p-3">
+<section
+  class="rounded-lg border border-accent/40 bg-accent/10 p-3 {fileDragOver
+    ? 'ring-2 ring-accent/60'
+    : ''}"
+  role="group"
+  aria-label={entry === null ? m["editor.entry_add_title"]() : m["editor.entry_edit_title"]()}
+  ondragenter={sectionDragEnter}
+  ondragover={sectionDragEnter}
+  ondragleave={() => (fileDragOver = false)}
+  ondrop={sectionDrop}
+>
   <div class="mb-2 text-[0.9rem] text-accent-light">
     {entry === null ? m["editor.entry_add_title"]() : m["editor.entry_edit_title"]()}
+  </div>
+
+  <div class="mb-3 flex flex-wrap items-center gap-2">
+    <button
+      class={btnGhost}
+      type="button"
+      disabled={disabled || fileBusy}
+      onclick={() => fileInput?.click()}
+    >
+      {m["editor.entry_file_pick"]()}
+    </button>
+    <input
+      bind:this={fileInput}
+      type="file"
+      class="hidden"
+      accept={fileAccept}
+      onchange={(event) => void onFileChosen(event)}
+    />
+    {#if fileError !== ""}
+      <span class="text-[0.85rem] text-red-300">{fileError}</span>
+    {/if}
+    {#if fileLevelHint !== null}
+      <span class="text-[0.85rem] text-accent-light">
+        {m["editor.entry_level_hint"]({ level: fileLevelHint })}
+      </span>
+      <button class={btnGhost} type="button" {disabled} onclick={adoptLevelHint}>
+        {m["editor.entry_level_adopt"]()}
+      </button>
+    {/if}
   </div>
 
   {#snippet fieldInput(field: CoreEntryField)}
