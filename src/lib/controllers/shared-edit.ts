@@ -12,6 +12,7 @@
  * 3. 接口异常：进入错误态，不再回落到本地编辑。
  */
 
+import type { SharedNewTableSeed } from "@brightmeows/bms/shared";
 import type { SharedTableItem } from "@brightmeows/mirror/shared";
 import { validateSharedId } from "@brightmeows/mirror/shared";
 import { sharedTablePath } from "@brightmeows/mirror/urls";
@@ -36,8 +37,8 @@ export interface SharedEditState {
   item: SharedTableItem | null;
   /** 线上并发基线（最近一次保存/创建后的 updated_at）。 */
   baseline: string | undefined;
-  /** 新表初始种子（无草稿认领时使用）。 */
-  seed: { name: string; symbol: string } | undefined;
+  /** 新表初始种子（无草稿认领时使用；可携带导入的整包内容）。 */
+  seed: SharedNewTableSeed | undefined;
 }
 
 /** 共享表编辑页初始状态：loading 相、非新建。 */
@@ -62,8 +63,8 @@ export interface SharedEditDeps {
   findInList(cacheBust: boolean): Promise<SharedTableItem | null>;
   /** 查询 id 是否可创建。 */
   checkId(id: string): Promise<{ available: boolean }>;
-  /** 取走新表种子（sessionStorage 一次性认领）。 */
-  takeSeed(): { name: string; symbol: string } | undefined;
+  /** 取走新表种子（sessionStorage 一次性认领与导入内容随行）。 */
+  takeSeed(): SharedNewTableSeed | undefined;
   create(payload: SharedPayloadBody): Promise<SharedCreateResult>;
   save(payload: SharedPayloadBody): Promise<SharedSaveResult>;
 }

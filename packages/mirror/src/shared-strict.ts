@@ -145,7 +145,40 @@ export interface SharedStrictReport {
   warnings: SharedStrictWarning[];
   /** 错误数达到收集上限被截断。 */
   truncated: boolean;
+  /** 通过形状校验的条目引用（仅 data 校验填充；调用方免二次转型取用）。 */
+  entries: Record<string, unknown>[];
+  /** 通过校验的 header 引用（完整载荷校验填充；非法时为 null）。 */
+  header: Record<string, unknown> | null;
 }
+
+/**
+ * editor.strict_* 消息键的单一来源：站点侧映射器与格式化器经本表取键，
+ * scripts/check-i18n-coverage.ts 经本表把动态引用计入（同 API_ERROR_CODES
+ * 的先例）。键的条目在 messages/{en,zh-cn,ja}.json 维护。
+ */
+export const STRICT_EDITOR_MESSAGE_KEYS = {
+  fieldType: "editor.strict_field_type",
+  notArray: "editor.strict_not_array",
+  levelOrderElement: "editor.strict_level_order_element",
+  courseElement: "editor.strict_course_element",
+  courseName: "editor.strict_course_name",
+  courseConstraintType: "editor.strict_course_constraint_type",
+  courseConstraintValue: "editor.strict_course_constraint_value",
+  courseTrophyType: "editor.strict_course_trophy_type",
+  courseTrophyName: "editor.strict_course_trophy_name",
+  courseTrophyRange: "editor.strict_course_trophy_range",
+  courseCharts: "editor.strict_course_charts",
+  courseHashes: "editor.strict_course_hashes",
+  entryLevel: "editor.strict_entry_level",
+  failed: "editor.strict_failed",
+  errorMore: "editor.strict_error_more",
+  errorTruncated: "editor.strict_error_truncated",
+  warnings: "editor.strict_warnings",
+  warnMissingDataUrl: "editor.strict_warn_missing_data_url",
+  warnUnknownField: "editor.strict_warn_unknown_field",
+  warnLevelNotListed: "editor.strict_warn_level_not_listed",
+  warnCourseHash: "editor.strict_warn_course_hash",
+} as const;
 
 /** 单次校验的错误收集上限（10000 条全坏时不至于产出上万条错误对象）。 */
 const MAX_STRICT_ERRORS = 100;
@@ -190,7 +223,7 @@ export function strictCheckHeader(header: unknown): SharedStrictReport {
   }
   checkLevelOrder(header, errors);
   checkCourseField(header, errors, warnings, seenUnknown);
-  return finish(errors, warnings);
+  return finish(errors, warnings, [], header);
 }
 
 /**
@@ -211,10 +244,12 @@ export function strictCheckData(data: unknown): SharedStrictReport {
   if (utf8ByteLength(JSON.stringify(data)) > SHARED_MAX_DATA_BYTES) {
     errors.add({ code: "data_too_large", path: "data", params: {} });
   }
+  const records: Record<string, unknown>[] = [];
   data.forEach((entry, index) => {
+    if (isRecord(entry)) records.push(entry);
     checkDataEntry(entry, index, errors, warnings, seenUnknown);
   });
-  return finish(errors, warnings);
+  return finish(errors, warnings, records);
 }
 
 /**
@@ -235,7 +270,7 @@ export function strictCheckSharedPayload(header: unknown, data: unknown): Shared
     ...dataReport.warnings,
     ...crossWarnings(header, data),
   ];
-  return finish(errors, warnings);
+  return finish(errors, warnings, dataReport.entries, headerReport.header);
 }
 
 // ---------------------------------------------------------------------------
@@ -260,6 +295,19 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+/** 基线错误码判定：结构、身份与上限（沿用 api.shared_* 消息键与服务端错误码）。 */
+export function isBaselinePayloadCode(code: SharedStrictCode): code is SharedPayloadError {
+  return (
+    code === "header_invalid" ||
+    code === "header_too_large" ||
+    code === "missing_identity" ||
+    code === "data_invalid" ||
+    code === "data_too_large" ||
+    code === "too_many_entries" ||
+    code === "entry_invalid"
+  );
+}
+
 /** 任意值的稳定文本化（错误参数展示用）：字符串原样，其余 JSON 序列化。 */
 function textOf(value: unknown): string {
   if (typeof value === "string") return value;
@@ -280,12 +328,19 @@ function fieldTypeError(path: string): SharedStrictError {
   return { code: "field_type", path, params: {} };
 }
 
-function finish(errors: ErrorCollector, warnings: SharedStrictWarning[]): SharedStrictReport {
+function finish(
+  errors: ErrorCollector,
+  warnings: SharedStrictWarning[],
+  entries: Record<string, unknown>[] = [],
+  header: Record<string, unknown> | null = null
+): SharedStrictReport {
   return {
     ok: errors.errors.length === 0,
     errors: errors.errors,
     warnings,
     truncated: errors.truncated,
+    entries,
+    header,
   };
 }
 
@@ -498,8 +553,11 @@ function checkDataEntry(
   collectUnknownFields(entry, STRICT_DATA_FIELDS, "entry", warnings, seenUnknown);
 }
 
-/** 交叉一致性警告：level 是否列入 level_order、course 哈希是否命中条目。 */
-function crossWarnings(header: unknown, data: unknown): SharedStrictWarning[] {
+/**
+ * 交叉一致性警告：level 是否列入 level_order、course 哈希是否命中条目。
+ * 独立导出，供分量分别校验的调用方（如新建页的分头导入）复用。
+ */
+export function crossWarnings(header: unknown, data: unknown): SharedStrictWarning[] {
   const warnings: SharedStrictWarning[] = [];
   if (!isRecord(header) || !Array.isArray(data)) return warnings;
   const levelOrder = header.level_order;

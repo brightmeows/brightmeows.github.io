@@ -1,4 +1,5 @@
 import { applyEntryFields } from "@brightmeows/mirror/shared";
+import type { SharedStrictWarning } from "@brightmeows/mirror/shared-strict";
 
 import { sortLevelValues } from "./table.ts";
 
@@ -598,6 +599,8 @@ export interface TableImportResult {
   data: Record<string, unknown>[] | null;
   dataMode: "append" | "replace";
   source: "paste" | "file" | "fork";
+  /** 强验证警告（非阻断），随结果上抛由调用方呈现。 */
+  warnings: SharedStrictWarning[];
 }
 
 /** 编辑器载荷（保存与另存共享用）。 */
