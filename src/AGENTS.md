@@ -74,7 +74,7 @@
 - **`r2.ts` 集中管理 R2 端点** — `src/lib/constants/r2.ts` 定义了 `R2_BASE`/`R2_TABLES_BASE`/`R2_INDEXES_BASE` 三个常量。修改 R2 地址时仅改此文件。
   - 另有 `r2TableHeaderUrl()`/`r2TableDataUrl()` 与共享表的 `r2SharedHeaderUrl()`/`r2SharedDataUrl()` 两对构造函数。
   - 该文件位于 `#lib/constants/`（环境无关层），可供构建时和客户端代码共同使用。
-- **共享表（`/bms/table/shared`）是独立于镜像的第二套表体系** — 用户自建、公开浏览、每人持有上限 3 张（含 admin，回收站不占名额）。
+- **共享表（`/bms/table/shared`）是独立于镜像的第二套表体系** — 用户自建、公开浏览、每人持有上限 10 张（含 admin，回收站不占名额）。
   - 两条路由：`new/`（预渲染前置屏：id 实时预览与查重、可选 name/symbol 种子，**不创建**，首次保存才创建；确认后跳带 `?edit=1` 的编辑器地址——新表只在编辑态呈现，查看分支会去拉尚不存在的表头）。
   - `[id]/`（查看与编辑合并的页面，默认查看态复用 `BmsTablePage`，`?edit=1` 就地切换编辑；`[id]/+layout.ts` 把整个子树设为 `prerender = false`）。
   - 列表页已于 2026-11 并入 `/bms/table`（共享表在上、自托管表在下的总览页，客户端拉 `/bms/table/shared/tables.json`），旧列表地址由 Worker 301（见 `packages/worker/AGENTS.md`）。

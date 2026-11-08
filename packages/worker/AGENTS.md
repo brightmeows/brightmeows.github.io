@@ -100,7 +100,7 @@
     - `INTERNAL_API_TOKEN`（内部接口共享 token，与仓库 Actions secret 同名同值）。
 - **共享表接口（`/api/shared/*`）不限频，防线是持有上限与审计** — 端点：`create`/`save`/`rename`/`delete`/`restore`（POST，Origin 白名单 + 登录）与 `check-id`/`removed`（GET，需登录）。
   - **刻意不调 `consumeOperation`**：镜像的每日 10 次配额不适用于共享表，因为整包保存是高频动作。
-  - 替代防线是每人 3 张持有上限（`shared_tables` 行数，含 admin，回收站行在 `shared_trash` 不占名额、30 天后经 `purgeExpiredSharedTrash` 清理释放）、保存类审计折叠（见下）与 admin 删除权（可删不可编辑他人内容，权限判定在处理层，前端仅显隐）。
+  - 替代防线是每人持有上限（`shared_tables` 行数，含 admin，回收站行在 `shared_trash` 不占名额、30 天后经 `purgeExpiredSharedTrash` 清理释放）、保存类审计折叠（见下）与 admin 删除权（可删不可编辑他人内容，权限判定在处理层，前端仅显隐）。
   - `check-id` 同时返回 `wasAliased`（曾被分发的旧 id，认领时前端弹知情确认）。
 - **创建与改 id 的失败形态是刻意选的** — 创建按“D1 占位先行”：`shared_tables` 主键 INSERT（与撤销旧别名同批原子，冲突即 409 且别名不被误删）成功后才写 R2，R2 失败回滚删行——宁可留“可查询、可再次创建覆盖的空壳行”，不留“占着 id 的孤儿对象”。
   - 改 id 相反：先复制 R2 对象到新前缀（旧对象仍在，失败不伤现役表），再单批原子完成新行 + 别名 + 删旧行，D1 失败则清理已复制对象。

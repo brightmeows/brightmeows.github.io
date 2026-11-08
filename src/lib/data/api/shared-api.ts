@@ -25,7 +25,7 @@ import { m } from "#lib/paraglide/messages.js";
  * `@brightmeows/mirror/api`，传输层在 `./http`）。
  *
  * 接口只存在于主站 Worker；静态宿主已退役，不再承载应用。
- * 写操作不消耗每日配额，防线是每人 3 张持有上限。
+ * 写操作不消耗每日配额，防线是每人持有上限。
  */
 
 export type SharedCheckIdResult = SharedCheckIdResponse;
