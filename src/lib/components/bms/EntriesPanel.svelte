@@ -101,6 +101,21 @@
   let bulkOpen = $state(false);
   let bulkText = $state("");
   let bulkMode = $state<"append" | "replace">("append");
+
+  // 行键按条目对象身份发放（WeakMap）：拖拽或排序按钮移动条目时，Svelte
+  // 搬移既有行块而不是重建，行内展开的详情表单因此不丢未保存的编辑。
+  const entryKeys = new WeakMap<object, number>();
+  let nextEntryKey = 1;
+  function entryKey(entry: Record<string, unknown> | undefined): number {
+    if (entry === undefined) return -1;
+    let key = entryKeys.get(entry);
+    if (key === undefined) {
+      key = nextEntryKey;
+      nextEntryKey += 1;
+      entryKeys.set(entry, key);
+    }
+    return key;
+  }
   let bulkError = $state<string | null>(null);
   let notice = $state<string | null>(null);
   let chartPreview = $state<JsonPreviewHandle | undefined>();
@@ -711,7 +726,7 @@
                 </div>
               </td>
             </tr>
-            {#each group.indices as index (index)}
+            {#each group.indices as index (entryKey(entries[index]))}
               {@const entry = entries[index] ?? {}}
               {@const levelHint =
                 editing && isUnassigned(entry) && hintFor(entry) !== null
