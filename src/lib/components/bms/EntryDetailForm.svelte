@@ -4,12 +4,14 @@
     commitEntryEdit,
     coreFieldTexts,
     customFieldRows,
+    normalizeHash,
     type CoreEntryField,
     type CustomFieldRow,
     type EntryCommitError,
   } from "@brightmeows/bms/editor";
   import { untrack } from "svelte";
 
+  import DetailsPanel from "#lib/components/ui/DetailsPanel.svelte";
   import {
     btnDanger,
     btnGhost,
@@ -92,6 +94,22 @@
 
   const LEVEL_OPTIONS_ID = "editor-level-options";
 
+  /** 常用字段：编辑高频，平铺在表单顶层。 */
+  const COMMON_FIELDS = [
+    "level",
+    "title",
+    "artist",
+    "md5",
+    "sha256",
+    "url",
+    "name_diff",
+  ] as const satisfies readonly CoreEntryField[];
+  /** 进阶字段：低频与兼容保留字段，连同自定义字段折叠收起。 */
+  const COMMON_FIELD_SET: ReadonlySet<CoreEntryField> = new Set<CoreEntryField>(COMMON_FIELDS);
+  const ADVANCED_FIELDS: CoreEntryField[] = CORE_ENTRY_FIELDS.filter(
+    (field) => !COMMON_FIELD_SET.has(field)
+  );
+
   let core = $state(initial.core);
   let custom = $state(initial.custom);
   let error = $state<{ code: EntryCommitError; detail: string | undefined } | null>(null);
@@ -135,28 +153,40 @@
     {entry === null ? m["editor.entry_add_title"]() : m["editor.entry_edit_title"]()}
   </div>
 
+  {#snippet fieldInput(field: CoreEntryField)}
+    {#if field === "level"}
+      <input
+        class={inputEditorMono}
+        type="text"
+        list={LEVEL_OPTIONS_ID}
+        value={core.level}
+        oninput={(event) => (core.level = event.currentTarget.value)}
+        {disabled}
+      />
+    {:else if field === "md5" || field === "sha256"}
+      <input
+        class={inputEditorMono}
+        type="text"
+        value={core[field]}
+        oninput={(event) => (core[field] = normalizeHash(event.currentTarget.value))}
+        {disabled}
+      />
+    {:else}
+      <input
+        class={inputEditorMono}
+        type="text"
+        value={core[field]}
+        oninput={(event) => (core[field] = event.currentTarget.value)}
+        {disabled}
+      />
+    {/if}
+  {/snippet}
+
   <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-    {#each CORE_ENTRY_FIELDS as field (field)}
-      <label class={field === "comment" ? "block sm:col-span-2" : "block"}>
+    {#each COMMON_FIELDS as field (field)}
+      <label class="block">
         <span class="mb-1 block text-[0.8rem] text-white-60">{FIELD_LABELS[field]}</span>
-        {#if field === "level"}
-          <input
-            class={inputEditorMono}
-            type="text"
-            list={LEVEL_OPTIONS_ID}
-            value={core.level}
-            oninput={(event) => (core.level = event.currentTarget.value)}
-            {disabled}
-          />
-        {:else}
-          <input
-            class={inputEditorMono}
-            type="text"
-            value={core[field]}
-            oninput={(event) => (core[field] = event.currentTarget.value)}
-            {disabled}
-          />
-        {/if}
+        {@render fieldInput(field)}
       </label>
     {/each}
   </div>
@@ -167,67 +197,80 @@
   </datalist>
 
   <div class="mt-4">
-    <div class="mb-2 flex flex-wrap items-center gap-2">
-      <span class="text-[0.85rem] text-white-70">{m["editor.entry_custom_title"]()}</span>
-      <span class="text-[0.8rem] text-white-50">{m["editor.entry_custom_hint"]()}</span>
-      <button
-        class="{btnGhost} ml-auto"
-        type="button"
-        {disabled}
-        onclick={() => custom.push({ key: "", valueText: "" })}
-      >
-        {m["editor.entry_custom_add"]()}
-      </button>
-    </div>
-    {#if custom.length === 0}
-      <p class="text-[0.85rem] text-white-50">{m["editor.entry_custom_empty"]()}</p>
-    {:else}
-      <div class="flex flex-col gap-2">
-        {#each custom as row, index (index)}
-          <div class="flex items-center gap-2">
-            <input
-              class="{inputEditorMono} max-w-48 flex-1"
-              type="text"
-              value={row.key}
-              placeholder={m["editor.entry_custom_key"]()}
-              oninput={(event) => (custom[index] = { ...row, key: event.currentTarget.value })}
-              {disabled}
-            />
-            <input
-              class="{inputEditorMono} min-w-40 flex-[2]"
-              type="text"
-              value={row.valueText}
-              placeholder={m["editor.entry_custom_value_placeholder"]()}
-              oninput={(event) =>
-                (custom[index] = { ...row, valueText: event.currentTarget.value })}
-              {disabled}
-            />
-            <button
-              class={btnIconDanger}
-              type="button"
-              {disabled}
-              title={m["editor.entry_custom_remove"]()}
-              aria-label={m["editor.entry_custom_remove"]()}
-              onclick={() => custom.splice(index, 1)}
-            >
-              <svg
-                class="size-4"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M18 6 6 18" />
-                <path d="m6 6 12 12" />
-              </svg>
-            </button>
-          </div>
+    <DetailsPanel summary={m["editor.entry_advanced"]()} variant="plain" sub={true}>
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {#each ADVANCED_FIELDS as field (field)}
+          <label class={field === "comment" ? "block sm:col-span-2" : "block"}>
+            <span class="mb-1 block text-[0.8rem] text-white-60">{FIELD_LABELS[field]}</span>
+            {@render fieldInput(field)}
+          </label>
         {/each}
       </div>
-    {/if}
+
+      <div class="mt-4">
+        <div class="mb-2 flex flex-wrap items-center gap-2">
+          <span class="text-[0.85rem] text-white-70">{m["editor.entry_custom_title"]()}</span>
+          <span class="text-[0.8rem] text-white-50">{m["editor.entry_custom_hint"]()}</span>
+          <button
+            class="{btnGhost} ml-auto"
+            type="button"
+            {disabled}
+            onclick={() => custom.push({ key: "", valueText: "" })}
+          >
+            {m["editor.entry_custom_add"]()}
+          </button>
+        </div>
+        {#if custom.length === 0}
+          <p class="text-[0.85rem] text-white-50">{m["editor.entry_custom_empty"]()}</p>
+        {:else}
+          <div class="flex flex-col gap-2">
+            {#each custom as row, index (index)}
+              <div class="flex items-center gap-2">
+                <input
+                  class="{inputEditorMono} max-w-48 flex-1"
+                  type="text"
+                  value={row.key}
+                  placeholder={m["editor.entry_custom_key"]()}
+                  oninput={(event) => (custom[index] = { ...row, key: event.currentTarget.value })}
+                  {disabled}
+                />
+                <input
+                  class="{inputEditorMono} min-w-40 flex-[2]"
+                  type="text"
+                  value={row.valueText}
+                  placeholder={m["editor.entry_custom_value_placeholder"]()}
+                  oninput={(event) =>
+                    (custom[index] = { ...row, valueText: event.currentTarget.value })}
+                  {disabled}
+                />
+                <button
+                  class={btnIconDanger}
+                  type="button"
+                  {disabled}
+                  title={m["editor.entry_custom_remove"]()}
+                  aria-label={m["editor.entry_custom_remove"]()}
+                  onclick={() => custom.splice(index, 1)}
+                >
+                  <svg
+                    class="size-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M18 6 6 18" />
+                    <path d="m6 6 12 12" />
+                  </svg>
+                </button>
+              </div>
+            {/each}
+          </div>
+        {/if}
+      </div>
+    </DetailsPanel>
   </div>
 
   {#if error}

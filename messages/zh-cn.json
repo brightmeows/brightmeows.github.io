@@ -286,6 +286,7 @@
   "editor.entries_select_row": "选择该条",
   "editor.entries_selected": "已选 {count} 条",
   "editor.entry_add_title": "添加条目",
+  "editor.entry_advanced": "进阶字段",
   "editor.entry_bmsir_add": "从 URL 添加",
   "editor.entry_bmsir_invalid": "不是有效的 bms-ir.org 谱面页 URL。",
   "editor.entry_bmsir_prefilled": "已从 URL 预填 MD5 {hash}，补全元数据后保存。",

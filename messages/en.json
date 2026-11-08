@@ -286,6 +286,7 @@
   "editor.entries_select_row": "Select entry",
   "editor.entries_selected": "{count} selected",
   "editor.entry_add_title": "Add entry",
+  "editor.entry_advanced": "Advanced fields",
   "editor.entry_bmsir_add": "Add from URL",
   "editor.entry_bmsir_invalid": "Not a valid bms-ir.org chart URL.",
   "editor.entry_bmsir_prefilled": "MD5 {hash} prefilled; complete metadata and save.",
