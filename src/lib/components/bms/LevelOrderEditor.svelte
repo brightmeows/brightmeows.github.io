@@ -4,6 +4,7 @@
 
   import { btnGhost, btnIcon, inputEditorBase } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
+  import { createDragList } from "#lib/utils/ui/dnd-list.svelte.js";
 
   /**
    * level_order 列表编辑：增删与拖拽排序；文本模式用于一次性粘贴整份列表。
@@ -20,8 +21,11 @@
   let textMode = $state(false);
   let textValue = $state("");
   let newLevel = $state("");
-  let dragIndex = $state<number | null>(null);
-  let dropIndex = $state<number | null>(null);
+
+  const dnd = createDragList({
+    enabled: () => !disabled,
+    onMove: (from, to) => commit(moveItem(levels, from, to)),
+  });
 
   function commit(next: string[]): void {
     levels = next;
@@ -47,13 +51,6 @@
   function applyTextMode(): void {
     commit(textToLevelOrder(textValue) ?? []);
     textMode = false;
-  }
-
-  function handleDrop(event: DragEvent, index: number): void {
-    event.preventDefault();
-    if (dragIndex !== null && dragIndex !== index) commit(moveItem(levels, dragIndex, index));
-    dragIndex = null;
-    dropIndex = null;
   }
 </script>
 
@@ -86,27 +83,11 @@
     <ul class="flex flex-col gap-1.5">
       {#each levels as level, index (index)}
         <li
-          class="flex items-center gap-2 rounded-lg border border-white-10 bg-black-20 px-2 py-1.5 {dropIndex ===
+          use:dnd.item={{ index, disabled }}
+          class="flex items-center gap-2 rounded-lg border border-white-10 bg-black-20 px-2 py-1.5 {dnd.dropTargetIndex ===
           index
             ? 'border-accent/60'
             : ''}"
-          draggable={!disabled}
-          ondragstart={(event) => {
-            dragIndex = index;
-            event.dataTransfer?.setData("text/plain", String(index));
-          }}
-          ondragover={(event) => {
-            event.preventDefault();
-            dropIndex = index;
-          }}
-          ondragleave={() => {
-            if (dropIndex === index) dropIndex = null;
-          }}
-          ondrop={(event) => handleDrop(event, index)}
-          ondragend={() => {
-            dragIndex = null;
-            dropIndex = null;
-          }}
         >
           <span class="cursor-grab text-white-35" aria-hidden="true">
             <svg class="size-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
