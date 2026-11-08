@@ -560,6 +560,35 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+/** 导入 JSON 的三态识别结果：合并包、纯 header、纯 data 或无法识别。 */
+export type TableImportDetect =
+  | { kind: "combined"; header: Record<string, unknown>; data: unknown[] }
+  | { kind: "header"; header: Record<string, unknown> }
+  | { kind: "data"; data: unknown[] }
+  | { kind: "invalid" };
+
+/**
+ * 识别粘贴或上传的导入 JSON：数组为 data；同时含 header 与 data 键的对象
+ * 为合并包（两者形状非法按无法识别处理）；其余对象为 header。
+ * 只判形状不验条目——条目级校验由强验证器承担。
+ */
+export function detectTableImportJson(raw: unknown): TableImportDetect {
+  if (Array.isArray(raw)) {
+    return { kind: "data", data: raw };
+  }
+  if (isRecord(raw)) {
+    const combined = parseCombinedPackage(raw);
+    if (combined !== null) {
+      if (isRecord(combined.header) && Array.isArray(combined.data)) {
+        return { kind: "combined", header: combined.header, data: combined.data };
+      }
+      return { kind: "invalid" };
+    }
+    return { kind: "header", header: raw };
+  }
+  return { kind: "invalid" };
+}
+
 /** 草稿来源类型：镜像表、自托管表、共享表。 */
 export type DraftSourceKind = "mirror" | "self" | "shared";
 
