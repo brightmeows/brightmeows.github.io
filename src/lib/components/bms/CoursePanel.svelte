@@ -274,7 +274,10 @@
                   onDelete={() => removeCourse(group.groupIndex, item.courseIndex)}
                   onMoveUp={() => moveCourse(group.groupIndex, item.courseIndex, -1)}
                   onMoveDown={() => moveCourse(group.groupIndex, item.courseIndex, 1)}
-                  onChange={() => onChange?.()}
+                  onedit={(mutate) => {
+                    mutate(item.course);
+                    onChange?.();
+                  }}
                 />
               {/if}
             {/each}

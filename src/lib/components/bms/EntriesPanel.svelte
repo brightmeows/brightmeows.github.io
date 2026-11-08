@@ -334,16 +334,29 @@
   function commitDetail(entry: Record<string, unknown>): void {
     const wasAdding = adding;
     const target = editingIndex;
-    const next =
-      wasAdding || target === null
-        ? [...entries, entry]
-        : entries.map((item, index) => (index === target ? entry : item));
-    const duplicate = duplicateEntryLabel(next, entry, wasAdding ? null : target);
-    notice =
-      duplicate === null
-        ? null
-        : m["editor.entry_duplicate_notice"]({ title: duplicate || m["editor.entry_unnamed"]() });
-    entries = next;
+    // 新增（含 target 为空的兜底路径）对追加前数组查重：对追加后数组查重会
+    // 自匹配必命中。新增命中即拦截（与 addFromUrl 语义一致），表单保留以便
+    // 修改后重提交；编辑排除自身所在行，命中仅提示放行。
+    if (wasAdding || target === null) {
+      const duplicate = duplicateEntryLabel(entries, entry, null);
+      if (duplicate !== null) {
+        notice = m["editor.entry_duplicate_notice"]({
+          title: duplicate || m["editor.entry_unnamed"](),
+        });
+        return;
+      }
+      entries = [...entries, entry];
+      notice = null;
+    } else {
+      const duplicate = duplicateEntryLabel(entries, entry, target);
+      notice =
+        duplicate === null
+          ? null
+          : m["editor.entry_duplicate_notice"]({
+              title: duplicate || m["editor.entry_unnamed"](),
+            });
+      entries = entries.map((item, index) => (index === target ? entry : item));
+    }
     adding = false;
     editingIndex = null;
     onChange?.();
