@@ -323,6 +323,8 @@
   "editor.entry_import_source_label": "来源：",
   "editor.entry_import_source_search": "搜索表",
   "editor.entry_level_hint": "文件等级：{level}",
+  "editor.entry_move_down": "下移",
+  "editor.entry_move_up": "上移",
   "editor.entry_save": "保存条目",
   "editor.entry_unnamed": "（未命名）",
   "editor.export_data": "下载 data.json",

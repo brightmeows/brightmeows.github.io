@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { ChartData } from "@brightmeows/bms/format";
+  import type { Action } from "svelte/action";
 
   import ChartLinkButtons from "./ChartLinkButtons.svelte";
 
@@ -7,6 +8,15 @@
   import { jsonPreview } from "#lib/components/ui/JsonPreview.svelte";
   import { m } from "#lib/paraglide/messages.js";
   import type { JsonPreviewHandle } from "#lib/types/ui.js";
+  import { inertDragItem, type DragItemOptions } from "#lib/utils/ui/dnd-list.svelte.js";
+
+  /** 行拖拽上下文：行动作、本行排序下标、当前落点下标与禁拖标志。 */
+  interface RowDrag {
+    item: Action<HTMLElement, DragItemOptions>;
+    index: number;
+    dropTargetIndex: number | null;
+    disabled: boolean;
+  }
 
   interface Props {
     chart: ChartData;
@@ -18,6 +28,8 @@
     selectable?: boolean;
     selected?: boolean;
     disabled?: boolean;
+    /** 编辑态：组内拖拽排序上下文；查看态不传。 */
+    drag?: RowDrag | undefined;
     onSelect?: ((checked: boolean) => void) | undefined;
     /** 编辑态：标题列内的编辑入口。 */
     onEdit?: (() => void) | undefined;
@@ -34,22 +46,45 @@
     selectable = false,
     selected = false,
     disabled = false,
+    drag = undefined,
     onSelect,
     onEdit,
     levelHint = null,
   }: Props = $props();
+
+  const rowAction = $derived(drag === undefined ? inertDragItem : drag.item);
+  const rowParams = $derived(
+    drag === undefined
+      ? { index: -1, disabled: true }
+      : { index: drag.index, disabled: drag.disabled }
+  );
+  const isDropTarget = $derived(drag !== undefined && drag.dropTargetIndex === drag.index);
 </script>
 
-<tr class="hover:bg-white-5">
+<tr use:rowAction={rowParams} class="hover:bg-white-5 {isDropTarget ? 'bg-accent/10' : ''}">
   {#if selectable}
     <td class="table-td-compact px-2">
-      <Checkbox
-        size="sm"
-        checked={selected}
-        {disabled}
-        ariaLabel={m["editor.entries_select_row"]()}
-        onchange={(checked: boolean) => onSelect?.(checked)}
-      />
+      <div class="flex items-center justify-center gap-1">
+        {#if drag}
+          <span class="cursor-grab text-white-35" aria-hidden="true">
+            <svg class="size-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <circle cx="9" cy="6" r="1.6" />
+              <circle cx="15" cy="6" r="1.6" />
+              <circle cx="9" cy="12" r="1.6" />
+              <circle cx="15" cy="12" r="1.6" />
+              <circle cx="9" cy="18" r="1.6" />
+              <circle cx="15" cy="18" r="1.6" />
+            </svg>
+          </span>
+        {/if}
+        <Checkbox
+          size="sm"
+          checked={selected}
+          {disabled}
+          ariaLabel={m["editor.entries_select_row"]()}
+          onchange={(checked: boolean) => onSelect?.(checked)}
+        />
+      </div>
     </td>
   {/if}
   <td class="table-td-compact whitespace-nowrap">

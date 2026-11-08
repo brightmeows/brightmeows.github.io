@@ -323,6 +323,8 @@
   "editor.entry_import_source_label": "インポート元：",
   "editor.entry_import_source_search": "表を検索",
   "editor.entry_level_hint": "ファイルのレベル：{level}",
+  "editor.entry_move_down": "下へ移動",
+  "editor.entry_move_up": "上へ移動",
   "editor.entry_save": "エントリを保存",
   "editor.entry_unnamed": "（無題）",
   "editor.export_data": "data.json をダウンロード",

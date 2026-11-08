@@ -13,6 +13,7 @@
   import {
     btnDanger,
     btnGhost,
+    btnIcon,
     btnIconDanger,
     inputEditorMono,
   } from "#lib/constants/ui-classes.js";
@@ -34,6 +35,12 @@
     oncancel: () => void;
     /** 编辑既有条目时提供的删除入口；新增时为 undefined。 */
     ondelete?: (() => void) | undefined;
+    /** 所属等级组内上移；未提供时隐藏按钮（如新增表单）。 */
+    onmoveup?: (() => void) | undefined;
+    /** 所属等级组内下移。 */
+    onmovedown?: (() => void) | undefined;
+    canmoveup?: boolean;
+    canmovedown?: boolean;
   }
 
   let {
@@ -44,6 +51,10 @@
     oncommit,
     oncancel,
     ondelete,
+    onmoveup = undefined,
+    onmovedown = undefined,
+    canmoveup = false,
+    canmovedown = false,
   }: Props = $props();
 
   /** 初始快照：父级用 keyed 区块重挂载来切换编辑对象，这里无需响应 prop 变化。 */
@@ -228,6 +239,52 @@
       <button class={btnDanger} type="button" {disabled} onclick={ondelete}>
         {m["editor.entry_delete"]()}
       </button>
+    {/if}
+    {#if onmoveup !== undefined && onmovedown !== undefined}
+      <div class="ml-2 flex gap-1">
+        <button
+          class={btnIcon}
+          type="button"
+          disabled={disabled || !canmoveup}
+          title={m["editor.entry_move_up"]()}
+          aria-label={m["editor.entry_move_up"]()}
+          onclick={onmoveup}
+        >
+          <svg
+            class="size-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m18 15-6-6-6 6" />
+          </svg>
+        </button>
+        <button
+          class={btnIcon}
+          type="button"
+          disabled={disabled || !canmovedown}
+          title={m["editor.entry_move_down"]()}
+          aria-label={m["editor.entry_move_down"]()}
+          onclick={onmovedown}
+        >
+          <svg
+            class="size-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </button>
+      </div>
     {/if}
     <div class="ml-auto flex gap-2">
       <button class={btnGhost} type="button" {disabled} onclick={handleSave}>

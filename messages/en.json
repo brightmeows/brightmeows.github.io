@@ -323,6 +323,8 @@
   "editor.entry_import_source_label": "Source:",
   "editor.entry_import_source_search": "Search tables",
   "editor.entry_level_hint": "File level: {level}",
+  "editor.entry_move_down": "Move down",
+  "editor.entry_move_up": "Move up",
   "editor.entry_save": "Save entry",
   "editor.entry_unnamed": "(untitled)",
   "editor.export_data": "Download data.json",

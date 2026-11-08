@@ -22,6 +22,9 @@ export interface DragList {
   readonly item: Action<HTMLElement, DragItemOptions>;
 }
 
+/** 未启用拖拽的行使用的空动作：让 use: 调用形态在不拖拽时保持统一。 */
+export const inertDragItem: Action<HTMLElement, DragItemOptions> = () => undefined;
+
 /** 创建一份列表拖拽排序；enabled() 为 false 时整表禁拖（如 busy 态）。 */
 export function createDragList(options: {
   enabled?: () => boolean;
