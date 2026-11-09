@@ -81,6 +81,7 @@
     detected: ReturnType<typeof detectTableImportJson>,
     source: "paste" | "file"
   ): void {
+    error = null;
     if (detected.kind === "invalid") {
       error = m["editor.import_invalid"]();
       return;

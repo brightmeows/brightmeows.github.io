@@ -240,9 +240,12 @@ export function strictCheckData(data: unknown): SharedStrictReport {
   }
   if (data.length > SHARED_MAX_ENTRIES) {
     errors.add({ code: "too_many_entries", path: "data", params: {} });
+    // 尺寸类错误即短路：超大载荷不再付出全量序列化与逐条遍历的代价
+    return finish(errors, warnings);
   }
   if (utf8ByteLength(JSON.stringify(data)) > SHARED_MAX_DATA_BYTES) {
     errors.add({ code: "data_too_large", path: "data", params: {} });
+    return finish(errors, warnings);
   }
   const records: Record<string, unknown>[] = [];
   data.forEach((entry, index) => {
