@@ -16,6 +16,11 @@
   - 镜像表由 Worker 运行时注入到 SPA 外壳的 `<head>`（绝对 R2 地址），两处共用 `injectBmstableMeta`。
 - **仓库里没有任何派生数据** — `static/bms/table/mirror/` 已于 2026-09 清空（旧的静态 stub 与 `tables.json` 删除）；同月又删掉最后一份派生文件 `src/lib/mirror/table-manifest.json`（清单快照，约 230KB）。
   - **R2 是唯一权威源**；静态宿主已退役，镜像页与 `tables.json` 全部由 Worker 运行时应答。
+- **用户层匹配口径在 `src/user-layer.ts`** — URL 匹配统一走 `tableUrlKey` 宽松键
+  （`normalizeTableUrl` 后折叠尾斜杠），目录名兜底走 `dirNameSet`，撤销索引由
+  `buildRevocationIndex` 构建；读取侧合并器（`mergeTableList`）、抓取侧合并器
+  （管线 `mergeActiveSet`）与添加准入（Worker `handleAdd`）三处消费同一套谓词，
+  撤销优先级统一为“删除与禁用先于添加”。改匹配语义只改这里。
 - **镜像表目录名 `dir_name` 由数据管线生成** — 格式为 `[host] name`（如 `[4uri.web.fc2.com] Youri差分難易度表`），与 R2 目录名一致；Worker 的清单校验与站点清单变换直接消费该字段，缺失即失败。不要改为纯数字或 UUID 标识符。
 - **共享表内核在 `src/shared.ts`（`./shared` 子路径）** — 服务端与前端必须共用同一套（错译键即不一致）。
   - id 规则（NFC 归一 + ASCII 大小写折叠 + `[a-z0-9-]` 与中日韩字符集 + 保留词 `new`/`edit`，`.` 不入字符集故天然挡掉 `tables.json`）、三档上限（header 1MB / data 10MB / 条目 10000）、载荷校验与导出改写（下载时 `data_url` → `./data.json`）全在这里。

@@ -147,6 +147,42 @@ export interface UserLayer {
   meta: readonly MetaOverride[];
 }
 
+/**
+ * 用户层匹配键：`normalizeTableUrl` 后去掉尾部斜杠。同一表源的不同尾斜杠变体
+ * （`https://host/table` 与 `https://host/table/`）得到同一个键——禁用、删除
+ * 黑名单、添加准入与替换规则的宽松匹配统一以此为口径。
+ */
+export function tableUrlKey(raw: string): string {
+  return normalizeTableUrl(raw).replace(/\/+$/u, "");
+}
+
+/** 非空目录名集合（trim 后入集）：清单条目的目录名兜底匹配用。 */
+export function dirNameSet(values: Iterable<string | undefined>): ReadonlySet<string> {
+  const set = new Set<string>();
+  for (const value of values) {
+    if (value === undefined) continue;
+    const dirName = value.trim();
+    if (dirName !== "") set.add(dirName);
+  }
+  return set;
+}
+
+/** 用户层撤销索引：禁用与删除黑名单的宽松 URL 键与目录名集合，构建一次后 O(1) 查询。 */
+export interface RevocationIndex {
+  disabledUrls: ReadonlySet<string>;
+  removedUrls: ReadonlySet<string>;
+  removedDirs: ReadonlySet<string>;
+}
+
+/** 构建撤销索引：合并器与添加准入共用同一套匹配口径。 */
+export function buildRevocationIndex(user: UserLayer): RevocationIndex {
+  return {
+    disabledUrls: new Set(user.disabled.map((entry) => tableUrlKey(entry.url))),
+    removedUrls: new Set(user.removed.map((entry) => tableUrlKey(entry.url))),
+    removedDirs: dirNameSet(user.removed.map((entry) => entry.dir_name)),
+  };
+}
+
 /** 空用户层：对象缺失或读取失败时的安全缺省。 */
 export function emptyUserLayer(): UserLayer {
   return {
@@ -177,7 +213,7 @@ export interface MergeTableListResult {
 
 /**
  * 规范化表 URL：能解析时取 `URL.href`，否则去除首尾空白后原样返回。
- * 用户层各对象与清单条目的匹配都以此为准。
+ * 用户层匹配键见 `tableUrlKey`（规范化再加尾斜杠折叠）。
  */
 export function normalizeTableUrl(raw: string): string {
   const text = raw.trim();
@@ -186,11 +222,6 @@ export function normalizeTableUrl(raw: string): string {
   } catch {
     return text;
   }
-}
-
-/** 宽松相等：忽略尾部斜杠差异，沿用旧实现中替换规则的匹配语义。 */
-function looseEqual(left: string, right: string): boolean {
-  return left.replace(/\/+$/u, "") === right.replace(/\/+$/u, "");
 }
 
 function findItemByDirName(
@@ -218,7 +249,9 @@ export function applyMetaOverride(item: MirrorTableItem, override: MetaOverride)
  * 把用户层合并进管线清单，得到站点消费的合成清单。
  *
  * 处理顺序：基线去重 → 删除黑名单与禁用移除 → 添加纳入（需抓取结果）→
- * 替换规则 → 元数据覆盖 → 授权标记。输出保持基线顺序，新添加的表追加在末尾。
+ * 替换规则 → 元数据覆盖 → 授权标记。URL 匹配统一走 `tableUrlKey` 宽松键
+ * （忽略尾斜杠），与添加准入（Worker handleAdd）和抓取侧合并器
+ * （管线 mergeActiveSet）同一口径。输出保持基线顺序，新添加的表追加在末尾。
  */
 export function mergeTableList(
   base: readonly MirrorTableItem[],
@@ -226,7 +259,7 @@ export function mergeTableList(
 ): MergeTableListResult {
   const items = new Map<string, MirrorTableItem>();
   for (const item of base) {
-    const key = normalizeTableUrl(item.url);
+    const key = tableUrlKey(item.url);
     if (!items.has(key)) {
       items.set(key, { ...item });
     }
@@ -234,20 +267,16 @@ export function mergeTableList(
 
   const stats: MergeStats = { added: 0, removed: 0, disabled: 0, replaced: 0, protected: 0 };
 
-  const disabledKeys = new Set(user.disabled.map((entry) => normalizeTableUrl(entry.url)));
-  const removedKeys = new Set(user.removed.map((entry) => normalizeTableUrl(entry.url)));
-  const removedDirs = new Set(
-    user.removed.map((entry) => entry.dir_name).filter((dirName) => dirName !== "")
-  );
+  const revoked = buildRevocationIndex(user);
 
   for (const [key, item] of items) {
-    if (disabledKeys.has(key)) {
+    if (revoked.disabledUrls.has(key)) {
       items.delete(key);
       stats.disabled += 1;
       continue;
     }
     const dirName = item.dir_name ?? "";
-    if (removedKeys.has(key) || (dirName !== "" && removedDirs.has(dirName))) {
+    if (revoked.removedUrls.has(key) || (dirName !== "" && revoked.removedDirs.has(dirName))) {
       items.delete(key);
       stats.removed += 1;
     }
@@ -255,8 +284,8 @@ export function mergeTableList(
 
   const fetchedById = new Map(user.fetched.map((entry) => [entry.id, entry]));
   for (const entry of user.added) {
-    const key = normalizeTableUrl(entry.url);
-    if (items.has(key) || disabledKeys.has(key) || removedKeys.has(key)) {
+    const key = tableUrlKey(entry.url);
+    if (items.has(key) || revoked.disabledUrls.has(key) || revoked.removedUrls.has(key)) {
       continue;
     }
     const fetched = fetchedById.get(entry.id);
@@ -264,7 +293,7 @@ export function mergeTableList(
       continue;
     }
     const dirName = fetched.dir_name.trim();
-    if (dirName === "" || removedDirs.has(dirName)) {
+    if (dirName === "" || revoked.removedDirs.has(dirName)) {
       continue;
     }
     if (findItemByDirName(items, dirName) !== undefined) {
@@ -280,29 +309,19 @@ export function mergeTableList(
   }
 
   for (const rule of user.replace) {
-    const fromKey = normalizeTableUrl(rule.from);
-    const toKey = normalizeTableUrl(rule.to);
-    let matchedKey: string | null = null;
-    for (const key of items.keys()) {
-      if (looseEqual(key, fromKey)) {
-        matchedKey = key;
-        break;
-      }
-    }
-    if (matchedKey === null || matchedKey === toKey) {
+    const fromKey = tableUrlKey(rule.from);
+    const toKey = tableUrlKey(rule.to);
+    const item = items.get(fromKey);
+    if (item === undefined || fromKey === toKey) {
       continue;
     }
-    const item = items.get(matchedKey);
-    if (item === undefined) {
-      continue;
-    }
-    items.delete(matchedKey);
+    items.delete(fromKey);
     items.set(toKey, { ...item, url: rule.to });
     stats.replaced += 1;
   }
 
   for (const override of user.meta) {
-    const key = normalizeTableUrl(override.url);
+    const key = tableUrlKey(override.url);
     const item = items.get(key);
     if (item === undefined) {
       continue;
@@ -310,12 +329,8 @@ export function mergeTableList(
     items.set(key, applyMetaOverride(item, override));
   }
 
-  const protectedKeys = new Set(user.authorized.map((entry) => normalizeTableUrl(entry.url)));
-  const protectedDirs = new Set(
-    user.authorized
-      .map((entry) => entry.dir_name)
-      .filter((dirName) => dirName !== undefined && dirName !== "")
-  );
+  const protectedKeys = new Set(user.authorized.map((entry) => tableUrlKey(entry.url)));
+  const protectedDirs = dirNameSet(user.authorized.map((entry) => entry.dir_name));
   for (const [key, item] of items) {
     const dirName = item.dir_name ?? "";
     if (protectedKeys.has(key) || (dirName !== "" && protectedDirs.has(dirName))) {

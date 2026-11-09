@@ -1,13 +1,23 @@
 /**
  * 活跃表集合计算（基线叠加用户层）。
  *
- * 顺序：base（R2 基线 info.json）→ 用户层添加（需已有抓取结果）→ 用户层
- * 删除与禁用 → 替换规则 → 元数据覆盖。站长与访客的操作同层存放，仅角色
+ * 顺序：base（R2 基线 info.json）→ 用户层删除与禁用 → 用户层添加（需已有
+ * 抓取结果）→ 替换规则 → 元数据覆盖。删除先于添加：撤销优先于纳入，与读取
+ * 侧合并器（mirror 的 mergeTableList）同序、同一套宽松匹配口径（tableUrlKey
+ * 忽略尾斜杠，目录名兜底经 dirNameSet）。站长与访客的操作同层存放，仅角色
  * 字段不同；授权名单不参与抓取，只影响读取侧的保护标记。纯函数，I/O 由
  * 调用方负责。
  */
 
-import { normalizeTableUrl, type UserLayer } from "@brightmeows/mirror/user-layer";
+import {
+  buildRevocationIndex,
+  dirNameSet,
+  tableUrlKey,
+  type AddedEntry,
+  type FetchedEntry,
+  type RevocationIndex,
+  type UserLayer,
+} from "@brightmeows/mirror/user-layer";
 
 import { cloneJson } from "./json-utils.ts";
 import type { ActiveSet, TableInfo } from "./types.ts";
@@ -24,23 +34,15 @@ export interface MergeResult {
   unmatchedReplace: string[];
 }
 
-/** 宽松相等：忽略尾部斜杠差异，沿用旧实现中替换规则的匹配语义。 */
-function looseEqual(left: string, right: string): boolean {
-  return left.replace(/\/+$/u, "") === right.replace(/\/+$/u, "");
-}
-
 /**
- * 在表中按 URL 查找键：先精确、再规范化、最后忽略尾部斜杠。
+ * 在表中按 URL 查找键：宽松键相等（忽略协议规范化细节与尾斜杠差异）。
  * 用户层记录由 Worker 写入，URL 规范可能与基线里的原始字符串不同。
  */
 function findKeyByUrl(map: ReadonlyMap<string, TableInfo>, url: string): string | undefined {
-  if (map.has(url)) {
-    return url;
-  }
-  const normalized = normalizeTableUrl(url);
-  for (const key of map.keys()) {
-    if (normalizeTableUrl(key) === normalized || looseEqual(key, url)) {
-      return key;
+  const key = tableUrlKey(url);
+  for (const candidate of map.keys()) {
+    if (tableUrlKey(candidate) === key) {
+      return candidate;
     }
   }
   return undefined;
@@ -92,6 +94,35 @@ function moveTable(
   }
 }
 
+/**
+ * 添加纳入的守卫判定：基线或撤销名单已有时跳过，抓取结果缺失或目录名
+ * （与撤销名单、与基线）冲突时跳过。守卫口径与 mergeTableList 同源。
+ */
+function canAddEntry(
+  entry: AddedEntry,
+  fetched: FetchedEntry | undefined,
+  revoked: RevocationIndex,
+  baselineDirs: ReadonlySet<string>,
+  tableInfoMap: ReadonlyMap<string, TableInfo>
+): string | null {
+  const key = tableUrlKey(entry.url);
+  if (
+    findKeyByUrl(tableInfoMap, entry.url) !== undefined ||
+    revoked.disabledUrls.has(key) ||
+    revoked.removedUrls.has(key)
+  ) {
+    return null;
+  }
+  if (fetched === undefined) {
+    return null;
+  }
+  const dirName = fetched.dir_name.trim();
+  if (dirName === "" || revoked.removedDirs.has(dirName) || baselineDirs.has(dirName)) {
+    return null;
+  }
+  return dirName;
+}
+
 /** 合并 base 与用户层，得到活跃表集合。 */
 export function mergeActiveSet(options: MergeOptions): MergeResult {
   const tableInfoMap = new Map<string, TableInfo>();
@@ -100,31 +131,10 @@ export function mergeActiveSet(options: MergeOptions): MergeResult {
   }
   const oldDirMap = new Map(options.oldDirMap);
   const unmatchedReplace: string[] = [];
+  const revoked = buildRevocationIndex(options.user);
 
-  // 用户层添加：基线已有时不动，抓取结果缺失时跳过（等待下一轮）。
-  const fetchedById = new Map(options.user.fetched.map((entry) => [entry.id, entry]));
-  for (const entry of options.user.added) {
-    if (findKeyByUrl(tableInfoMap, entry.url) !== undefined) {
-      continue;
-    }
-    const fetched = fetchedById.get(entry.id);
-    if (fetched === undefined) {
-      continue;
-    }
-    const dirName = fetched.dir_name.trim();
-    if (dirName === "") {
-      continue;
-    }
-    tableInfoMap.set(entry.url, {
-      name: fetched.name,
-      symbol: fetched.symbol ?? "",
-      url: entry.url,
-      extra: {},
-    });
-    oldDirMap.set(entry.url, dirName);
-  }
-
-  // 用户层删除与禁用：按 URL 匹配，目录名作为兜底。
+  // 用户层删除与禁用：先于添加（撤销优先于纳入）。URL 匹配不到时按目录名
+  // 从旧目录映射反查兜底——基线键是原始 URL，兜底比镜像侧的目录名集合更精确。
   for (const entry of options.user.removed) {
     if (removeUrl(tableInfoMap, oldDirMap, entry.url)) {
       continue;
@@ -146,6 +156,26 @@ export function mergeActiveSet(options: MergeOptions): MergeResult {
         removeUrl(tableInfoMap, oldDirMap, url);
       }
     }
+  }
+
+  // 用户层添加：守卫判定收在 canAddEntry（基线已有、撤销名单命中、抓取结果
+  // 缺失、目录名与撤销名单或基线冲突一律跳过）——与 mergeTableList 的纳入
+  // 守卫同口径，保证“清单显示的表”与“抓取的表”是同一个集合。
+  const fetchedById = new Map(options.user.fetched.map((entry) => [entry.id, entry]));
+  const baselineDirs = dirNameSet(oldDirMap.values());
+  for (const entry of options.user.added) {
+    const fetched = fetchedById.get(entry.id);
+    const dirName = canAddEntry(entry, fetched, revoked, baselineDirs, tableInfoMap);
+    if (dirName === null || fetched === undefined) {
+      continue;
+    }
+    tableInfoMap.set(entry.url, {
+      name: fetched.name,
+      symbol: fetched.symbol ?? "",
+      url: entry.url,
+      extra: {},
+    });
+    oldDirMap.set(entry.url, dirName);
   }
 
   for (const rule of options.user.replace) {

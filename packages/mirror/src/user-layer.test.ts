@@ -10,6 +10,7 @@ import {
   parseFetchedEntry,
   remainingOperations,
   serializeUserRecord,
+  tableUrlKey,
   utcDateStamp,
   type AddedEntry,
   type AuthorizedEntry,
@@ -72,6 +73,16 @@ describe("normalizeTableUrl", () => {
 
   it("无法解析的字符串去除空白后原样返回", () => {
     expect(normalizeTableUrl("  not a url  ")).toBe("not a url");
+  });
+});
+
+describe("tableUrlKey", () => {
+  it("尾斜杠变体得到同一个键", () => {
+    expect(tableUrlKey("https://a.example/one/")).toBe(tableUrlKey("https://a.example/one"));
+  });
+
+  it("解析失败的串去空白并折叠尾斜杠", () => {
+    expect(tableUrlKey("  not a url/  ")).toBe("not a url");
   });
 });
 
@@ -187,6 +198,20 @@ describe("mergeTableList", () => {
     };
     const result = mergeTableList(BASE, layer({ removed: [removed] }));
     expect(result.list.map((item) => item.dir_name)).toEqual(["[b.example] 表二"]);
+    expect(result.stats.removed).toBe(1);
+  });
+
+  it("删除黑名单的 URL 与基线只差尾斜杠时也命中", () => {
+    const removed: RemovedEntry = {
+      url: "https://b.example/two",
+      dir_name: "[b.example] 表二",
+      author: "bob",
+      role: "user",
+      removed_at: "2026-09-21T00:02:00.000Z",
+      trash_prefix: "trash/x/[b.example] 表二",
+    };
+    const result = mergeTableList(BASE, layer({ removed: [removed] }));
+    expect(result.list.map((item) => item.dir_name)).toEqual(["[a.example] 表一"]);
     expect(result.stats.removed).toBe(1);
   });
 

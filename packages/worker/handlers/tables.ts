@@ -13,7 +13,7 @@ import type {
   RestoreResponse,
 } from "@brightmeows/mirror/api";
 import {
-  normalizeTableUrl,
+  tableUrlKey,
   TRASH_RETENTION_DAYS,
   type AddedEntry,
   type StatusEntry,
@@ -77,10 +77,11 @@ export async function handleAdd(request: Request, env: Env, now: Date): Promise<
     });
   }
 
-  const key = normalizeTableUrl(targetUrl);
+  // 准入匹配与清单合并器同一宽松口径（tableUrlKey 忽略尾斜杠）：同一表源的
+  // 变体 URL 不至于绕过已列入、已删除或已禁用的拦截
+  const key = tableUrlKey(targetUrl);
   const alreadyListed = manifest.some(
-    (item) =>
-      normalizeTableUrl(item.url) === key || normalizeTableUrl(item.url_from ?? item.url) === key
+    (item) => tableUrlKey(item.url) === key || tableUrlKey(item.url_from ?? item.url) === key
   );
   if (alreadyListed) {
     return failure(409, "Table is already in the mirror list", {
@@ -89,7 +90,7 @@ export async function handleAdd(request: Request, env: Env, now: Date): Promise<
   }
   // 同 URL 的旧记录：失败或僵死的清掉后放行重新提交（状态历史留在 fetch_status），
   // 仍在推进中的照旧拦截
-  const sameUrl = user.added.filter((entry) => normalizeTableUrl(entry.url) === key);
+  const sameUrl = user.added.filter((entry) => tableUrlKey(entry.url) === key);
   for (const entry of sameUrl) {
     if (!(await isRetryableAdd(env, entry, now))) {
       return failure(409, "Table already has a pending add request", {
@@ -98,18 +99,18 @@ export async function handleAdd(request: Request, env: Env, now: Date): Promise<
     }
     await deleteAddedById(env, entry.id);
   }
-  if (user.removed.some((entry) => normalizeTableUrl(entry.url) === key)) {
+  if (user.removed.some((entry) => tableUrlKey(entry.url) === key)) {
     return failure(
       409,
       "Table was deleted before: self-restore within 30 days, contact the owner afterwards",
       { code: API_ERROR_CODES.wasDeleted }
     );
   }
-  if (user.disabled.some((entry) => normalizeTableUrl(entry.url) === key)) {
+  if (user.disabled.some((entry) => tableUrlKey(entry.url) === key)) {
     return failure(409, "Table disabled by the owner", { code: API_ERROR_CODES.disabledByOwner });
   }
 
-  const replaceHit = user.replace.find((rule) => normalizeTableUrl(rule.from) === key);
+  const replaceHit = user.replace.find((rule) => tableUrlKey(rule.from) === key);
   const effectiveUrl = replaceHit?.to ?? targetUrl;
 
   const quota = await consumeMutation(env, session, now);
@@ -177,7 +178,7 @@ export async function handleDelete(request: Request, env: Env, now: Date): Promi
   if (session instanceof Response) return session;
   const body = await readJsonBody(request);
   const dirName = typeof body?.dir_name === "string" ? body.dir_name.trim() : "";
-  const urlKey = typeof body?.url === "string" ? normalizeTableUrl(body.url.trim()) : "";
+  const urlKey = typeof body?.url === "string" ? tableUrlKey(body.url.trim()) : "";
   if (dirName === "" && urlKey === "") {
     return failure(400, "dir_name or url is required", { code: API_ERROR_CODES.needDirOrUrl });
   }
@@ -191,7 +192,7 @@ export async function handleDelete(request: Request, env: Env, now: Date): Promi
   const entry = manifest.find(
     (item) =>
       (dirName !== "" && item.dir_name === dirName) ||
-      (urlKey !== "" && normalizeTableUrl(item.url) === urlKey)
+      (urlKey !== "" && tableUrlKey(item.url) === urlKey)
   );
   if (entry === undefined) {
     return failure(404, "Table not found in the manifest", { code: API_ERROR_CODES.notInManifest });
