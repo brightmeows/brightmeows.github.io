@@ -6,21 +6,17 @@
 
 import { hashFormatOk, moveItem } from "./editor.ts";
 
-/** 规范固定的 constraint 取值（未知值原样保留在模型里）。 */
-export const COURSE_CONSTRAINTS: readonly string[] = [
-  "grade_random",
-  "grade_mirror",
-  "no_speed",
-  "no_good",
-  "no_great",
-  "gauge_lr2",
-  "gauge_5k",
-  "gauge_7k",
-  "gauge_9k",
-  "gauge_24k",
-];
+/**
+ * 段位约束与奖牌名的封闭清单：单一来源是 mirror/shared-strict 的
+ * SHARED_COURSE_CONSTRAINTS 与 SHARED_TROPHY_NAMES（bms-table 技能字段表口径，
+ * 技能扩充时只改那边）；此处按既有名字重导出，供段位编辑组件做选项清单。
+ */
+export {
+  SHARED_COURSE_CONSTRAINTS as COURSE_CONSTRAINTS,
+  SHARED_TROPHY_NAMES as TROPHY_NAMES,
+} from "@brightmeows/mirror/shared-strict";
 
-/** 奖牌名的固定取值（未知值同样保留）。 */
+/** 段位谱面哈希格式校验结论：ok 或失败原因（缺一、md5 格式、sha256 格式）。 */
 export type CourseHashIssue = "ok" | "missing" | "md5" | "sha256";
 
 /** 段位谱面哈希格式校验：md5 与 sha256 至少填一，已填的须为对应定长十六进制。 */
@@ -32,8 +28,6 @@ export function courseHashIssue(item: CourseChartItem): CourseHashIssue {
   if (!hashFormatOk("sha256", sha256)) return "sha256";
   return "ok";
 }
-
-export const TROPHY_NAMES: readonly string[] = ["goldmedal", "silvermedal", "bronzemedal"];
 
 export interface CourseChartItem {
   md5: string;
