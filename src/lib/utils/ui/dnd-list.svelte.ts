@@ -45,6 +45,9 @@ export function createDragList(options: {
     node.draggable = !params.disabled;
 
     const onDragstart = (event: DragEvent) => {
+      // 嵌套拖拽列表（谱面行嵌在课程行内）的事件会冒泡：只处理本行元素
+      // 自身发起的拖拽，来自子拖拽项的事件交回子列表，dragIndex 保持空值
+      if (event.target !== node) return;
       if (!dragAllowed(current.disabled)) {
         event.preventDefault();
         return;
