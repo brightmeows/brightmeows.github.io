@@ -159,6 +159,7 @@
   "common.load_failed_with_error": "Failed to load: {error}",
   "common.loading_data": "Loading data...",
   "common.matched": "{shown} / {total} matched",
+  "common.more_actions": "More actions",
   "common.more_links": "More links",
   "common.none": "None",
   "common.optional": "Optional",

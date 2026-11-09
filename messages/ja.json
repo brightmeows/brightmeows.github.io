@@ -159,6 +159,7 @@
   "common.load_failed_with_error": "読み込みに失敗しました：{error}",
   "common.loading_data": "データを読み込み中…",
   "common.matched": "{shown} / {total} 件一致",
+  "common.more_actions": "その他の操作",
   "common.more_links": "その他のリンク",
   "common.none": "なし",
   "common.optional": "任意",

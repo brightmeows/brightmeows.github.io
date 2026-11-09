@@ -159,6 +159,7 @@
   "common.load_failed_with_error": "加载失败：{error}",
   "common.loading_data": "正在加载数据...",
   "common.matched": "匹配 {shown} / {total}",
+  "common.more_actions": "更多操作",
   "common.more_links": "更多链接",
   "common.none": "无",
   "common.optional": "可选",

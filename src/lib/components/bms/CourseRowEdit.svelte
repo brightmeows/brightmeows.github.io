@@ -16,13 +16,13 @@
   import type { Action } from "svelte/action";
 
   import CourseRow from "./CourseRow.svelte";
+  import RowActionMenu from "./RowActionMenu.svelte";
 
   import DetailsPanel from "#lib/components/ui/DetailsPanel.svelte";
   import {
     badgeWarningSm,
     btnGhost,
     btnGhostXs,
-    btnIcon,
     btnIconDanger,
     inputEditorMono,
   } from "#lib/constants/ui-classes.js";
@@ -259,66 +259,22 @@
     <button class={btnGhostXs} type="button" aria-expanded={expanded} onclick={onToggle}>
       {expanded ? m["common.collapse"]() : m["common.edit"]()}
     </button>
-    <button
-      class={btnIcon}
-      type="button"
-      disabled={disabled || !canMoveUp}
-      title={m["editor.level_order_move_up"]()}
-      aria-label={m["editor.level_order_move_up"]()}
-      onclick={onMoveUp}
-    >
-      <svg
-        class="size-4"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"><path d="m18 15-6-6-6 6" /></svg
-      >
-    </button>
-    <button
-      class={btnIcon}
-      type="button"
-      disabled={disabled || !canMoveDown}
-      title={m["editor.level_order_move_down"]()}
-      aria-label={m["editor.level_order_move_down"]()}
-      onclick={onMoveDown}
-    >
-      <svg
-        class="size-4"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg
-      >
-    </button>
-    <button
-      class={btnIconDanger}
-      type="button"
+    <RowActionMenu
       {disabled}
-      title={m["editor.course_remove"]()}
-      aria-label={m["editor.course_remove"]()}
-      onclick={onDelete}
-    >
-      <svg
-        class="size-4"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"
-      >
-        <path d="M3 6h18" />
-        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-      </svg>
-    </button>
+      items={[
+        {
+          label: m["editor.level_order_move_up"](),
+          disabled: disabled || !canMoveUp,
+          onselect: onMoveUp,
+        },
+        {
+          label: m["editor.level_order_move_down"](),
+          disabled: disabled || !canMoveDown,
+          onselect: onMoveDown,
+        },
+        { label: m["editor.course_remove"](), danger: true, disabled, onselect: onDelete },
+      ]}
+    />
   {/snippet}
 
   {#snippet children()}
@@ -550,66 +506,27 @@
                     </span>
                   {/if}
                   <div class="ml-auto flex items-center gap-1">
-                    <button
-                      class={btnIcon}
-                      type="button"
+                    <RowActionMenu
                       {disabled}
-                      title={m["editor.level_order_move_up"]()}
-                      aria-label={m["editor.level_order_move_up"]()}
-                      onclick={() => moveChart(index, -1)}
-                    >
-                      <svg
-                        class="size-4"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        aria-hidden="true"><path d="m18 15-6-6-6 6" /></svg
-                      >
-                    </button>
-                    <button
-                      class={btnIcon}
-                      type="button"
-                      {disabled}
-                      title={m["editor.level_order_move_down"]()}
-                      aria-label={m["editor.level_order_move_down"]()}
-                      onclick={() => moveChart(index, 1)}
-                    >
-                      <svg
-                        class="size-4"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg
-                      >
-                    </button>
-                    <button
-                      class={btnIconDanger}
-                      type="button"
-                      {disabled}
-                      title={m["editor.course_chart_remove"]()}
-                      aria-label={m["editor.course_chart_remove"]()}
-                      onclick={() => removeChart(index)}
-                    >
-                      <svg
-                        class="size-4"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        aria-hidden="true"
-                      >
-                        <path d="M3 6h18" />
-                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                      </svg>
-                    </button>
+                      items={[
+                        {
+                          label: m["editor.level_order_move_up"](),
+                          disabled,
+                          onselect: () => moveChart(index, -1),
+                        },
+                        {
+                          label: m["editor.level_order_move_down"](),
+                          disabled,
+                          onselect: () => moveChart(index, 1),
+                        },
+                        {
+                          label: m["editor.course_chart_remove"](),
+                          danger: true,
+                          disabled,
+                          onselect: () => removeChart(index),
+                        },
+                      ]}
+                    />
                   </div>
                 </div>
               </div>
