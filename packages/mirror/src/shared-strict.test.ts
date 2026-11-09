@@ -180,15 +180,23 @@ describe("strictCheckData", () => {
     expect(report.errors[1]?.params.field).toBe("comment");
   });
 
+  it("规范点名的社区常见自定义字段不出未知字段警告", () => {
+    const report = strictCheckData([
+      { md5: "a", level: "1", total: 480, judge: 3, note: "x", tag: "同時押し", eval: 0 },
+    ]);
+    expect(report.ok).toBe(true);
+    expect(report.warnings).toEqual([]);
+  });
+
   it("未知条目字段按字段名去重给警告", () => {
     const report = strictCheckData([
-      { md5: "a", level: "1", eval: 0, total: 480 },
-      { md5: "b", level: "2", eval: 1 },
+      { md5: "a", level: "1", custom_x: 1, custom_y: "x" },
+      { md5: "b", level: "2", custom_x: 2 },
     ]);
     expect(report.ok).toBe(true);
     expect(report.warnings).toEqual([
-      { kind: "unknown_field", scope: "entry", field: "eval" },
-      { kind: "unknown_field", scope: "entry", field: "total" },
+      { kind: "unknown_field", scope: "entry", field: "custom_x" },
+      { kind: "unknown_field", scope: "entry", field: "custom_y" },
     ]);
   });
 
