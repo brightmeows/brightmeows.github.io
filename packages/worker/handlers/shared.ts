@@ -18,13 +18,20 @@ import type {
   SharedSaveResponse,
 } from "@brightmeows/mirror/api";
 import {
-  checkSharedPayload,
+  SHARED_MAX_DATA_BYTES,
+  SHARED_MAX_ENTRIES,
+  SHARED_MAX_HEADER_BYTES,
   SHARED_MAX_TABLES_PER_USER,
   validateSharedId,
   withDataUrl,
   type SharedIdError,
   type SharedPayloadError,
 } from "@brightmeows/mirror/shared";
+import {
+  isBaselinePayloadCode,
+  strictCheckSharedPayload,
+  type SharedStrictError,
+} from "@brightmeows/mirror/shared-strict";
 import { sharedTablePath, r2SharedDataUrl } from "@brightmeows/mirror/urls";
 import { TRASH_RETENTION_DAYS } from "@brightmeows/mirror/user-layer";
 
@@ -140,7 +147,18 @@ function payloadFailure(error: SharedPayloadError, limit: number): Response {
   }
 }
 
-/** 校验载荷并序列化；失败返回错误响应。 */
+/** 单条强验证错误的英文兜底细节（error 恒为英文，直连与日志可读）。 */
+function strictErrorDetail(error: SharedStrictError): string {
+  return error.path + " (" + error.code + ")";
+}
+
+/**
+ * 校验载荷（强验证）并序列化；失败返回错误响应。
+ *
+ * 结构、身份与上限类失败沿用基线错误码（粒度消息不变）；字段级失败返回
+ * shared_strict_invalid，detail 带首条定位路径。字段级错误明细的翻译清单
+ * 由客户端保存闸门先行给出——服务端只兜底直连请求。
+ */
 function preparePayload(
   headerRaw: unknown,
   dataRaw: unknown
@@ -152,22 +170,30 @@ function preparePayload(
       dataJson: string;
     }
   | Response {
-  const checked = checkSharedPayload(headerRaw, dataRaw);
+  const checked = strictCheckSharedPayload(headerRaw, dataRaw);
   if (!checked.ok) {
-    // 尺寸类错误带对应上限，其余错误的 limit 传条目上限（未用到占位符）
-    const limit =
-      checked.error === "header_too_large"
-        ? 1024 * 1024
-        : checked.error === "data_too_large"
-          ? 10 * 1024 * 1024
-          : 10_000;
-    return payloadFailure(checked.error, limit);
+    // 不变式：ok 为 false 当且仅当 errors 非空（见 shared-strict 模块）
+    const first = checked.errors[0];
+    if (isBaselinePayloadCode(first.code)) {
+      const limit =
+        first.code === "header_too_large"
+          ? SHARED_MAX_HEADER_BYTES
+          : first.code === "data_too_large"
+            ? SHARED_MAX_DATA_BYTES
+            : SHARED_MAX_ENTRIES;
+      return payloadFailure(first.code, limit);
+    }
+    return failure(400, "Payload failed strict validation", {
+      code: API_ERROR_CODES.sharedStrictInvalid,
+      params: { detail: strictErrorDetail(first) },
+    });
   }
+  const header = checked.header ?? {};
   return {
-    header: checked.header,
-    data: checked.data,
-    headerJson: JSON.stringify(checked.header, null, 2),
-    dataJson: JSON.stringify(checked.data, null, 2),
+    header,
+    data: checked.entries,
+    headerJson: JSON.stringify(header, null, 2),
+    dataJson: JSON.stringify(checked.entries, null, 2),
   };
 }
 

@@ -35,6 +35,7 @@
   import HashListPanel from "#lib/components/bms/HashListPanel.svelte";
   import TableEntryImportPanel from "#lib/components/bms/TableEntryImportPanel.svelte";
   import TableImportPanel from "#lib/components/bms/TableImportPanel.svelte";
+  import { strictWarningsNotice } from "#lib/controllers/editor.js";
   import { m } from "#lib/paraglide/messages.js";
 
   let {
@@ -90,7 +91,12 @@
       noticeText = m["editor.import_done"]({ source: sourceLabel });
     }
     onChange();
-    onNotice({ kind: "ok", text: noticeText });
+    const warningsText = strictWarningsNotice(result.warnings);
+    if (warningsText !== "") {
+      onNotice({ kind: "warn", text: noticeText + " " + warningsText });
+    } else {
+      onNotice({ kind: "ok", text: noticeText });
+    }
   }
 
   function handleDropAdd(result: BmsDropResult): void {

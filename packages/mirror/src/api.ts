@@ -89,6 +89,7 @@ export const API_ERROR_CODES = {
   sharedMissingIdentity: "api.shared_missing_identity",
   sharedNotFound: "api.shared_not_found",
   sharedRestoreFull: "api.shared_restore_full",
+  sharedStrictInvalid: "api.shared_strict_invalid",
   sharedTooManyEntries: "api.shared_too_many_entries",
   sharedTrashExpired: "api.shared_trash_expired",
   sharedTrashNotFound: "api.shared_trash_not_found",

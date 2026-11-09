@@ -1,4 +1,5 @@
 import type { ChartData } from "@brightmeows/bms/format";
+import type { SharedNewTableSeed } from "@brightmeows/bms/shared";
 
 import { fetchBmsHeader, fetchBmsTableData } from "#lib/data/api/bms-data.js";
 import { m } from "#lib/paraglide/messages.js";
@@ -12,8 +13,8 @@ export interface TableLoaderDeps {
   headerUrl: () => string | null;
   /** header.data_url 缺失时的回退数据地址。 */
   dataUrlFallback: () => string | null;
-  /** 新表初始种子（无草稿认领时使用）。 */
-  seed: () => { name: string; symbol: string } | undefined;
+  /** 新表初始种子（无草稿认领时使用；可携带导入的整包内容）。 */
+  seed: () => SharedNewTableSeed | undefined;
   /** 线上并发基线尚无值时以进入时的基线初始化。 */
   initBaseline: () => void;
   /** header 状态套用到模型（核心字段、levels、course、extra）。 */
@@ -111,11 +112,19 @@ export function createTableLoader(deps: TableLoaderDeps) {
     const seed = deps.seed();
     if (seed !== undefined) {
       deps.setSeedIdentity(seed);
+      const payload = seed.payload;
+      if (payload !== undefined) {
+        // 导入的整包内容：头部经表单字段装配（与远端 header 同路径），条目直入。
+        deps.applyHeaderState(payload.header);
+        deps.setEntries(payload.data.map((item) => ({ ...item })));
+      }
     }
-    // 先清空再应用草稿：认领（另存为我的共享表）会把源表的头部与条目一起
-    // 搬进来，清空若排在 prepareNewTable 之后会把刚套用的条目抹掉，
-    // 认领结果只剩头部字段。
-    deps.setEntries([]);
+    if (seed?.payload === undefined) {
+      // 先清空再应用草稿：认领（另存为我的共享表）会把源表的头部与条目一起
+      // 搬进来，清空若排在 prepareNewTable 之后会把刚套用的条目抹掉，
+      // 认领结果只剩头部字段。
+      deps.setEntries([]);
+    }
     await deps.prepareNewTable();
     headerLoadState = "loaded";
     dataLoadState = "loaded";

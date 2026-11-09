@@ -1,4 +1,5 @@
 import type { SharedTableItem } from "@brightmeows/mirror/shared";
+import type { SharedStrictError } from "@brightmeows/mirror/shared-strict";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -9,8 +10,10 @@ import {
   mirrorDirNameFromUrl,
   pageCount,
   paginate,
-  sortSharedGroups,
   sharedIdPreview,
+  sortSharedGroups,
+  strictIssueMessage,
+  strictWarningMessage,
   textToLevelOrder,
 } from "./shared.ts";
 
@@ -187,5 +190,58 @@ describe("sharedIdPreview", () => {
       "https://site.test/bms/table/shared/%E6%88%91%E7%9A%84%E8%A1%A8/"
     );
     expect(sharedIdPreview("t", "")).toBe("/bms/table/shared/t/");
+  });
+});
+
+describe("strictIssueMessage 强验证错误消息映射", () => {
+  const error = (code: SharedStrictError["code"], path: string): SharedStrictError => ({
+    code,
+    path,
+    params: {},
+  });
+
+  it("基线码沿用 api.shared_* 键（与服务端拒绝同一句话）", () => {
+    expect(strictIssueMessage(error("header_invalid", "header"))).toEqual({
+      key: "api.shared_header_invalid",
+      params: {},
+    });
+    expect(strictIssueMessage(error("data_too_large", "data")).key).toBe(
+      "api.shared_data_too_large"
+    );
+  });
+
+  it("字段级码映射 editor.strict_* 并携带定位路径", () => {
+    const level = strictIssueMessage({
+      code: "entry_level",
+      path: "data[3].level",
+      params: { index: 3 },
+    });
+    expect(level).toEqual({
+      key: "editor.strict_entry_level",
+      params: { path: "data[3].level", index: 3 },
+    });
+    expect(strictIssueMessage(error("field_type", "header.tag")).key).toBe(
+      "editor.strict_field_type"
+    );
+    expect(strictIssueMessage(error("course_not_array", "header.course")).key).toBe(
+      "editor.strict_not_array"
+    );
+  });
+});
+
+describe("strictWarningMessage 强验证警告消息映射", () => {
+  it("各类警告映射到对应键并携带插值参数", () => {
+    expect(strictWarningMessage({ kind: "missing_data_url" }).key).toBe(
+      "editor.strict_warn_missing_data_url"
+    );
+    expect(
+      strictWarningMessage({ kind: "unknown_field", scope: "entry", field: "eval" }).params
+    ).toEqual({ field: "eval" });
+    expect(strictWarningMessage({ kind: "level_not_listed", levels: ["3", "5"] }).params).toEqual({
+      levels: "3, 5",
+    });
+    expect(
+      strictWarningMessage({ kind: "course_hash_unmatched", hashes: ["a", "b"] }).params
+    ).toEqual({ hashes: "a, b" });
   });
 });

@@ -13,6 +13,7 @@ import {
   coreFieldTexts,
   countUnassigned,
   customFieldRows,
+  detectTableImportJson,
   draftStorageKey,
   duplicateEntryLabel,
   encodeLevelFilterOption,
@@ -503,5 +504,34 @@ describe("splitNewEntries", () => {
     expect(added).toEqual([]);
     expect(skipped).toBe(1);
     expect(current[0]?.md5).toBe("F".repeat(32));
+  });
+});
+describe("detectTableImportJson", () => {
+  it("数组识别为 data", () => {
+    expect(detectTableImportJson([{ md5: "a" }])).toEqual({
+      kind: "data",
+      data: [{ md5: "a" }],
+    });
+  });
+
+  it("含 header 与 data 键的对象识别为合并包", () => {
+    const header = { name: "表", symbol: "▼" };
+    const data = [{ md5: "a", level: "1" }];
+    expect(detectTableImportJson({ header, data })).toEqual({ kind: "combined", header, data });
+  });
+
+  it("合并包形状非法按无法识别处理", () => {
+    expect(detectTableImportJson({ header: "x", data: [] }).kind).toBe("invalid");
+    expect(detectTableImportJson({ header: {}, data: "x" }).kind).toBe("invalid");
+  });
+
+  it("其余对象识别为 header，非对象非数组无法识别", () => {
+    expect(detectTableImportJson({ name: "表" })).toEqual({
+      kind: "header",
+      header: { name: "表" },
+    });
+    expect(detectTableImportJson("x").kind).toBe("invalid");
+    expect(detectTableImportJson(null).kind).toBe("invalid");
+    expect(detectTableImportJson(42).kind).toBe("invalid");
   });
 });

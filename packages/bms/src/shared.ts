@@ -5,6 +5,12 @@ import {
   type SharedPayloadError,
   type SharedTableItem,
 } from "@brightmeows/mirror/shared";
+import {
+  isBaselinePayloadCode,
+  STRICT_EDITOR_MESSAGE_KEYS,
+  type SharedStrictError,
+  type SharedStrictWarning,
+} from "@brightmeows/mirror/shared-strict";
 import { sharedTablePath } from "@brightmeows/mirror/urls";
 
 /**
@@ -211,5 +217,95 @@ export function sharedPayloadMessage(error: SharedPayloadError): SharedPayloadMe
       return { key: "api.shared_too_many_entries", params: { limit: SHARED_MAX_ENTRIES } };
     case "entry_invalid":
       return { key: "api.shared_entry_invalid" };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 新建共享表的编辑器种子与强验证消息映射
+// ---------------------------------------------------------------------------
+
+/** 种子携带的整包内容（header 与 data 都已通过强验证）。 */
+export interface SharedNewTableSeedPayload {
+  header: Record<string, unknown>;
+  data: Record<string, unknown>[];
+}
+
+/** 编辑器新表种子：身份字段加可选的整包内容（导入强验证后携带）。 */
+export interface SharedNewTableSeed {
+  name: string;
+  symbol: string;
+  payload?: SharedNewTableSeedPayload | undefined;
+}
+
+/** 结构化展示消息：键加插值参数，翻译由调用方经 translateMessage 完成。 */
+export interface StrictIssueMessage {
+  key: string;
+  params: Record<string, string | number>;
+}
+
+/**
+ * 强验证错误 → 展示消息：基线码走 api.shared_* 键（与服务端拒绝同一句话），
+ * 字段级码走 editor.strict_* 键并携带定位路径；未知键不存在——代码是闭集。
+ */
+export function strictIssueMessage(error: SharedStrictError): StrictIssueMessage {
+  if (isBaselinePayloadCode(error.code)) {
+    const message = sharedPayloadMessage(error.code);
+    return { key: message.key, params: message.params ?? {} };
+  }
+  const keys = STRICT_EDITOR_MESSAGE_KEYS;
+  const params: Record<string, string | number> = { path: error.path };
+  for (const [name, value] of Object.entries(error.params)) {
+    params[name] = value;
+  }
+  switch (error.code) {
+    case "field_type":
+    case "entry_field_type":
+      return { key: keys.fieldType, params };
+    case "level_order_not_array":
+    case "course_not_array":
+      return { key: keys.notArray, params };
+    case "level_order_element":
+      return { key: keys.levelOrderElement, params };
+    case "course_element":
+      return { key: keys.courseElement, params };
+    case "course_name":
+      return { key: keys.courseName, params };
+    case "course_constraint_type":
+      return { key: keys.courseConstraintType, params };
+    case "course_constraint_value":
+      return { key: keys.courseConstraintValue, params };
+    case "course_trophy_type":
+      return { key: keys.courseTrophyType, params };
+    case "course_trophy_name":
+      return { key: keys.courseTrophyName, params };
+    case "course_trophy_range":
+      return { key: keys.courseTrophyRange, params };
+    case "course_charts":
+      return { key: keys.courseCharts, params };
+    case "course_hashes":
+      return { key: keys.courseHashes, params };
+    case "entry_level":
+      return { key: keys.entryLevel, params };
+  }
+}
+
+/** 强验证警告 → 展示消息（警告只提示不阻断）。 */
+export function strictWarningMessage(warning: SharedStrictWarning): StrictIssueMessage {
+  const keys = STRICT_EDITOR_MESSAGE_KEYS;
+  switch (warning.kind) {
+    case "missing_data_url":
+      return { key: keys.warnMissingDataUrl, params: {} };
+    case "unknown_field":
+      return { key: keys.warnUnknownField, params: { field: warning.field } };
+    case "level_not_listed":
+      return {
+        key: keys.warnLevelNotListed,
+        params: { levels: warning.levels.join(", ") },
+      };
+    case "course_hash_unmatched":
+      return {
+        key: keys.warnCourseHash,
+        params: { hashes: warning.hashes.join(", ") },
+      };
   }
 }

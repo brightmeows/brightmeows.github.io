@@ -28,7 +28,7 @@
   - `pnpm check:config` 调用它，pre-commit 与 CI 都跑。
 - `scripts/check-i18n-coverage.ts` — i18n 覆盖校验，六条断言：
   - 三语 key 对称、占位符一致；
-  - 源码引用与 Worker 错误码常量表（`@brightmeows/mirror/api` 的 `API_ERROR_CODES` 全部值）存在于 messages；
+  - 源码引用与 Worker 错误码常量表（`@brightmeows/mirror/api` 的 `API_ERROR_CODES` 全部值）与共享表强验证消息键表（`@brightmeows/mirror/shared-strict` 的 `STRICT_EDITOR_MESSAGE_KEYS`，动态键的单一来源）存在于 messages；
   - Worker 源码里的 `code:` 字面量视为漂移；
   - 死 key；
   - src 残留中日韩字符（注释/console/测试/AGENTS/领域术语按豁免清单）；

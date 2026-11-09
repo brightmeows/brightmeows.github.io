@@ -111,53 +111,6 @@ export type SharedPayloadError =
   | "too_many_entries"
   | "entry_invalid";
 
-export type SharedPayloadResult =
-  | { ok: true; header: Record<string, unknown>; data: Record<string, unknown>[] }
-  | { ok: false; error: SharedPayloadError };
-
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-/** 谱面条目的身份字段：md5 与 sha256 至少一个非空字符串（规范的必须项）。 */
-function hasChartIdentity(entry: Record<string, unknown>): boolean {
-  const md5 = entry.md5;
-  const sha256 = entry.sha256;
-  return (typeof md5 === "string" && md5 !== "") || (typeof sha256 === "string" && sha256 !== "");
-}
-
-/**
- * 校验一份 header + data 载荷：结构、必须字段（name/symbol、条目身份）、
- * 尺寸与条目数上限。返回值保留未知字段——校验不裁剪，编辑侧靠
- * `applyEntryFields` 保住它们。
- */
-export function checkSharedPayload(header: unknown, data: unknown): SharedPayloadResult {
-  if (!isPlainObject(header)) return { ok: false, error: "header_invalid" };
-  const name = header.name;
-  const symbol = header.symbol;
-  if (typeof name !== "string" || name.trim() === "")
-    return { ok: false, error: "missing_identity" };
-  if (typeof symbol !== "string" || symbol.trim() === "") {
-    return { ok: false, error: "missing_identity" };
-  }
-  if (utf8ByteLength(JSON.stringify(header)) > SHARED_MAX_HEADER_BYTES) {
-    return { ok: false, error: "header_too_large" };
-  }
-  if (!Array.isArray(data)) return { ok: false, error: "data_invalid" };
-  if (utf8ByteLength(JSON.stringify(data)) > SHARED_MAX_DATA_BYTES) {
-    return { ok: false, error: "data_too_large" };
-  }
-  if (data.length > SHARED_MAX_ENTRIES) return { ok: false, error: "too_many_entries" };
-  const records: Record<string, unknown>[] = [];
-  for (const entry of data) {
-    if (!isPlainObject(entry) || !hasChartIdentity(entry)) {
-      return { ok: false, error: "entry_invalid" };
-    }
-    records.push(entry);
-  }
-  return { ok: true, header, data: records };
-}
-
 /**
  * 编辑器的字段合并：只覆盖调用方提交的已知字段，其余（含自定义字段）
  * 原样保留；值为 `undefined` 表示清除该键，不落成 JSON 里的 null。
