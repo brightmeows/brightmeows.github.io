@@ -37,7 +37,7 @@ import { TRASH_RETENTION_DAYS } from "@brightmeows/mirror/user-layer";
 
 import { getSession, type Session } from "../auth.ts";
 import type { Env } from "../env.ts";
-import { checkSameOrigin, failure, json, readJsonBody } from "../http.ts";
+import { failure, json, readJsonBody } from "../http.ts";
 import { writeAudit, writeFoldedAudit } from "../store/audit.ts";
 import {
   countSharedFor,
@@ -62,26 +62,16 @@ import {
   type SharedRow,
 } from "../store/shared.ts";
 
+import { authorizeWrite } from "./guard.ts";
+
 /** 自助恢复窗口的截止时间（ISO）：与回收站清理窗口同源。 */
 function trashCutoffIso(now: Date): string {
   return new Date(now.getTime() - TRASH_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
 }
 
-/** 统一的“先 Origin 后会话”检查；失败返回错误响应，成功返回会话。 */
-async function authorizeWrite(request: Request, env: Env, now: Date): Promise<Session | Response> {
-  if (!checkSameOrigin(request)) {
-    return failure(403, "Origin check failed", { code: API_ERROR_CODES.originCheckFailed });
-  }
-  const session = await getSession(env, request, now);
-  if (session === null) {
-    return failure(401, "Log in with GitHub first", { code: API_ERROR_CODES.loginRequired });
-  }
-  return session;
-}
-
 /**
- * 写处理器的公共前奏：Origin、会话、请求体与主 id 校验，五端点共用。
- * 失败返回错误响应，成功返回会话、请求体与校验过的 id。
+ * 写处理器的公共前奏：Origin、会话（守门在 guard.ts）、请求体与主 id 校验，
+ * 五端点共用。失败返回错误响应，成功返回会话、请求体与校验过的 id。
  */
 async function readSharedWrite(
   request: Request,

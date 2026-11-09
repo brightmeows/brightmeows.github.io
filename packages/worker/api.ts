@@ -1,8 +1,11 @@
 /**
  * `/api/*` 的路由表：把路径与方法分派到 worker/handlers/ 下的处理函数。
  *
- * 只做分派：登录态、同源校验与配额都由各 handler 自己负责。`/api/internal/*` 不经过
- * 这里——worker/index.ts 在那之前就交给 worker/internal.ts 了。
+ * 只做分派：写操作的前奏由 handlers/guard.ts 的守门函数承担（tables 的三个
+ * 写 handler 与 preview 直接复用，shared 域经 readSharedWrite 间接复用），
+ * 配额扣减发生在各 handler 的业务检查之后；`/api/admin/*` 的站长判定在
+ * admin.ts 路由层。`/api/internal/*` 不经过这里——worker/index.ts 在那之前
+ * 就交给 worker/internal.ts 了。
  */
 
 import { API_ERROR_CODES } from "@brightmeows/mirror/api";
