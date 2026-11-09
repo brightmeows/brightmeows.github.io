@@ -262,7 +262,7 @@
       onchange={(event) => void onFileChosen(event)}
     />
     {#if fileError !== ""}
-      <span class="text-[0.85rem] text-red-300">{fileError}</span>
+      <span class="text-[0.85rem] text-error">{fileError}</span>
     {/if}
     {#if fileLevelHint !== null}
       <span class="text-[0.85rem] text-accent-light">
@@ -395,7 +395,7 @@
   </div>
 
   {#if error}
-    <p class="mt-2 text-[0.85rem] text-red-300">{errorMessage}</p>
+    <p class="mt-2 text-[0.85rem] text-error">{errorMessage}</p>
   {/if}
 
   <div class="mt-3 flex flex-wrap items-center gap-2">
