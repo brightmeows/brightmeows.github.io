@@ -28,6 +28,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 
 import { API_ERROR_CODES } from "../packages/mirror/src/api.ts";
+import { STRICT_EDITOR_MESSAGE_KEYS } from "../packages/mirror/src/shared-strict.ts";
 
 import { isRecord } from "./guards.ts";
 
@@ -258,9 +259,14 @@ function main(): void {
   // 消息引用只从代码文件收集：文档里的示例 `m["key"]()` 不是真实引用；
   // Worker 错误码以常量表为准（API_ERROR_CODES），源码字面量视为漂移
   const CODE_EXTENSIONS = new Set([".ts", ".svelte", ".js"]);
-  const refs = srcTexts
-    .filter(([rel]) => CODE_EXTENSIONS.has(path.extname(rel)))
-    .flatMap(([, text]) => collectMessageRefs(text));
+  // 动态键的单一来源表与 API_ERROR_CODES 同例：计入引用（存在性加死 key）
+  const editorStrictKeys = Object.values(STRICT_EDITOR_MESSAGE_KEYS);
+  const refs = [
+    ...srcTexts
+      .filter(([rel]) => CODE_EXTENSIONS.has(path.extname(rel)))
+      .flatMap(([, text]) => collectMessageRefs(text)),
+    ...editorStrictKeys,
+  ];
   const workerCodes = Object.values(API_ERROR_CODES);
 
   const issues = [

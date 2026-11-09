@@ -8,6 +8,7 @@ import {
 } from "@brightmeows/bms/editor";
 import type { ChartData } from "@brightmeows/bms/format";
 import { editorHeaderState } from "@brightmeows/bms/header";
+import type { SharedNewTableSeed } from "@brightmeows/bms/shared";
 import { computeTableStats, groupChartsByLevel, resolveCourses } from "@brightmeows/bms/transform";
 import { withLocalDataUrl } from "@brightmeows/mirror/shared";
 
@@ -15,6 +16,7 @@ import {
   commitEditorSave,
   planEditorSave,
   planSaveAsShared,
+  strictWarningsNotice,
   type EditorNotice,
 } from "#lib/controllers/editor.js";
 import { writeDraftClaim, deleteDraft } from "#lib/data/api/table-drafts.js";
@@ -58,8 +60,8 @@ export interface TablePageCapabilities {
   createMode?: boolean | undefined;
   /** 进入时的线上 updated_at（共享表并发提示基线）。 */
   initialBaselineUpdatedAt?: string | undefined;
-  /** 新表初始种子（无草稿认领时使用）。 */
-  seed?: { name: string; symbol: string } | undefined;
+  /** 新表初始种子（无草稿认领时使用；可携带导入的整包内容）。 */
+  seed?: SharedNewTableSeed | undefined;
 }
 
 /**
@@ -225,7 +227,9 @@ export function createTableModel(input: TableModelInput) {
       return;
     }
     busy = true;
-    notice = null;
+    // 强验证警告不阻断：放行的同时给出警告清单，成功通知随后替换
+    notice =
+      plan.warnings.length > 0 ? { kind: "warn", text: strictWarningsNotice(plan.warnings) } : null;
     const outcome = await commitEditorSave({ plan, onSave, deleteDraft, draftKey });
     if (outcome.kind === "saved") {
       if (outcome.nextBaseline !== undefined) baselineUpdatedAt = outcome.nextBaseline;

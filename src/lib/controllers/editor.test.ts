@@ -1,3 +1,4 @@
+import type { SharedStrictError } from "@brightmeows/mirror/shared-strict";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -6,9 +7,12 @@ import {
   decideNewTableDraft,
   planEditorSave,
   planSaveAsShared,
+  strictErrorsNotice,
+  strictWarningsNotice,
 } from "./editor";
 
 import { m } from "#lib/paraglide/messages.js";
+import { translateMessage } from "#lib/utils/i18n/i18n.js";
 
 /** 决策点的行为锁定测试：闸门顺序与草稿来源优先级对应组件内原实现。 */
 
@@ -17,11 +21,17 @@ function draft(savedAt: string) {
 }
 
 describe("decideLocalSaveGate 保存闸门", () => {
-  it("载荷非法：以原因为闸门结果", () => {
+  it("载荷非法：以强验证错误清单为闸门结果", () => {
     const gate = decideLocalSaveGate("not-object" as unknown as Record<string, unknown>, []);
-    expect(gate).toEqual({ gate: "invalid_payload", error: "header_invalid" });
+    expect(gate.gate).toBe("invalid_payload");
+    if (gate.gate === "invalid_payload") {
+      expect(gate.errors[0]?.code).toBe("header_invalid");
+    }
     const noIdentity = decideLocalSaveGate({ symbol: "s" }, []);
-    expect(noIdentity).toEqual({ gate: "invalid_payload", error: "missing_identity" });
+    expect(noIdentity.gate).toBe("invalid_payload");
+    if (noIdentity.gate === "invalid_payload") {
+      expect(noIdentity.errors[0]?.code).toBe("missing_identity");
+    }
   });
 
   it("存在未指派条目：发布前拦截并给出数量", () => {
@@ -32,12 +42,23 @@ describe("decideLocalSaveGate 保存闸门", () => {
     expect(gate).toEqual({ gate: "unassigned", count: 1 });
   });
 
-  it("全部通过：返回校验后的载荷（条目身份由 checkSharedPayload 保证）", () => {
+  it("缺失 level 重分类为未指派，数字 level 是硬错误", () => {
+    const missing = decideLocalSaveGate({ name: "n", symbol: "s" }, [{ md5: "a" }]);
+    expect(missing).toEqual({ gate: "unassigned", count: 1 });
+    const numeric = decideLocalSaveGate({ name: "n", symbol: "s" }, [{ md5: "a", level: 3 }]);
+    expect(numeric.gate).toBe("invalid_payload");
+    if (numeric.gate === "invalid_payload") {
+      expect(numeric.errors[0]?.code).toBe("entry_level");
+    }
+  });
+
+  it("全部通过：返回载荷与空警告清单", () => {
     const gate = decideLocalSaveGate({ name: "n", symbol: "s" }, [{ sha256: "h", level: "1" }]);
     expect(gate.gate).toBe("pass");
     if (gate.gate === "pass") {
       expect(gate.header).toEqual({ name: "n", symbol: "s" });
       expect(gate.data).toEqual([{ sha256: "h", level: "1" }]);
+      expect(gate.warnings).toEqual([]);
     }
   });
 
@@ -80,7 +101,7 @@ const nonErrorReason = "weird" as unknown as Error;
 describe("planEditorSave 与 commitEditorSave", () => {
   const base = {
     header: { name: "表名", symbol: "SY" },
-    entries: [{ md5: "a", level: 1 }],
+    entries: [{ md5: "a", level: "1" }],
     baselineUpdatedAt: undefined,
     confirm: () => true,
   };
@@ -196,7 +217,7 @@ describe("planEditorSave 与 commitEditorSave", () => {
 
 describe("planSaveAsShared", () => {
   const header = { name: "表名", symbol: "SY" };
-  const entries = [{ md5: "a", level: 1 }];
+  const entries = [{ md5: "a", level: "1" }];
 
   it("载荷非法返回 invalid 通知", () => {
     const plan = planSaveAsShared({ name: "" }, []);
@@ -206,5 +227,56 @@ describe("planSaveAsShared", () => {
 
   it("合法载荷走认领", () => {
     expect(planSaveAsShared(header, entries)).toEqual({ kind: "claim" });
+  });
+});
+
+describe("strictErrorsNotice 强验证错误清单", () => {
+  const error = (code: SharedStrictError["code"], path: string): SharedStrictError => ({
+    code,
+    path,
+    params: {},
+  });
+
+  it("逐句拼接并以 strict_failed 包裹", () => {
+    const text = strictErrorsNotice({
+      errors: [error("entry_level", "data[0].level"), error("field_type", "header.tag")],
+      truncated: false,
+    });
+    expect(text).toContain("data[0].level");
+    expect(text).toContain("header.tag");
+    expect(text).toContain(translateMessage("editor.strict_failed", { list: "" }) ?? "");
+  });
+
+  it("超过 10 条时封顶并追加余量计数", () => {
+    const errors = Array.from({ length: 12 }, (_, index) =>
+      error("entry_level", "data[" + index + "].level")
+    );
+    const text = strictErrorsNotice({ errors, truncated: false });
+    expect(text).toContain("data[9].level");
+    expect(text).not.toContain("data[10].level");
+    expect(text).toContain("2 more not shown");
+  });
+
+  it("截断时以截断说明收尾", () => {
+    const errors = Array.from({ length: 100 }, (_, index) =>
+      error("entry_level", "data[" + index + "].level")
+    );
+    const text = strictErrorsNotice({ errors, truncated: true });
+    expect(text).toContain(translateMessage("editor.strict_error_truncated") ?? "");
+  });
+});
+
+describe("strictWarningsNotice 强验证警告清单", () => {
+  it("空清单返回空串", () => {
+    expect(strictWarningsNotice([])).toBe("");
+  });
+
+  it("非空清单拼接各警告句子", () => {
+    const text = strictWarningsNotice([
+      { kind: "missing_data_url" },
+      { kind: "unknown_field", scope: "entry", field: "eval" },
+    ]);
+    expect(text).toContain("eval");
+    expect(text).toContain(translateMessage("editor.strict_warn_missing_data_url") ?? "");
   });
 });

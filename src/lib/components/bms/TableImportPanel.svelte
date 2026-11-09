@@ -1,14 +1,22 @@
 <script lang="ts">
-  import { parseCombinedPackage, type TableImportResult } from "@brightmeows/bms/editor";
+  import { detectTableImportJson, type TableImportResult } from "@brightmeows/bms/editor";
   import { mirrorDirNameFromUrl } from "@brightmeows/bms/shared";
+  import type { SharedStrictError, SharedStrictWarning } from "@brightmeows/mirror/shared-strict";
+  import {
+    crossWarnings,
+    strictCheckData,
+    strictCheckHeader,
+  } from "@brightmeows/mirror/shared-strict";
 
   import { r2TableDataUrl, r2TableHeaderUrl } from "#lib/constants/r2.js";
   import { btnGhost, inputEditorMono } from "#lib/constants/ui-classes.js";
+  import { strictErrorsNotice } from "#lib/controllers/editor.js";
   import { m } from "#lib/paraglide/messages.js";
 
   /**
    * 编辑器导入面板：粘贴或上传 JSON（合并包、header、data 自动识别）与镜像表
-   * fork（客户端直连 R2）。只负责解析与校验，应用策略（追加或替换）交给父级。
+   * fork（客户端直连 R2）。解析后经强验证：分量独立判定、分量内整体拒绝，
+   * 错误就地呈现；警告随结果上抛由父级呈现，应用策略（追加或替换）交给父级。
    */
   interface Props {
     disabled?: boolean;
@@ -32,51 +40,64 @@
     { id: "fork", label: m["editor.import_tab_fork"]() },
   ];
 
-  function isPlainObject(value: unknown): value is Record<string, unknown> {
+  function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === "object" && value !== null && !Array.isArray(value);
   }
 
-  function validEntries(data: unknown[]): boolean {
-    return data.every((entry) => {
-      if (!isPlainObject(entry)) return false;
-      const md5 = typeof entry.md5 === "string" ? entry.md5 : "";
-      const sha256 = typeof entry.sha256 === "string" ? entry.sha256 : "";
-      return md5 !== "" || sha256 !== "";
-    });
+  /** 分量强验证：错误即拒绝并就地呈现清单，警告随返回值上抛。 */
+  function validateParts(
+    header: Record<string, unknown> | null,
+    data: unknown[] | null
+  ): { warnings: SharedStrictWarning[]; records: Record<string, unknown>[] | null } | null {
+    const errors: SharedStrictError[] = [];
+    const warnings: SharedStrictWarning[] = [];
+    let truncated = false;
+    let records: Record<string, unknown>[] | null = null;
+    if (header !== null) {
+      const report = strictCheckHeader(header);
+      errors.push(...report.errors);
+      truncated = truncated || report.truncated;
+      warnings.push(...report.warnings);
+    }
+    if (data !== null) {
+      const report = strictCheckData(data);
+      errors.push(...report.errors);
+      truncated = truncated || report.truncated;
+      warnings.push(...report.warnings);
+      records = report.entries;
+    }
+    if (header !== null && records !== null) {
+      warnings.push(...crossWarnings(header, records));
+    }
+    if (errors.length > 0) {
+      error = strictErrorsNotice({ errors, truncated });
+      return null;
+    }
+    return { warnings, records };
   }
 
-  /** 自动识别：数组为 data；含 header+data 键为合并包；其余对象为 header。 */
-  function detect(raw: unknown): TableImportResult | null {
+  /** 识别与校验通过后的统一出口（粘贴与上传共用）。 */
+  function applyDetected(
+    detected: ReturnType<typeof detectTableImportJson>,
+    source: "paste" | "file"
+  ): void {
     error = null;
-    if (Array.isArray(raw)) {
-      if (!validEntries(raw)) {
-        error = m["editor.import_entry_invalid"]();
-        return null;
-      }
-      return { header: null, data: raw as Record<string, unknown>[], dataMode, source: "paste" };
+    if (detected.kind === "invalid") {
+      error = m["editor.import_invalid"]();
+      return;
     }
-    if (isPlainObject(raw)) {
-      const combined = parseCombinedPackage(raw);
-      if (combined !== null) {
-        if (!isPlainObject(combined.header) || !Array.isArray(combined.data)) {
-          error = m["editor.import_invalid"]();
-          return null;
-        }
-        if (!validEntries(combined.data)) {
-          error = m["editor.import_entry_invalid"]();
-          return null;
-        }
-        return {
-          header: combined.header,
-          data: combined.data as Record<string, unknown>[],
-          dataMode,
-          source: "paste",
-        };
-      }
-      return { header: raw, data: null, dataMode, source: "paste" };
-    }
-    error = m["editor.import_invalid"]();
-    return null;
+    const header = detected.kind === "data" ? null : detected.header;
+    const data = detected.kind === "header" ? null : detected.data;
+    const validated = validateParts(header, data);
+    if (validated === null) return;
+    jsonText = "";
+    onapply({
+      header,
+      data: validated.records,
+      dataMode,
+      source,
+      warnings: validated.warnings,
+    });
   }
 
   function applyJson(): void {
@@ -89,29 +110,23 @@
       });
       return;
     }
-    const result = detect(raw);
-    if (result === null) return;
-    jsonText = "";
-    onapply(result);
+    applyDetected(detectTableImportJson(raw), "paste");
   }
 
   async function applyFile(file: File): Promise<void> {
     busy = true;
     error = null;
     try {
-      const text = await file.text();
       let raw: unknown;
       try {
-        raw = JSON.parse(text);
+        raw = JSON.parse(await file.text());
       } catch (parseError) {
         error = m["editor.json_parse_failed"]({
           detail: parseError instanceof Error ? parseError.message : String(parseError),
         });
         return;
       }
-      const result = detect(raw);
-      if (result === null) return;
-      onapply({ ...result, source: "file" });
+      applyDetected(detectTableImportJson(raw), "file");
     } finally {
       busy = false;
     }
@@ -139,7 +154,7 @@
       const headerRes = await fetch(headerUrl);
       if (!headerRes.ok) throw new Error(String(headerRes.status));
       const header = (await headerRes.json()) as unknown;
-      if (!isPlainObject(header)) throw new Error(m["editor.import_invalid"]());
+      if (!isRecord(header)) throw new Error(m["editor.import_invalid"]());
       const dataUrl =
         typeof header.data_url === "string" && header.data_url !== ""
           ? header.data_url
@@ -148,13 +163,15 @@
       const dataRes = await fetch(new URL(dataUrl, headerUrl).toString());
       if (!dataRes.ok) throw new Error(String(dataRes.status));
       const data = (await dataRes.json()) as unknown;
-      if (!Array.isArray(data) || !validEntries(data))
-        throw new Error(m["editor.import_invalid"]());
+      if (!Array.isArray(data)) throw new Error(m["editor.import_invalid"]());
+      const validated = validateParts(header, data);
+      if (validated === null) return;
       onapply({
         header,
-        data: data as Record<string, unknown>[],
+        data: validated.records,
         dataMode: "replace",
         source: "fork",
+        warnings: validated.warnings,
       });
       forkUrl = "";
     } catch (forkError) {

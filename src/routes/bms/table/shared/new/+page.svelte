@@ -1,12 +1,20 @@
 <script lang="ts">
-  import { sharedIdPreview } from "@brightmeows/bms/shared";
+  import { detectTableImportJson } from "@brightmeows/bms/editor";
+  import { sharedIdPreview, type SharedNewTableSeedPayload } from "@brightmeows/bms/shared";
   import { validateSharedId, type SharedIdError } from "@brightmeows/mirror/shared";
+  import type { SharedStrictError, SharedStrictWarning } from "@brightmeows/mirror/shared-strict";
+  import {
+    crossWarnings,
+    strictCheckData,
+    strictCheckHeader,
+  } from "@brightmeows/mirror/shared-strict";
   import { onMount } from "svelte";
 
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
-  import { btnPrimary, inputPanel } from "#lib/constants/ui-classes.js";
+  import { btnGhost, btnPrimary, inputEditorMono, inputPanel } from "#lib/constants/ui-classes.js";
+  import { strictErrorsNotice, strictWarningsNotice } from "#lib/controllers/editor.js";
   import { fetchSharedCheckId } from "#lib/data/api/shared-api.js";
   import { auth } from "#lib/data/store/auth-store.svelte.js";
   import { sharedNewSeed } from "#lib/data/store/shared-new.svelte.js";
@@ -15,7 +23,8 @@
 
   /**
    * 新建前置屏：id 实时预览与异步查重（需登录），可顺带填 name/symbol 作
-   * 编辑器种子；确认后进入编辑器，首次保存才真正创建（D1 占位先行）。
+   * 编辑器种子，亦可导入头与数据（强验证后随种子带入编辑器）；确认后进入
+   * 编辑器，首次保存才真正创建（D1 占位先行）。
    */
   let id = $state("");
   let name = $state("");
@@ -26,6 +35,15 @@
     "idle"
   );
   let busy = $state(false);
+
+  // 导入段状态：分量独立判定，通过的部分入库并随种子带入编辑器。
+  let importText = $state("");
+  let importBusy = $state(false);
+  let importedHeader = $state<Record<string, unknown> | null>(null);
+  let importedData = $state<Record<string, unknown>[] | null>(null);
+  let importErrors = $state<string | null>(null);
+  let importWarnings = $state<string | null>(null);
+  let importSummary = $state<string | null>(null);
 
   const idResult = $derived.by(() => {
     const raw = id.trim();
@@ -89,6 +107,110 @@
     };
   });
 
+  /** 头部入库并预填身份表单（导入值作为初值，用户可改）。 */
+  function storeImportedHeader(header: Record<string, unknown>): void {
+    importedHeader = header;
+    if (typeof header.name === "string" && header.name !== "") name = header.name;
+    if (typeof header.symbol === "string" && header.symbol !== "") symbol = header.symbol;
+  }
+
+  /** 重算导入摘要与警告（分量警告加交叉一致性警告）。 */
+  function refreshImportReport(): void {
+    if (importedHeader === null && importedData === null) {
+      importSummary = null;
+      importWarnings = null;
+      return;
+    }
+    const entries = importedData?.length ?? 0;
+    const headerOrder = importedHeader?.level_order;
+    let levels = 0;
+    if (Array.isArray(headerOrder)) {
+      levels = headerOrder.length;
+    } else if (importedData !== null) {
+      const distinct = new Set<string>();
+      for (const item of importedData) {
+        const level = item.level;
+        if (typeof level === "string" && level !== "") distinct.add(level);
+      }
+      levels = distinct.size;
+    }
+    let courses = 0;
+    const course = importedHeader?.course;
+    if (Array.isArray(course)) {
+      for (const item of course) courses += Array.isArray(item) ? item.length : 1;
+    }
+    const kind =
+      importedHeader !== null && importedData !== null
+        ? m["shared.import_kind_combined"]()
+        : importedHeader !== null
+          ? m["shared.import_kind_header"]()
+          : (m["shared.import_kind_data"]() as string);
+    importSummary = m["shared.import_summary"]({ kind, entries, levels, courses });
+    const warnings: SharedStrictWarning[] = [];
+    if (importedHeader !== null) warnings.push(...strictCheckHeader(importedHeader).warnings);
+    if (importedData !== null) warnings.push(...strictCheckData(importedData).warnings);
+    if (importedHeader !== null && importedData !== null) {
+      warnings.push(...crossWarnings(importedHeader, importedData));
+    }
+    importWarnings = strictWarningsNotice(warnings);
+  }
+
+  /** 解析并强验证一段导入文本；分量独立判定，通过的部分入库。 */
+  function applyImportText(text: string): void {
+    let raw: unknown;
+    try {
+      raw = JSON.parse(text);
+    } catch (parseError) {
+      importErrors = m["editor.json_parse_failed"]({
+        detail: parseError instanceof Error ? parseError.message : String(parseError),
+      });
+      return;
+    }
+    const detected = detectTableImportJson(raw);
+    if (detected.kind === "invalid") {
+      importErrors = m["shared.import_invalid"]();
+      return;
+    }
+    const errors: SharedStrictError[] = [];
+    let truncated = false;
+    let headerToStore: Record<string, unknown> | null = null;
+    let dataToStore: Record<string, unknown>[] | null = null;
+    if (detected.kind === "header" || detected.kind === "combined") {
+      const report = strictCheckHeader(detected.header);
+      errors.push(...report.errors);
+      truncated = truncated || report.truncated;
+      if (report.ok) headerToStore = detected.header;
+    }
+    if (detected.kind === "data" || detected.kind === "combined") {
+      const report = strictCheckData(detected.data);
+      errors.push(...report.errors);
+      truncated = truncated || report.truncated;
+      if (report.ok) dataToStore = report.entries;
+    }
+    importErrors = errors.length > 0 ? strictErrorsNotice({ errors, truncated }) : null;
+    if (headerToStore !== null) storeImportedHeader(headerToStore);
+    if (dataToStore !== null) importedData = dataToStore;
+    refreshImportReport();
+  }
+
+  async function applyImportFile(file: File): Promise<void> {
+    importBusy = true;
+    try {
+      applyImportText(await file.text());
+    } finally {
+      importBusy = false;
+    }
+  }
+
+  function clearImport(): void {
+    importedHeader = null;
+    importedData = null;
+    importErrors = null;
+    importWarnings = null;
+    importSummary = null;
+    importText = "";
+  }
+
   async function submit(): Promise<void> {
     if (idResult === null || !idResult.ok || busy) return;
     if (checkState === "aliased") {
@@ -98,6 +220,14 @@
     busy = true;
     try {
       sharedNewSeed.set(name.trim(), symbol.trim());
+      if (importedHeader !== null || importedData !== null) {
+        const overrides: Record<string, unknown> = {};
+        if (name.trim() !== "") overrides.name = name.trim();
+        if (symbol.trim() !== "") overrides.symbol = symbol.trim();
+        const header = importedHeader !== null ? { ...importedHeader, ...overrides } : overrides;
+        const payload: SharedNewTableSeedPayload = { header, data: importedData ?? [] };
+        sharedNewSeed.setPayload(payload);
+      }
       // 新表只在编辑态呈现：查看分支会去拉尚不存在的表头（R2 对象还没有）。
       // 带 ?edit=1 后共享表页先渲染 loading，等状态就绪再以空 headerUrl 进新表模式。
       await goto(`${preview}?edit=1`);
@@ -200,6 +330,56 @@
           </div>
         </div>
         <p class="-mt-2 text-[0.85rem] text-white-50">{m["shared.seed_hint"]()}</p>
+
+        <details class="rounded-lg border border-white-15 bg-black-20 p-3">
+          <summary class="cursor-pointer text-[0.9rem] text-white-70">
+            {m["shared.import_section"]()}
+          </summary>
+          <p class="mt-2 text-[0.85rem] text-white-60">{m["shared.import_hint"]()}</p>
+          <textarea
+            class="mt-2 {inputEditorMono} min-h-32"
+            bind:value={importText}
+            placeholder={m["shared.import_json_placeholder"]()}
+            disabled={importBusy}></textarea>
+          <div class="mt-2 flex flex-wrap items-center gap-2">
+            <button
+              class={btnGhost}
+              type="button"
+              disabled={importBusy}
+              onclick={() => applyImportText(importText)}
+            >
+              {importBusy ? m["shared.import_busy"]() : m["shared.import_apply"]()}
+            </button>
+            <input
+              class="text-[0.85rem] file:cursor-pointer file:rounded-md file:border-0 file:bg-white-10 file:px-3 file:py-1.5 file:text-white-80"
+              type="file"
+              accept="application/json,.json"
+              disabled={importBusy}
+              onchange={(event) => {
+                const file = event.currentTarget.files?.[0];
+                if (file !== undefined) void applyImportFile(file);
+              }}
+            />
+            {#if importedHeader !== null || importedData !== null}
+              <button
+                class="ml-auto text-[0.85rem] text-white-50 hover:text-white-70"
+                type="button"
+                onclick={clearImport}
+              >
+                {m["shared.import_clear"]()}
+              </button>
+            {/if}
+          </div>
+          {#if importErrors !== null}
+            <p class="mt-2 text-[0.85rem] text-red-300">{importErrors}</p>
+          {/if}
+          {#if importWarnings !== null && importWarnings !== ""}
+            <p class="mt-2 text-[0.85rem] text-amber-300">{importWarnings}</p>
+          {/if}
+          {#if importSummary !== null}
+            <p class="mt-2 text-[0.85rem] text-success">{importSummary}</p>
+          {/if}
+        </details>
 
         <div class="text-center">
           <button class={btnPrimary} type="submit" disabled={idResult?.ok !== true || busy}>

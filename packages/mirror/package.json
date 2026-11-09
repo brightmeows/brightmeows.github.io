@@ -20,6 +20,10 @@
       "types": "./src/shared.ts",
       "default": "./src/shared.ts"
     },
+    "./shared-strict": {
+      "types": "./src/shared-strict.ts",
+      "default": "./src/shared-strict.ts"
+    },
     "./api": {
       "types": "./src/api.ts",
       "default": "./src/api.ts"
