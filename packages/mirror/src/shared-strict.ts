@@ -18,6 +18,7 @@ import {
   utf8ByteLength,
   type SharedPayloadError,
 } from "./shared.ts";
+import { isRecord } from "./types.ts";
 
 // ---------------------------------------------------------------------------
 // 封闭清单与枚举（bms-table 技能字段表；技能扩充时同步维护）
@@ -302,10 +303,6 @@ class ErrorCollector {
     }
     this.errors.push(error);
   }
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 /** 基线错误码判定：结构、身份与上限（沿用 api.shared_* 消息键与服务端错误码）。 */

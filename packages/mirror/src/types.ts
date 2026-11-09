@@ -1,3 +1,8 @@
+/** 值为非数组的 JSON 对象：本包响应窄化与记录解析共用的窄化谓词。 */
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 /** 镜像表格项 */
 export interface MirrorTableItem {
   name: string;

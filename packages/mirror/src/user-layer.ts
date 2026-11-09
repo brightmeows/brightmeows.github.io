@@ -12,7 +12,7 @@
  * 确定后应用；元数据覆盖最后应用；授权标记按 URL 或目录名匹配。
  */
 
-import type { MirrorTableItem } from "./types.ts";
+import { isRecord, type MirrorTableItem } from "./types.ts";
 
 /** 每账号每日增删操作上限。 */
 export const DAILY_OPERATION_LIMIT = 10;
@@ -332,10 +332,6 @@ function asRecord(value: unknown, context: string): Record<string, unknown> {
     throw new TypeError(`${context} 应为对象`);
   }
   return value;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function requiredString(record: Record<string, unknown>, key: string, context: string): string {
