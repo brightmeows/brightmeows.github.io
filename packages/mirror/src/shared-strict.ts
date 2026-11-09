@@ -51,7 +51,12 @@ export const STRICT_HEADER_FIELDS: readonly string[] = [
   "mode",
 ];
 
-/** data 条目的已知字段清单（封闭）。 */
+/**
+ * data 条目的已知字段清单：规范标准字段加规范点名的社区常见自定义字段
+ * （total、judge 等；難易度表の仕様要求解析器对未知字段保持宽容）。
+ * 只用于豁免未知字段警告，类型约束由 STRICT_DATA_STRING_FIELDS 另行承担
+ * （total、judge、eval 是数值，进字符串类型清单会误报 field_type）。
+ */
 export const STRICT_DATA_FIELDS: readonly string[] = [
   "md5",
   "sha256",
@@ -69,6 +74,11 @@ export const STRICT_DATA_FIELDS: readonly string[] = [
   "ipfs",
   "ipfs_diff",
   "lr2_bmsid",
+  "total",
+  "judge",
+  "note",
+  "tag",
+  "eval",
 ];
 
 /** data 条目中要求“存在即须为字符串”的已知字段（level 单独校验非空）。 */
