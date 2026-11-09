@@ -8,7 +8,9 @@ import {
   courseHashIssue,
   emptyCourseModel,
   moveChartRow,
+  moveChartToIndex,
   moveCourseInModel,
+  moveCourseToIndex,
   parseCourse,
   removeCourseFromModel,
   removeGroupFromModel,
@@ -156,6 +158,33 @@ describe("structural helpers", () => {
       ],
     });
     expect(moveChartRow(withCharts, 0, 1).charts.map((chart) => chart.md5)).toEqual(["b", "a"]);
+  });
+
+  it("moves courses and chart rows to target indices", () => {
+    const model = parseCourse([[{ name: "A" }, { name: "B" }, { name: "C" }], [{ name: "D" }]]);
+    const moved = moveCourseToIndex(model, 0, 0, 2);
+    expect(moved.groups[0]?.courses.map((c) => c.name)).toEqual(["B", "C", "A"]);
+    expect(moved.groups[1]?.courses.map((c) => c.name)).toEqual(["D"]);
+    expect(moveCourseToIndex(model, 5, 0, 1)).toBe(model);
+    expect(moveCourseToIndex(model, 0, 9, 1).groups[0]?.courses.map((c) => c.name)).toEqual([
+      "A",
+      "B",
+      "C",
+    ]);
+
+    const withCharts = course({
+      charts: [
+        { md5: "a", sha256: "", levelText: "", extra: {} },
+        { md5: "b", sha256: "", levelText: "", extra: {} },
+        { md5: "c", sha256: "", levelText: "", extra: {} },
+      ],
+    });
+    expect(moveChartToIndex(withCharts, 2, 0).charts.map((chart) => chart.md5)).toEqual([
+      "c",
+      "a",
+      "b",
+    ]);
+    expect(moveChartToIndex(withCharts, 1, 1)).toEqual(withCharts);
   });
 });
 

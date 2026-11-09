@@ -139,9 +139,25 @@ export function customFieldRows(entry: Record<string, unknown>): CustomFieldRow[
   return rows;
 }
 
+/**
+ * 已填哈希是否为对应定长的十六进制（md5 为 32 位、sha256 为 64 位，大小写不敏感）。
+ * 空串不算格式错误，身份校验（至少填一）由调用方负责。
+ */
+export function hashFormatOk(field: "md5" | "sha256", value: string): boolean {
+  const text = value.trim();
+  if (text === "") return true;
+  return field === "md5" ? /^[0-9a-f]{32}$/i.test(text) : /^[0-9a-f]{64}$/i.test(text);
+}
+
+/** 哈希输入规范化：去首尾空白并转小写（大小写不敏感，统一小写入库）。 */
+export function normalizeHash(value: string): string {
+  return value.trim().toLowerCase();
+}
+
 /** 条目编辑提交失败的稳定原因码（展示文案由组件层映射 i18n）。 */
 export type EntryCommitError =
   | "identity"
+  | "hash_format"
   | "custom_key_empty"
   | "custom_key_duplicate"
   | "custom_key_core"
@@ -165,15 +181,22 @@ export function commitEntryEdit(
   original: Record<string, unknown>,
   input: EntryCommitInput
 ): EntryCommitResult {
-  const md5 = input.core.md5.trim();
-  const sha256 = input.core.sha256.trim();
+  const md5 = normalizeHash(input.core.md5);
+  const sha256 = normalizeHash(input.core.sha256);
   if (md5 === "" && sha256 === "") {
     return { ok: false, error: "identity", detail: undefined };
   }
+  if (!hashFormatOk("md5", md5)) {
+    return { ok: false, error: "hash_format", detail: "md5" };
+  }
+  if (!hashFormatOk("sha256", sha256)) {
+    return { ok: false, error: "hash_format", detail: "sha256" };
+  }
 
+  const values: Record<CoreEntryField, string> = { ...input.core, md5, sha256 };
   const fields: Record<string, unknown> = {};
   for (const field of CORE_ENTRY_FIELDS) {
-    const value = input.core[field].trim();
+    const value = values[field].trim();
     fields[field] = value === "" ? undefined : value;
   }
 

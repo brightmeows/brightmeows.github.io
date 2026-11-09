@@ -4,7 +4,7 @@
  * charts/md5/sha256 归一到统一的编辑行，序列化时统一写为 `charts`。
  */
 
-import { moveItem } from "./editor.ts";
+import { hashFormatOk, moveItem } from "./editor.ts";
 
 /** 规范固定的 constraint 取值（未知值原样保留在模型里）。 */
 export const COURSE_CONSTRAINTS: readonly string[] = [
@@ -28,8 +28,8 @@ export function courseHashIssue(item: CourseChartItem): CourseHashIssue {
   const md5 = item.md5.trim();
   const sha256 = item.sha256.trim();
   if (md5 === "" && sha256 === "") return "missing";
-  if (md5 !== "" && !/^[0-9a-f]{32}$/iu.test(md5)) return "md5";
-  if (sha256 !== "" && !/^[0-9a-f]{64}$/iu.test(sha256)) return "sha256";
+  if (!hashFormatOk("md5", md5)) return "md5";
+  if (!hashFormatOk("sha256", sha256)) return "sha256";
   return "ok";
 }
 
@@ -294,6 +294,21 @@ export function removeGroupFromModel(model: CourseModel, groupIndex: number): Co
   };
 }
 
+/** 把课程组内的课程移到目标下标（组不存在时返回原模型；越界或同位原样返回副本）。 */
+export function moveCourseToIndex(
+  model: CourseModel,
+  groupIndex: number,
+  fromIndex: number,
+  toIndex: number
+): CourseModel {
+  const group = model.groups[groupIndex];
+  if (group === undefined) return model;
+  const groups = model.groups.map((current, gi) =>
+    gi === groupIndex ? { courses: moveItem(group.courses, fromIndex, toIndex) } : current
+  );
+  return { ...model, groups, present: true };
+}
+
 /** 在课程组内上移或下移一个课程。 */
 export function moveCourseInModel(
   model: CourseModel,
@@ -301,14 +316,19 @@ export function moveCourseInModel(
   courseIndex: number,
   delta: number
 ): CourseModel {
-  const groups = model.groups.map((group, gi) => {
-    if (gi !== groupIndex) return group;
-    return { courses: moveItem(group.courses, courseIndex, courseIndex + delta) };
-  });
-  return { ...model, groups, present: true };
+  return moveCourseToIndex(model, groupIndex, courseIndex, courseIndex + delta);
+}
+
+/** 把课程内的段位谱面行移到目标下标（越界或同位原样返回副本）。 */
+export function moveChartToIndex(
+  course: EditableCourse,
+  fromIndex: number,
+  toIndex: number
+): EditableCourse {
+  return { ...course, charts: moveItem(course.charts, fromIndex, toIndex) };
 }
 
 /** 移动课程内的段位谱面行。 */
 export function moveChartRow(course: EditableCourse, index: number, delta: number): EditableCourse {
-  return { ...course, charts: moveItem(course.charts, index, index + delta) };
+  return moveChartToIndex(course, index, index + delta);
 }

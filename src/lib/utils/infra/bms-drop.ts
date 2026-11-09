@@ -5,6 +5,7 @@ import {
   decodeBmsBytes,
   fieldsToEntry,
   isBmsFileName,
+  type ImportedBmsEntry,
 } from "@brightmeows/bms/file";
 
 import { md5 } from "./md5.js";
@@ -24,6 +25,26 @@ export function isHashingAvailable(): boolean {
   // 站点允许被 http 页面 iframe 嵌入，非安全上下文没有 crypto.subtle。
   const subtle = (globalThis as { crypto?: { subtle?: unknown } }).crypto?.subtle;
   return typeof subtle !== "undefined";
+}
+
+/**
+ * 单文件解析（条目表单反查用）：哈希计算、编码嗅探与头部字段提取，
+ * 返回条目与文件等级建议；读取失败或不是有效谱面文件时返回 null。
+ * 批量导入（去重、计数）仍走 processBmsFiles。
+ */
+export async function decodeBmsFile(file: File): Promise<ImportedBmsEntry | null> {
+  try {
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const md5Hex = md5(bytes);
+    const sha256 = await sha256Hex(bytes);
+    const decoded = decodeBmsBytes(bytes);
+    const isBmson = file.name.toLowerCase().endsWith(".bmson");
+    const fields = isBmson ? bmsonTextToFields(decoded.text) : bmsTextToFields(decoded.text);
+    if (fields === null) return null;
+    return fieldsToEntry(fields, md5Hex, sha256);
+  } catch {
+    return null;
+  }
 }
 
 async function sha256Hex(bytes: Uint8Array): Promise<string> {

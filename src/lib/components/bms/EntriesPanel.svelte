@@ -7,11 +7,13 @@
     duplicateEntryLabel,
     encodeLevelFilterOption,
     entryGroupAnchorId,
+    type EntryLevelGroup,
     entryHashes,
     entryLabel,
     filterEntryIndices,
     groupEntryIndices,
     isUnassigned,
+    moveItem,
     parseLevelFilterOption,
     removeIndices,
     setIndices,
@@ -31,6 +33,7 @@
   import { m } from "#lib/paraglide/messages.js";
   import type { JsonPreviewHandle } from "#lib/types/ui.js";
   import { validateUrl } from "#lib/utils/infra/url.js";
+  import { createDragList } from "#lib/utils/ui/dnd-list.svelte.js";
 
   /**
    * 条目面板：查看与编辑共用条目表、组头、难度导航与搜索/筛选。
@@ -98,6 +101,21 @@
   let bulkOpen = $state(false);
   let bulkText = $state("");
   let bulkMode = $state<"append" | "replace">("append");
+
+  // 行键按条目对象身份发放（WeakMap）：拖拽或排序按钮移动条目时，Svelte
+  // 搬移既有行块而不是重建，行内展开的详情表单因此不丢未保存的编辑。
+  const entryKeys = new WeakMap<object, number>();
+  let nextEntryKey = 1;
+  function entryKey(entry: Record<string, unknown> | undefined): number {
+    if (entry === undefined) return -1;
+    let key = entryKeys.get(entry);
+    if (key === undefined) {
+      key = nextEntryKey;
+      nextEntryKey += 1;
+      entryKeys.set(entry, key);
+    }
+    return key;
+  }
   let bulkError = $state<string | null>(null);
   let notice = $state<string | null>(null);
   let chartPreview = $state<JsonPreviewHandle | undefined>();
@@ -129,6 +147,39 @@
   );
   const filteredIndices = $derived(filterEntryIndices(entries, { level: levelFilter, query }));
   const groups = $derived(groupEntryIndices(entries, filteredIndices, levels));
+
+  /** 行下标到所属等级组的映射：组内拖拽拦截与表单排序按钮共用。 */
+  const dragGroups = $derived.by(() => {
+    const map = new Map<number, EntryLevelGroup>();
+    for (const group of groups) {
+      for (const index of group.indices) map.set(index, group);
+    }
+    return map;
+  });
+
+  const dnd = createDragList({
+    enabled: () => editing && !disabled,
+    canDrop: (from, to) => {
+      const group = dragGroups.get(from);
+      return group !== undefined && dragGroups.get(to) === group;
+    },
+    onMove: (from, to) => {
+      entries = moveItem(entries, from, to);
+      if (editingIndex === from) editingIndex = to;
+      onChange?.();
+    },
+  });
+
+  /** 编辑中条目在所属组内的排序信息（详情表单的上移下移按钮）。 */
+  const editingMove = $derived.by(() => {
+    if (editingIndex === null) return undefined;
+    const group = dragGroups.get(editingIndex);
+    if (group === undefined) return undefined;
+    const position = group.indices.indexOf(editingIndex);
+    if (position === -1) return undefined;
+    return { canUp: position > 0, canDown: position < group.indices.length - 1 };
+  });
+
   const unassignedCount = $derived(countUnassigned(entries));
   const selectedCount = $derived(selected.size);
   const columnCount = $derived(editing ? 5 : 4);
@@ -324,6 +375,19 @@
     }
     startAdd({ md5: parsed.md5 });
     notice = m["editor.entry_bmsir_prefilled"]({ hash: shortenHash(parsed.md5) });
+  }
+
+  /** 编辑中条目在所属等级组内上移或下移；保持详情表单跟随移动后的行。 */
+  function moveEditing(delta: number): void {
+    if (editingIndex === null) return;
+    const group = dragGroups.get(editingIndex);
+    if (group === undefined) return;
+    const position = group.indices.indexOf(editingIndex);
+    const target = group.indices[position + delta];
+    if (target === undefined) return;
+    entries = moveItem(entries, editingIndex, target);
+    editingIndex = target;
+    onChange?.();
   }
 
   function cancelDetail(): void {
@@ -662,7 +726,7 @@
                 </div>
               </td>
             </tr>
-            {#each group.indices as index (index)}
+            {#each group.indices as index (entryKey(entries[index]))}
               {@const entry = entries[index] ?? {}}
               {@const levelHint =
                 editing && isUnassigned(entry) && hintFor(entry) !== null
@@ -680,6 +744,14 @@
                 selectable={editing}
                 selected={selected.has(index)}
                 {disabled}
+                drag={editing
+                  ? {
+                      item: dnd.item,
+                      index,
+                      dropTargetIndex: dnd.dropTargetIndex,
+                      disabled,
+                    }
+                  : undefined}
                 onSelect={(checked: boolean) => setSelected(index, checked)}
                 onEdit={editing ? () => startEdit(index) : undefined}
               />
@@ -694,6 +766,10 @@
                         oncommit={commitDetail}
                         oncancel={cancelDetail}
                         ondelete={deleteEditing}
+                        onmoveup={() => moveEditing(-1)}
+                        onmovedown={() => moveEditing(1)}
+                        canmoveup={editingMove?.canUp ?? false}
+                        canmovedown={editingMove?.canDown ?? false}
                       />
                     {/key}
                   </td>
