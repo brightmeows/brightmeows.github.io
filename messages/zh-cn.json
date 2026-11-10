@@ -465,7 +465,6 @@
   "mirror.deleted": "已删除“{name}”，清单约 1 分钟后更新。",
   "mirror.deleting": "删除中…",
   "mirror.disable_confirm": "将“{name}”禁用？禁用后它会从公开清单消失，可在管理区重新启用。",
-  "mirror.edit_table_title": "编辑此表",
   "mirror.empty_desc": "未找到镜像列表。",
   "mirror.empty_title": "暂无镜像数据",
   "mirror.fetch_done": "抓取完成，清单马上更新。",

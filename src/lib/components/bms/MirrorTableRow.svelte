@@ -1,12 +1,17 @@
 <script lang="ts">
   import type { MirrorTableItem } from "@brightmeows/mirror/types";
   import { mirrorTablePath } from "@brightmeows/mirror/urls";
+  import Check from "@lucide/svelte/icons/check";
+  import Copy from "@lucide/svelte/icons/copy";
+  import Trash2 from "@lucide/svelte/icons/trash-2";
+  import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 
   import MirrorTableEditRow from "./MirrorTableEditRow.svelte";
 
   import Checkbox from "#lib/components/ui/Checkbox.svelte";
   import GradientButton from "#lib/components/ui/GradientButton.svelte";
   import { jsonPreview } from "#lib/components/ui/JsonPreview.svelte";
+  import ToggleButton from "#lib/components/ui/ToggleButton.svelte";
   import { btnDanger, btnGhostXs, btnIconPlain } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { MirrorAdminUi } from "#lib/types/bms-view.js";
@@ -90,35 +95,9 @@
         onclick={() => adminUi.openEdit(item)}
       >
         {#if item.protected === true}
-          <svg
-            class="size-4 text-success"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M20 6 9 17l-5-5" />
-          </svg>
+          <Check class="size-4 text-success" aria-hidden="true" strokeWidth={2.5} />
         {:else}
-          <svg
-            class="size-4 text-[#ffd54f]"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path
-              d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"
-            />
-            <path d="M12 9v4" />
-            <path d="M12 17h.01" />
-          </svg>
+          <TriangleAlert class="size-4 text-[#ffd54f]" aria-hidden="true" />
         {/if}
       </button>
     {:else}
@@ -129,35 +108,9 @@
         aria-label={authTitle}
       >
         {#if item.protected === true}
-          <svg
-            class="size-4 text-success"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="M20 6 9 17l-5-5" />
-          </svg>
+          <Check class="size-4 text-success" aria-hidden="true" strokeWidth={2.5} />
         {:else}
-          <svg
-            class="size-4 text-[#ffd54f]"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path
-              d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"
-            />
-            <path d="M12 9v4" />
-            <path d="M12 17h.01" />
-          </svg>
+          <TriangleAlert class="size-4 text-[#ffd54f]" aria-hidden="true" />
         {/if}
       </span>
     {/if}
@@ -182,6 +135,7 @@
           onclick={() => cb.copy("mirror", new URL(item.url, window.location.origin).toString())}
           aria-label={m["mirror.copy_mirror_aria"]()}
         >
+          <Copy class="size-4 shrink-0" aria-hidden="true" />
           {m["common.copy"]()}
         </button>
       {/if}
@@ -208,6 +162,7 @@
             onclick={() => cb.copy("original", item.url_from!)}
             aria-label={m["mirror.copy_original_aria"]()}
           >
+            <Copy class="size-4 shrink-0" aria-hidden="true" />
             {m["common.copy"]()}
           </button>
         {/if}
@@ -220,15 +175,12 @@
     <td class="table-td-compact px-2">
       <div class="flex items-center gap-1">
         {#if adminUi.isAdmin}
-          <button
-            class={btnGhostXs}
-            type="button"
-            title={m["mirror.edit_table_title"]()}
-            aria-expanded={isExpanded}
-            onclick={() => adminUi.toggleEdit(item)}
-          >
-            {isExpanded ? m["mirror.collapse_edit"]() : m["mirror.manage"]()}
-          </button>
+          <ToggleButton
+            size="xs"
+            expanded={isExpanded}
+            label={isExpanded ? m["mirror.collapse_edit"]() : m["mirror.manage"]()}
+            onToggle={() => adminUi.toggleEdit(item)}
+          />
         {:else if canDelete && item.protected !== true && ondelete}
           <button
             class={btnDanger}
@@ -238,6 +190,7 @@
             disabled={deleting}
             onclick={() => ondelete(item)}
           >
+            <Trash2 class="size-4 shrink-0" aria-hidden="true" />
             {deleting ? m["mirror.deleting"]() : m["common.delete"]()}
           </button>
         {/if}
