@@ -7,6 +7,8 @@
     strictCheckData,
     strictCheckHeader,
   } from "@brightmeows/mirror/shared-strict";
+  import Check from "@lucide/svelte/icons/check";
+  import Download from "@lucide/svelte/icons/download";
 
   import { r2TableDataUrl, r2TableHeaderUrl } from "#lib/constants/r2.js";
   import { btnGhost, inputEditorMono } from "#lib/constants/ui-classes.js";
@@ -234,6 +236,7 @@
         {disabled}></textarea>
       <div class="mt-2">
         <button class={btnGhost} type="button" {disabled} onclick={applyJson}>
+          <Check class="size-4 shrink-0" aria-hidden="true" />
           {m["editor.import_apply"]()}
         </button>
       </div>
@@ -268,6 +271,7 @@
           disabled={disabled || busy}
           onclick={() => void applyFork()}
         >
+          <Download class="size-4 shrink-0" aria-hidden="true" />
           {busy ? m["editor.import_busy"]() : m["editor.import_apply"]()}
         </button>
       </div>
