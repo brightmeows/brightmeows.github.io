@@ -1,5 +1,10 @@
 <script lang="ts">
   import type { DisabledEntry } from "@brightmeows/mirror/user-layer";
+  import CircleCheck from "@lucide/svelte/icons/circle-check";
+  import Plus from "@lucide/svelte/icons/plus";
+  import RotateCcw from "@lucide/svelte/icons/rotate-ccw";
+  import Undo2 from "@lucide/svelte/icons/undo-2";
+  import X from "@lucide/svelte/icons/x";
 
   import { btnGhost, inputInline } from "#lib/constants/ui-classes.js";
   import type { AdminOverview, TrashEntry } from "#lib/data/api/mirror-admin-api.js";
@@ -56,7 +61,10 @@
   {:else if overview === null}
     <div class="flex flex-wrap items-center gap-3 text-[0.95rem] text-red-300">
       <span>{error ?? m["common.load_failed"]()}</span>
-      <button class={btnGhost} type="button" onclick={onretry}>{m["common.retry"]()}</button>
+      <button class={btnGhost} type="button" onclick={onretry}>
+        <RotateCcw class="size-4 shrink-0" aria-hidden="true" />
+        {m["common.retry"]()}
+      </button>
     </div>
   {:else}
     <div class="flex flex-col gap-5">
@@ -85,21 +93,24 @@
             disabled={busy || replaceFrom.trim() === "" || replaceTo.trim() === ""}
             onclick={() => void submitReplace()}
           >
+            <Plus class="size-4 shrink-0" aria-hidden="true" />
             {m["admin.replace_add"]()}
           </button>
         </div>
         {#if overview.replace.length > 0}
           <ul class="mt-2 flex flex-col gap-1 text-[0.85rem] text-white-70">
             {#each overview.replace as rule (rule.from)}
-              <li class="flex flex-wrap items-center gap-2">
+              <li class="flex flex-wrap items-center justify-between gap-2">
                 <span>{m["admin.replace_item"]({ from: rule.from, to: rule.to })}</span>
                 <button
                   class={btnGhost}
                   type="button"
                   disabled={busy}
                   onclick={() => void onreplaceremove(rule.from)}
-                  >{m["admin.replace_remove"]()}</button
                 >
+                  <X class="size-4 shrink-0" aria-hidden="true" />
+                  {m["admin.replace_remove"]()}
+                </button>
               </li>
             {/each}
           </ul>
@@ -113,7 +124,7 @@
         {:else}
           <ul class="flex flex-col gap-1 text-[0.85rem] text-white-70">
             {#each overview.disabled as item (item.url)}
-              <li class="flex flex-wrap items-center gap-2">
+              <li class="flex flex-wrap items-center justify-between gap-2">
                 <span>
                   {item.dir_name ?? item.url}{#if item.note}<span class="ml-1 text-white-50"
                       >{m["admin.note_wrap"]({ note: item.note })}</span
@@ -123,8 +134,11 @@
                   class={btnGhost}
                   type="button"
                   disabled={busy}
-                  onclick={() => void onenable(item)}>{m["admin.enable"]()}</button
+                  onclick={() => void onenable(item)}
                 >
+                  <CircleCheck class="size-4 shrink-0" aria-hidden="true" />
+                  {m["admin.enable"]()}
+                </button>
               </li>
             {/each}
           </ul>
@@ -138,7 +152,7 @@
         {:else}
           <ul class="flex flex-col gap-1 text-[0.85rem] text-white-70">
             {#each overview.trash as item (item.trash_prefix)}
-              <li class="flex flex-wrap items-center gap-2">
+              <li class="flex flex-wrap items-center justify-between gap-2">
                 <span
                   >{item.dir_name}<span class="ml-2 text-white-50">{formatTime(item.uploaded)}</span
                   ></span
@@ -147,8 +161,11 @@
                   class={btnGhost}
                   type="button"
                   disabled={busy}
-                  onclick={() => void onrestore(item)}>{m["admin.restore"]()}</button
+                  onclick={() => void onrestore(item)}
                 >
+                  <Undo2 class="size-4 shrink-0" aria-hidden="true" />
+                  {m["admin.restore"]()}
+                </button>
               </li>
             {/each}
           </ul>

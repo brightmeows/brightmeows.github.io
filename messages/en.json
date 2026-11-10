@@ -465,7 +465,6 @@
   "mirror.deleted": "Deleted “{name}”. The manifest updates in about a minute.",
   "mirror.deleting": "Deleting…",
   "mirror.disable_confirm": "Disable “{name}”? It disappears from the public manifest until you re-enable it in the admin area.",
-  "mirror.edit_table_title": "Edit this table",
   "mirror.empty_desc": "Mirror list not found.",
   "mirror.empty_title": "No mirror data",
   "mirror.fetch_done": "Fetch complete; the manifest will update shortly.",

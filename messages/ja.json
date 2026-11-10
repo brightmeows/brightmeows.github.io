@@ -465,7 +465,6 @@
   "mirror.deleted": "「{name}」を削除しました。マニフェストは約1分後に更新されます。",
   "mirror.deleting": "削除中…",
   "mirror.disable_confirm": "「{name}」を無効化しますか？公開マニフェストから消え、管理エリアでいつでも有効化し直せます。",
-  "mirror.edit_table_title": "この表を編集",
   "mirror.empty_desc": "ミラーリストが見つかりません。",
   "mirror.empty_title": "ミラーデータがありません",
   "mirror.fetch_done": "取得が完了しました。マニフェストはまもなく更新されます。",

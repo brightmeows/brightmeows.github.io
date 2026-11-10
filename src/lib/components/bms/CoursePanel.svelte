@@ -10,6 +10,8 @@
     type EditableCourse,
   } from "@brightmeows/bms/course";
   import type { Course, ResolvedCourseGroup } from "@brightmeows/bms/format";
+  import Plus from "@lucide/svelte/icons/plus";
+  import Trash2 from "@lucide/svelte/icons/trash-2";
 
   import CourseRowEdit from "./CourseRowEdit.svelte";
   import CourseRowView from "./CourseRowView.svelte";
@@ -253,10 +255,12 @@
         <div class="ml-auto flex flex-wrap gap-2">
           {#if showGroups}
             <button class={btnGhost} type="button" {disabled} onclick={addGroup}>
+              <Plus class="size-4 shrink-0" aria-hidden="true" />
               {m["editor.course_group_add"]()}
             </button>
           {:else}
             <button class={btnGhost} type="button" {disabled} onclick={() => addCourse(0)}>
+              <Plus class="size-4 shrink-0" aria-hidden="true" />
               {m["editor.course_add"]()}
             </button>
           {/if}
@@ -285,6 +289,7 @@
                     {disabled}
                     onclick={() => addCourse(group.groupIndex)}
                   >
+                    <Plus class="size-4 shrink-0" aria-hidden="true" />
                     {m["editor.course_add"]()}
                   </button>
                   <button
@@ -295,19 +300,7 @@
                     aria-label={m["editor.course_group_remove"]()}
                     onclick={() => removeGroup(group.groupIndex)}
                   >
-                    <svg
-                      class="size-4"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      aria-hidden="true"
-                    >
-                      <path d="M3 6h18" />
-                      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                    </svg>
+                    <Trash2 class="size-4" aria-hidden="true" />
                   </button>
                 </div>
               {/if}

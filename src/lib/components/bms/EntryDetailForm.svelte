@@ -11,6 +11,13 @@
     type EntryCommitError,
   } from "@brightmeows/bms/editor";
   import { BMS_FILE_EXTENSIONS, isBmsFileName, type ImportedBmsEntry } from "@brightmeows/bms/file";
+  import Check from "@lucide/svelte/icons/check";
+  import ChevronDown from "@lucide/svelte/icons/chevron-down";
+  import ChevronUp from "@lucide/svelte/icons/chevron-up";
+  import FileUp from "@lucide/svelte/icons/file-up";
+  import Plus from "@lucide/svelte/icons/plus";
+  import Trash2 from "@lucide/svelte/icons/trash-2";
+  import X from "@lucide/svelte/icons/x";
   import { untrack } from "svelte";
 
   import DetailsPanel from "#lib/components/ui/DetailsPanel.svelte";
@@ -19,6 +26,7 @@
     btnGhost,
     btnIcon,
     btnIconDanger,
+    btnPrimary,
     inputEditorMono,
   } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
@@ -252,6 +260,7 @@
       disabled={disabled || fileBusy}
       onclick={() => fileInput?.click()}
     >
+      <FileUp class="size-4 shrink-0" aria-hidden="true" />
       {m["editor.entry_file_pick"]()}
     </button>
     <input
@@ -265,12 +274,15 @@
       <span class="text-[0.85rem] text-error">{fileError}</span>
     {/if}
     {#if fileLevelHint !== null}
-      <span class="text-[0.85rem] text-accent-light">
-        {m["editor.entry_level_hint"]({ level: fileLevelHint })}
-      </span>
-      <button class={btnGhost} type="button" {disabled} onclick={adoptLevelHint}>
-        {m["editor.entry_level_adopt"]()}
-      </button>
+      <div class="ml-auto flex items-center gap-2">
+        <span class="text-[0.85rem] text-accent-light">
+          {m["editor.entry_level_hint"]({ level: fileLevelHint })}
+        </span>
+        <button class={btnGhost} type="button" {disabled} onclick={adoptLevelHint}>
+          <Check class="size-4 shrink-0" aria-hidden="true" />
+          {m["editor.entry_level_adopt"]()}
+        </button>
+      </div>
     {/if}
   </div>
 
@@ -338,6 +350,7 @@
             {disabled}
             onclick={() => custom.push({ key: "", valueText: "" })}
           >
+            <Plus class="size-4 shrink-0" aria-hidden="true" />
             {m["editor.entry_custom_add"]()}
           </button>
         </div>
@@ -372,19 +385,7 @@
                   aria-label={m["editor.entry_custom_remove"]()}
                   onclick={() => custom.splice(index, 1)}
                 >
-                  <svg
-                    class="size-4"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M18 6 6 18" />
-                    <path d="m6 6 12 12" />
-                  </svg>
+                  <X class="size-4" aria-hidden="true" />
                 </button>
               </div>
             {/each}
@@ -398,14 +399,9 @@
     <p class="mt-2 text-[0.85rem] text-error">{errorMessage}</p>
   {/if}
 
-  <div class="mt-3 flex flex-wrap items-center gap-2">
-    {#if entry !== null && ondelete}
-      <button class={btnDanger} type="button" {disabled} onclick={ondelete}>
-        {m["editor.entry_delete"]()}
-      </button>
-    {/if}
+  <div class="mt-3 flex flex-wrap items-center justify-end gap-2">
     {#if onmoveup !== undefined && onmovedown !== undefined}
-      <div class="ml-2 flex gap-1">
+      <div class="flex gap-1">
         <button
           class={btnIcon}
           type="button"
@@ -414,18 +410,7 @@
           aria-label={m["editor.entry_move_up"]()}
           onclick={onmoveup}
         >
-          <svg
-            class="size-4"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="m18 15-6-6-6 6" />
-          </svg>
+          <ChevronUp class="size-4" aria-hidden="true" />
         </button>
         <button
           class={btnIcon}
@@ -435,28 +420,23 @@
           aria-label={m["editor.entry_move_down"]()}
           onclick={onmovedown}
         >
-          <svg
-            class="size-4"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            aria-hidden="true"
-          >
-            <path d="m6 9 6 6 6-6" />
-          </svg>
+          <ChevronDown class="size-4" aria-hidden="true" />
         </button>
       </div>
     {/if}
-    <div class="ml-auto flex gap-2">
-      <button class={btnGhost} type="button" {disabled} onclick={handleSave}>
-        {m["editor.entry_save"]()}
+    {#if entry !== null && ondelete}
+      <button class={btnDanger} type="button" {disabled} onclick={ondelete}>
+        <Trash2 class="size-4 shrink-0" aria-hidden="true" />
+        {m["editor.entry_delete"]()}
       </button>
-      <button class={btnGhost} type="button" {disabled} onclick={oncancel}>
-        {m["common.cancel"]()}
-      </button>
-    </div>
+    {/if}
+    <button class={btnGhost} type="button" {disabled} onclick={oncancel}>
+      <X class="size-4 shrink-0" aria-hidden="true" />
+      {m["common.cancel"]()}
+    </button>
+    <button class={btnPrimary} type="button" {disabled} onclick={handleSave}>
+      <Check class="size-4 shrink-0" aria-hidden="true" />
+      {m["editor.entry_save"]()}
+    </button>
   </div>
 </section>

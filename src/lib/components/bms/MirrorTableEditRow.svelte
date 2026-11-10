@@ -1,6 +1,12 @@
 <script lang="ts">
   import type { MirrorTableItem } from "@brightmeows/mirror/types";
   import type { MetaOverride } from "@brightmeows/mirror/user-layer";
+  import Ban from "@lucide/svelte/icons/ban";
+  import Eraser from "@lucide/svelte/icons/eraser";
+  import Save from "@lucide/svelte/icons/save";
+  import ShieldCheck from "@lucide/svelte/icons/shield-check";
+  import ShieldOff from "@lucide/svelte/icons/shield-off";
+  import Trash2 from "@lucide/svelte/icons/trash-2";
   import { untrack } from "svelte";
 
   import DetailsPanel from "#lib/components/ui/DetailsPanel.svelte";
@@ -95,7 +101,7 @@
       <section class="flex flex-col gap-2">
         <h4 class="text-[0.95rem] font-semibold text-white-90">{m["admin.auth_section"]()}</h4>
         <p class={helpText}>{m["admin.auth_help"]()}</p>
-        <div class="flex flex-wrap items-center gap-2">
+        <div class="flex flex-wrap items-center justify-between gap-2">
           <span class="text-[0.85rem] text-white-70">
             {item.protected === true
               ? m["mirror.protected_title"]()
@@ -107,6 +113,11 @@
             disabled={busy}
             onclick={() => onauthorize(item)}
           >
+            {#if item.protected === true}
+              <ShieldOff class="size-4 shrink-0" aria-hidden="true" />
+            {:else}
+              <ShieldCheck class="size-4 shrink-0" aria-hidden="true" />
+            {/if}
             {item.protected === true ? m["admin.authorize_remove"]() : m["admin.authorize_add"]()}
           </button>
         </div>
@@ -131,24 +142,28 @@
               disabled={busy}
             />
           </div>
-          <button class={btnDanger} type="button" disabled={busy} onclick={submitDisable}>
-            {m["admin.disable"]()}
-          </button>
-          {#if canDelete && ondelete}
-            <button
-              class={btnDanger}
-              type="button"
-              disabled={deleteDisabled}
-              title={deleteTitle}
-              onclick={() => ondelete(item)}
-            >
-              {m["admin.delete_table"]()}
+          <div class="ml-auto flex flex-wrap items-center gap-2">
+            <button class={btnDanger} type="button" disabled={busy} onclick={submitDisable}>
+              <Ban class="size-4 shrink-0" aria-hidden="true" />
+              {m["admin.disable"]()}
             </button>
-          {/if}
-          {#if item.protected === true && canDelete && ondelete}
-            <span class="text-[0.8rem] text-white-50">{m["admin.delete_protected"]()}</span>
-          {/if}
+            {#if canDelete && ondelete}
+              <button
+                class={btnDanger}
+                type="button"
+                disabled={deleteDisabled}
+                title={deleteTitle}
+                onclick={() => ondelete(item)}
+              >
+                <Trash2 class="size-4 shrink-0" aria-hidden="true" />
+                {m["admin.delete_table"]()}
+              </button>
+            {/if}
+          </div>
         </div>
+        {#if item.protected === true && canDelete && ondelete}
+          <p class="text-[0.8rem] text-white-50">{m["admin.delete_protected"]()}</p>
+        {/if}
       </section>
 
       <div class="border-t border-white-10"></div>
@@ -238,6 +253,7 @@
         </div>
         <div class="flex flex-wrap justify-end gap-2">
           <button class={btnGhostXs} type="button" disabled={busy} onclick={submitMeta}>
+            <Save class="size-4 shrink-0" aria-hidden="true" />
             {m["admin.meta_save"]()}
           </button>
           <button
@@ -246,6 +262,7 @@
             disabled={busy || override === null}
             onclick={onmetaclear}
           >
+            <Eraser class="size-4 shrink-0" aria-hidden="true" />
             {m["admin.meta_clear"]()}
           </button>
         </div>

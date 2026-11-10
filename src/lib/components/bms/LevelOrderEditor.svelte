@@ -1,8 +1,15 @@
 <script lang="ts">
   import { addLevel, moveItem, removeLevelAt } from "@brightmeows/bms/editor";
   import { levelOrderToText, textToLevelOrder } from "@brightmeows/bms/shared";
+  import Check from "@lucide/svelte/icons/check";
+  import ChevronDown from "@lucide/svelte/icons/chevron-down";
+  import ChevronUp from "@lucide/svelte/icons/chevron-up";
+  import ClipboardList from "@lucide/svelte/icons/clipboard-list";
+  import GripVertical from "@lucide/svelte/icons/grip-vertical";
+  import Plus from "@lucide/svelte/icons/plus";
+  import X from "@lucide/svelte/icons/x";
 
-  import { btnGhost, btnIcon, inputEditorBase } from "#lib/constants/ui-classes.js";
+  import { btnGhost, btnIcon, btnIconDanger, inputEditorBase } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
   import { createDragList } from "#lib/utils/ui/dnd-list.svelte.js";
 
@@ -59,13 +66,16 @@
     <div class="ml-auto flex gap-2">
       {#if textMode}
         <button class={btnGhost} type="button" {disabled} onclick={applyTextMode}>
+          <Check class="size-4 shrink-0" aria-hidden="true" />
           {m["editor.level_order_apply_text"]()}
         </button>
         <button class={btnGhost} type="button" onclick={() => (textMode = false)}>
+          <X class="size-4 shrink-0" aria-hidden="true" />
           {m["common.cancel"]()}
         </button>
       {:else}
         <button class={btnGhost} type="button" {disabled} onclick={startTextMode}>
+          <ClipboardList class="size-4 shrink-0" aria-hidden="true" />
           {m["editor.level_order_text_mode"]()}
         </button>
       {/if}
@@ -90,14 +100,7 @@
             : ''}"
         >
           <span class="cursor-grab text-white-35" aria-hidden="true">
-            <svg class="size-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <circle cx="9" cy="6" r="1.6" />
-              <circle cx="15" cy="6" r="1.6" />
-              <circle cx="9" cy="12" r="1.6" />
-              <circle cx="15" cy="12" r="1.6" />
-              <circle cx="9" cy="18" r="1.6" />
-              <circle cx="15" cy="18" r="1.6" />
-            </svg>
+            <GripVertical class="size-4" />
           </span>
           <span class="min-w-0 flex-1 truncate font-mono text-[0.95rem] text-white-90">{level}</span
           >
@@ -109,18 +112,7 @@
             aria-label={m["editor.level_order_move_up"]()}
             onclick={() => commit(moveItem(levels, index, index - 1))}
           >
-            <svg
-              class="size-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path d="m18 15-6-6-6 6" />
-            </svg>
+            <ChevronUp class="size-4" aria-hidden="true" />
           </button>
           <button
             class={btnIcon}
@@ -130,40 +122,17 @@
             aria-label={m["editor.level_order_move_down"]()}
             onclick={() => commit(moveItem(levels, index, index + 1))}
           >
-            <svg
-              class="size-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path d="m6 9 6 6 6-6" />
-            </svg>
+            <ChevronDown class="size-4" aria-hidden="true" />
           </button>
           <button
-            class="{btnIcon} text-red-200/80 hover:bg-red-400/20 hover:text-red-200"
+            class={btnIconDanger}
             type="button"
             {disabled}
             title={m["editor.level_order_remove"]()}
             aria-label={m["editor.level_order_remove"]()}
             onclick={() => handleRemove(index)}
           >
-            <svg
-              class="size-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M18 6 6 18" />
-              <path d="m6 6 12 12" />
-            </svg>
+            <X class="size-4" aria-hidden="true" />
           </button>
         </li>
       {/each}
@@ -190,6 +159,7 @@
         }}
       />
       <button class={btnGhost} type="button" {disabled} onclick={handleAdd}>
+        <Plus class="size-4 shrink-0" aria-hidden="true" />
         {m["editor.level_order_add"]()}
       </button>
     </div>

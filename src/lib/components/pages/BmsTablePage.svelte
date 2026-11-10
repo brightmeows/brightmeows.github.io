@@ -10,6 +10,9 @@
 
 <script lang="ts">
   import type { BmsDropResult } from "@brightmeows/bms/editor";
+  import Copy from "@lucide/svelte/icons/copy";
+  import Download from "@lucide/svelte/icons/download";
+  import ExternalLink from "@lucide/svelte/icons/external-link";
   import type { Component, Snippet } from "svelte";
   import { onMount, tick } from "svelte";
 
@@ -333,6 +336,7 @@
     disabled={model.dataLoadState !== "loaded"}
     onclick={() => model.exportTable("header")}
   >
+    <Download class="size-4 shrink-0" aria-hidden="true" />
     {m["editor.export_header"]()}
   </button>
   <button
@@ -341,6 +345,7 @@
     disabled={model.dataLoadState !== "loaded"}
     onclick={() => model.exportTable("data")}
   >
+    <Download class="size-4 shrink-0" aria-hidden="true" />
     {m["editor.export_data"]()}
   </button>
   <button
@@ -349,25 +354,23 @@
     disabled={model.dataLoadState !== "loaded"}
     onclick={() => model.exportTable("package")}
   >
+    <Download class="size-4 shrink-0" aria-hidden="true" />
     {m["editor.export_package"]()}
   </button>
   {#if headerUrl !== null}
-    <a
-      class="{btnGhost} w-full text-center"
-      href={headerUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-    >
+    <a class="{btnGhost} w-full" href={headerUrl} target="_blank" rel="noopener noreferrer">
+      <ExternalLink class="size-4 shrink-0" aria-hidden="true" />
       {m["table.view_header"]()}
     </a>
   {/if}
   {#if model.dataFetchUrl !== null}
     <a
-      class="{btnGhost} w-full text-center"
+      class="{btnGhost} w-full"
       href={model.dataFetchUrl}
       target="_blank"
       rel="noopener noreferrer"
     >
+      <ExternalLink class="size-4 shrink-0" aria-hidden="true" />
       {m["table.view_data"]()}
     </a>
   {/if}
@@ -378,6 +381,7 @@
       disabled={model.busy}
       onclick={() => void model.saveAsSharedNow()}
     >
+      <Copy class="size-4 shrink-0" aria-hidden="true" />
       {sharedMode ? m["shared.fork"]() : m["editor.save_as_shared"]()}
     </button>
   {/if}

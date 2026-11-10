@@ -1,6 +1,10 @@
 <script lang="ts">
+  import Plus from "@lucide/svelte/icons/plus";
+  import Search from "@lucide/svelte/icons/search";
+  import Undo2 from "@lucide/svelte/icons/undo-2";
   import { onMount } from "svelte";
 
+  import ToggleButton from "#lib/components/ui/ToggleButton.svelte";
   import { btnGhost, inputPanel } from "#lib/constants/ui-classes.js";
   import {
     fetchFetchStatus,
@@ -174,9 +178,11 @@
           <div class="text-[0.9rem] text-white-60">
             {m["mirror.remaining"]({ count: user.remaining })}
           </div>
-          <button class={btnGhost} type="button" onclick={() => (showRemoved = !showRemoved)}>
-            {m["mirror.removed_count"]({ count: removed.length })}
-          </button>
+          <ToggleButton
+            expanded={showRemoved}
+            label={m["mirror.removed_count"]({ count: removed.length })}
+            onToggle={() => (showRemoved = !showRemoved)}
+          />
         </div>
 
         <form
@@ -199,9 +205,11 @@
             disabled={previewing || url.trim() === ""}
             onclick={() => void doPreview()}
           >
+            <Search class="size-4 shrink-0" aria-hidden="true" />
             {previewing ? m["mirror.previewing"]() : m["mirror.preview"]()}
           </button>
           <button class={btnGhost} type="submit" disabled={submitting || preview === null}>
+            <Plus class="size-4 shrink-0" aria-hidden="true" />
             {submitting ? m["mirror.submitting"]() : m["mirror.submit"]()}
           </button>
         </form>
@@ -247,6 +255,7 @@
                       disabled={restoring === record.dir_name}
                       onclick={() => void doRestore(record.dir_name)}
                     >
+                      <Undo2 class="size-4 shrink-0" aria-hidden="true" />
                       {restoring === record.dir_name
                         ? m["mirror.restoring"]()
                         : m["mirror.restore"]()}

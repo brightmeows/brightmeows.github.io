@@ -1,7 +1,9 @@
 <script lang="ts">
+  import Undo2 from "@lucide/svelte/icons/undo-2";
   import { onMount } from "svelte";
 
   import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
+  import ToggleButton from "#lib/components/ui/ToggleButton.svelte";
   import { btnGhostXs } from "#lib/constants/ui-classes.js";
   import {
     fetchSharedRemoved,
@@ -83,9 +85,12 @@
   <GlassPanel class="mt-4">
     <div class="flex flex-col gap-3">
       <div class="flex justify-end">
-        <button class={btnGhostXs} type="button" onclick={() => (open = !open)}>
-          {m["shared.trash_count"]({ count: entries.length })}
-        </button>
+        <ToggleButton
+          expanded={open}
+          label={m["shared.trash_count"]({ count: entries.length })}
+          size="xs"
+          onToggle={() => (open = !open)}
+        />
       </div>
       {#if notice}
         <div class="text-[0.9rem] {notice.kind === 'ok' ? 'text-success' : 'text-red-300'}">
@@ -113,6 +118,7 @@
                     disabled={restoring === record.id}
                     onclick={() => void doRestore(record.id)}
                   >
+                    <Undo2 class="size-4 shrink-0" aria-hidden="true" />
                     {restoring === record.id
                       ? m["shared.restoring"]()
                       : m["shared.restore_button"]()}
