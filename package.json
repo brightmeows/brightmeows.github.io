@@ -51,7 +51,7 @@
     "oxfmt": "^0.77.0",
     "oxlint": "^1.90.0",
     "oxlint-tailwindcss": "^1.17.1",
-    "oxlint-tsgolint": "^7.0.2005",
+    "oxlint-tsgolint": "^7.0.2006",
     "parse5": "^8.0.1",
     "rehype-stringify": "^10.0.1",
     "remark-gfm": "^4.0.1",
