@@ -307,5 +307,10 @@ export function strictWarningMessage(warning: SharedStrictWarning): StrictIssueM
         key: keys.warnCourseHash,
         params: { hashes: warning.hashes.join(", ") },
       };
+    case "unknown_constraint":
+      return {
+        key: keys.warnUnknownConstraint,
+        params: { values: warning.values.join(", ") },
+      };
   }
 }

@@ -7,9 +7,10 @@
 import { hashFormatOk, moveItem } from "./editor.ts";
 
 /**
- * 段位约束与奖牌名的封闭清单：单一来源是 mirror/shared-strict 的
- * SHARED_COURSE_CONSTRAINTS 与 SHARED_TROPHY_NAMES（bms-table 技能字段表口径，
- * 技能扩充时只改那边）；此处按既有名字重导出，供段位编辑组件做选项清单。
+ * 段位约束词表与标准奖牌名：单一来源是 mirror/shared-strict 的
+ * SHARED_COURSE_CONSTRAINTS（对齐 beatoraja 全枚举）与 SHARED_TROPHY_NAMES
+ * （建议清单，名称实际是自由文本）；此处按既有名字重导出，供段位编辑
+ * 组件做选项清单。
  */
 export {
   SHARED_COURSE_CONSTRAINTS as COURSE_CONSTRAINTS,

@@ -33,8 +33,8 @@ export type LocalSaveGate =
 
 /**
  * 保存闸门：先强验证（不过即拒），再未指派检查（发布前必须全部指派）。
- * 强验证里“缺失或空 level”重分类进未指派计数——那是编辑器的指派工作流，
- * 提示文案保持原口径；数字等非法 level 仍是硬错误。
+ * 强验证里“缺失、null 或空 level”重分类进未指派计数——那是编辑器的指派
+ * 工作流，提示文案保持原口径；数字 level 合法，其余非法类型仍是硬错误。
  */
 export function decideLocalSaveGate(
   header: Record<string, unknown>,
@@ -47,7 +47,7 @@ export function decideLocalSaveGate(
     if (error.code === "entry_level") {
       const index = typeof error.params.index === "number" ? error.params.index : -1;
       const level = entries[index]?.level;
-      if (level === undefined || level === "") {
+      if (level === undefined || level === null || level === "") {
         unassigned += 1;
         continue;
       }

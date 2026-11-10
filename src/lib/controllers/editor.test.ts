@@ -42,13 +42,18 @@ describe("decideLocalSaveGate 保存闸门", () => {
     expect(gate).toEqual({ gate: "unassigned", count: 1 });
   });
 
-  it("缺失 level 重分类为未指派，数字 level 是硬错误", () => {
+  it("缺失、null 与空 level 重分类为未指派，数字 level 合法通过", () => {
     const missing = decideLocalSaveGate({ name: "n", symbol: "s" }, [{ md5: "a" }]);
     expect(missing).toEqual({ gate: "unassigned", count: 1 });
-    const numeric = decideLocalSaveGate({ name: "n", symbol: "s" }, [{ md5: "a", level: 3 }]);
-    expect(numeric.gate).toBe("invalid_payload");
-    if (numeric.gate === "invalid_payload") {
-      expect(numeric.errors[0]?.code).toBe("entry_level");
+    const nullLevel = decideLocalSaveGate({ name: "n", symbol: "s" }, [{ md5: "a", level: null }]);
+    expect(nullLevel).toEqual({ gate: "unassigned", count: 1 });
+    expect(decideLocalSaveGate({ name: "n", symbol: "s" }, [{ md5: "a", level: 3 }]).gate).toBe(
+      "pass"
+    );
+    const boolean = decideLocalSaveGate({ name: "n", symbol: "s" }, [{ md5: "a", level: true }]);
+    expect(boolean.gate).toBe("invalid_payload");
+    if (boolean.gate === "invalid_payload") {
+      expect(boolean.errors[0]?.code).toBe("entry_level");
     }
   });
 

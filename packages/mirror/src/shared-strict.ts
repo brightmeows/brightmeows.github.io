@@ -1,6 +1,11 @@
 /**
- * 共享表载荷的强验证（bms-table 技能字段表口径）：在结构之上逐字段校验
- * 类型、枚举与数值范围；未知字段宽容保留，只产出按字段名去重的警告。
+ * 共享表载荷的强验证：在结构之上逐字段校验类型与数值范围；未知字段与
+ * 未识别的段位约束值宽容保留，只产出警告。
+ *
+ * 段位约束词表对齐权威实现 beatoraja 的 CourseDataConstraint 全枚举
+ * （比 bms-table 技能文档多 grade/ln/cn/hcn 四值）；清单外的字符串值
+ * 只警告不拒收（真实难度表存在自定义约束与空串值，整表拒绝会误伤）。
+ * 奖牌名是显示文本（beatoraja 只要求非空），不做枚举校验。
  *
  * 与 mirror/shared.ts 的关系：结构与上限判定沿用同源常量（utf8ByteLength
  * 与 SHARED_MAX_*），错误码沿用 SharedPayloadError 并扩充字段级代码。
@@ -21,11 +26,12 @@ import {
 import { isRecord } from "./types.ts";
 
 // ---------------------------------------------------------------------------
-// 封闭清单与枚举（bms-table 技能字段表；技能扩充时同步维护）
+// 封闭清单与枚举（constraint 对齐 beatoraja 全枚举；技能文档扩充时同步维护）
 // ---------------------------------------------------------------------------
 
-/** 段位约束的封闭枚举（技能：constraint 可选值）。 */
+/** 段位约束的已知值清单（beatoraja CourseDataConstraint 全枚举）。 */
 export const SHARED_COURSE_CONSTRAINTS: readonly string[] = [
+  "grade",
   "grade_random",
   "grade_mirror",
   "no_speed",
@@ -36,9 +42,12 @@ export const SHARED_COURSE_CONSTRAINTS: readonly string[] = [
   "gauge_7k",
   "gauge_9k",
   "gauge_24k",
+  "ln",
+  "cn",
+  "hcn",
 ];
 
-/** 奖牌条件的封闭枚举（技能：trophy name 可选值）。 */
+/** 标准奖牌名（编辑器建议清单；名称本身是显示文本，校验不做枚举约束）。 */
 export const SHARED_TROPHY_NAMES: readonly string[] = ["goldmedal", "silvermedal", "bronzemedal"];
 
 /** header 的已知字段清单（封闭）：清单外即“未知字段”。 */
@@ -82,7 +91,11 @@ export const STRICT_DATA_FIELDS: readonly string[] = [
   "eval",
 ];
 
-/** data 条目中要求“存在即须为字符串”的已知字段（level 单独校验非空）。 */
+/**
+ * data 条目中要求“存在即须为字符串”的已知字段（level 单独校验非空）。
+ * 真实难度表存在数字与显式 null（如 LN 表把 lr2_bmsid 发成整数），字符串
+ * 之外接受数字与 null（null 视同缺失）；其余类型仍是硬错误。
+ */
 export const STRICT_DATA_STRING_FIELDS: readonly string[] = [
   "md5",
   "sha256",
@@ -146,6 +159,7 @@ export interface SharedStrictError {
 export type SharedStrictWarning =
   | { kind: "missing_data_url" }
   | { kind: "unknown_field"; scope: "header" | "course" | "entry"; field: string }
+  | { kind: "unknown_constraint"; values: string[] }
   | { kind: "level_not_listed"; levels: string[] }
   | { kind: "course_hash_unmatched"; hashes: string[] };
 
@@ -189,6 +203,7 @@ export const STRICT_EDITOR_MESSAGE_KEYS = {
   warnUnknownField: "editor.strict_warn_unknown_field",
   warnLevelNotListed: "editor.strict_warn_level_not_listed",
   warnCourseHash: "editor.strict_warn_course_hash",
+  warnUnknownConstraint: "editor.strict_warn_unknown_constraint",
 } as const;
 
 /** 单次校验的错误收集上限（10000 条全坏时不至于产出上万条错误对象）。 */
@@ -210,6 +225,7 @@ export function strictCheckHeader(header: unknown): SharedStrictReport {
   const errors = new ErrorCollector();
   const warnings: SharedStrictWarning[] = [];
   const seenUnknown = new Set<string>();
+  const unknownConstraints = new Set<string>();
   if (!isRecord(header)) {
     errors.add({ code: "header_invalid", path: "header", params: {} });
     return finish(errors, warnings);
@@ -233,7 +249,13 @@ export function strictCheckHeader(header: unknown): SharedStrictReport {
     warnings.push({ kind: "missing_data_url" });
   }
   checkLevelOrder(header, errors);
-  checkCourseField(header, errors, warnings, seenUnknown);
+  checkCourseField(header, errors, warnings, seenUnknown, unknownConstraints);
+  if (unknownConstraints.size > 0) {
+    warnings.push({
+      kind: "unknown_constraint",
+      values: [...unknownConstraints].slice(0, MAX_WARNING_SAMPLES),
+    });
+  }
   return finish(errors, warnings, [], header);
 }
 
@@ -392,7 +414,8 @@ function checkCourseField(
   header: Record<string, unknown>,
   errors: ErrorCollector,
   warnings: SharedStrictWarning[],
-  seenUnknown: Set<string>
+  seenUnknown: Set<string>,
+  unknownConstraints: Set<string>
 ): void {
   if (!("course" in header)) return;
   const course = header.course;
@@ -406,7 +429,7 @@ function checkCourseField(
         const path = "header.course[" + i + "][" + j + "]";
         const index = i + "." + j;
         if (isRecord(item)) {
-          checkCourseObject(item, path, index, errors, warnings, seenUnknown);
+          checkCourseObject(item, path, index, errors, warnings, seenUnknown, unknownConstraints);
         } else {
           errors.add({ code: "course_element", path, params: { index } });
         }
@@ -418,7 +441,8 @@ function checkCourseField(
         String(i),
         errors,
         warnings,
-        seenUnknown
+        seenUnknown,
+        unknownConstraints
       );
     } else {
       errors.add({
@@ -437,14 +461,15 @@ function checkCourseObject(
   index: string,
   errors: ErrorCollector,
   warnings: SharedStrictWarning[],
-  seenUnknown: Set<string>
+  seenUnknown: Set<string>,
+  unknownConstraints: Set<string>
 ): void {
   collectUnknownFields(course, STRICT_COURSE_FIELDS, "course", warnings, seenUnknown);
   if (typeof course.name !== "string" || course.name.trim() === "") {
     errors.add({ code: "course_name", path: path + ".name", params: { index } });
   }
   if ("constraint" in course) {
-    checkCourseConstraint(course.constraint, path, index, errors);
+    checkCourseConstraint(course.constraint, path, index, errors, unknownConstraints);
   }
   if ("trophy" in course) {
     checkCourseTrophy(course.trophy, path, index, errors);
@@ -478,19 +503,22 @@ function checkCourseConstraint(
   constraint: unknown,
   path: string,
   index: string,
-  errors: ErrorCollector
+  errors: ErrorCollector,
+  unknownConstraints: Set<string>
 ): void {
   if (!Array.isArray(constraint)) {
     errors.add({ code: "course_constraint_type", path: path + ".constraint", params: { index } });
     return;
   }
   constraint.forEach((value, i) => {
-    if (typeof value !== "string" || !SHARED_COURSE_CONSTRAINTS.includes(value)) {
+    if (typeof value !== "string") {
       errors.add({
         code: "course_constraint_value",
         path: path + ".constraint[" + i + "]",
-        params: { index, value: textOf(value) },
+        params: { index },
       });
+    } else if (!SHARED_COURSE_CONSTRAINTS.includes(value)) {
+      unknownConstraints.add(value);
     }
   });
 }
@@ -511,11 +539,11 @@ function checkCourseTrophy(
       errors.add({ code: "course_trophy_type", path: trophyPath, params: { index } });
       return;
     }
-    if (typeof item.name !== "string" || !SHARED_TROPHY_NAMES.includes(item.name)) {
+    if (typeof item.name !== "string" || item.name.trim() === "") {
       errors.add({
         code: "course_trophy_name",
         path: trophyPath + ".name",
-        params: { index, value: textOf(item.name) },
+        params: { index },
       });
     }
     for (const field of ["missrate", "scorerate"] as const) {
@@ -548,11 +576,22 @@ function checkDataEntry(
   if (!hasChartIdentity) {
     errors.add({ code: "entry_invalid", path: "data[" + index + "]", params: { index } });
   }
-  if (typeof entry.level !== "string" || entry.level === "") {
+  // level 接受非空字符串与数字（Overjoy 等真实表发数字等级，与 level_order
+  // 的数字口径一致）；缺失、null、空串与其他类型报错（前两类由编辑器
+  // 保存闸门重分类为未指派工作流）。
+  const levelOk =
+    (typeof entry.level === "string" && entry.level !== "") || typeof entry.level === "number";
+  if (!levelOk) {
     errors.add({ code: "entry_level", path: "data[" + index + "].level", params: { index } });
   }
   for (const field of STRICT_DATA_STRING_FIELDS) {
-    if (field in entry && typeof entry[field] !== "string") {
+    const value = entry[field];
+    if (
+      field in entry &&
+      value !== null &&
+      typeof value !== "string" &&
+      typeof value !== "number"
+    ) {
       errors.add({
         code: "entry_field_type",
         path: "data[" + index + "]." + field,
@@ -583,8 +622,9 @@ export function crossWarnings(header: unknown, data: unknown): SharedStrictWarni
     for (const entry of data) {
       if (!isRecord(entry)) continue;
       const level = entry.level;
-      if (typeof level === "string" && level !== "" && !listed.has(level)) {
-        unlisted.add(level);
+      const levelText = typeof level === "number" ? String(level) : level;
+      if (typeof levelText === "string" && levelText !== "" && !listed.has(levelText)) {
+        unlisted.add(levelText);
       }
     }
     if (unlisted.size > 0) {
