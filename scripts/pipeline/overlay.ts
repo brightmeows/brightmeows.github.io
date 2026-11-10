@@ -160,9 +160,10 @@ export function mergeActiveSet(options: MergeOptions): MergeResult {
 
   // 用户层添加：守卫判定收在 canAddEntry（基线已有、撤销名单命中、抓取结果
   // 缺失、目录名与撤销名单或基线冲突一律跳过）——与 mergeTableList 的纳入
-  // 守卫同口径，保证“清单显示的表”与“抓取的表”是同一个集合。
+  // 守卫同口径，保证“清单显示的表”与“抓取的表”是同一个集合。纳入成功的
+  // 目录名即时入集合：批内同目录名的后续条目与读取侧一样被拦下。
   const fetchedById = new Map(options.user.fetched.map((entry) => [entry.id, entry]));
-  const baselineDirs = dirNameSet(oldDirMap.values());
+  const baselineDirs = new Set(dirNameSet(oldDirMap.values()));
   for (const entry of options.user.added) {
     const fetched = fetchedById.get(entry.id);
     const dirName = canAddEntry(entry, fetched, revoked, baselineDirs, tableInfoMap);
@@ -176,6 +177,7 @@ export function mergeActiveSet(options: MergeOptions): MergeResult {
       extra: {},
     });
     oldDirMap.set(entry.url, dirName);
+    baselineDirs.add(dirName);
   }
 
   for (const rule of options.user.replace) {

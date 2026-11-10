@@ -239,13 +239,31 @@ describe("mergeActiveSet", () => {
     const result = mergeActiveSet({
       base: new Map(),
       user: layer({
-        added: [addedEntry("https://readd/")],
-        fetched: [fetchedEntry("https://readd/", "[gone] 已删")],
+        added: [addedEntry("https://readd/", "req1"), addedEntry("https://readd2/", "req2")],
+        fetched: [
+          fetchedEntry("https://readd/", "[gone] 已删", "req1"),
+          fetchedEntry("https://readd2/", "[gone] 已删", "req2"),
+        ],
         removed: [removed],
       }),
       oldDirMap: new Map(),
     });
     expect(result.activeSet.activeUrls.size).toBe(0);
+  });
+
+  it("批内同目录名的添加只纳入第一个", () => {
+    const result = mergeActiveSet({
+      base: new Map(),
+      user: layer({
+        added: [addedEntry("https://first/", "req1"), addedEntry("https://second/", "req2")],
+        fetched: [
+          fetchedEntry("https://first/", "[new] 新表", "req1"),
+          fetchedEntry("https://second/", "[new] 新表", "req2"),
+        ],
+      }),
+      oldDirMap: new Map(),
+    });
+    expect([...result.activeSet.activeUrls]).toEqual(["https://first/"]);
   });
 });
 
@@ -285,5 +303,23 @@ describe("mergeActiveSet 与 mergeTableList 口径一致", () => {
     const activeKeys = [...active.activeSet.activeUrls].map((url) => tableUrlKey(url)).sort();
     expect(listKeys).toEqual(activeKeys);
     expect(listKeys).toEqual(["https://b", "https://new"]);
+  });
+
+  it("批内同目录名的添加两侧都只纳入第一个", () => {
+    const items: MirrorTableItem[] = [];
+    const user = layer({
+      added: [addedEntry("https://first/", "req1"), addedEntry("https://second/", "req2")],
+      fetched: [
+        fetchedEntry("https://first/", "[new] 新表", "req1"),
+        fetchedEntry("https://second/", "[new] 新表", "req2"),
+      ],
+    });
+
+    const merged = mergeTableList(items, user);
+    const active = mergeActiveSet({ base: new Map(), user, oldDirMap: new Map() });
+    const listKeys = merged.list.map((item) => tableUrlKey(item.url));
+    const activeKeys = [...active.activeSet.activeUrls].map((url) => tableUrlKey(url));
+    expect(listKeys).toEqual(["https://first"]);
+    expect(listKeys).toEqual(activeKeys);
   });
 });
