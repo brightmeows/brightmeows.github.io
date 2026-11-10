@@ -135,6 +135,8 @@
 ## 架构边界
 
 - **`packages/worker/` 按“路由、处理、数据”分三层** — `index.ts` 入口，`api.ts`/`admin.ts` 路由表，`handlers/` 处理，`store/` 数据；`auth.ts` 会话原语，`canonical-slash.ts`、`dispatch.ts`、`backup.ts`、`schema.ts`、`manifest.ts` 各管一块。
+  - `handlers/guard.ts` 写接口守门：Origin 加会话的 `authorizeWrite` 与每日配额扣减的
+    `consumeMutation`；扣减刻意独立于鉴权——业务检查失败的请求不扣量。
 - **本地 `pnpm dev` 不提供 mirror 动态路由** — 验证 mirror 行为用 `pnpm build && pnpm exec wrangler dev`（`localhost:8787` 已在桶 CORS 放行）。
 - **自托管个人表的旧地址由 Worker 静态映射 301（2026-11 迁移）** — `self-sp`/`self-dp` 已迁入共享表（新 id `meow-sp`/`meow-dp`），旧地址 `/bms/table/<旧名>/` 由 `legacy-self-tables.ts` 的两条硬编码映射 301（含无尾斜杠形态，透传 query），接线在静态树分发之前。
   - 共享表列表页并入 `/bms/table` 后，`/bms/table/shared`（含无尾斜杠形态）同样由 `legacy-shared-list.ts` 静态映射 301（子路径 `new/`、`[id]/`、`tables.json` 在 index.ts 既有分支先分流，不受影响）。

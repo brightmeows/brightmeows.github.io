@@ -1,5 +1,8 @@
+import type { MirrorTableItem } from "@brightmeows/mirror/types";
 import {
   emptyUserLayer,
+  mergeTableList,
+  tableUrlKey,
   type AddedEntry,
   type DisabledEntry,
   type FetchedEntry,
@@ -208,5 +211,115 @@ describe("mergeActiveSet", () => {
       oldDirMap: new Map(),
     });
     expect(result.activeSet.tableInfoMap.get("https://a.example/one.html")?.name).toBe("新名");
+  });
+
+  it("基线同目录名的添加被跳过（目录名冲突守卫）", () => {
+    const base = new Map([["https://a/", makeInfo("甲", "https://a/")]]);
+    const result = mergeActiveSet({
+      base,
+      user: layer({
+        added: [addedEntry("https://other/")],
+        fetched: [fetchedEntry("https://other/", "[a] 甲")],
+      }),
+      oldDirMap: new Map([["https://a/", "[a] 甲"]]),
+    });
+    expect(result.activeSet.activeUrls.has("https://other/")).toBe(false);
+    expect(result.activeSet.activeUrls.size).toBe(1);
+  });
+
+  it("删除黑名单的目录名阻断同目录名的添加", () => {
+    const removed: RemovedEntry = {
+      url: "https://gone/",
+      dir_name: "[gone] 已删",
+      author: "bob",
+      role: "user",
+      removed_at: "2026-09-21T00:02:00.000Z",
+      trash_prefix: "trash/x/[gone] 已删",
+    };
+    const result = mergeActiveSet({
+      base: new Map(),
+      user: layer({
+        added: [addedEntry("https://readd/", "req1"), addedEntry("https://readd2/", "req2")],
+        fetched: [
+          fetchedEntry("https://readd/", "[gone] 已删", "req1"),
+          fetchedEntry("https://readd2/", "[gone] 已删", "req2"),
+        ],
+        removed: [removed],
+      }),
+      oldDirMap: new Map(),
+    });
+    expect(result.activeSet.activeUrls.size).toBe(0);
+  });
+
+  it("批内同目录名的添加只纳入第一个", () => {
+    const result = mergeActiveSet({
+      base: new Map(),
+      user: layer({
+        added: [addedEntry("https://first/", "req1"), addedEntry("https://second/", "req2")],
+        fetched: [
+          fetchedEntry("https://first/", "[new] 新表", "req1"),
+          fetchedEntry("https://second/", "[new] 新表", "req2"),
+        ],
+      }),
+      oldDirMap: new Map(),
+    });
+    expect([...result.activeSet.activeUrls]).toEqual(["https://first/"]);
+  });
+});
+
+describe("mergeActiveSet 与 mergeTableList 口径一致", () => {
+  it("同一基线与用户层下，抓取集合与站点清单是同一个表集合", () => {
+    const items: MirrorTableItem[] = [
+      { name: "甲", url: "https://a/", dir_name: "[a] 甲" },
+      { name: "乙", url: "https://b/", dir_name: "[b] 乙" },
+      { name: "丙", url: "https://c/", dir_name: "[c] 丙" },
+    ];
+    const base = new Map(
+      items.map((item) => [
+        item.url,
+        { name: item.name, symbol: "s", url: item.url, extra: {} } satisfies TableInfo,
+      ])
+    );
+    const oldDirMap = new Map(items.map((item) => [item.url, item.dir_name!]));
+    const user = layer({
+      added: [addedEntry("https://new/")],
+      fetched: [fetchedEntry("https://new/", "[new] 新表")],
+      removed: [
+        {
+          url: "https://a/",
+          dir_name: "[a] 甲",
+          author: "bob",
+          role: "user",
+          removed_at: "2026-09-21T00:02:00.000Z",
+          trash_prefix: "trash/x/[a] 甲",
+        },
+      ],
+      disabled: [{ url: "https://c/", author: "root", disabled_at: "2026-09-21T00:02:00.000Z" }],
+    });
+
+    const merged = mergeTableList(items, user);
+    const active = mergeActiveSet({ base, user, oldDirMap });
+    const listKeys = merged.list.map((item) => tableUrlKey(item.url)).sort();
+    const activeKeys = [...active.activeSet.activeUrls].map((url) => tableUrlKey(url)).sort();
+    expect(listKeys).toEqual(activeKeys);
+    expect(listKeys).toEqual(["https://b", "https://new"]);
+  });
+
+  it("批内同目录名的添加两侧都只纳入第一个", () => {
+    const items: MirrorTableItem[] = [];
+    const user = layer({
+      added: [addedEntry("https://first/", "req1"), addedEntry("https://second/", "req2")],
+      fetched: [
+        fetchedEntry("https://first/", "[new] 新表", "req1"),
+        fetchedEntry("https://second/", "[new] 新表", "req2"),
+      ],
+    });
+
+    const merged = mergeTableList(items, user);
+    const active = mergeActiveSet({ base: new Map(), user, oldDirMap: new Map() });
+    const listKeys = merged.list.map((item) => tableUrlKey(item.url));
+    const activeKeys = [...active.activeSet.activeUrls].map((url) => tableUrlKey(url));
+    expect(listKeys).toEqual(["https://first"]);
+    expect(listKeys).toEqual(activeKeys);
   });
 });

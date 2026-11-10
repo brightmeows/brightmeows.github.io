@@ -13,21 +13,19 @@ import type {
   RestoreResponse,
 } from "@brightmeows/mirror/api";
 import {
-  DAILY_OPERATION_LIMIT,
-  normalizeTableUrl,
+  tableUrlKey,
   TRASH_RETENTION_DAYS,
   type AddedEntry,
   type StatusEntry,
 } from "@brightmeows/mirror/user-layer";
 
-import { getSession, type Session } from "../auth.ts";
+import { getSession } from "../auth.ts";
 import { dispatchWorkflow } from "../dispatch.ts";
 import type { Env } from "../env.ts";
-import { checkSameOrigin, failure, json, readJsonBody } from "../http.ts";
+import { failure, json, readJsonBody } from "../http.ts";
 import { invalidateMergedManifest, loadMergedManifest } from "../manifest.ts";
 import { writeAudit } from "../store/audit.ts";
 import { readFetchStatus, writeFetchStatus } from "../store/fetch-status.ts";
-import { RateLimitError, consumeOperation } from "../store/quota.ts";
 import { moveTableToTrash, restoreTableFromTrash } from "../store/trash.ts";
 import {
   deleteAddedById,
@@ -38,23 +36,13 @@ import {
   upsertRemoved,
 } from "../store/user-layer.ts";
 
+import { authorizeWrite, consumeMutation } from "./guard.ts";
+
 /** 自助恢复窗口（毫秒）：与回收站清理窗口同源。 */
 const RESTORE_WINDOW_MS = TRASH_RETENTION_DAYS * 24 * 60 * 60 * 1000;
 
 /** 僵死添加记录的判定窗口（毫秒）：超过该时长未推进的 pending 记录允许重新提交。 */
 const ADD_RETRY_AFTER_MS = 24 * 60 * 60 * 1000;
-
-/** 统一处理限次错误。 */
-async function consume(env: Env, session: Session, now: Date): Promise<number | null> {
-  try {
-    return await consumeOperation(env, session.login, now);
-  } catch (error) {
-    if (error instanceof RateLimitError) {
-      return null;
-    }
-    throw error;
-  }
-}
 
 /**
  * 判定一条添加记录是否可被重新提交：最新状态为 failed，或记录已超过僵死
@@ -71,13 +59,8 @@ async function isRetryableAdd(env: Env, entry: AddedEntry, now: Date): Promise<b
 
 /** 添加表：登记添加请求并触发单表抓取工作流，返回的 id 供前端轮询。 */
 export async function handleAdd(request: Request, env: Env, now: Date): Promise<Response> {
-  if (!checkSameOrigin(request)) {
-    return failure(403, "Origin check failed", { code: API_ERROR_CODES.originCheckFailed });
-  }
-  const session = await getSession(env, request, now);
-  if (session === null) {
-    return failure(401, "Log in with GitHub first", { code: API_ERROR_CODES.loginRequired });
-  }
+  const session = await authorizeWrite(request, env, now);
+  if (session instanceof Response) return session;
   const body = await readJsonBody(request);
   const rawUrl = typeof body?.url === "string" ? body.url.trim() : "";
   let targetUrl: string;
@@ -94,10 +77,11 @@ export async function handleAdd(request: Request, env: Env, now: Date): Promise<
     });
   }
 
-  const key = normalizeTableUrl(targetUrl);
+  // 准入匹配与清单合并器同一宽松口径（tableUrlKey 忽略尾斜杠）：同一表源的
+  // 变体 URL 不至于绕过已列入、已删除或已禁用的拦截
+  const key = tableUrlKey(targetUrl);
   const alreadyListed = manifest.some(
-    (item) =>
-      normalizeTableUrl(item.url) === key || normalizeTableUrl(item.url_from ?? item.url) === key
+    (item) => tableUrlKey(item.url) === key || tableUrlKey(item.url_from ?? item.url) === key
   );
   if (alreadyListed) {
     return failure(409, "Table is already in the mirror list", {
@@ -106,7 +90,7 @@ export async function handleAdd(request: Request, env: Env, now: Date): Promise<
   }
   // 同 URL 的旧记录：失败或僵死的清掉后放行重新提交（状态历史留在 fetch_status），
   // 仍在推进中的照旧拦截
-  const sameUrl = user.added.filter((entry) => normalizeTableUrl(entry.url) === key);
+  const sameUrl = user.added.filter((entry) => tableUrlKey(entry.url) === key);
   for (const entry of sameUrl) {
     if (!(await isRetryableAdd(env, entry, now))) {
       return failure(409, "Table already has a pending add request", {
@@ -115,27 +99,22 @@ export async function handleAdd(request: Request, env: Env, now: Date): Promise<
     }
     await deleteAddedById(env, entry.id);
   }
-  if (user.removed.some((entry) => normalizeTableUrl(entry.url) === key)) {
+  if (user.removed.some((entry) => tableUrlKey(entry.url) === key)) {
     return failure(
       409,
       "Table was deleted before: self-restore within 30 days, contact the owner afterwards",
       { code: API_ERROR_CODES.wasDeleted }
     );
   }
-  if (user.disabled.some((entry) => normalizeTableUrl(entry.url) === key)) {
+  if (user.disabled.some((entry) => tableUrlKey(entry.url) === key)) {
     return failure(409, "Table disabled by the owner", { code: API_ERROR_CODES.disabledByOwner });
   }
 
-  const replaceHit = user.replace.find((rule) => normalizeTableUrl(rule.from) === key);
+  const replaceHit = user.replace.find((rule) => tableUrlKey(rule.from) === key);
   const effectiveUrl = replaceHit?.to ?? targetUrl;
 
-  const consumed = await consume(env, session, now);
-  if (consumed === null) {
-    return failure(429, `Daily operation limit reached (${DAILY_OPERATION_LIMIT} per day)`, {
-      code: API_ERROR_CODES.dailyLimit,
-      params: { limit: DAILY_OPERATION_LIMIT },
-    });
-  }
+  const quota = await consumeMutation(env, session, now);
+  if (quota instanceof Response) return quota;
 
   const requestId = crypto.randomUUID();
   const at = now.toISOString();
@@ -189,22 +168,17 @@ export async function handleAdd(request: Request, env: Env, now: Date): Promise<
   return json<AddResponse>({
     requestId,
     url: effectiveUrl,
-    remaining: Math.max(0, DAILY_OPERATION_LIMIT - consumed),
+    remaining: quota.remaining,
   });
 }
 
 /** 删除表：写黑名单（可见性优先）并移对象入回收站，作者 30 天内可恢复。 */
 export async function handleDelete(request: Request, env: Env, now: Date): Promise<Response> {
-  if (!checkSameOrigin(request)) {
-    return failure(403, "Origin check failed", { code: API_ERROR_CODES.originCheckFailed });
-  }
-  const session = await getSession(env, request, now);
-  if (session === null) {
-    return failure(401, "Log in with GitHub first", { code: API_ERROR_CODES.loginRequired });
-  }
+  const session = await authorizeWrite(request, env, now);
+  if (session instanceof Response) return session;
   const body = await readJsonBody(request);
   const dirName = typeof body?.dir_name === "string" ? body.dir_name.trim() : "";
-  const urlKey = typeof body?.url === "string" ? normalizeTableUrl(body.url.trim()) : "";
+  const urlKey = typeof body?.url === "string" ? tableUrlKey(body.url.trim()) : "";
   if (dirName === "" && urlKey === "") {
     return failure(400, "dir_name or url is required", { code: API_ERROR_CODES.needDirOrUrl });
   }
@@ -218,7 +192,7 @@ export async function handleDelete(request: Request, env: Env, now: Date): Promi
   const entry = manifest.find(
     (item) =>
       (dirName !== "" && item.dir_name === dirName) ||
-      (urlKey !== "" && normalizeTableUrl(item.url) === urlKey)
+      (urlKey !== "" && tableUrlKey(item.url) === urlKey)
   );
   if (entry === undefined) {
     return failure(404, "Table not found in the manifest", { code: API_ERROR_CODES.notInManifest });
@@ -235,13 +209,8 @@ export async function handleDelete(request: Request, env: Env, now: Date): Promi
     });
   }
 
-  const consumed = await consume(env, session, now);
-  if (consumed === null) {
-    return failure(429, `Daily operation limit reached (${DAILY_OPERATION_LIMIT} per day)`, {
-      code: API_ERROR_CODES.dailyLimit,
-      params: { limit: DAILY_OPERATION_LIMIT },
-    });
-  }
+  const quota = await consumeMutation(env, session, now);
+  if (quota instanceof Response) return quota;
 
   const at = now.toISOString();
   const stamp = at.replaceAll(":", "-").replaceAll(".", "-");
@@ -269,19 +238,14 @@ export async function handleDelete(request: Request, env: Env, now: Date): Promi
   return json<DeleteResponse>({
     dirName: targetDir,
     trashPrefix,
-    remaining: Math.max(0, DAILY_OPERATION_LIMIT - consumed),
+    remaining: quota.remaining,
   });
 }
 
 /** 自助恢复：30 天内按目录名从回收站还原并移出黑名单。 */
 export async function handleRestore(request: Request, env: Env, now: Date): Promise<Response> {
-  if (!checkSameOrigin(request)) {
-    return failure(403, "Origin check failed", { code: API_ERROR_CODES.originCheckFailed });
-  }
-  const session = await getSession(env, request, now);
-  if (session === null) {
-    return failure(401, "Log in with GitHub first", { code: API_ERROR_CODES.loginRequired });
-  }
+  const session = await authorizeWrite(request, env, now);
+  if (session instanceof Response) return session;
   const body = await readJsonBody(request);
   const dirName = typeof body?.dir_name === "string" ? body.dir_name.trim() : "";
   if (dirName === "") {
@@ -306,13 +270,8 @@ export async function handleRestore(request: Request, env: Env, now: Date): Prom
     });
   }
 
-  const consumed = await consume(env, session, now);
-  if (consumed === null) {
-    return failure(429, `Daily operation limit reached (${DAILY_OPERATION_LIMIT} per day)`, {
-      code: API_ERROR_CODES.dailyLimit,
-      params: { limit: DAILY_OPERATION_LIMIT },
-    });
-  }
+  const quota = await consumeMutation(env, session, now);
+  if (quota instanceof Response) return quota;
 
   const restoredObjects = await restoreTableFromTrash(env, record.trash_prefix, record.dir_name);
   await deleteRemovedByDirName(env, record.dir_name);
@@ -330,7 +289,7 @@ export async function handleRestore(request: Request, env: Env, now: Date): Prom
   return json<RestoreResponse>({
     dirName: record.dir_name,
     restoredObjects,
-    remaining: Math.max(0, DAILY_OPERATION_LIMIT - consumed),
+    remaining: quota.remaining,
   });
 }
 

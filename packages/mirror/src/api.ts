@@ -18,6 +18,7 @@
  * 约束与镜像内核一致：零依赖、可擦除语法、相对导入带 .ts 扩展名。
  */
 
+import { isRecord } from "./types.ts";
 import type {
   AddedEntry,
   AuditEntry,
@@ -107,10 +108,6 @@ export type ApiErrorCode = (typeof API_ERROR_CODES)[keyof typeof API_ERROR_CODES
 // ---------------------------------------------------------------------------
 // 窄化基础
 // ---------------------------------------------------------------------------
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
 
 // ---------------------------------------------------------------------------
 // 账号（GET /api/me）
