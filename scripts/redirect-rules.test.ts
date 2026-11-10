@@ -69,7 +69,11 @@ describe("parseRedirectConfig", () => {
     const config = readRedirectConfig();
     const excluded = new Set(config.zones.flatMap((zone) => zone.excludeHosts));
     expect(excluded).toEqual(
-      new Set(["bms-table-mirror-r2.brightmeows.com", "bms-table-mirror-r2.miyakomeow.site"])
+      new Set([
+        "bms-table-mirror-r2.brightmeows.com",
+        "bms-table-mirror-r2.miyakomeow.site",
+        "private-dsh.brightmeows.com",
+      ])
     );
   });
 
