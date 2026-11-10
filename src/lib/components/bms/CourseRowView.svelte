@@ -4,7 +4,8 @@
 
   import CourseRow from "./CourseRow.svelte";
 
-  import { badgeWarningMd, badgeWarningSm, btnGhostXs } from "#lib/constants/ui-classes.js";
+  import ToggleButton from "#lib/components/ui/ToggleButton.svelte";
+  import { badgeWarningMd, badgeWarningSm } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
 
   /** 查看态段位行：摘要加可展开的只读详情。 */
@@ -48,9 +49,12 @@
   {/snippet}
 
   {#snippet actions()}
-    <button class={btnGhostXs} type="button" aria-expanded={expanded} onclick={onToggle}>
-      {expanded ? m["common.collapse"]() : m["common.details"]()}
-    </button>
+    <ToggleButton
+      size="xs"
+      {expanded}
+      label={expanded ? m["common.collapse"]() : m["common.details"]()}
+      {onToggle}
+    />
   {/snippet}
 
   {#snippet children()}

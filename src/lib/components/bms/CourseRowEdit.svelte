@@ -13,16 +13,21 @@
     filterEntryIndices,
     moveItem,
   } from "@brightmeows/bms/editor";
+  import GripVertical from "@lucide/svelte/icons/grip-vertical";
+  import Plus from "@lucide/svelte/icons/plus";
+  import Search from "@lucide/svelte/icons/search";
+  import Trash2 from "@lucide/svelte/icons/trash-2";
+  import X from "@lucide/svelte/icons/x";
   import type { Action } from "svelte/action";
 
   import CourseRow from "./CourseRow.svelte";
   import RowActionMenu from "./RowActionMenu.svelte";
 
   import DetailsPanel from "#lib/components/ui/DetailsPanel.svelte";
+  import ToggleButton from "#lib/components/ui/ToggleButton.svelte";
   import {
     badgeWarningSm,
     btnGhost,
-    btnGhostXs,
     btnIconDanger,
     inputEditorMono,
   } from "#lib/constants/ui-classes.js";
@@ -256,9 +261,12 @@
         </svg>
       </span>
     {/if}
-    <button class={btnGhostXs} type="button" aria-expanded={expanded} onclick={onToggle}>
-      {expanded ? m["common.collapse"]() : m["common.edit"]()}
-    </button>
+    <ToggleButton
+      size="xs"
+      {expanded}
+      label={expanded ? m["common.collapse"]() : m["common.edit"]()}
+      {onToggle}
+    />
     <RowActionMenu
       {disabled}
       items={[
@@ -313,6 +321,7 @@
       <DetailsPanel summary={m["editor.course_trophy"]()} variant="plain" sub={true}>
         {#snippet actions()}
           <button class={btnGhost} type="button" {disabled} onclick={addTrophy}>
+            <Plus class="size-4 shrink-0" aria-hidden="true" />
             {m["editor.course_trophy_add"]()}
           </button>
         {/snippet}
@@ -355,19 +364,7 @@
                   aria-label={m["editor.course_trophy_remove"]()}
                   onclick={() => removeTrophy(index)}
                 >
-                  <svg
-                    class="size-4"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    aria-hidden="true"
-                  >
-                    <path d="M3 6h18" />
-                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                  </svg>
+                  <Trash2 class="size-4" aria-hidden="true" />
                 </button>
               </div>
             {/each}
@@ -387,9 +384,11 @@
         {#snippet actions()}
           <div class="flex gap-2">
             <button class={btnGhost} type="button" {disabled} onclick={openPicker}>
+              <Search class="size-4 shrink-0" aria-hidden="true" />
               {m["editor.course_chart_pick"]()}
             </button>
             <button class={btnGhost} type="button" {disabled} onclick={addEmptyChart}>
+              <Plus class="size-4 shrink-0" aria-hidden="true" />
               {m["editor.course_chart_add"]()}
             </button>
           </div>
@@ -406,6 +405,7 @@
                 {disabled}
               />
               <button class={btnGhost} type="button" onclick={openPicker}>
+                <X class="size-4 shrink-0" aria-hidden="true" />
                 {m["common.cancel"]()}
               </button>
             </div>
@@ -429,6 +429,7 @@
                       {disabled}
                       onclick={() => addFromPicker(entry)}
                     >
+                      <Plus class="size-4 shrink-0" aria-hidden="true" />
                       {m["editor.course_picker_add"]()}
                     </button>
                   </li>
@@ -452,14 +453,7 @@
               >
                 <div class="flex flex-wrap items-center gap-2">
                   <span class="cursor-grab text-white-35" aria-hidden="true">
-                    <svg class="size-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                      <circle cx="9" cy="6" r="1.6" />
-                      <circle cx="15" cy="6" r="1.6" />
-                      <circle cx="9" cy="12" r="1.6" />
-                      <circle cx="15" cy="12" r="1.6" />
-                      <circle cx="9" cy="18" r="1.6" />
-                      <circle cx="15" cy="18" r="1.6" />
-                    </svg>
+                    <GripVertical class="size-4" />
                   </span>
                   <input
                     class="{inputEditorMono} min-w-52 flex-1 {issue === 'md5'

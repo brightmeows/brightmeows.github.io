@@ -1,9 +1,17 @@
 <script lang="ts">
+  import Copy from "@lucide/svelte/icons/copy";
+  import Eye from "@lucide/svelte/icons/eye";
+  import History from "@lucide/svelte/icons/history";
+  import Pencil from "@lucide/svelte/icons/pencil";
+  import Save from "@lucide/svelte/icons/save";
+  import Trash2 from "@lucide/svelte/icons/trash-2";
+  import Undo2 from "@lucide/svelte/icons/undo-2";
   import type { Snippet } from "svelte";
   import { onMount } from "svelte";
   import { cubicIn, cubicOut } from "svelte/easing";
   import { fly } from "svelte/transition";
 
+  import ToggleButton from "#lib/components/ui/ToggleButton.svelte";
   import { btnBar, btnGhostMd, btnPrimary } from "#lib/constants/ui-classes.js";
   import {
     applyDockScroll,
@@ -241,34 +249,9 @@
       <div class="flex items-center justify-between gap-2 border-b border-white-15 pb-2">
         <div class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           {#if editing}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="size-4 shrink-0 text-white-80"
-              aria-hidden="true"
-            >
-              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-            </svg>
+            <Pencil class="size-4 shrink-0 text-white-80" aria-hidden="true" />
           {:else}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="size-4 shrink-0 text-white-80"
-              aria-hidden="true"
-            >
-              <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
+            <Eye class="size-4 shrink-0 text-white-80" aria-hidden="true" />
           {/if}
           <span class="text-[0.85rem] text-white-85">{stateWord}</span>
           {#each dockSignals as signal (signal.title)}
@@ -305,6 +288,7 @@
         {#if editing}
           {#if !createMode}
             <button class="{btnBar} w-full" type="button" onclick={() => onSetMode("view")}>
+              <Eye class="size-4 shrink-0" aria-hidden="true" />
               {m["editor.view"]()}
             </button>
           {/if}
@@ -315,6 +299,7 @@
               disabled={model.busy}
               onclick={() => void model.save()}
             >
+              <Save class="size-4 shrink-0" aria-hidden="true" />
               {model.saveLabel}
             </button>
           {/if}
@@ -325,11 +310,13 @@
               disabled={model.busy}
               onclick={() => void model.saveAsSharedNow()}
             >
+              <Copy class="size-4 shrink-0" aria-hidden="true" />
               {m["editor.save_as_shared"]()}
             </button>
           {/if}
         {:else}
           <button class="{btnPrimary} w-full" type="button" onclick={() => onSetMode("edit")}>
+            <Pencil class="size-4 shrink-0" aria-hidden="true" />
             {model.dirty ? m["editor.continue_edit"]() : m["editor.enter_table"]()}
           </button>
           <p class="text-center text-[0.8rem] text-white-50">{editHint}</p>
@@ -343,6 +330,7 @@
               disabled={model.busy}
               onclick={() => void model.save()}
             >
+              <Save class="size-4 shrink-0" aria-hidden="true" />
               {model.saveLabel}
             </button>
           {/if}
@@ -352,6 +340,7 @@
             disabled={model.busy}
             onclick={() => void model.discardEdits()}
           >
+            <Undo2 class="size-4 shrink-0" aria-hidden="true" />
             {m["editor.discard_unsaved"]()}
           </button>
         {/if}
@@ -359,29 +348,11 @@
 
       {#if tableActions}
         <div class="mt-3 border-t border-white-15 pt-2">
-          <button
-            class="flex w-full items-center justify-between gap-2 py-1 text-[0.85rem] text-white-70 transition-colors duration-150 hover:text-white"
-            type="button"
-            aria-expanded={tableActionsOpen}
-            onclick={toggleTableActions}
-          >
-            {m["editor.dock_table_actions"]()}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="size-4 transition-transform duration-200 {tableActionsOpen
-                ? 'rotate-180'
-                : ''}"
-              aria-hidden="true"
-            >
-              <path d="m6 9 6 6 6-6" />
-            </svg>
-          </button>
+          <ToggleButton
+            expanded={tableActionsOpen}
+            label={m["editor.dock_table_actions"]()}
+            onToggle={toggleTableActions}
+          />
           {#if tableActionsOpen}
             <div class="mt-2 flex flex-col items-stretch gap-2">
               {@render tableActions()}
@@ -392,27 +363,11 @@
 
       {#if importSection}
         <div class="mt-3 border-t border-white-15 pt-2">
-          <button
-            class="flex w-full items-center justify-between gap-2 py-1 text-[0.85rem] text-white-70 transition-colors duration-150 hover:text-white"
-            type="button"
-            aria-expanded={importOpen}
-            onclick={toggleImport}
-          >
-            {m["editor.import_section"]()}
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="size-4 transition-transform duration-200 {importOpen ? 'rotate-180' : ''}"
-              aria-hidden="true"
-            >
-              <path d="m6 9 6 6 6-6" />
-            </svg>
-          </button>
+          <ToggleButton
+            expanded={importOpen}
+            label={m["editor.import_section"]()}
+            onToggle={toggleImport}
+          />
           {#if importOpen}
             <div class="mt-2">
               {@render importSection()}
@@ -433,6 +388,7 @@
           </p>
           <div class="mt-3 flex flex-wrap justify-center gap-3">
             <button class={btnPrimary} type="button" onclick={model.restorePendingDraft}>
+              <History class="size-4 shrink-0" aria-hidden="true" />
               {m["editor.draft_restore"]()}
             </button>
             <button
@@ -440,6 +396,7 @@
               type="button"
               onclick={() => void model.discardPendingDraft()}
             >
+              <Trash2 class="size-4 shrink-0" aria-hidden="true" />
               {m["editor.draft_discard"]()}
             </button>
           </div>
@@ -474,34 +431,9 @@
     out:fly={{ y: 24, opacity: 0, duration: reduceMotion ? 0 : 140, easing: cubicIn }}
   >
     {#if editing}
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        class="size-4 text-white-80"
-        aria-hidden="true"
-      >
-        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-      </svg>
+      <Pencil class="size-4 text-white-80" aria-hidden="true" />
     {:else}
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        class="size-4 text-white-80"
-        aria-hidden="true"
-      >
-        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
-        <circle cx="12" cy="12" r="3" />
-      </svg>
+      <Eye class="size-4 text-white-80" aria-hidden="true" />
     {/if}
     <span class="text-[0.85rem] whitespace-nowrap text-white-85">{stateWord}</span>
     {#each dockSignals as signal (signal.title)}

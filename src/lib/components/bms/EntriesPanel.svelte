@@ -22,14 +22,24 @@
   } from "@brightmeows/bms/editor";
   import type { ChartData } from "@brightmeows/bms/format";
   import { levelSegmentColor } from "@brightmeows/bms/table";
+  import Check from "@lucide/svelte/icons/check";
+  import CheckCheck from "@lucide/svelte/icons/check-check";
+  import Link2 from "@lucide/svelte/icons/link-2";
+  import ListChecks from "@lucide/svelte/icons/list-checks";
+  import Plus from "@lucide/svelte/icons/plus";
+  import RotateCcw from "@lucide/svelte/icons/rotate-ccw";
+  import Trash2 from "@lucide/svelte/icons/trash-2";
+  import WandSparkles from "@lucide/svelte/icons/wand-sparkles";
+  import X from "@lucide/svelte/icons/x";
   import { tick } from "svelte";
 
   import ChartTableRow from "#lib/components/bms/ChartTableRow.svelte";
   import EntryDetailForm from "#lib/components/bms/EntryDetailForm.svelte";
   import JsonPreview from "#lib/components/ui/JsonPreview.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
+  import ToggleButton from "#lib/components/ui/ToggleButton.svelte";
   import ToggleJumpChip from "#lib/components/ui/ToggleJumpChip.svelte";
-  import { btnGhost, btnPrimary, inputEditorMono } from "#lib/constants/ui-classes.js";
+  import { btnDanger, btnGhost, btnPrimary, inputEditorMono } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { JsonPreviewHandle } from "#lib/types/ui.js";
   import { validateUrl } from "#lib/utils/infra/url.js";
@@ -507,6 +517,7 @@
       <p class="mb-4 text-white-70">{m["table.data_load_failed_tip"]()}</p>
       {#if onRetry}
         <button class={btnPrimary} type="button" onclick={() => void onRetry?.()}>
+          <RotateCcw class="size-4 shrink-0" aria-hidden="true" />
           {m["table.retry_load_charts"]()}
         </button>
       {/if}
@@ -528,6 +539,7 @@
       {#if editing}
         <div class="ml-auto flex flex-wrap gap-2">
           <button class={btnGhost} type="button" {disabled} onclick={() => startAdd()}>
+            <Plus class="size-4 shrink-0" aria-hidden="true" />
             {m["editor.entries_add"]()}
           </button>
           <input
@@ -539,17 +551,15 @@
             onchange={addFromUrl}
           />
           <button class={btnGhost} type="button" {disabled} onclick={addFromUrl}>
+            <Link2 class="size-4 shrink-0" aria-hidden="true" />
             {m["editor.entry_bmsir_add"]()}
           </button>
-          <button
-            class={btnGhost}
-            type="button"
+          <ToggleButton
+            expanded={batchOpen}
+            label={m["editor.entries_batch_toggle"]()}
             {disabled}
-            aria-expanded={batchOpen}
-            onclick={() => (batchOpen = !batchOpen)}
-          >
-            {m["editor.entries_batch_toggle"]()}
-          </button>
+            onToggle={() => (batchOpen = !batchOpen)}
+          />
         </div>
       {/if}
     </div>
@@ -579,80 +589,88 @@
           <span class="text-[0.85rem] text-white-60">
             {m["editor.entries_selected"]({ count: selectedCount })}
           </span>
-          <button class={btnGhost} type="button" {disabled} onclick={selectAllFiltered}>
-            {m["editor.entries_select_filtered"]()}
-          </button>
-          <button class={btnGhost} type="button" {disabled} onclick={clearSelection}>
-            {m["editor.entries_clear_selection"]()}
-          </button>
-          <select
-            class="rounded-md border border-white-20 bg-black-30 px-2 py-1 text-[0.85rem] text-white outline-none"
-            bind:value={batchChoice}
-            {disabled}
-          >
-            <option value={BATCH_NONE} disabled>{m["editor.entries_batch_choose"]()}</option>
-            {#each levels as level (level)}
-              <option value={encodeLevelFilterOption(level)}>{level}</option>
-            {/each}
-            <option value="">{m["editor.entries_batch_clear"]()}</option>
-          </select>
-          <button
-            class={btnGhost}
-            type="button"
-            disabled={disabled || selectedCount === 0 || batchChoice === BATCH_NONE}
-            onclick={assignSelected}
-          >
-            {m["editor.entries_batch_apply"]()}
-          </button>
-          <button
-            class="{btnGhost} text-red-200/80 hover:bg-red-400/20 hover:text-red-200"
-            type="button"
-            disabled={disabled || selectedCount === 0}
-            onclick={deleteSelected}
-          >
-            {m["editor.entries_batch_delete"]()}
-          </button>
-          {#if hintApplicableCount > 0}
-            <button class={btnGhost} type="button" {disabled} onclick={assignFromHints}>
-              {m["editor.entries_assign_hint"]({ count: hintApplicableCount })}
+          <div class="ml-auto flex flex-wrap items-center gap-2">
+            <button class={btnGhost} type="button" {disabled} onclick={selectAllFiltered}>
+              <CheckCheck class="size-4 shrink-0" aria-hidden="true" />
+              {m["editor.entries_select_filtered"]()}
             </button>
-          {/if}
-          <button
-            class="{btnGhost} ml-auto"
-            type="button"
-            {disabled}
-            aria-expanded={bulkOpen}
-            onclick={() => (bulkOpen = !bulkOpen)}
-          >
-            {m["editor.bulk_paste"]()}
-          </button>
-        </div>
-        {#if bulkOpen}
-          <div class="mt-3 border-t border-white-10 pt-3">
-            <p class="mb-2 text-[0.85rem] text-white-60">{m["editor.bulk_paste_hint"]()}</p>
-            <textarea class="{inputEditorMono} min-h-32" bind:value={bulkText} placeholder="[…]"
-            ></textarea>
-            <div class="mt-2 flex flex-wrap items-center gap-3">
-              <label class="flex items-center gap-1.5 text-[0.85rem] text-white-70">
-                <input type="radio" bind:group={bulkMode} value="append" />
-                {m["editor.bulk_mode_append"]()}
-              </label>
-              <label class="flex items-center gap-1.5 text-[0.85rem] text-white-70">
-                <input type="radio" bind:group={bulkMode} value="replace" />
-                {m["editor.bulk_mode_replace"]()}
-              </label>
-              <button class={btnGhost} type="button" onclick={applyBulk}>
-                {m["editor.bulk_apply"]()}
+            <button class={btnGhost} type="button" {disabled} onclick={clearSelection}>
+              <X class="size-4 shrink-0" aria-hidden="true" />
+              {m["editor.entries_clear_selection"]()}
+            </button>
+            <select
+              class="rounded-md border border-white-20 bg-black-30 px-2 py-1 text-[0.85rem] text-white outline-none"
+              bind:value={batchChoice}
+              {disabled}
+            >
+              <option value={BATCH_NONE} disabled>{m["editor.entries_batch_choose"]()}</option>
+              {#each levels as level (level)}
+                <option value={encodeLevelFilterOption(level)}>{level}</option>
+              {/each}
+              <option value="">{m["editor.entries_batch_clear"]()}</option>
+            </select>
+            <button
+              class={btnGhost}
+              type="button"
+              disabled={disabled || selectedCount === 0 || batchChoice === BATCH_NONE}
+              onclick={assignSelected}
+            >
+              <ListChecks class="size-4 shrink-0" aria-hidden="true" />
+              {m["editor.entries_batch_apply"]()}
+            </button>
+            <button
+              class={btnDanger}
+              type="button"
+              disabled={disabled || selectedCount === 0}
+              onclick={deleteSelected}
+            >
+              <Trash2 class="size-4 shrink-0" aria-hidden="true" />
+              {m["editor.entries_batch_delete"]()}
+            </button>
+            {#if hintApplicableCount > 0}
+              <button class={btnGhost} type="button" {disabled} onclick={assignFromHints}>
+                <WandSparkles class="size-4 shrink-0" aria-hidden="true" />
+                {m["editor.entries_assign_hint"]({ count: hintApplicableCount })}
               </button>
-              <button class={btnGhost} type="button" onclick={() => (bulkOpen = false)}>
-                {m["common.cancel"]()}
-              </button>
-            </div>
-            {#if bulkError}
-              <p class="mt-2 text-[0.85rem] text-red-300">{bulkError}</p>
             {/if}
           </div>
-        {/if}
+        </div>
+        <div class="mt-3 border-t border-white-10 pt-2">
+          <ToggleButton
+            expanded={bulkOpen}
+            label={m["editor.bulk_paste"]()}
+            {disabled}
+            onToggle={() => (bulkOpen = !bulkOpen)}
+          />
+          {#if bulkOpen}
+            <div class="mt-2">
+              <p class="mb-2 text-[0.85rem] text-white-60">{m["editor.bulk_paste_hint"]()}</p>
+              <textarea class="{inputEditorMono} min-h-32" bind:value={bulkText} placeholder="[…]"
+              ></textarea>
+              <div class="mt-2 flex flex-wrap items-center gap-3">
+                <label class="flex items-center gap-1.5 text-[0.85rem] text-white-70">
+                  <input type="radio" bind:group={bulkMode} value="append" />
+                  {m["editor.bulk_mode_append"]()}
+                </label>
+                <label class="flex items-center gap-1.5 text-[0.85rem] text-white-70">
+                  <input type="radio" bind:group={bulkMode} value="replace" />
+                  {m["editor.bulk_mode_replace"]()}
+                </label>
+                <button class={btnGhost} type="button" onclick={applyBulk}>
+                  <Check class="size-4 shrink-0" aria-hidden="true" />
+                  {m["editor.bulk_apply"]()}
+                </button>
+                <button class={btnGhost} type="button" onclick={() => (bulkOpen = false)}>
+                  <X class="size-4 shrink-0" aria-hidden="true" />
+                  {m["common.cancel"]()}
+                </button>
+              </div>
+              {#if bulkError}
+                <p class="mt-2 text-[0.85rem] text-red-300">{bulkError}</p>
+              {/if}
+            </div>
+          {/if}
+        </div>
       </div>
     {/if}
 
