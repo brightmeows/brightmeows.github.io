@@ -5,37 +5,51 @@
  */
 
 // ---- 主按钮（accent 圆角胶囊） ----
+// 文字钮家族统一 inline-flex 布局以容纳图标；纯文字时视觉与原 text-align 居中一致
 
 /** 标准主按钮。 */
 export const btnPrimary =
-  "cursor-pointer rounded-[25px] border-none bg-accent px-6 py-2.5 text-[1rem] font-semibold text-white transition-colors duration-300 ease-out hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50";
+  "cursor-pointer inline-flex items-center justify-center gap-[0.3rem] rounded-[25px] border-none bg-accent px-6 py-2.5 text-[1rem] font-semibold text-white transition-colors duration-300 ease-out hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50";
 /** 大号主按钮（查看页主操作）。 */
 export const btnPrimaryLarge =
-  "cursor-pointer rounded-[25px] border-none bg-accent px-8 py-3 text-[1rem] font-semibold text-white transition-colors duration-300 ease-out hover:bg-accent-hover";
+  "cursor-pointer inline-flex items-center justify-center gap-[0.3rem] rounded-[25px] border-none bg-accent px-8 py-3 text-[1rem] font-semibold text-white transition-colors duration-300 ease-out hover:bg-accent-hover";
 /** 链接形态主按钮（a 元素，去下划线）。 */
 export const btnPrimaryLink =
-  "cursor-pointer rounded-[25px] border-none bg-accent px-6 py-2.5 text-[1rem] font-semibold text-white no-underline transition-colors duration-300 ease-out hover:bg-accent-hover";
+  "cursor-pointer inline-flex items-center justify-center gap-[0.3rem] rounded-[25px] border-none bg-accent px-6 py-2.5 text-[1rem] font-semibold text-white no-underline transition-colors duration-300 ease-out hover:bg-accent-hover";
 
 // ---- 幽灵按钮（白描边玻璃） ----
 
 /** 迷你幽灵按钮。 */
 export const btnGhostXs =
-  "cursor-pointer rounded-md border border-white-20 bg-white-10 px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-white-80 transition-all duration-200 ease-in-out hover:bg-white-20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
+  "cursor-pointer inline-flex items-center justify-center gap-1 rounded-md border border-white-20 bg-white-10 px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-white-80 transition-all duration-200 ease-in-out hover:bg-white-20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
 /** 小幽灵按钮。 */
 export const btnGhostSm =
-  "cursor-pointer rounded-md border border-white-20 bg-white-10 px-2.5 py-1 text-[0.85rem] whitespace-nowrap text-white-80 transition-all duration-200 ease-in-out hover:bg-white-20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
+  "cursor-pointer inline-flex items-center justify-center gap-[0.3rem] rounded-md border border-white-20 bg-white-10 px-2.5 py-1 text-[0.85rem] whitespace-nowrap text-white-80 transition-all duration-200 ease-in-out hover:bg-white-20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
 /** 标准幽灵按钮。 */
 export const btnGhost =
-  "cursor-pointer rounded-md border border-white-20 bg-white-10 px-3 py-1.5 text-[0.85rem] whitespace-nowrap text-white-80 transition-all duration-200 ease-in-out hover:bg-white-20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
+  "cursor-pointer inline-flex items-center justify-center gap-[0.3rem] rounded-md border border-white-20 bg-white-10 px-3 py-1.5 text-[0.85rem] whitespace-nowrap text-white-80 transition-all duration-200 ease-in-out hover:bg-white-20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
 /** 标准幽灵按钮（大一号文字）。 */
 export const btnGhostMd =
-  "cursor-pointer rounded-md border border-white-20 bg-white-10 px-3 py-1.5 text-[0.9rem] whitespace-nowrap text-white-80 transition-all duration-200 ease-in-out hover:bg-white-20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
+  "cursor-pointer inline-flex items-center justify-center gap-[0.3rem] rounded-md border border-white-20 bg-white-10 px-3 py-1.5 text-[0.9rem] whitespace-nowrap text-white-80 transition-all duration-200 ease-in-out hover:bg-white-20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
 /** 顶栏幽灵按钮（文字略亮）。 */
 export const btnBar =
-  "cursor-pointer rounded-md border border-white-20 bg-white-10 px-3 py-1.5 text-[0.9rem] whitespace-nowrap text-white-85 transition-all duration-200 ease-in-out hover:bg-white-20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
+  "cursor-pointer inline-flex items-center justify-center gap-[0.3rem] rounded-md border border-white-20 bg-white-10 px-3 py-1.5 text-[0.9rem] whitespace-nowrap text-white-85 transition-all duration-200 ease-in-out hover:bg-white-20 hover:text-white disabled:cursor-not-allowed disabled:opacity-50";
 /** 危险操作按钮（红调）。 */
 export const btnDanger =
-  "cursor-pointer rounded-md border border-red-300/30 bg-red-400/10 px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-red-200 transition-colors duration-200 hover:bg-red-400/20 disabled:cursor-not-allowed disabled:opacity-50";
+  "cursor-pointer inline-flex items-center justify-center gap-1 rounded-md border border-red-300/30 bg-red-400/10 px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-red-200 transition-colors duration-200 hover:bg-red-400/20 disabled:cursor-not-allowed disabled:opacity-50";
+
+// ---- 折叠开关（2026-11 自 btnGhost 混用中分离：与次操作同玻璃底，文字降一档
+// 色阶表达“非动作”；chevron 结构与 aria-expanded 由 ToggleButton 组件统一承担） ----
+
+/** 迷你折叠开关。 */
+export const btnToggleXs =
+  "cursor-pointer inline-flex items-center justify-center gap-1 rounded-md border border-white-20 bg-white-10 px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-white-60 transition-all duration-200 ease-in-out hover:bg-white-20 hover:text-white-85 disabled:cursor-not-allowed disabled:opacity-50";
+/** 标准折叠开关。 */
+export const btnToggle =
+  "cursor-pointer inline-flex items-center justify-center gap-[0.3rem] rounded-md border border-white-20 bg-white-10 px-3 py-1.5 text-[0.85rem] whitespace-nowrap text-white-60 transition-all duration-200 ease-in-out hover:bg-white-20 hover:text-white-85 disabled:cursor-not-allowed disabled:opacity-50";
+/** 大号折叠开关。 */
+export const btnToggleMd =
+  "cursor-pointer inline-flex items-center justify-center gap-[0.3rem] rounded-md border border-white-20 bg-white-10 px-3 py-1.5 text-[0.9rem] whitespace-nowrap text-white-60 transition-all duration-200 ease-in-out hover:bg-white-20 hover:text-white-85 disabled:cursor-not-allowed disabled:opacity-50";
 
 // ---- 图标按钮（方形透明） ----
 

@@ -32,7 +32,8 @@
   },
   "dependencies": {
     "@brightmeows/bms": "workspace:*",
-    "@brightmeows/mirror": "workspace:*"
+    "@brightmeows/mirror": "workspace:*",
+    "@lucide/svelte": "^1.70.0"
   },
   "devDependencies": {
     "@inlang/paraglide-js": "^2.29.3",
