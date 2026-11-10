@@ -4,7 +4,7 @@
       "name": "brightmeows.com",
       "ruleRef": "legacy-redirect-brightmeows-com",
       "matchApex": false,
-      "excludeHosts": ["bms-table-mirror-r2.brightmeows.com"]
+      "excludeHosts": ["bms-table-mirror-r2.brightmeows.com", "private-dsh.brightmeows.com"]
     },
     {
       "name": "brightmeows.cn",
