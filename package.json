@@ -49,7 +49,7 @@
     "markdownlint-cli": "^0.50.0",
     "opencc-js": "^1.4.2",
     "oxfmt": "^0.77.0",
-    "oxlint": "^1.90.0",
+    "oxlint": "^1.92.0",
     "oxlint-tailwindcss": "^1.17.1",
     "oxlint-tsgolint": "^7.0.2006",
     "parse5": "^8.0.1",
