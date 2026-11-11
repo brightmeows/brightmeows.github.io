@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { ChartData } from "@brightmeows/bms/format";
+  import GripVertical from "@lucide/svelte/icons/grip-vertical";
   import type { Action } from "svelte/action";
 
   import ChartLinkButtons from "./ChartLinkButtons.svelte";
@@ -67,14 +68,7 @@
       <div class="flex items-center justify-center gap-1">
         {#if drag}
           <span class="cursor-grab text-white-35" aria-hidden="true">
-            <svg class="size-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <circle cx="9" cy="6" r="1.6" />
-              <circle cx="15" cy="6" r="1.6" />
-              <circle cx="9" cy="12" r="1.6" />
-              <circle cx="15" cy="12" r="1.6" />
-              <circle cx="9" cy="18" r="1.6" />
-              <circle cx="15" cy="18" r="1.6" />
-            </svg>
+            <GripVertical class="size-4" />
           </span>
         {/if}
         <Checkbox

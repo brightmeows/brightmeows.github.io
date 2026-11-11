@@ -1,4 +1,6 @@
 <script lang="ts">
+  import EllipsisVertical from "@lucide/svelte/icons/ellipsis-vertical";
+
   import { btnIcon } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
 
@@ -97,11 +99,7 @@
   {disabled}
   onclick={toggleMenu}
 >
-  <svg class="size-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-    <circle cx="12" cy="5" r="1.6" />
-    <circle cx="12" cy="12" r="1.6" />
-    <circle cx="12" cy="19" r="1.6" />
-  </svg>
+  <EllipsisVertical class="size-4" />
 </button>
 
 {#if menuOpen}
