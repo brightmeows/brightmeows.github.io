@@ -1,5 +1,9 @@
 <script lang="ts">
+  import Check from "@lucide/svelte/icons/check";
+  import Hourglass from "@lucide/svelte/icons/hourglass";
   import Search from "@lucide/svelte/icons/search";
+  import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
+  import X from "@lucide/svelte/icons/x";
   import { onMount, onDestroy } from "svelte";
   import { SvelteMap } from "svelte/reactivity";
 
@@ -218,7 +222,7 @@
   {#if indexClient.phase === "loading"}
     <!-- 索引加载进度 -->
     <div class="p-8 text-center">
-      <div class="mb-6 text-[3rem]">⏳</div>
+      <Hourglass class="mx-auto mb-6 size-12 text-white-30" strokeWidth={1.5} aria-hidden="true" />
       <p class="mb-4 text-white-80">{m["search.loading_index"]()}</p>
       <div class="mx-auto max-w-xs space-y-2 text-left">
         {#each indexClient.progress as item (item.name)}
@@ -229,10 +233,10 @@
               ></div>
               <span class="text-white-60">{item.name}.json</span>
             {:else if item.status === "done"}
-              <span class="shrink-0 text-success">✓</span>
+              <Check class="size-4 shrink-0 text-success" aria-hidden="true" />
               <span class="text-white-80">{item.name}.json</span>
             {:else}
-              <span class="shrink-0 text-error">✗</span>
+              <X class="size-4 shrink-0 text-error" aria-hidden="true" />
               <span class="text-white-50">{item.name}.json</span>
             {/if}
           </div>
@@ -242,7 +246,7 @@
   {:else if indexClient.phase === "error"}
     <!-- 索引加载失败 -->
     <div class="p-12 text-center">
-      <div class="mb-4 text-[4rem]">⚠️</div>
+      <TriangleAlert class="mx-auto mb-4 size-16 text-error" strokeWidth={1.5} aria-hidden="true" />
       <h3 class="mb-4 text-error">{m["search.index_load_failed"]()}</h3>
       <p class="message-error my-6">
         {indexClient.errorMessage ?? m["common.unknown_error"]()}
@@ -279,13 +283,13 @@
             : m["search.search"]()}
         >
           {#if searchPhase === "loading-tables"}
-            ✕
+            <X class="size-5" aria-hidden="true" />
           {:else if isSearching}
             <div
               class="h-5 w-5 animate-spin rounded-full border-2 border-white-30 border-t-accent"
             ></div>
           {:else}
-            🔍
+            <Search class="size-5" aria-hidden="true" />
           {/if}
         </button>
       </div>
@@ -311,12 +315,16 @@
       </div>
     {:else if searchPhase === "searching"}
       <div class="p-12 text-center">
-        <div class="mb-4 text-[4rem]">🔍</div>
+        <Search class="mx-auto mb-4 size-16 text-white-30" strokeWidth={1.5} aria-hidden="true" />
         <p class="text-white-70">{m["search.searching"]()}</p>
       </div>
     {:else if searchPhase === "loading-tables"}
       <div class="p-12 text-center">
-        <div class="mb-4 text-[4rem]">⏳</div>
+        <Hourglass
+          class="mx-auto mb-4 size-16 text-white-30"
+          strokeWidth={1.5}
+          aria-hidden="true"
+        />
         <p class="text-white-70">{m["search.loading_tables"]()}</p>
       </div>
     {:else if hasNoResults}

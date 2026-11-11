@@ -1,6 +1,10 @@
 <script lang="ts">
   import type { ChartData } from "@brightmeows/bms/format";
   import { mirrorTablePath } from "@brightmeows/mirror/urls";
+  import CircleDashed from "@lucide/svelte/icons/circle-dashed";
+  import Package from "@lucide/svelte/icons/package";
+  import RefreshCw from "@lucide/svelte/icons/refresh-cw";
+  import X from "@lucide/svelte/icons/x";
 
   import BmsLinkButtons from "./BmsLinkButtons.svelte";
 
@@ -127,7 +131,8 @@
                   rel="noopener noreferrer"
                   size="sm"
                 >
-                  📦 {m["common.bundle"]()}
+                  <Package class="size-4" aria-hidden="true" />
+                  {m["common.bundle"]()}
                 </GradientButton>
               {/if}
               {#if diffUrl}
@@ -138,7 +143,8 @@
                   rel="noopener noreferrer"
                   size="sm"
                 >
-                  🔄 {m["common.diff"]()}
+                  <RefreshCw class="size-4" aria-hidden="true" />
+                  {m["common.diff"]()}
                 </GradientButton>
               {/if}
             </div>
@@ -189,7 +195,7 @@
       {:else if loadState?.status === "error"}
         <!-- 加载失败 -->
         <div class="card-dark flex items-center gap-3">
-          <span class="shrink-0 text-error">✗</span>
+          <X class="size-4 shrink-0 text-error" aria-hidden="true" />
           <div class="flex flex-1 flex-col gap-0.5">
             <span class="text-white-80">{loadState.name}</span>
             <span class="text-[0.8rem] text-error/70">{loadState.errorMessage}</span>
@@ -201,7 +207,7 @@
       {:else}
         <!-- 等待中或状态未知 -->
         <div class="card-dark flex items-center gap-3">
-          <span class="shrink-0 text-white-30">○</span>
+          <CircleDashed class="size-4 shrink-0 text-white-30" aria-hidden="true" />
           <a
             class="flex-1 text-white-50 no-underline transition-colors hover:text-accent"
             href={tableHref}
