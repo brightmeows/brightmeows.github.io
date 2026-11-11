@@ -10,7 +10,7 @@
 
   import GlassContainer from "#lib/components/ui/GlassContainer.svelte";
   import GradientButton from "#lib/components/ui/GradientButton.svelte";
-  import { btnGhostSm } from "#lib/constants/ui-classes.js";
+  import { btnChip, btnChipOnSuccess, btnGhostSm, linkInline } from "#lib/constants/ui-classes.js";
   import type { SearchResult } from "#lib/data/api/search-aggregator.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { TableLoadState } from "#lib/types/bms-view.js";
@@ -62,10 +62,7 @@
           type="button"
           onclick={() => void cb.copy("md5", result.md5!)}
           title={cb.copiedField === "md5" ? m["common.copied"]() : `MD5: ${result.md5}`}
-          class="cursor-pointer rounded-md px-2 py-1 text-[0.75rem] font-medium text-white transition-colors {cb.copiedField ===
-          'md5'
-            ? 'bg-success'
-            : 'bg-[#607d8b] hover:bg-[#78909c]'}"
+          class={cb.copiedField === "md5" ? btnChipOnSuccess : btnChip}
         >
           {cb.copiedField === "md5" ? m["common.copied"]() : m["search.copy_md5"]()}
         </button>
@@ -77,10 +74,7 @@
           title={cb.copiedField === "sha256"
             ? m["common.copied"]()
             : `SHA256: ${result.sha256.slice(0, 16)}...`}
-          class="cursor-pointer rounded-md px-2 py-1 text-[0.75rem] font-medium text-white transition-colors {cb.copiedField ===
-          'sha256'
-            ? 'bg-success'
-            : 'bg-[#607d8b] hover:bg-[#78909c]'}"
+          class={cb.copiedField === "sha256" ? btnChipOnSuccess : btnChip}
         >
           {cb.copiedField === "sha256" ? m["common.copied"]() : m["search.copy_sha256"]()}
         </button>
@@ -110,10 +104,7 @@
               >
                 {entry.symbol ?? ""}{entry.chart.level ?? "?"}
               </span>
-              <a
-                class="text-white no-underline transition-colors hover:text-accent"
-                href={tableHref}
-              >
+              <a class={linkInline} href={tableHref}>
                 {entry.tableName}
               </a>
             </div>
@@ -155,10 +146,7 @@
         {@const displayName = loadState.name}
         <div class="card-dark flex flex-col gap-2">
           <div class="flex items-center justify-between">
-            <a
-              class="text-white-80 no-underline transition-colors hover:text-accent"
-              href={tableHref}
-            >
+            <a class={linkInline} href={tableHref}>
               {displayName}
             </a>
             <span class="text-[0.8rem] text-white-50">
@@ -180,10 +168,7 @@
           <div
             class="h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-white-30 border-t-accent"
           ></div>
-          <a
-            class="flex-1 text-white-60 no-underline transition-colors hover:text-accent"
-            href={tableHref}
-          >
+          <a class="flex-1 {linkInline}" href={tableHref}>
             {loadState.name}
           </a>
           <span class="shrink-0 text-[0.8rem] text-white-40">
@@ -208,10 +193,7 @@
         <!-- 等待中或状态未知 -->
         <div class="card-dark flex items-center gap-3">
           <CircleDashed class="size-4 shrink-0 text-white-30" aria-hidden="true" />
-          <a
-            class="flex-1 text-white-50 no-underline transition-colors hover:text-accent"
-            href={tableHref}
-          >
+          <a class="flex-1 {linkInline}" href={tableHref}>
             {entry.tableName}
           </a>
           <span class="shrink-0 text-[0.8rem] text-white-30">{m["search.waiting"]()}</span>

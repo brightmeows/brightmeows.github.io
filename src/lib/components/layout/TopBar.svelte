@@ -17,7 +17,12 @@
   import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
   import { popoverLayer } from "#lib/components/ui/popover-layer.js";
   import { topLevelNav, type NavDropdown, type NavItem } from "#lib/constants/nav.js";
-  import { topbarIcon, topbarMenuItem } from "#lib/constants/ui-classes.js";
+  import {
+    topbarIcon,
+    topbarIconSolid,
+    topbarMenuItem,
+    topbarMenuItemSm,
+  } from "#lib/constants/ui-classes.js";
   import { auth } from "#lib/data/store/auth-store.svelte.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { TocItem, TopbarPanel } from "#lib/types/ui.js";
@@ -414,8 +419,6 @@
 
   const linkBase =
     "rounded-lg px-3 py-2 text-sm no-underline transition-colors duration-150 cursor-pointer";
-  const loginButtonClass =
-    "flex size-9 cursor-pointer items-center justify-center rounded-full bg-white-15 text-white transition-colors hover:bg-white-25";
   const pillClass = "pointer-events-auto rounded-2xl p-1.5";
 </script>
 
@@ -647,11 +650,7 @@
                 <div class="mx-2 my-1 border-t border-white-15"></div>
                 {#each topLevelNav as item, i (i)}
                   {#if "children" in item}
-                    <a
-                      href={item.href}
-                      class="block rounded-xl px-3 py-2.5 text-xs font-medium text-white-60 no-underline transition-colors hover:bg-white-10 hover:text-white"
-                      onclick={() => closePanels()}
-                    >
+                    <a href={item.href} class={topbarMenuItemSm} onclick={() => closePanels()}>
                       {item.label()}
                     </a>
                     {@render dropdownEntries(item.children)}
@@ -733,7 +732,7 @@
           {#if auth.status === "ready" && auth.user === null}
             <a
               href={loginHref}
-              class={loginButtonClass}
+              class={topbarIconSolid}
               aria-label={m["topbar.login"]()}
               title={m["topbar.login"]()}
             >

@@ -1,11 +1,12 @@
 <script lang="ts">
+  import ArrowLeft from "@lucide/svelte/icons/arrow-left";
   import Plus from "@lucide/svelte/icons/plus";
   import Search from "@lucide/svelte/icons/search";
   import Undo2 from "@lucide/svelte/icons/undo-2";
   import { onMount } from "svelte";
 
   import ToggleButton from "#lib/components/ui/ToggleButton.svelte";
-  import { btnGhost, inputPanel } from "#lib/constants/ui-classes.js";
+  import { btnGhost, btnGhostXs, inputPanel } from "#lib/constants/ui-classes.js";
   import {
     fetchFetchStatus,
     fetchPreview,
@@ -164,7 +165,10 @@
   <div class="flex flex-col gap-3">
     <div class="text-[0.9rem] text-white-60">
       {m["shared.cross_before"]()}
-      <a class="link-accent" href="/bms/table">{m["nav.table"]()}</a>
+      <a class={btnGhostXs} href="/bms/table">
+        <ArrowLeft class="size-4 shrink-0" aria-hidden="true" />
+        {m["nav.table"]()}
+      </a>
       {m["shared.cross_after"]()}
     </div>
     {#if user === null}

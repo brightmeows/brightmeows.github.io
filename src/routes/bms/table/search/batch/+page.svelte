@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { ChartData } from "@brightmeows/bms/format";
+  import ArrowRight from "@lucide/svelte/icons/arrow-right";
   import Check from "@lucide/svelte/icons/check";
   import ChevronDown from "@lucide/svelte/icons/chevron-down";
   import ChevronRight from "@lucide/svelte/icons/chevron-right";
@@ -17,7 +18,7 @@
   import EmptyState from "#lib/components/ui/EmptyState.svelte";
   import GradientButton from "#lib/components/ui/GradientButton.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
-  import { btnSearchSubmit, inputSearchMono } from "#lib/constants/ui-classes.js";
+  import { btnGhostXs, btnSearchSubmit, inputSearchMono } from "#lib/constants/ui-classes.js";
   import { createEpochGuard, runTableLoad } from "#lib/controllers/table-load.js";
   import type { CandidateEntry, QueryType } from "#lib/data/api/bms-search.js";
   import {
@@ -261,8 +262,9 @@
   <h1 class="page-title text-center">{m["batch.page_title"]()}</h1>
   <p class="mt-2 text-center text-[1.1rem] text-white-70">{m["batch.subtitle"]()}</p>
   <p class="mt-3 text-center text-[0.95rem] text-white-40">
-    <a class="text-accent underline-offset-2 hover:underline" href="/bms/table/search">
+    <a class={btnGhostXs} href="/bms/table/search">
       {m["batch.back_link"]()}
+      <ArrowRight class="size-4 shrink-0" aria-hidden="true" />
     </a>
   </p>
 {/snippet}

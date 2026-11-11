@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ArrowRight from "@lucide/svelte/icons/arrow-right";
   import Check from "@lucide/svelte/icons/check";
   import Hourglass from "@lucide/svelte/icons/hourglass";
   import Search from "@lucide/svelte/icons/search";
@@ -10,7 +11,7 @@
   import BmsSearchResult from "#lib/components/bms/BmsSearchResult.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import EmptyState from "#lib/components/ui/EmptyState.svelte";
-  import { btnSearchSubmit, inputSearchLg } from "#lib/constants/ui-classes.js";
+  import { btnGhostXs, btnSearchSubmit, inputSearchLg } from "#lib/constants/ui-classes.js";
   import { createEpochGuard, runTableLoad, waitingState } from "#lib/controllers/table-load.js";
   import type { CandidateEntry } from "#lib/data/api/bms-search.js";
   import {
@@ -212,8 +213,9 @@
   <h1 class="page-title text-center">{m["search.page_title"]()}</h1>
   <p class="mt-2 text-center text-[1.1rem] text-white-70">{m["search.subtitle"]()}</p>
   <p class="mt-3 text-center text-[0.95rem] text-white-40">
-    <a class="text-accent underline-offset-2 hover:underline" href="/bms/table/search/batch">
+    <a class={btnGhostXs} href="/bms/table/search/batch">
       {m["search.batch_link"]()}
+      <ArrowRight class="size-4 shrink-0" aria-hidden="true" />
     </a>
   </p>
 {/snippet}

@@ -13,7 +13,7 @@
   import { fly } from "svelte/transition";
 
   import ToggleButton from "#lib/components/ui/ToggleButton.svelte";
-  import { btnBar, btnGhostMd, btnPrimary } from "#lib/constants/ui-classes.js";
+  import { btnGhostMd, btnPrimary } from "#lib/constants/ui-classes.js";
   import {
     applyDockScroll,
     createDockScrollState,
@@ -276,7 +276,7 @@
       <div class="mt-3 flex flex-col items-stretch gap-2">
         {#if editing}
           {#if !createMode}
-            <button class="{btnBar} w-full" type="button" onclick={() => onSetMode("view")}>
+            <button class="{btnGhostMd} w-full" type="button" onclick={() => onSetMode("view")}>
               <Eye class="size-4 shrink-0" aria-hidden="true" />
               {m["editor.view"]()}
             </button>

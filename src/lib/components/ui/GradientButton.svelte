@@ -84,7 +84,7 @@
     align-items: center;
     justify-content: center;
     border: none;
-    border-radius: 0.5rem;
+    border-radius: 0.625rem;
     font-weight: 600;
     color: white;
     text-decoration: none;

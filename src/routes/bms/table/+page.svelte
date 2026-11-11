@@ -7,6 +7,7 @@
     type SharedSortKey,
   } from "@brightmeows/bms/shared";
   import type { SharedTableItem } from "@brightmeows/mirror/shared";
+  import BookOpen from "@lucide/svelte/icons/book-open";
   import { onMount, tick } from "svelte";
 
   import type { PageData } from "./$types";
@@ -17,7 +18,13 @@
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import Checkbox from "#lib/components/ui/Checkbox.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
-  import { btnInputClear, btnPrimaryLink } from "#lib/constants/ui-classes.js";
+  import {
+    btnChip,
+    btnChipOnWarning,
+    btnGhostXs,
+    btnInputClear,
+    btnPrimaryLink,
+  } from "#lib/constants/ui-classes.js";
   import { loadSharedTables, submitSharedDelete } from "#lib/data/api/shared-api.js";
   import { auth } from "#lib/data/store/auth-store.svelte.js";
   import { searchConverters } from "#lib/data/store/search-converters.svelte.js";
@@ -117,11 +124,12 @@
   </div>
   <p class="mt-2 text-center text-[0.85rem] text-white-50">
     <a
-      class="underline decoration-white-20 underline-offset-2 transition-colors hover:text-white-80 hover:decoration-white-40"
+      class={btnGhostXs}
       href="https://github.com/brightmeows/bms-skills/blob/main/skills/bms-table/SKILL.md"
       target="_blank"
       rel="noopener noreferrer"
     >
+      <BookOpen class="size-4 shrink-0" aria-hidden="true" />
       {m["table.format_reference"]()}
     </a>
   </p>
@@ -144,11 +152,7 @@
     <div class="flex flex-wrap items-center justify-center gap-3">
       <h2 class="section-title">{m["shared.all_tables"]()}</h2>
       {#if login !== null}
-        <label
-          class="flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-[0.35rem] text-[0.85rem] transition-colors duration-200 select-none {mineOnly
-            ? 'border-[#ffd54f] bg-[#ffd54f]/20 text-[#ffd54f]'
-            : 'border-white-20 text-white-50 hover:border-white-40 hover:text-white-70'}"
-        >
+        <label class={mineOnly ? btnChipOnWarning : btnChip}>
           <Checkbox
             size="sm"
             ariaLabel={m["shared.mine_filter"]()}

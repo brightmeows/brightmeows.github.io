@@ -6,6 +6,7 @@
   import TocPanel from "./TocPanel.svelte";
 
   import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
+  import { btnIcon, btnIconSm } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { TocItem, TocSidebarChapters } from "#lib/types/ui.js";
   import {
@@ -54,7 +55,7 @@
     <span class="text-[0.95rem] font-semibold text-white-90">{m["toc.title"]()}</span>
     <button
       type="button"
-      class="flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full text-white-60 transition-colors hover:bg-white-8 hover:text-white"
+      class="{btnIcon} shrink-0"
       title={m["toc.sidebar.collapse"]()}
       aria-label={m["toc.sidebar.collapse"]()}
       onclick={onCollapse}
@@ -68,7 +69,7 @@
       <div class="flex items-center gap-1 py-1.5 pr-2 pl-1">
         <button
           type="button"
-          class="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-white-60 transition-colors hover:bg-white-8 hover:text-white"
+          class="{btnIconSm} shrink-0"
           aria-expanded={chaptersOpen}
           aria-label={chapters.bookTitle}
           onclick={toggleChapters}
@@ -103,7 +104,7 @@
     <div class="flex items-center gap-1 py-1.5 pr-2 pl-1">
       <button
         type="button"
-        class="flex size-6 shrink-0 cursor-pointer items-center justify-center rounded-md text-white-60 transition-colors hover:bg-white-8 hover:text-white"
+        class="{btnIconSm} shrink-0"
         aria-expanded={headingsOpen}
         aria-label={m["toc.sidebar.headings"]()}
         onclick={toggleHeadings}

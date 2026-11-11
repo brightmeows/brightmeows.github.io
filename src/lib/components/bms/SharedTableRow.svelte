@@ -3,7 +3,7 @@
   import Pencil from "@lucide/svelte/icons/pencil";
   import Trash2 from "@lucide/svelte/icons/trash-2";
 
-  import { btnIconDanger, btnIconPlain } from "#lib/constants/ui-classes.js";
+  import { btnIconDanger, btnIconPlain, linkInline } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
   import { getLocale } from "#lib/paraglide/runtime.js";
   import { formatRelativeTime } from "#lib/utils/infra/date.js";
@@ -35,7 +35,7 @@
 <tr class="hover:bg-white-5 last:[&>td]:border-b-0">
   <td class="table-td-glass wrap-break-word text-white-80">{item.symbol ?? ""}</td>
   <td class="table-td-glass min-w-50 wrap-break-word">
-    <a href={item.url} class="text-accent no-underline transition-colors hover:text-accent-light">
+    <a href={item.url} class={linkInline}>
       {label}
     </a>
     <div class="mt-0.5 font-mono text-[0.8rem] text-white-50">{item.id}</div>

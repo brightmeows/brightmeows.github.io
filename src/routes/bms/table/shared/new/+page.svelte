@@ -13,7 +13,13 @@
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
-  import { btnGhost, btnPrimary, inputEditorMono, inputPanel } from "#lib/constants/ui-classes.js";
+  import {
+    btnGhost,
+    btnPrimary,
+    inputFile,
+    inputEditorMono,
+    inputPanel,
+  } from "#lib/constants/ui-classes.js";
   import { strictErrorsNotice, strictWarningsNotice } from "#lib/controllers/editor.js";
   import { fetchSharedCheckId } from "#lib/data/api/shared-api.js";
   import { auth } from "#lib/data/store/auth-store.svelte.js";
@@ -351,7 +357,7 @@
               {importBusy ? m["shared.import_busy"]() : m["shared.import_apply"]()}
             </button>
             <input
-              class="text-[0.85rem] file:cursor-pointer file:rounded-md file:border-0 file:bg-white-10 file:px-3 file:py-1.5 file:text-white-80"
+              class={inputFile}
               type="file"
               accept="application/json,.json"
               disabled={importBusy}

@@ -8,7 +8,7 @@
   import Package from "@lucide/svelte/icons/package";
   import { onMount } from "svelte";
 
-  import { chartLinkIcon } from "#lib/constants/ui-classes.js";
+  import { chartLinkIcon, topbarMenuItem } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
 
   interface Props {
@@ -219,7 +219,7 @@
   >
     {#each hiddenLinks as link (link.id)}
       <a
-        class="flex items-center gap-2 rounded-md px-2 py-1.5 text-[0.85rem] text-white-80 transition-colors hover:bg-white-10 hover:text-white"
+        class={topbarMenuItem}
         href={link.href}
         target="_blank"
         rel="noopener noreferrer"

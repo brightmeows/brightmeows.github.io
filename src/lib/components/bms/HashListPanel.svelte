@@ -1,7 +1,7 @@
 <script lang="ts">
   import { parseHashList, type HashListParseResult } from "@brightmeows/bms/hash-list";
 
-  import { btnGhost, inputEditorMono } from "#lib/constants/ui-classes.js";
+  import { btnGhost, inputFile, inputEditorMono } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
 
   /**
@@ -61,7 +61,7 @@
         {m["editor.import_apply"]()}
       </button>
       <input
-        class="text-[0.85rem] file:cursor-pointer file:rounded-md file:border-0 file:bg-white-10 file:px-3 file:py-1.5 file:text-white-80"
+        class={inputFile}
         type="file"
         accept=".txt,.csv,.list,.md,text/plain"
         {disabled}
