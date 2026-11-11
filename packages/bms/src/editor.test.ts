@@ -9,6 +9,7 @@ import {
   assignLevel,
   buildCombinedPackage,
   buildEntryHashSet,
+  captureEntryRemoval,
   commitEntryEdit,
   coreFieldTexts,
   countUnassigned,
@@ -31,6 +32,7 @@ import {
   parseLevelFilterOption,
   removeIndices,
   removeLevelAt,
+  restoreEntryRemoval,
   setIndices,
   shortenHash,
   shouldWarnOverwrite,
@@ -333,6 +335,45 @@ describe("assignLevel / removeIndices", () => {
     const source = [entry({ md5: "a" }), entry({ md5: "b" }), entry({ md5: "c" })];
     expect(removeIndices(source, [0, 2]).map((item) => item.md5)).toEqual(["b"]);
     expect(source).toHaveLength(3);
+  });
+});
+
+describe("captureEntryRemoval / restoreEntryRemoval", () => {
+  it("撤销按原下标原位插回并保持对象引用", () => {
+    const a = entry({ md5: "a" });
+    const b = entry({ md5: "b" });
+    const c = entry({ md5: "c" });
+    const source = [a, b, c];
+    const snapshot = captureEntryRemoval(source, [0, 2]);
+    const removed = removeIndices(source, [0, 2]);
+    expect(removed).toEqual([b]);
+    const restored = restoreEntryRemoval(removed, snapshot);
+    expect(restored.map((item) => item.md5)).toEqual(["a", "b", "c"]);
+    expect(restored[0]).toBe(a);
+    expect(restored[2]).toBe(c);
+  });
+
+  it("乱序与重复下标归一为升序去重", () => {
+    const source = [entry({ md5: "a" }), entry({ md5: "b" }), entry({ md5: "c" })];
+    const snapshot = captureEntryRemoval(source, [2, 0, 2]);
+    expect(snapshot.indices).toEqual([0, 2]);
+    const restored = restoreEntryRemoval([], snapshot);
+    expect(restored.map((item) => item.md5)).toEqual(["a", "c"]);
+  });
+
+  it("越界下标在捕获时忽略", () => {
+    const snapshot = captureEntryRemoval([entry({ md5: "a" })], [-1, 0, 5]);
+    expect(snapshot.indices).toEqual([0]);
+    expect(snapshot.items).toHaveLength(1);
+  });
+
+  it("删除后数组又有增删时插入下标钳制到当前长度", () => {
+    const a = entry({ md5: "a" });
+    const snapshot = captureEntryRemoval([a], [0]);
+    const grown = [entry({ md5: "x" }), entry({ md5: "y" })];
+    const restored = restoreEntryRemoval(grown, snapshot);
+    expect(restored[0]).toBe(a);
+    expect(restored).toHaveLength(3);
   });
 });
 

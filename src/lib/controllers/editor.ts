@@ -93,6 +93,11 @@ export function decideNewTableDraft(
 export interface EditorNotice {
   kind: "ok" | "warn" | "error";
   text: string;
+  /**
+   * 撤销入口：删除类通知附快照恢复回调，dock notice 区渲染撤销按钮；
+   * 带 action 的通知是 ok 类，沿用成功通知的 8 秒过期即撤销窗口关闭。
+   */
+  action?: { label: string; run: () => void } | undefined;
 }
 
 export type EditorSavePlan =

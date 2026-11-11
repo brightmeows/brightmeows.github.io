@@ -14,7 +14,7 @@
   import { fly } from "svelte/transition";
 
   import ToggleButton from "#lib/components/ui/ToggleButton.svelte";
-  import { btnGhostMd, btnPrimary } from "#lib/constants/ui-classes.js";
+  import { btnGhostMd, btnGhostSm, btnPrimary } from "#lib/constants/ui-classes.js";
   import {
     applyDockScroll,
     createDockScrollState,
@@ -108,6 +108,8 @@
     tableActionsOpen = mode === "view";
     importOpen = false;
     importDismissed = false;
+    // 撤销通知的恢复闭包绑定编辑态组件作用域，不作跨模式迁移
+    if (model.notice?.action !== undefined) model.notice = null;
   });
 
   // 空表（新建/未导入）自动展开导入段一次，引导第一步操作
@@ -139,6 +141,7 @@
     return {
       busy: model.busy,
       draftPending: model.pendingDraft !== null,
+      undoPending: model.notice?.action !== undefined,
       nearBottom: isNearDocumentBottom(
         window.scrollY,
         window.innerHeight,
@@ -159,6 +162,14 @@
   function toggleExpansion(): void {
     scrollState = toggleDockExpansion(scrollState);
     expansion = scrollState.expansion;
+  }
+
+  /** 执行通知附带的撤销并收起通知；恢复动作内部经 onChange 落 dirty。 */
+  function runPendingUndo(): void {
+    const action = model.notice?.action;
+    if (action === undefined) return;
+    model.notice = null;
+    action.run();
   }
 
   function handleFocusIn(event: FocusEvent): void {
@@ -219,7 +230,10 @@
         });
       } else {
         signals.push({
-          word: m["editor.dock_notice_ok"](),
+          word:
+            model.notice.action !== undefined
+              ? m["editor.dock_undo_pending"]()
+              : m["editor.dock_notice_ok"](),
           dot: "bg-success",
           text: "text-success",
           title: model.notice.text,
@@ -408,6 +422,12 @@
               : 'border-error/40 bg-error/10 text-error'}"
         >
           {model.notice.text}
+          {#if model.notice.action !== undefined}
+            <button class="{btnGhostSm} mt-2" type="button" onclick={runPendingUndo}>
+              <Undo2 class="size-3.5 shrink-0" aria-hidden="true" />
+              {model.notice.action.label}
+            </button>
+          {/if}
         </div>
       {/if}
     </div>

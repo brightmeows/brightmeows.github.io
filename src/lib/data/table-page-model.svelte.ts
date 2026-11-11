@@ -152,7 +152,8 @@ export function createTableModel(input: TableModelInput) {
 
   function markDirty(): void {
     drafts.markEdited();
-    notice = null;
+    // error/warn 常驻到被新通知替换；ok 类（含撤销窗口）随下一次编辑失效
+    if (notice?.kind === "ok") notice = null;
   }
 
   /** 草稿内容套用到模型（草稿侧的落账在 createDraftLifecycle.restore）。 */

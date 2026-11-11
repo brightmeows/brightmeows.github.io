@@ -539,6 +539,7 @@
       disabled={isEdit ? model.busy || model.dataLoadState !== "loaded" : false}
       {management}
       onChange={model.markDirty}
+      onNotice={(value: EditorNotice) => (model.notice = value)}
     />
   </div>
 {/snippet}
@@ -554,6 +555,7 @@
       nested={model.courseModel.shape === "nested"}
       disabled={isEdit ? model.busy || model.dataLoadState !== "loaded" : false}
       onChange={model.markDirty}
+      onNotice={(value: EditorNotice) => (model.notice = value)}
     />
   </div>
 {/snippet}
@@ -584,6 +586,7 @@
       dataError={model.dataError}
       onRetry={model.retryData}
       onChange={model.markDirty}
+      onNotice={(value: EditorNotice) => (model.notice = value)}
       confirm={confirmDialog.ask}
       bind:hiddenLevels
       bind:hideUnassigned

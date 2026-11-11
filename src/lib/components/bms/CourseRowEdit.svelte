@@ -31,6 +31,7 @@
     btnIconDanger,
     inputEditorMono,
   } from "#lib/constants/ui-classes.js";
+  import type { EditorNotice } from "#lib/controllers/editor.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { DeepReadonly } from "#lib/types/bms-view.js";
   import { createDragList, type DragItemOptions } from "#lib/utils/ui/dnd-list.svelte.js";
@@ -59,6 +60,8 @@
     onMoveDown: () => void;
     /** 写入收口：mutator 拿到可写 course 原地修改，执行后由父级统一 onChange。 */
     onedit: (mutate: (target: EditableCourse) => void) => void;
+    /** 删除类撤销通知的出口（dock notice 区渲染撤销按钮）；缺省不通知。 */
+    onNotice?: ((notice: EditorNotice) => void) | undefined;
   }
 
   let {
@@ -76,6 +79,7 @@
     onMoveUp,
     onMoveDown,
     onedit,
+    onNotice = undefined,
   }: Props = $props();
 
   const PICKER_LIMIT = 20;
@@ -157,8 +161,25 @@
   }
 
   function removeTrophy(index: number): void {
+    const removed = course.trophies[index];
+    if (removed === undefined) return;
+    // 快照在可写目标里捕获：只读视图的深只读类型不能直接写回
+    let snapshot: EditableCourse["trophies"] = [];
     onedit((target) => {
+      snapshot = [...target.trophies];
       target.trophies = target.trophies.filter((_, i) => i !== index);
+    });
+    onNotice?.({
+      kind: "ok",
+      text: m["editor.undo_trophy_deleted"]({ name: removed.name }),
+      action: {
+        label: m["common.undo"](),
+        run: () => {
+          onedit((target) => {
+            target.trophies = snapshot;
+          });
+        },
+      },
     });
   }
 
