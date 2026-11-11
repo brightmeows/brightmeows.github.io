@@ -22,6 +22,7 @@ import {
   SHARED_MAX_ENTRIES,
   SHARED_MAX_HEADER_BYTES,
   SHARED_MAX_TABLES_PER_USER,
+  serializeSharedJson,
   validateSharedId,
   withDataUrl,
   type SharedIdError,
@@ -156,7 +157,6 @@ function preparePayload(
   | {
       header: Record<string, unknown>;
       data: Record<string, unknown>[];
-      headerJson: string;
       dataJson: string;
     }
   | Response {
@@ -182,8 +182,7 @@ function preparePayload(
   return {
     header,
     data: checked.entries,
-    headerJson: JSON.stringify(header, null, 2),
-    dataJson: JSON.stringify(checked.entries, null, 2),
+    dataJson: serializeSharedJson(checked.entries),
   };
 }
 
@@ -229,7 +228,7 @@ export async function handleSharedCreate(request: Request, env: Env, now: Date):
     await putSharedObjects(
       env,
       id,
-      JSON.stringify(withDataUrl(payload.header, r2SharedDataUrl(env.R2_BASE, id)), null, 2),
+      serializeSharedJson(withDataUrl(payload.header, r2SharedDataUrl(env.R2_BASE, id))),
       payload.dataJson
     );
   } catch (error) {
@@ -275,7 +274,7 @@ export async function handleSharedSave(request: Request, env: Env, now: Date): P
     await putSharedObjects(
       env,
       id,
-      JSON.stringify(withDataUrl(payload.header, r2SharedDataUrl(env.R2_BASE, id)), null, 2),
+      serializeSharedJson(withDataUrl(payload.header, r2SharedDataUrl(env.R2_BASE, id))),
       payload.dataJson
     );
   } catch (error) {
