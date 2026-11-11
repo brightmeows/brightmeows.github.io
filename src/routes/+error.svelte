@@ -1,6 +1,7 @@
 <script lang="ts">
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import GlassButton from "#lib/components/ui/GlassButton.svelte";
+  import { btnPrimaryLink } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
@@ -15,9 +16,9 @@
   );
   // 文案延迟求值：与顶栏菜单同一约定，模块求值期不触碰 m。
   const exits = [
-    { href: resolve("/"), label: () => m["nav.home"]() },
-    { href: resolve("/bms/table/mirror"), label: () => m["nav.mirror"]() },
-    { href: resolve("/bms/table/search"), label: () => m["nav.search"]() },
+    { href: resolve("/"), label: () => m["nav.home"](), primary: true },
+    { href: resolve("/bms/table/mirror"), label: () => m["nav.mirror"](), primary: false },
+    { href: resolve("/bms/table/search"), label: () => m["nav.search"](), primary: false },
   ];
 </script>
 
@@ -32,7 +33,11 @@
     <p class="mx-auto mb-8 max-w-[30rem] text-white-70">{hint}</p>
     <div class="flex flex-wrap justify-center gap-3">
       {#each exits as exit (exit.href)}
-        <GlassButton href={exit.href} size="md">{exit.label()}</GlassButton>
+        {#if exit.primary}
+          <a class={btnPrimaryLink} href={exit.href}>{exit.label()}</a>
+        {:else}
+          <GlassButton href={exit.href} size="md">{exit.label()}</GlassButton>
+        {/if}
       {/each}
     </div>
   </div>

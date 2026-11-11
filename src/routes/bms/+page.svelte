@@ -16,7 +16,7 @@
   });
 </script>
 
-<PageShell {tocItems} panes={[titlePane, contentPane]} />
+<PageShell constrainPanes {tocItems} panes={[titlePane, contentPane]} />
 
 {#snippet titlePane()}
   <h1 class="page-title text-center">BMS</h1>

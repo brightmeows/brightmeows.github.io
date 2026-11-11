@@ -402,7 +402,7 @@
     <h1 class="page-title m-0 flex w-full justify-center">
       {#if isEdit}
         <input
-          class="w-full max-w-2xl rounded-md bg-transparent text-center outline-none [font:inherit] placeholder:text-white-30 focus-visible:ring-2 focus-visible:ring-accent/40"
+          class="w-full rounded-md bg-transparent text-center outline-none [font:inherit] placeholder:text-white-30 focus-visible:ring-2 focus-visible:ring-accent/40"
           type="text"
           bind:value={model.name}
           placeholder={model.pageTitle}

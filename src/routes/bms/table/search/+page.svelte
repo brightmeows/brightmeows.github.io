@@ -243,7 +243,7 @@
     <div class="p-12 text-center">
       <div class="mb-4 text-[4rem]">⚠️</div>
       <h3 class="mb-4 text-error">{m["search.index_load_failed"]()}</h3>
-      <p class="my-6 rounded-glass-sm border-l-4 border-error bg-[rgba(255,107,107,0.1)] p-4">
+      <p class="message-error my-6">
         {indexClient.errorMessage ?? m["common.unknown_error"]()}
       </p>
     </div>

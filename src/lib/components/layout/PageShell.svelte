@@ -20,6 +20,8 @@
     sidebarCollapsed?: boolean;
     /** 贴边把手点击（展开侧栏） */
     onExpandSidebar?: () => void;
+    /** 无侧栏时把 pane 收窄到正文卡宽度（工具与列表页保持全宽默认） */
+    constrainPanes?: boolean;
   }
 
   let {
@@ -29,6 +31,7 @@
     sidebar,
     sidebarCollapsed = false,
     onExpandSidebar,
+    constrainPanes = false,
   }: Props = $props();
 </script>
 
@@ -77,7 +80,12 @@
   {:else}
     {#each panes as pane, i (i)}
       {@const isLast = i === panes.length - 1}
-      <GlassContainer animate={true} class="w-full {!isLast ? 'mb-8' : ''}">
+      <GlassContainer
+        animate={true}
+        class="{constrainPanes ? 'mx-auto w-full max-w-[1000px]' : 'w-full'} {!isLast
+          ? 'mb-8'
+          : ''}"
+      >
         {@render pane()}
       </GlassContainer>
     {/each}
