@@ -139,6 +139,8 @@
   }
 
   function handleKeydown(event: KeyboardEvent): void {
+    // 确认弹层打开时冻结页面快捷键：待确认操作不得被切模式打断后跨态落地
+    if (confirmDialog.open) return;
     if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return;
     if (event.key === "s" || event.key === "S") {
       if (!model.canSave || model.busy) return;

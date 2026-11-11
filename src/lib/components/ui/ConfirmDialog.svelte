@@ -22,6 +22,7 @@
   let panel = $state<HTMLDivElement | null>(null);
   let confirmButton = $state<HTMLButtonElement | null>(null);
   let reduceMotion = $state(false);
+  let lastFocused: HTMLElement | null = null;
 
   onMount(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -33,10 +34,37 @@
     return () => query.removeEventListener("change", onChange);
   });
 
-  // 打开时聚焦确定键；backdrop 为纯装饰，交互由本面板承载
+  // 打开时记录来源焦点并聚焦确定键；关闭归还焦点（控件已卸载则不还）
   $effect(() => {
-    if (dialog.open) confirmButton?.focus();
+    if (dialog.open) {
+      lastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      confirmButton?.focus();
+    } else if (lastFocused !== null) {
+      if (lastFocused.isConnected) lastFocused.focus();
+      lastFocused = null;
+    }
   });
+
+  /** 弹层内 Tab 循环：模态期间焦点不出弹层。 */
+  function handlePanelKeydown(event: KeyboardEvent): void {
+    if (event.key !== "Tab" || panel === null) return;
+    const focusables = [...panel.querySelectorAll<HTMLElement>("button:not([disabled])")];
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (focusables.length === 0 || first === undefined || last === undefined) return;
+    const active = document.activeElement;
+    const inPanel = active instanceof HTMLElement && focusables.includes(active);
+    if (!inPanel) {
+      event.preventDefault();
+      first.focus();
+    } else if (event.shiftKey && active === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && active === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
 
   // 弹层外按下即取消（与顶栏弹层的外点关闭同语义，经 document 监听
   // 而非遮罩 onclick，避免给装饰层挂交互）
@@ -68,8 +96,10 @@
     <div
       bind:this={panel}
       role="dialog"
+      tabindex="-1"
       aria-modal="true"
       aria-label={m["common.confirm"]()}
+      onkeydown={handlePanelKeydown}
       class="w-full max-w-sm rounded-glass-lg bg-glass p-4 shadow-[var(--glass-lighting),0_12px_32px_rgba(0,0,0,0.35)] backdrop-blur"
       in:fly={{ y: 10, opacity: 0, duration: reduceMotion ? 0 : 150, easing: cubicOut }}
       out:fade={{ duration: reduceMotion ? 0 : 100 }}

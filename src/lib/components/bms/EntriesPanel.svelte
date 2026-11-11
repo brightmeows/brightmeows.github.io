@@ -470,7 +470,20 @@
 
   /** 撤销删除：快照条目按原下标原位插回（引用保持），经 onChange 落 dirty。 */
   function restoreRemoval(snapshot: EntryRemovalSnapshot): void {
+    // 插回会推移后续下标：勾选与编辑中的行按对象身份重算，避免指向错行
+    const editingEntry = editingIndex !== null ? entries[editingIndex] : undefined;
+    const selectedEntries = [...selected].flatMap((index) => {
+      const entry = entries[index];
+      return entry !== undefined ? [entry] : [];
+    });
     entries = restoreEntryRemoval(entries, snapshot);
+    editingIndex = editingEntry !== undefined ? entries.indexOf(editingEntry) : null;
+    selected = new Set(
+      selectedEntries.flatMap((entry) => {
+        const index = entries.indexOf(entry);
+        return index >= 0 ? [index] : [];
+      })
+    );
     onChange?.();
   }
 

@@ -9,7 +9,7 @@
   import Trash2 from "@lucide/svelte/icons/trash-2";
   import Undo2 from "@lucide/svelte/icons/undo-2";
   import type { Snippet } from "svelte";
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
   import { cubicIn, cubicOut } from "svelte/easing";
   import { fly } from "svelte/transition";
 
@@ -103,13 +103,16 @@
 
   // 模式变化重置初值（挂载时同样执行一次，与初始化等价）
   $effect(() => {
+    // 通知读写经 untrack 排除：notice 更新不得重跑本 effect（会重置收展态
+    // 与折叠段）；撤销闭包绑定编辑态组件作用域，模式切换时不作迁移
+    untrack(() => {
+      if (model.notice?.action !== undefined) model.notice = null;
+    });
     scrollState = createDockScrollState(mode);
     expansion = scrollState.expansion;
     tableActionsOpen = mode === "view";
     importOpen = false;
     importDismissed = false;
-    // 撤销通知的恢复闭包绑定编辑态组件作用域，不作跨模式迁移
-    if (model.notice?.action !== undefined) model.notice = null;
   });
 
   // 空表（新建/未导入）自动展开导入段一次，引导第一步操作
