@@ -16,6 +16,14 @@
 
 - [Satellite / Stella](https://stellabms.xyz/)：Satellite 与 Stella 难度表及对应段位认定的官方站。
 
+## 格式参考
+
+面向开发者与 AI 代理整理的 BMS 技术格式参考（[brightmeows/bms-skills](https://github.com/brightmeows/bms-skills) 仓库）：
+
+- [BMS 谱面格式](https://github.com/brightmeows/bms-skills/blob/main/skills/bms/SKILL.md)：.bms 谱面的通道映射、头部命令与编码兼容性参考。
+- [BMSON 谱面格式](https://github.com/brightmeows/bms-skills/blob/main/skills/bmson/SKILL.md)：JSON 谱面的 v1/v2 schema 字段定义与 beatoraja 扩展参考。
+- [难度表格式](https://github.com/brightmeows/bms-skills/blob/main/skills/bms-table/SKILL.md)：難易度表三文件结构、header 与 data 字段定义、段位认定（course）参考。
+
 ## 什么是BMS？
 
 BMS（Be-Music Source）是一种音乐游戏谱面格式，主要用于播放器如Lunatic Rave
