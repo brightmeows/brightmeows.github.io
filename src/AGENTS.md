@@ -86,7 +86,10 @@
 - **难度表页面（查看与编辑合并）是同一路由** — 三类表的每张表只有一个地址：`/bms/table/<table>/`、`/bms/table/mirror/<name>/`、`/bms/table/shared/<id>/`。
   - 查看态默认、地址即导入地址（meta 注入不变）；点“编辑”（入口在右下角 dock）以 `?edit=1` 浅层路由就地切换（压入历史、返回键回查看态、深链与刷新保持编辑态）。
   - 页面（`BmsTablePage`）持有唯一一份内存模型与两段式加载（header 先行、data 随后、草稿探查殿后），查看态直接渲染未保存的编辑结果（分组、统计、段位实时重算）并显示未保存标识。
-  - 模式切换、保存、另存、放弃、表整体操作、导入与 notice、草稿横幅、自动保存时刻都在常驻右下角的操作 dock（`TableDock`）：收起态是模式胶囊（图标加状态词；状态以“色点+短词”成对提示，黄=未保存、橙=警告、红=错误、绿=完成、浅蓝=待恢复草稿，悬停 title 保留完整 notice 文本），展开态是 340px 玻璃面板（窄屏回退全宽底部条），面板头为同一状态标识、按钮纵排；查看态编辑按钮下内联进入编辑说明（editHint）。
+  - 模式切换、保存、另存、放弃、表整体操作、导入与 notice、草稿横幅、自动保存时刻都在常驻右下角的操作 dock（`TableDock`）：查看态收起态是两枚——“编辑此表”
+    主按钮（btnPrimary，未保存时显“继续编辑”，点击直达编辑）加面板钮（SlidersHorizontal 图标；未保存等信号色点挂其上，title 保留完整文本）；编辑态收起态是模式胶囊
+    （图标加状态词；状态以“色点+短词”成对提示，黄=未保存、橙=警告、红=错误、绿=完成、浅蓝=待恢复草稿，悬停 title 保留完整 notice 文本）；展开态是 340px 玻璃面板
+    （窄屏回退全宽底部条），面板头为模式状态标识（“查看中”只在面板头保留）、按钮纵排；查看态编辑按钮下内联进入编辑说明（editHint）。
   - 表整体操作与导入是面板内的折叠段：表操作段（内存导出三键、查看原文直链、fork——fork 即查看态的另存共享，命名保持原名）查看态默认展开、编辑态默认收起；导入段默认收起，空表自动展开一次（手动收起后本会话不再自动），展开时面板加宽到 480px。标题区只留身份信息与复制导入链接；共享表页的线上版下载按钮与登录兜底入口已随迁移删除（下载统一内存导出，所见即所得）。
   - 快捷键：Ctrl/Cmd+S 保存（拦截浏览器默认，仅 canSave 且空闲时生效）、Ctrl/Cmd+E 切换查看/编辑（沿用 dock 切换的滚回页首；焦点在输入控件时不触发）。
   - 收展由 `controllers/table-dock` 状态机驱动（纯决策配相邻测试）。
@@ -177,9 +180,13 @@
   - 直接路径无维护面、语义无歧义，不要再新增 barrel。
   - 写 UI 前 `glob src/lib/components/**/*.svelte` 检索已有组件。
   - 按钮与输入框的类串用 `constants/ui-classes.ts` 的令牌（2026-10 自 16 个组件的本地复制收敛，按家族与尺寸逐变体命名；同月 layout.css 的 `.gradient-btn` 全局类一并收敛为 `btnGradientBlue`/`btnGradientOrange` 令牌），不要再本地复制类串；变体之间不组合，新视觉形态加新令牌。
-- **样式令牌纪律（2026-11 全站收敛）** — 玻璃圆角阶梯 glass-sm/md/lg/xl（10/14/18/20px）兼作全站圆角尺，徽章等非玻璃元素同阶梯取值，25px 胶囊是主按钮唯一保留的任意值。
+- **样式令牌纪律（2026-11 全站收敛）** — 玻璃圆角阶梯 glass-sm/md/lg/xl（10/14/18/20px）兼作全站圆角尺，徽章等非玻璃元素同阶梯取值；非胶囊按钮统一 glass-sm（10px），25px 胶囊（主按钮）、圆形（rounded-full）与搜索提交钮（跟随输入框成对）是仅有的豁免形态。
   - 语义色（accent、success、error、warning 及其透明度）一律走令牌工具类或 var(--color-*)，禁止十六进制字面量（含组件 style 块）。
-  - 渐变按钮双轨分工：面板行标准尺寸用 btnGradientBlue/Orange 令牌，行内紧凑尺寸与 green/custom 变体用 GradientButton、IconButton 组件（圆角已对齐 8px）。
-  - 三套图标按钮分工：btnIcon 族方形透明、chartLinkIcon 表内方形描边、IconButton 圆形渐变。
+  - 渐变按钮双轨分工：面板行标准尺寸用 btnGradientBlue/Orange 令牌，行内紧凑尺寸与 green/custom 变体用 GradientButton、IconButton 组件（圆角已对齐 10px 阶梯）。
+  - 三套图标按钮分工：btnIcon 族方形透明（含 size-6 的 btnIconSm）、chartLinkIcon 表内方形描边、IconButton 圆形渐变。
+  - 筛选 chip 家族是完整状态令牌：btnChip（灰态）加 btnChipOnAccent/btnChipOnWarning（按语义分激活色）加 btnChipOnSuccess（复制反馈态）；chip 是状态控件，不做部分类组合。
+  - 文字按钮家族（primary、ghost、danger、toggle、chip）统一带 focus-visible ring；btnBar 已并入 btnGhostMd，标准尺寸的危险动作用 btnDangerMd。
+  - 链接两族分工：行内主链接（表名等）用 linkInline 令牌（accent 无下划线悬停提亮），正文强调链用 link-accent 全局类；动作性链接（教程、格式参考、返回列表、查看全部、搜索互链）按钮化为 btnGhostXs——保留 a 元素只换视觉不换元素（href、target、中键行为不动），导航与内容链接（顶栏、TOC、卡片、表名行内链）保持链接形态。
   - 搜索域与徽章控件各用 ui-classes 的对应家族令牌，新变体先进 ui-classes 再使用。
+  - 机械守门是 `pnpm check:ui`（指纹集与豁免口径见 `scripts/check-ui-tokens.py` 头注），图标纪律守门是 `pnpm check:icons`。
 - **图标单源 lucide（2026-11 全站收敛）** — UI 图标一律 @lucide/svelte 组件（stroke 线性画法），emoji 与文本符号不当图标用；手绘 SVG 仅剩品牌资产（GIF logo、BMS-IR 文字徽标）与 innerHTML 场景（标题锚点，path 数据取自 lucide 并注明来源）。机械守门是 `pnpm check:icons`（禁用集与豁免口径见脚本头注）。
