@@ -59,7 +59,7 @@
   {#if overview === null && (overviewState === "idle" || overviewState === "loading")}
     <div class="text-[0.95rem] text-white-70">{m["common.loading_data"]()}</div>
   {:else if overview === null}
-    <div class="flex flex-wrap items-center gap-3 text-[0.95rem] text-red-300">
+    <div class="flex flex-wrap items-center gap-3 text-[0.95rem] text-error">
       <span>{error ?? m["common.load_failed"]()}</span>
       <button class={btnGhost} type="button" onclick={onretry}>
         <RotateCcw class="size-4 shrink-0" aria-hidden="true" />

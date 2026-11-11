@@ -270,7 +270,7 @@
       {#if loading}
         <p class="text-[0.85rem] text-white-50">{m["editor.entry_import_loading"]()}</p>
       {:else if loadError !== null}
-        <p class="text-[0.85rem] text-red-300">
+        <p class="text-[0.85rem] text-error">
           {m["editor.entry_import_failed"]({ detail: loadError })}
         </p>
       {:else}

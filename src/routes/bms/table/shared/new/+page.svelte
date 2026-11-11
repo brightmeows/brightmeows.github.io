@@ -279,7 +279,7 @@
           />
           <p class="mt-1.5 text-[0.85rem] text-white-50">{m["shared.id_hint"]()}</p>
           {#if idError !== null}
-            <p class="mt-2 text-[0.9rem] text-red-300">{idErrorMessage(idError)}</p>
+            <p class="mt-2 text-[0.9rem] text-error">{idErrorMessage(idError)}</p>
           {/if}
         </div>
 
@@ -296,9 +296,9 @@
             {:else if checkState === "aliased"}
               <span class="text-amber-300">{m["shared.id_was_aliased"]()}</span>
             {:else if checkState === "taken"}
-              <span class="text-red-300">{m["shared.id_taken"]()}</span>
+              <span class="text-error">{m["shared.id_taken"]()}</span>
             {:else if checkState === "failed"}
-              <span class="text-red-300">{m["shared.id_check_failed"]()}</span>
+              <span class="text-error">{m["shared.id_check_failed"]()}</span>
             {/if}
           </div>
         </div>
@@ -371,7 +371,7 @@
             {/if}
           </div>
           {#if importErrors !== null}
-            <p class="mt-2 text-[0.85rem] text-red-300">{importErrors}</p>
+            <p class="mt-2 text-[0.85rem] text-error">{importErrors}</p>
           {/if}
           {#if importWarnings !== null && importWarnings !== ""}
             <p class="mt-2 text-[0.85rem] text-amber-300">{importWarnings}</p>

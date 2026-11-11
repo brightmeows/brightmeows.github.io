@@ -121,6 +121,7 @@
   "batch.subtitle": "1行1語で一括検索し、JSON をエクスポート",
   "batch.summary": "完了：検索語 {queries} 件、譜面 {charts} 件",
   "batch.tables_failed": "{count} 件の表の読み込みに失敗（スキップ）",
+  "bms.page_title": "BMS リソース集",
   "bmsdata.actual_array": "配列",
   "bmsdata.chart_done": "譜面データを読み込みました",
   "bmsdata.chart_format_invalid": "譜面データの形式が不正です: {error}",

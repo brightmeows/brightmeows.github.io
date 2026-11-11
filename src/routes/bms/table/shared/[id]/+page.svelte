@@ -198,7 +198,7 @@
         </span>
       {/if}
       {#if notice}
-        <span class="text-[0.9rem] {notice.kind === 'ok' ? 'text-success' : 'text-red-300'}">
+        <span class="text-[0.9rem] {notice.kind === 'ok' ? 'text-success' : 'text-error'}">
           {notice.text}
         </span>
       {/if}
@@ -265,13 +265,13 @@
         <p class="text-[1rem] text-white-75">{m["shared.login_required"]()}</p>
         <a class="{btnPrimary} mt-4 inline-block" href={loginHref}>{m["topbar.login"]()}</a>
       {:else if s?.phase === "notfound"}
-        <p class="text-[1.05rem] text-red-300">{m["shared.not_found"]()}</p>
+        <p class="text-[1.05rem] text-error">{m["shared.not_found"]()}</p>
         <p class="mt-2 text-[0.9rem] text-white-60">{m["shared.not_found_hint"]()}</p>
         <a class="link-accent mt-3 inline-block" href="/bms/table/shared/">
           {m["shared.back_to_list"]()}
         </a>
       {:else if s?.phase === "error"}
-        <p class="text-[1.05rem] text-red-300">
+        <p class="message-error">
           {m["common.load_failed_with_error"]({
             error: s.loadError ?? m["common.unknown_error"](),
           })}

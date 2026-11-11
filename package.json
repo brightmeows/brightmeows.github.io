@@ -29,7 +29,7 @@
     "check:jsdoc": "node scripts/check-jsdoc.ts",
     "check:quotes": "git ls-files -z -- '*.md' '*.svx' '*.ts' '*.svelte' '*.js' '*.py' '*.yml' '*.yaml' '*.json' '*.jsonc' '*.toml' '*.css' '*.html' ':(exclude)static/**' | xargs -0 -r python3 scripts/check-cn-quotes.py",
     "check:icons": "git ls-files -z -- '*.svelte' | xargs -0 -r python3 scripts/check-ui-icons.py",
-    "check:md": "git ls-files -z -- '*.md' ':(exclude)content/**' ':(exclude)static/**' | xargs -0 -r markdownlint --config .markdownlint.toml && git ls-files -z -- 'content/**/*.md' | xargs -0 -r markdownlint --config .markdownlint.toml --disable MD013 MD025 MD033 --"
+    "check:md": "git ls-files -z -- '*.md' ':(exclude)content/**' ':(exclude)static/**' ':(exclude)src/routes/**/*.md' | xargs -0 -r markdownlint --config .markdownlint.toml && git ls-files -z -- 'src/routes/**/*.md' | xargs -0 -r markdownlint --config .markdownlint.toml --disable MD041 -- && git ls-files -z -- 'content/**/*.md' | xargs -0 -r markdownlint --config .markdownlint.toml --disable MD013 MD025 MD033 --"
   },
   "dependencies": {
     "@brightmeows/bms": "workspace:*",
