@@ -182,3 +182,4 @@
   - 渐变按钮双轨分工：面板行标准尺寸用 btnGradientBlue/Orange 令牌，行内紧凑尺寸与 green/custom 变体用 GradientButton、IconButton 组件（圆角已对齐 8px）。
   - 三套图标按钮分工：btnIcon 族方形透明、chartLinkIcon 表内方形描边、IconButton 圆形渐变。
   - 搜索域与徽章控件各用 ui-classes 的对应家族令牌，新变体先进 ui-classes 再使用。
+- **图标单源 lucide（2026-11 全站收敛）** — UI 图标一律 @lucide/svelte 组件（stroke 线性画法），emoji 与文本符号不当图标用；手绘 SVG 仅剩品牌资产（GIF logo、BMS-IR 文字徽标）与 innerHTML 场景（标题锚点，path 数据取自 lucide 并注明来源）。机械守门是 `pnpm check:icons`（禁用集与豁免口径见脚本头注）。

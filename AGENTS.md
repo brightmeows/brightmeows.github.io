@@ -25,7 +25,7 @@ pre-commit run --all-files    # 手动触发全部 hooks
 Hooks：
 
 - `pnpm format:check`、`pnpm check:md`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`、`pnpm check:bms`、`pnpm check:worker`、`pnpm check:config`；
-- `pnpm check:i18n`、`pnpm check:jsdoc`、`pnpm check:quotes`、`pnpm test`；
+- `pnpm check:i18n`、`pnpm check:jsdoc`、`pnpm check:quotes`、`pnpm check:icons`、`pnpm test`；
 - no-confusable-unicode、site-config、i18n-coverage、jsdoc-coverage、conventional-commit（commit-msg stage 校验提交信息）。
 
 ### 手动命令
@@ -37,6 +37,7 @@ Hooks：
 - `pnpm check:i18n` — i18n 覆盖校验（三语 key 对称与占位符、引用/死 key、源码 CJK 残留、英文漏翻；离线，毫秒级）
 - `pnpm check:jsdoc` — 导出函数 JSDoc 覆盖校验（离线，毫秒级，见 `scripts/AGENTS.md`）
 - `pnpm check:quotes` — 全量中文引号检查（扩展名与 `static/` 排除规则在 `package.json`，pre-commit 与 CI 共用；离线，毫秒级）
+- `pnpm check:icons` — UI 模板图标纪律检查（src 下 `.svelte` 禁 emoji 与符号图标；离线，毫秒级）
 
 域内命令见子文档：部署与 wrangler 相关在 `packages/worker/AGENTS.md`；管线、抓取、对拍与校验脚本在 `scripts/AGENTS.md`。
 
