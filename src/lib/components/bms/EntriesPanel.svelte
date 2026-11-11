@@ -40,6 +40,7 @@
   import ToggleButton from "#lib/components/ui/ToggleButton.svelte";
   import ToggleJumpChip from "#lib/components/ui/ToggleJumpChip.svelte";
   import { btnDanger, btnGhost, btnPrimary, inputEditorMono } from "#lib/constants/ui-classes.js";
+  import { planImportApply } from "#lib/controllers/editor.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { JsonPreviewHandle } from "#lib/types/ui.js";
   import { validateUrl } from "#lib/utils/infra/url.js";
@@ -68,6 +69,8 @@
     dataError?: string | null;
     onRetry?: (() => void | Promise<void>) | undefined;
     onChange?: (() => void) | undefined;
+    /** 应用前的确认原语（玻璃弹层）：批量粘贴的 replace 覆盖先问过再写。 */
+    confirm?: ((message: string) => Promise<boolean>) | undefined;
     hiddenLevels?: Set<string>;
     hideUnassigned?: boolean;
   }
@@ -86,6 +89,7 @@
     dataError = null,
     onRetry,
     onChange,
+    confirm = undefined,
     hiddenLevels = $bindable(new Set()),
     hideUnassigned = $bindable(false),
   }: Props = $props();
@@ -452,7 +456,7 @@
     if (editingIndex !== null) removeEntry(editingIndex);
   }
 
-  function applyBulk(): void {
+  async function applyBulk(): Promise<void> {
     bulkError = null;
     let parsed: unknown;
     try {
@@ -491,6 +495,17 @@
       notice = m["editor.bulk_done"]({ added: added.length, skipped });
       onChange?.();
       return;
+    }
+    const gate = planImportApply({
+      headerApplied: false,
+      hasData: true,
+      dataMode: bulkMode,
+      currentCount: entries.length,
+    });
+    if (gate.kind === "confirm") {
+      const approved =
+        confirm !== undefined ? await confirm(gate.message) : window.confirm(gate.message);
+      if (!approved) return;
     }
     entries = parsed as Record<string, unknown>[];
     bulkText = "";

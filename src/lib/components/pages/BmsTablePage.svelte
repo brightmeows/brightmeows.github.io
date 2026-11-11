@@ -27,6 +27,8 @@
   import TableOverviewPanel from "#lib/components/bms/TableOverviewPanel.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import CardSwitcher, { type CardSwitchItem } from "#lib/components/ui/CardSwitcher.svelte";
+  import { createConfirmDialog } from "#lib/components/ui/confirm-dialog.svelte.js";
+  import ConfirmDialog from "#lib/components/ui/ConfirmDialog.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
   import { btnGhost, btnPrimaryLarge } from "#lib/constants/ui-classes.js";
   import type { EditorNotice } from "#lib/controllers/editor.js";
@@ -72,11 +74,15 @@
   let levelRefHasData = $state(false);
   let levelRefLoadState = $state<"idle" | "loading" | "done" | "not-found" | "error">("idle");
 
+  /** 玻璃确认弹层：本页唯一实例，模型与编辑面板共用同一确认原语。 */
+  const confirmDialog = createConfirmDialog();
+
   // getter 传递：props 对象经闭包读取，模型内的 $derived 跟踪其响应式变化
   const model = createTableModel({
     source: () => source,
     publish: () => publish,
     capabilities: () => capabilities,
+    confirm: () => confirmDialog.ask,
   });
   const headerUrl = $derived(source.headerUrl);
   const showLevelRefPane = $derived(headerUrl !== null && levelRefLoadState !== "not-found");
@@ -320,6 +326,8 @@
     onSetMode={handleDockSetMode}
   />
 {/if}
+
+<ConfirmDialog dialog={confirmDialog} />
 
 <!-- 编辑态全页拖拽接收：与导入折叠段的拖拽区共用同一管线 -->
 {#if isEdit && model.ready}
@@ -576,6 +584,7 @@
       dataError={model.dataError}
       onRetry={model.retryData}
       onChange={model.markDirty}
+      confirm={confirmDialog.ask}
       bind:hiddenLevels
       bind:hideUnassigned
     />
@@ -598,6 +607,7 @@
       disabled={model.busy || model.dataLoadState !== "loaded"}
       onChange={model.markDirty}
       onNotice={(value: EditorNotice | null) => (model.notice = value)}
+      confirm={confirmDialog.ask}
     />
   {/if}
 {/snippet}

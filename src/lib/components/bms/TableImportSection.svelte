@@ -18,6 +18,8 @@
     disabled: boolean;
     onChange: () => void;
     onNotice: (notice: EditorNotice | null) => void;
+    /** 应用前的确认原语（玻璃弹层）：replace 覆盖与表头套用先问过再写。 */
+    confirm: (message: string) => Promise<boolean>;
   }
 </script>
 
@@ -35,7 +37,7 @@
   import HashListPanel from "#lib/components/bms/HashListPanel.svelte";
   import TableEntryImportPanel from "#lib/components/bms/TableEntryImportPanel.svelte";
   import TableImportPanel from "#lib/components/bms/TableImportPanel.svelte";
-  import { strictWarningsNotice } from "#lib/controllers/editor.js";
+  import { planImportApply, strictWarningsNotice } from "#lib/controllers/editor.js";
   import { m } from "#lib/paraglide/messages.js";
 
   let {
@@ -51,6 +53,7 @@
     disabled,
     onChange,
     onNotice,
+    confirm,
   }: TableImportSectionProps = $props();
 
   function applyImportedHeader(header: Record<string, unknown>): void {
@@ -64,7 +67,14 @@
     extraHeader = state.extra;
   }
 
-  function handleImport(result: TableImportResult): void {
+  async function handleImport(result: TableImportResult): Promise<void> {
+    const gate = planImportApply({
+      headerApplied: result.header !== null,
+      hasData: result.data !== null,
+      dataMode: result.dataMode,
+      currentCount: entries.length,
+    });
+    if (gate.kind === "confirm" && !(await confirm(gate.message))) return;
     if (result.header !== null) applyImportedHeader(result.header);
     const sourceLabel =
       result.source === "paste"

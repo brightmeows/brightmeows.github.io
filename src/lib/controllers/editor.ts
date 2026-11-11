@@ -107,14 +107,15 @@ export type EditorSavePlan =
 
 /**
  * 保存前置段：强验证闸门（先于未指派判定）与并发基线检查（shouldWarnOverwrite
- * 命中且用户取消则拒绝）。confirm 注入（页面传 window.confirm，单测传假实现）。
+ * 命中且用户取消则拒绝）。confirm 注入（页面传真实现或玻璃弹层，单测传假
+ * 实现）；确认原语可同步可异步，页面侧的弹层返回 Promise。
  */
 export async function planEditorSave(deps: {
   header: Record<string, unknown>;
   entries: Record<string, unknown>[];
   baselineUpdatedAt: string | undefined;
   conflictCheck: (() => Promise<string | undefined>) | undefined;
-  confirm: (message: string) => boolean;
+  confirm: (message: string) => boolean | Promise<boolean>;
 }): Promise<EditorSavePlan> {
   const gate = decideLocalSaveGate(deps.header, deps.entries);
   if (gate.gate === "invalid_payload") {
@@ -131,17 +132,53 @@ export async function planEditorSave(deps: {
   }
   if (deps.conflictCheck !== undefined) {
     const online = await deps.conflictCheck();
-    if (
-      shouldWarnOverwrite(deps.baselineUpdatedAt, online) &&
-      !deps.confirm(m["editor.save_conflict_confirm"]())
-    ) {
-      return {
-        kind: "rejected",
-        notice: { kind: "warn", text: m["editor.save_conflict_canceled"]() },
-      };
+    if (shouldWarnOverwrite(deps.baselineUpdatedAt, online)) {
+      const approved = await deps.confirm(m["editor.save_conflict_confirm"]());
+      if (!approved) {
+        return {
+          kind: "rejected",
+          notice: { kind: "warn", text: m["editor.save_conflict_canceled"]() },
+        };
+      }
     }
   }
   return { kind: "proceed", header: gate.header, data: gate.data, warnings: gate.warnings };
+}
+
+// ---- 导入与批量粘贴的应用闸门（replace 类覆盖在写入前要求确认） ----
+
+export type ImportApplyPlan =
+  /** 直接应用：空表或纯追加不拦截。 */
+  | { kind: "apply" }
+  /** 需确认：文案带覆盖范围与计数，用户取消则丢弃本次应用。 */
+  | { kind: "confirm"; message: string };
+
+/**
+ * 导入（合并包/header/data）与批量粘贴的应用闸门：数据 replace 覆盖非空表
+ * 优先按条目覆盖计数确认；套用表头（名称、等级顺序等）落到非空表按表头
+ * 覆盖确认。空表两者都放行——新建流程的第一步导入不设闸。
+ */
+export function planImportApply(deps: {
+  /** 是否套用导入的表头。 */
+  headerApplied: boolean;
+  /** 是否写入导入的条目数据。 */
+  hasData: boolean;
+  /** 条目写入模式。 */
+  dataMode: "append" | "replace";
+  /** 当前表条目数。 */
+  currentCount: number;
+}): ImportApplyPlan {
+  if (deps.currentCount <= 0) return { kind: "apply" };
+  if (deps.hasData && deps.dataMode === "replace") {
+    return {
+      kind: "confirm",
+      message: m["editor.replace_entries_confirm"]({ count: deps.currentCount }),
+    };
+  }
+  if (deps.headerApplied) {
+    return { kind: "confirm", message: m["editor.import_header_confirm"]() };
+  }
+  return { kind: "apply" };
 }
 
 export type EditorSaveOutcome =
