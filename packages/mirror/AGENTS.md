@@ -26,3 +26,11 @@
   - id 规则（NFC 归一 + ASCII 大小写折叠 + `[a-z0-9-]` 与中日韩字符集 + 保留词 `new`/`edit`，`.` 不入字符集故天然挡掉 `tables.json`）、三档上限（header 1MB / data 10MB / 条目 10000）、载荷校验与导出改写（下载时 `data_url` → `./data.json`）全在这里。
   - R2 对象键用原始 id（`sharedObjectPrefix`），公开 URL 才经 `encodeTableId` 百分号编码。
   - `shared/` 是与 `tables/` 平行的独立命名空间，镜像管线的 rclone 白名单不含它——**共享表永远不要并入 `tables/` 或镜像清单**，否则会被管线当镜像表重抓、并混进 BeMusicSeeker 清单。
+
+## 反直觉决策
+
+以下行为在代码中看似冗余，但均为故意。
+
+- **共享表 JSON 序列化给 trophy 数值补写小数点** — `serializeSharedJson`（`src/shared.ts`）对 `missrate`/`scorerate` 的整数值输出 `5.0` 而非 `5`。
+  - 原因：難易度表规范把这两处定义为 Float，beatoraja 内置的 2018 年版 jbmstable-parser 对其做 `(double)` 原始类型强转，`JSON.stringify` 的整数形式会让已装机用户（0.8.9 在内）导入即抛 ClassCastException。
+  - 覆盖面：Worker 写 R2 与客户端导出的共享表产物都经它序列化，不要“简化”回裸 `JSON.stringify`；镜像表不经它——字节透传是保真约定，源站的整数 trophy 属源站问题。

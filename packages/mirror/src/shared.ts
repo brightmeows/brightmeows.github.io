@@ -143,6 +143,56 @@ export function withLocalDataUrl(header: Record<string, unknown>): Record<string
   return withDataUrl(header, "./data.json");
 }
 
+/**
+ * 需要按 Float 补写小数点的字段：難易度表规范里 header 的 trophy 数值字段。
+ * beatoraja 内置的 jbmstable-parser（2018 年版 jar，0.8.9 仍未更新）对这两处
+ * 做 `(double)` 原始类型强转，JS 序列化的整数形式会令已装机用户导入即抛
+ * ClassCastException；主流表统一写 `5.0`，补写后与其对齐。
+ */
+const FLOAT_PAD_FIELDS: ReadonlySet<string> = new Set(["missrate", "scorerate"]);
+
+/**
+ * 补写哨兵：NUL 开头的串在真实表数据里不会出现。深拷贝时把目标整数值换成
+ * 哨兵串，序列化后替换回裸数字；真实数据撞形时整体回退普通序列化。
+ */
+const FLOAT_PAD_SENTINEL = "\u0000bmstable-float:";
+
+/** 序列化文本里的哨兵形态（\u0000 已被 JSON.stringify 转义为六字符序列）。 */
+const FLOAT_PAD_TOKEN = /"\\u0000bmstable-float:([^"]+)"/g;
+
+function containsFloatSentinel(value: unknown): boolean {
+  if (typeof value === "string") return value.startsWith(FLOAT_PAD_SENTINEL);
+  if (Array.isArray(value)) return value.some(containsFloatSentinel);
+  if (typeof value !== "object" || value === null) return false;
+  return Object.entries(value).some(
+    ([key, item]) => key.startsWith(FLOAT_PAD_SENTINEL) || containsFloatSentinel(item)
+  );
+}
+
+function padFloatValues(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(padFloatValues);
+  if (typeof value !== "object" || value === null) return value;
+  const out: Record<string, unknown> = {};
+  for (const [key, item] of Object.entries(value)) {
+    out[key] =
+      FLOAT_PAD_FIELDS.has(key) && typeof item === "number" && Number.isInteger(item)
+        ? FLOAT_PAD_SENTINEL + item.toFixed(1)
+        : padFloatValues(item);
+  }
+  return out;
+}
+
+/**
+ * 共享表 JSON 产物的统一序列化（header.json、data.json、合并包与内嵌
+ * header 的任何产物）：输出与 `JSON.stringify(value, null, 2)` 逐字节一致，
+ * 仅把 missrate/scorerate 的整数值补写 `.0`（因果见上方 FLOAT_PAD_FIELDS）。
+ * 数据与哨兵撞形时整体回退普通序列化：只损失旧版兼容，绝不改动数据本身。
+ */
+export function serializeSharedJson(value: unknown): string {
+  if (containsFloatSentinel(value)) return JSON.stringify(value, null, 2);
+  return JSON.stringify(padFloatValues(value), null, 2).replace(FLOAT_PAD_TOKEN, "$1");
+}
+
 /** R2 上共享表对象的键前缀（对象键用原始 id，公开 URL 才百分号编码）。 */
 export function sharedObjectPrefix(id: string): string {
   return `shared/${id}`;

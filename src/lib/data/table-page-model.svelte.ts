@@ -10,7 +10,7 @@ import type { ChartData } from "@brightmeows/bms/format";
 import { editorHeaderState } from "@brightmeows/bms/header";
 import type { SharedNewTableSeed } from "@brightmeows/bms/shared";
 import { computeTableStats, groupChartsByLevel, resolveCourses } from "@brightmeows/bms/transform";
-import { withLocalDataUrl } from "@brightmeows/mirror/shared";
+import { serializeSharedJson, withLocalDataUrl } from "@brightmeows/mirror/shared";
 
 import {
   commitEditorSave,
@@ -28,7 +28,7 @@ import {
 } from "#lib/data/table-model-drafts.svelte.js";
 import { createTableLoader } from "#lib/data/table-model-loader.svelte.js";
 import { m } from "#lib/paraglide/messages.js";
-import { downloadJsonFile } from "#lib/utils/infra/download.js";
+import { downloadTextFile } from "#lib/utils/infra/download.js";
 import { goto } from "$app/navigation";
 
 /** 来源：从哪里加载、草稿存哪。 */
@@ -292,13 +292,13 @@ export function createTableModel(input: TableModelInput) {
     if (!ensureValid()) return;
     noteUnassigned();
     if (kind === "header") {
-      downloadJsonFile("header.json", withLocalDataUrl(buildHeader()));
+      downloadTextFile("header.json", serializeSharedJson(withLocalDataUrl(buildHeader())));
     } else if (kind === "data") {
-      downloadJsonFile("data.json", entries);
+      downloadTextFile("data.json", serializeSharedJson(entries));
     } else {
-      downloadJsonFile(
+      downloadTextFile(
         "table-package.json",
-        buildCombinedPackage(withLocalDataUrl(buildHeader()), entries)
+        serializeSharedJson(buildCombinedPackage(withLocalDataUrl(buildHeader()), entries))
       );
     }
   }
