@@ -164,6 +164,18 @@ describe("commitEntryEdit", () => {
     expect(result.entry).toEqual({ md5: MD5, total: 480 });
   });
 
+  it("preserves a __proto__-named custom field without prototype pollution", () => {
+    const result = commitEntryEdit(entry({ md5: MD5 }), {
+      core: { ...blankCore(), md5: MD5 },
+      custom: [{ key: "__proto__", valueText: '{"keep":true}' }],
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(Object.getOwnPropertyNames(result.entry)).toContain("__proto__");
+    expect(Object.entries(result.entry)).toContainEqual(["__proto__", { keep: true }]);
+    expect(Object.prototype).not.toHaveProperty("keep");
+  });
+
   it("rejects core-field names, duplicates and empty keys in custom rows", () => {
     const base = { core: { ...blankCore(), md5: MD5 }, custom: [] };
     expect(commitEntryEdit({}, { ...base, custom: [{ key: "level", valueText: '"1"' }] })).toEqual({

@@ -194,10 +194,10 @@ export function commitEntryEdit(
   }
 
   const values: Record<CoreEntryField, string> = { ...input.core, md5, sha256 };
-  const fields: Record<string, unknown> = {};
+  const fields: [string, unknown][] = [];
   for (const field of CORE_ENTRY_FIELDS) {
     const value = values[field].trim();
-    fields[field] = value === "" ? undefined : value;
+    fields.push([field, value === "" ? undefined : value]);
   }
 
   const seen = new Set<string>();
@@ -210,7 +210,7 @@ export function commitEntryEdit(
 
     const text = row.valueText.trim();
     if (text === "") {
-      fields[key] = undefined;
+      fields.push([key, undefined]);
       continue;
     }
     let parsed: unknown;
@@ -219,15 +219,17 @@ export function commitEntryEdit(
     } catch {
       return { ok: false, error: "custom_value", detail: key };
     }
-    fields[key] = parsed;
+    fields.push([key, parsed]);
   }
 
   for (const key of Object.keys(original)) {
     if (CORE_FIELD_SET.has(key) || seen.has(key)) continue;
-    fields[key] = undefined;
+    fields.push([key, undefined]);
   }
 
-  return { ok: true, entry: applyEntryFields(original, fields) };
+  // fromEntries 走 CreateDataPropertyOrThrow：自定义字段名可为任意用户
+  // 输入（含 __proto__），裸赋值会触发 setter 丢值，这里统一安全收口。
+  return { ok: true, entry: applyEntryFields(original, Object.fromEntries(fields)) };
 }
 
 /** 条目身份哈希（小写，用于判重与展示）。 */

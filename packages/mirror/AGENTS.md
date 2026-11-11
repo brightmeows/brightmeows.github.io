@@ -26,6 +26,8 @@
   - id 规则（NFC 归一 + ASCII 大小写折叠 + `[a-z0-9-]` 与中日韩字符集 + 保留词 `new`/`edit`，`.` 不入字符集故天然挡掉 `tables.json`）、三档上限（header 1MB / data 10MB / 条目 10000）、载荷校验与导出改写（下载时 `data_url` → `./data.json`）全在这里。
   - R2 对象键用原始 id（`sharedObjectPrefix`），公开 URL 才经 `encodeTableId` 百分号编码。
   - `shared/` 是与 `tables/` 平行的独立命名空间，镜像管线的 rclone 白名单不含它——**共享表永远不要并入 `tables/` 或镜像清单**，否则会被管线当镜像表重抓、并混进 BeMusicSeeker 清单。
+- **动态键构造 plain object 一律走安全形态** — 以动态（尤其用户输入）键名构造或填充对象时，用 `Object.fromEntries`（内部 `CreateDataPropertyOrThrow`）或 `Object.create(null)` 底。
+  - 裸赋值 `out[key] = value` 会让名为 `__proto__` 的字段触发 setter——对象值改原型、原始值静默丢失，违反“未知字段原样保留”纪律（2026-11 于 serializeSharedJson 实发，CodeRabbit 评审捕获）。固定键清单（如 `normalizeHeader` 的 `HEADER_FIELDS`）不受此限。
 
 ## 反直觉决策
 

@@ -114,17 +114,19 @@ export type SharedPayloadError =
 /**
  * 编辑器的字段合并：只覆盖调用方提交的已知字段，其余（含自定义字段）
  * 原样保留；值为 `undefined` 表示清除该键，不落成 JSON 里的 null。
+ * 键名可能来自用户输入，经 Map 中转加 fromEntries 收口——不触发
+ * `__proto__` setter，名为 `__proto__` 的自定义字段按自有属性原样保留。
  */
 export function applyEntryFields(
   original: Record<string, unknown>,
   fields: Record<string, unknown>
 ): Record<string, unknown> {
-  const merged: Record<string, unknown> = { ...original };
+  const merged = new Map(Object.entries(original));
   for (const [key, value] of Object.entries(fields)) {
-    if (value === undefined) delete merged[key];
-    else merged[key] = value;
+    if (value === undefined) merged.delete(key);
+    else merged.set(key, value);
   }
-  return merged;
+  return Object.fromEntries(merged);
 }
 
 /** 返回把 header 的 data_url 指向指定地址的副本（不改动入参）。 */
@@ -176,22 +178,14 @@ function containsFloatSentinel(value: unknown): boolean {
 function padFloatValues(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(padFloatValues);
   if (!isPlainObject(value)) return value;
-  const out: Record<string, unknown> = {};
-  for (const [key, item] of Object.entries(value)) {
-    const next =
+  return Object.fromEntries(
+    Object.entries(value).map(([key, item]): [string, unknown] => [
+      key,
       FLOAT_PAD_FIELDS.has(key) && typeof item === "number" && Number.isInteger(item)
         ? FLOAT_PAD_SENTINEL + item.toFixed(1)
-        : padFloatValues(item);
-    // CreateDataProperty 等价物：普通赋值会让名为 __proto__ 的自定义字段
-    // 触发 setter（对象改原型、原始值被静默丢弃），defineProperty 不走 [[Set]]。
-    Object.defineProperty(out, key, {
-      value: next,
-      enumerable: true,
-      writable: true,
-      configurable: true,
-    });
-  }
-  return out;
+        : padFloatValues(item),
+    ])
+  );
 }
 
 /**

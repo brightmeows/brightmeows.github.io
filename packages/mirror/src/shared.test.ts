@@ -96,6 +96,19 @@ describe("applyEntryFields", () => {
     expect(JSON.stringify(merged)).not.toContain("comment");
   });
 
+  it("__proto__ 键按自有属性保真（覆盖与新增均不触发 setter）", () => {
+    const original = JSON.parse('{"md5":"a","__proto__":{"old":1}}') as Record<string, unknown>;
+    const merged = applyEntryFields(original, { level: "9" });
+    expect(Object.getOwnPropertyNames(merged)).toContain("__proto__");
+    expect(Object.entries(merged)).toContainEqual(["__proto__", { old: 1 }]);
+    const overridden = applyEntryFields(
+      original,
+      JSON.parse('{"__proto__":{"new":2}}') as Record<string, unknown>
+    );
+    expect(Object.entries(overridden)).toContainEqual(["__proto__", { new: 2 }]);
+    expect(Object.prototype).not.toHaveProperty("new");
+  });
+
   it("不改动入参", () => {
     const original = { md5: "a", level: "1" };
     applyEntryFields(original, { level: "9" });
