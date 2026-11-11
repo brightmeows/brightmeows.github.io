@@ -19,3 +19,4 @@
   - `shared` 共享表域纯函数（搜索过滤、作者分组、载荷校验消息——校验消息返回 `api.shared_*` 结构化键，翻译由调用方经 translateMessage 完成）；
   - `constants` 域常量。
 - **类型检查门槛** — `pnpm check:bms`（pre-commit 与 CI 的 check job 均跑），包内测试随文件迁移，vitest 的 `packages/**/*.test.ts` include 天然覆盖。
+- **挂起项：段位编辑不支持顶层 `header.grade` 形态** — GLAssist 面向的表把段位放 header 顶层 `grade` 字段（条目含 `style` 展示样式，镜像 444 表中 1 张），编辑器只认 `course`，该字段维持未知字段警告与导入导出保真。触发条件：共享表体系出现需要编辑该形态的实际需求。

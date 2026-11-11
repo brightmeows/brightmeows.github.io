@@ -243,5 +243,8 @@ describe("strictWarningMessage 强验证警告消息映射", () => {
     expect(
       strictWarningMessage({ kind: "course_hash_unmatched", hashes: ["a", "b"] }).params
     ).toEqual({ hashes: "a, b" });
+    expect(
+      strictWarningMessage({ kind: "unknown_constraint", values: ["", "grade_easy"] }).params
+    ).toEqual({ values: ", grade_easy" });
   });
 });

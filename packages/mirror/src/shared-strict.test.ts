@@ -77,19 +77,43 @@ describe("strictCheckHeader", () => {
     expect(codesOf(report.errors)).toEqual(["course_name", "course_name"]);
   });
 
-  it("constraint 非数组与越界值分别报 type 与 value", () => {
+  it("constraint 非数组报 type，非字符串元素报 value", () => {
     const report = strictCheckHeader({
       ...okHeader,
       course: [
         { name: "a", constraint: "grade_mirror" },
-        { name: "b", constraint: ["no_good", "grade_easy"] },
+        { name: "b", constraint: ["no_good", 42] },
       ],
     });
     expect(codesOf(report.errors)).toEqual(["course_constraint_type", "course_constraint_value"]);
-    expect(report.errors[1]?.params.value).toBe("grade_easy");
+    expect(report.errors[1]?.path).toBe("header.course[1].constraint[1]");
+    expect(report.errors[1]?.params.value).toBeUndefined();
   });
 
-  it("trophy 结构、名称与数值范围逐项校验", () => {
+  it("清单外的 constraint 值降为警告（真实表的 ln/自定义值不拒收）", () => {
+    const report = strictCheckHeader({
+      ...okHeader,
+      course: [{ name: "a", constraint: ["gauge_lr2", "ln", "", "grade_easy"] }],
+    });
+    expect(report.ok).toBe(true);
+    expect(report.errors).toEqual([]);
+    expect(report.warnings).toEqual([{ kind: "unknown_constraint", values: ["", "grade_easy"] }]);
+  });
+
+  it("beatoraja 全枚举 constraint 都接受（SSA3rd 的 ln 组合）", () => {
+    const report = strictCheckHeader({
+      ...okHeader,
+      course: [
+        { name: "LN 一次", constraint: ["gauge_lr2", "grade_mirror", "ln"] },
+        { name: "初段", constraint: ["grade"] },
+        { name: "HCN 段位", constraint: ["grade", "hcn", "cn"] },
+      ],
+    });
+    expect(report.errors).toEqual([]);
+    expect(report.warnings).toEqual([]);
+  });
+
+  it("trophy 结构、名称存在性与数值范围逐项校验（名称是自由文本）", () => {
     const report = strictCheckHeader({
       ...okHeader,
       course: [
@@ -98,20 +122,27 @@ describe("strictCheckHeader", () => {
           trophy: [
             "goldmedal",
             { name: "platinum" },
+            { name: "ゴールド" },
             { name: "goldmedal", missrate: 120 },
             { name: "silvermedal", scorerate: "80" },
+            {},
+            { name: "" },
           ],
         },
       ],
     });
     expect(codesOf(report.errors)).toEqual([
       "course_trophy_type",
+      "course_trophy_range",
+      "course_trophy_range",
       "course_trophy_name",
-      "course_trophy_range",
-      "course_trophy_range",
+      "course_trophy_name",
     ]);
-    expect(report.errors[2]?.path).toBe("header.course[0].trophy[2].missrate");
-    expect(report.errors[3]?.params.field).toBe("scorerate");
+    expect(report.errors[0]?.path).toBe("header.course[0].trophy[0]");
+    expect(report.errors[1]?.path).toBe("header.course[0].trophy[3].missrate");
+    expect(report.errors[2]?.params.field).toBe("scorerate");
+    expect(report.errors[3]?.path).toBe("header.course[0].trophy[5].name");
+    expect(report.errors[4]?.path).toBe("header.course[0].trophy[6].name");
   });
 
   it("charts 与哈希清单结构校验", () => {
@@ -164,20 +195,42 @@ describe("strictCheckData", () => {
     expect(report.errors[1]?.path).toBe("data[1]");
   });
 
-  it("level 必须是非空字符串，数字 level 是硬错误", () => {
+  it("level 接受非空字符串与数字（Overjoy 的数字等级），缺失与空串报错", () => {
     const report = strictCheckData([
       { md5: "a", level: 3 },
-      { md5: "a", level: "" },
       { md5: "a", level: "1" },
+      { md5: "a" },
+      { md5: "a", level: "" },
+      { md5: "a", level: null },
+      { md5: "a", level: true },
     ]);
-    expect(codesOf(report.errors)).toEqual(["entry_level", "entry_level"]);
-    expect(report.errors[0]?.path).toBe("data[0].level");
+    expect(codesOf(report.errors)).toEqual([
+      "entry_level",
+      "entry_level",
+      "entry_level",
+      "entry_level",
+    ]);
+    expect(report.errors[3]?.path).toBe("data[5].level");
   });
 
-  it("已知字符串字段非字符串报 entry_field_type", () => {
-    const report = strictCheckData([{ md5: "a", level: "1", title: 42, comment: null }]);
+  it("已知字符串字段接受字符串、数字与 null（LN 表的数字 lr2_bmsid），其余类型报错", () => {
+    const ok = strictCheckData([
+      { md5: "a", level: "1", lr2_bmsid: 395, url_pack: null, name_diff: null },
+    ]);
+    expect(ok.errors).toEqual([]);
+    const report = strictCheckData([{ md5: "a", level: "1", title: true, comment: { x: 1 } }]);
     expect(codesOf(report.errors)).toEqual(["entry_field_type", "entry_field_type"]);
+    expect(report.errors[0]?.params.field).toBe("title");
     expect(report.errors[1]?.params.field).toBe("comment");
+  });
+
+  it("哈希身份字段不接受数字（数字 md5 会经段位解析进视图崩掉 slice），null 视同缺失", () => {
+    const report = strictCheckData([
+      { md5: 123, sha256: "a".repeat(64), level: "1" },
+      { md5: null, sha256: "a".repeat(64), level: "1" },
+    ]);
+    expect(codesOf(report.errors)).toEqual(["entry_field_type"]);
+    expect(report.errors[0]?.params.field).toBe("md5");
   });
 
   it("规范点名的社区常见自定义字段不出未知字段警告", () => {
@@ -201,7 +254,7 @@ describe("strictCheckData", () => {
   });
 
   it("错误数达到收集上限时截断", () => {
-    const entries = Array.from({ length: 150 }, () => ({ md5: "a", level: 9 }));
+    const entries = Array.from({ length: 150 }, () => ({ md5: "a", level: true }));
     const report = strictCheckData(entries);
     expect(report.truncated).toBe(true);
     expect(report.errors).toHaveLength(100);
