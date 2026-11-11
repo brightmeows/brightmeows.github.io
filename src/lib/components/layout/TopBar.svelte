@@ -1,4 +1,8 @@
 <script lang="ts">
+  import ChevronDown from "@lucide/svelte/icons/chevron-down";
+  import List from "@lucide/svelte/icons/list";
+  import Menu from "@lucide/svelte/icons/menu";
+  import User from "@lucide/svelte/icons/user";
   import { onMount } from "svelte";
   import { cubicOut } from "svelte/easing";
   import { fade, fly } from "svelte/transition";
@@ -424,19 +428,7 @@
 
 <!-- 人形图标：未登录入口与头像加载失败共用 -->
 {#snippet personIcon()}
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    class="size-5"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="2"
-    stroke-linecap="round"
-    aria-hidden="true"
-  >
-    <circle cx="12" cy="8" r="4" />
-    <path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" />
-  </svg>
+  <User class="size-5" />
 {/snippet}
 
 <!-- 站长资料卡：桌面 Home 悬停卡与窄屏菜单资料区共用 -->
@@ -549,15 +541,7 @@
                     );
                   }}
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    class="size-3.5"
-                    fill="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path d="M7 10l5 5 5-5z" />
-                  </svg>
+                  <ChevronDown class="size-3.5" />
                 </button>
               </div>
 
@@ -636,18 +620,7 @@
           {...triggerHoverHandlers("menu", "left")}
           onclick={(event) => togglePanel("menu", "left", event)}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            class="size-5"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            aria-hidden="true"
-          >
-            <path d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
+          <Menu class="size-5" />
         </button>
 
         {#if panels.isOpen("menu")}
@@ -705,15 +678,7 @@
               {...triggerHoverHandlers("toc", "right", () => rightPill)}
               onclick={(event) => togglePanel("toc", "right", event, rightPill)}
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                class="size-5"
-                fill="currentColor"
-                aria-hidden="true"
-              >
-                <path d="M4 6h16v2H4V6zm0 5h10v2H4v-2zm0 5h16v2H4v-2z" />
-              </svg>
+              <List class="size-5" />
             </button>
 
             {#if panels.isOpen("toc")}

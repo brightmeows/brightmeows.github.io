@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ChevronDown from "@lucide/svelte/icons/chevron-down";
   import { untrack, type Snippet } from "svelte";
 
   /**
@@ -65,20 +66,11 @@
       {@render actions()}
     {/if}
     {#if collapsible}
-      <svg
+      <ChevronDown
         class="size-4 flex-none text-white-50 transition-transform duration-200 {open
           ? 'rotate-180'
           : ''}"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"
-      >
-        <path d="m6 9 6 6 6-6" />
-      </svg>
+      />
     {/if}
   </span>
 {/snippet}

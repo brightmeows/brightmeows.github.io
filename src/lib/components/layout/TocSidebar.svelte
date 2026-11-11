@@ -1,4 +1,6 @@
 <script lang="ts">
+  import ChevronRight from "@lucide/svelte/icons/chevron-right";
+  import ChevronsLeft from "@lucide/svelte/icons/chevrons-left";
   import { onMount } from "svelte";
 
   import TocPanel from "./TocPanel.svelte";
@@ -57,15 +59,7 @@
       aria-label={m["toc.sidebar.collapse"]()}
       onclick={onCollapse}
     >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        class="size-4"
-        fill="currentColor"
-        aria-hidden="true"
-      >
-        <path d="M14.5 6l-6 6 6 6zM19.5 6l-6 6 6 6z" />
-      </svg>
+      <ChevronsLeft class="size-4" />
     </button>
   </div>
 
@@ -79,15 +73,7 @@
           aria-label={chapters.bookTitle}
           onclick={toggleChapters}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            class="size-3.5 transition-transform {chaptersOpen ? 'rotate-90' : ''}"
-            fill="currentColor"
-            aria-hidden="true"
-          >
-            <path d="M9.5 6l6 6-6 6z" />
-          </svg>
+          <ChevronRight class="size-3.5 transition-transform {chaptersOpen ? 'rotate-90' : ''}" />
         </button>
         <a
           href={chapters.bookHref}
@@ -119,15 +105,7 @@
         aria-label={m["toc.sidebar.headings"]()}
         onclick={toggleHeadings}
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          class="size-3.5 transition-transform {headingsOpen ? 'rotate-90' : ''}"
-          fill="currentColor"
-          aria-hidden="true"
-        >
-          <path d="M9.5 6l6 6-6 6z" />
-        </svg>
+        <ChevronRight class="size-3.5 transition-transform {headingsOpen ? 'rotate-90' : ''}" />
       </button>
       <span class="text-[0.9rem] leading-snug font-semibold text-white-90">
         {m["toc.sidebar.headings"]()}
