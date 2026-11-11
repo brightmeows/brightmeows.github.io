@@ -677,6 +677,7 @@
   "table.sections": "表のセクション",
   "table.import_url_short": "インポート URL",
   "table.view_data": "data.json を表示",
+  "table.format_reference": "難易度表形式リファレンス",
   "table.view_header": "header.json を表示",
   "toc.anchor_jump": "この見出しへジャンプ",
   "toc.group": "カテゴリ {name}",

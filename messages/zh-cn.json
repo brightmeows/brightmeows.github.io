@@ -677,6 +677,7 @@
   "table.sections": "表分区",
   "table.import_url_short": "导入地址",
   "table.view_data": "查看data.json",
+  "table.format_reference": "难度表格式参考",
   "table.view_header": "查看header.json",
   "toc.anchor_jump": "跳转到此标题",
   "toc.group": "分类 {name}",

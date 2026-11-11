@@ -115,6 +115,16 @@
       {m["shared.create_button"]()}
     </a>
   </div>
+  <p class="mt-2 text-center text-[0.85rem] text-white-50">
+    <a
+      class="underline decoration-white-20 underline-offset-2 transition-colors hover:text-white-80 hover:decoration-white-40"
+      href="https://github.com/brightmeows/bms-skills/blob/main/skills/bms-table/SKILL.md"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      {m["table.format_reference"]()}
+    </a>
+  </p>
 {/snippet}
 
 {#snippet contentPane()}

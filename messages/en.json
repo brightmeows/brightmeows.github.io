@@ -677,6 +677,7 @@
   "table.sections": "Table sections",
   "table.import_url_short": "Import URL",
   "table.view_data": "View data.json",
+  "table.format_reference": "Table format reference",
   "table.view_header": "View header.json",
   "toc.anchor_jump": "Jump to this heading",
   "toc.group": "Category {name}",

@@ -10,6 +10,7 @@
 
 <script lang="ts">
   import type { BmsDropResult } from "@brightmeows/bms/editor";
+  import BookOpen from "@lucide/svelte/icons/book-open";
   import Copy from "@lucide/svelte/icons/copy";
   import Download from "@lucide/svelte/icons/download";
   import ExternalLink from "@lucide/svelte/icons/external-link";
@@ -374,6 +375,15 @@
       {m["table.view_data"]()}
     </a>
   {/if}
+  <a
+    class="{btnGhost} w-full"
+    href="https://github.com/brightmeows/bms-skills/blob/main/skills/bms-table/SKILL.md"
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    <BookOpen class="size-4 shrink-0" aria-hidden="true" />
+    {m["table.format_reference"]()}
+  </a>
   {#if !isEdit && saveAsShared === "same-origin"}
     <button
       class="{btnGhost} w-full"
