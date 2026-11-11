@@ -160,10 +160,14 @@ const FLOAT_PAD_SENTINEL = "\u0000bmstable-float:";
 /** 序列化文本里的哨兵形态（\u0000 已被 JSON.stringify 转义为六字符序列）。 */
 const FLOAT_PAD_TOKEN = /"\\u0000bmstable-float:([^"]+)"/g;
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 function containsFloatSentinel(value: unknown): boolean {
   if (typeof value === "string") return value.startsWith(FLOAT_PAD_SENTINEL);
   if (Array.isArray(value)) return value.some(containsFloatSentinel);
-  if (typeof value !== "object" || value === null) return false;
+  if (!isPlainObject(value)) return false;
   return Object.entries(value).some(
     ([key, item]) => key.startsWith(FLOAT_PAD_SENTINEL) || containsFloatSentinel(item)
   );
@@ -171,13 +175,21 @@ function containsFloatSentinel(value: unknown): boolean {
 
 function padFloatValues(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(padFloatValues);
-  if (typeof value !== "object" || value === null) return value;
+  if (!isPlainObject(value)) return value;
   const out: Record<string, unknown> = {};
   for (const [key, item] of Object.entries(value)) {
-    out[key] =
+    const next =
       FLOAT_PAD_FIELDS.has(key) && typeof item === "number" && Number.isInteger(item)
         ? FLOAT_PAD_SENTINEL + item.toFixed(1)
         : padFloatValues(item);
+    // CreateDataProperty 等价物：普通赋值会让名为 __proto__ 的自定义字段
+    // 触发 setter（对象改原型、原始值被静默丢弃），defineProperty 不走 [[Set]]。
+    Object.defineProperty(out, key, {
+      value: next,
+      enumerable: true,
+      writable: true,
+      configurable: true,
+    });
   }
   return out;
 }

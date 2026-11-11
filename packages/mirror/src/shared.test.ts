@@ -175,6 +175,16 @@ describe("serializeSharedJson", () => {
     expect(serializeSharedJson(evil)).toBe(JSON.stringify(evil, null, 2));
   });
 
+  it("__proto__ 自有属性原样保留（展开复制不触发 setter）", () => {
+    const evil = JSON.parse(
+      '{"name":"x","__proto__":{"polluted":true},"trophy":[{"name":"t","missrate":5}]}'
+    ) as Record<string, unknown>;
+    const text = serializeSharedJson(evil);
+    expect(text).toContain('"__proto__"');
+    expect(text).toContain('"polluted"');
+    expect(text).toContain('"missrate": 5.0');
+  });
+
   it("字符串与非有限数值原样交给 JSON.stringify", () => {
     expect(serializeSharedJson({ missrate: "5" })).toBe('{\n  "missrate": "5"\n}');
     expect(serializeSharedJson({ missrate: Number.NaN })).toBe('{\n  "missrate": null\n}');
