@@ -121,6 +121,7 @@
   "batch.subtitle": "One search term per line; batch search and export JSON",
   "batch.summary": "Done: {queries} terms, {charts} charts total",
   "batch.tables_failed": "{count} tables failed to load (skipped)",
+  "bms.page_title": "BMS Resource Hub",
   "bmsdata.actual_array": "array",
   "bmsdata.chart_done": "Chart data loaded",
   "bmsdata.chart_format_invalid": "Invalid chart data: {error}",

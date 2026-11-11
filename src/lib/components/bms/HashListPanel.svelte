@@ -75,7 +75,7 @@
       {/if}
     </div>
     {#if error !== null}
-      <p class="mt-2 text-[0.85rem] text-red-300">{error}</p>
+      <p class="mt-2 text-[0.85rem] text-error">{error}</p>
     {/if}
   </div>
 </details>

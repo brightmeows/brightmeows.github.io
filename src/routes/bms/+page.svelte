@@ -5,6 +5,7 @@
 
   import MarkdownContent from "#lib/components/content/MarkdownContent.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
+  import { m } from "#lib/paraglide/messages.js";
   import type { TocItem } from "#lib/types/ui.js";
   import { buildTocFromHeadings } from "#lib/utils/ui/toc.js";
 
@@ -19,7 +20,7 @@
 <PageShell constrainPanes {tocItems} panes={[titlePane, contentPane]} />
 
 {#snippet titlePane()}
-  <h1 class="page-title text-center">BMS</h1>
+  <h1 class="page-title text-center">{m["bms.page_title"]()}</h1>
 {/snippet}
 
 {#snippet contentPane()}

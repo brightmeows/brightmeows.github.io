@@ -135,7 +135,7 @@
       <div
         class="text-center text-[0.9rem] {actionNotice.kind === 'ok'
           ? 'text-success'
-          : 'text-red-300'}"
+          : 'text-error'}"
       >
         {actionNotice.text}
       </div>
@@ -214,7 +214,7 @@
         />
       </div>
     {:else if error}
-      <div class="mt-6 text-red-300">{m["common.load_failed_with_error"]({ error })}</div>
+      <div class="message-error mt-6">{m["common.load_failed_with_error"]({ error })}</div>
     {:else}
       <SharedTablesSection
         {groups}

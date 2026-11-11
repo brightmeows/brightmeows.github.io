@@ -41,7 +41,7 @@
 
 {#if groups.length === 0}
   <div class="mt-6">
-    <EmptyState title={emptyTitle} description={emptyDescription} />
+    <EmptyState title={emptyTitle} description={emptyDescription} headingLevel={3} />
   </div>
 {:else}
   <div class="mt-8">

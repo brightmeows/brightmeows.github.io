@@ -456,7 +456,7 @@
         <div
           class="text-center text-[0.9rem] {admin.notice.kind === 'ok'
             ? 'text-success'
-            : 'text-red-300'}"
+            : 'text-error'}"
         >
           {admin.notice.text}
         </div>
@@ -563,11 +563,11 @@
           title={pageTitle}
         />
       {:else if listState.phase === "error"}
-        <div class="text-red-300">
+        <div class="message-error my-4">
           {m["common.load_failed_with_error"]({ error: listState.message })}
         </div>
       {:else if listState.phase === "unavailable"}
-        <div class="text-red-300">
+        <div class="message-error my-4">
           {m["common.load_failed_with_error"]({ error: m["common.unknown_error"]() })}
         </div>
       {:else if groupedByTags.length === 0}

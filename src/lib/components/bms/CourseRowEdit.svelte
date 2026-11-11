@@ -484,11 +484,11 @@
                       : m["editor.course_chart_unresolved"]()}
                   </span>
                   {#if issue === "missing"}
-                    <span class="text-[0.78rem] text-red-300">
+                    <span class="text-[0.78rem] text-error">
                       {m["editor.course_chart_identity"]()}
                     </span>
                   {:else if issue !== "ok"}
-                    <span class="text-[0.78rem] text-red-300">
+                    <span class="text-[0.78rem] text-error">
                       {m["editor.course_chart_hash_invalid"]({ field: issue })}
                     </span>
                   {/if}
