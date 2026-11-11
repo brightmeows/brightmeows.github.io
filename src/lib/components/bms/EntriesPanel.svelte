@@ -512,7 +512,7 @@
     />
   {:else if loadState === "error"}
     <div class="py-8 text-center">
-      <h3 class="mb-3 text-error">{m["table.data_load_failed_title"]()}</h3>
+      <h2 class="mb-3 text-error">{m["table.data_load_failed_title"]()}</h2>
       <p class="message-error my-4">{dataError ?? m["common.unknown_error"]()}</p>
       <p class="mb-4 text-white-70">{m["table.data_load_failed_tip"]()}</p>
       {#if onRetry}
@@ -666,7 +666,7 @@
                 </button>
               </div>
               {#if bulkError}
-                <p class="mt-2 text-[0.85rem] text-red-300">{bulkError}</p>
+                <p class="mt-2 text-[0.85rem] text-error">{bulkError}</p>
               {/if}
             </div>
           {/if}
