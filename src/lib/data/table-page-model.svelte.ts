@@ -76,6 +76,8 @@ export interface TableModelInput {
   source: () => TablePageSource;
   publish: () => TablePagePublish;
   capabilities: () => TablePageCapabilities;
+  /** 确认原语（玻璃弹层）；缺省回退原生 window.confirm。 */
+  confirm?: (() => (message: string) => Promise<boolean>) | undefined;
 }
 
 /** 难度表页内存模型工厂：两段式加载、草稿与保存发布的响应式编排（输入经 getter 保持响应式）。 */
@@ -83,6 +85,7 @@ export function createTableModel(input: TableModelInput) {
   const source = input.source;
   const publish = input.publish;
   const capabilities = input.capabilities;
+  const confirmChoice = $derived(input.confirm?.());
   const headerUrl = $derived(source().headerUrl);
   const dataUrlFallback = $derived(source().dataUrlFallback);
   const draftKey = $derived(source().draftKey);
@@ -149,7 +152,8 @@ export function createTableModel(input: TableModelInput) {
 
   function markDirty(): void {
     drafts.markEdited();
-    notice = null;
+    // error/warn 常驻到被新通知替换；ok 类（含撤销窗口）随下一次编辑失效
+    if (notice?.kind === "ok") notice = null;
   }
 
   /** 草稿内容套用到模型（草稿侧的落账在 createDraftLifecycle.restore）。 */
@@ -167,6 +171,12 @@ export function createTableModel(input: TableModelInput) {
       savedAt: new Date().toISOString(),
       baselineUpdatedAt,
     };
+  }
+
+  /** 确认原语：页面注入的弹层优先，缺省回退原生 confirm。 */
+  async function askConfirm(message: string): Promise<boolean> {
+    const choice = confirmChoice;
+    return choice !== undefined ? choice(message) : window.confirm(message);
   }
 
   // ---- 子域：草稿生命周期与两段式加载（单向依赖：loader 引用 drafts） ----
@@ -205,7 +215,7 @@ export function createTableModel(input: TableModelInput) {
 
   /** 放弃未保存修改：删草稿并回载远端（新表回到种子态）。 */
   async function discardEdits(): Promise<void> {
-    if (!window.confirm(m["editor.discard_unsaved_confirm"]())) return;
+    if (!(await askConfirm(m["editor.discard_unsaved_confirm"]()))) return;
     await drafts.resetAfterDiscard();
     notice = null;
     levelHints = {};
@@ -220,7 +230,7 @@ export function createTableModel(input: TableModelInput) {
       entries,
       baselineUpdatedAt,
       conflictCheck,
-      confirm: (message) => window.confirm(message),
+      confirm: (message) => askConfirm(message),
     });
     if (plan.kind === "rejected") {
       notice = plan.notice;

@@ -4,6 +4,7 @@
 
   import DetailsPanel from "#lib/components/ui/DetailsPanel.svelte";
   import InlineEmpty from "#lib/components/ui/InlineEmpty.svelte";
+  import type { EditorNotice } from "#lib/controllers/editor.js";
   import { m } from "#lib/paraglide/messages.js";
 
   /** 头部字段区：查看态文本/胶囊，编辑态输入/编辑器，布局与标签共用。 */
@@ -17,6 +18,8 @@
     extraJson: string;
     disabled?: boolean;
     onchange?: (() => void) | undefined;
+    /** 删除类撤销通知的出口（dock notice 区渲染撤销按钮）；缺省不通知。 */
+    onNotice?: ((notice: EditorNotice) => void) | undefined;
   }
 
   let {
@@ -29,6 +32,7 @@
     extraJson,
     disabled = false,
     onchange,
+    onNotice = undefined,
   }: Props = $props();
 </script>
 
@@ -67,7 +71,7 @@
     sub={true}
   >
     {#if editing}
-      <LevelOrderEditor bind:levels {disabled} {onchange} />
+      <LevelOrderEditor bind:levels {disabled} {onchange} {onNotice} />
     {:else if levels.length > 0}
       <div class="flex flex-wrap gap-2">
         {#each levels as level (level)}

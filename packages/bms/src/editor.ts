@@ -528,6 +528,43 @@ export function removeIndices(
   return entries.filter((_, index) => !targets.has(index));
 }
 
+/** 条目删除的撤销快照：原下标与原对象引用，供单步撤销原位插回。 */
+export interface EntryRemovalSnapshot {
+  /** 被删条目的原引用（按原下标升序）。 */
+  items: Record<string, unknown>[];
+  /** 被删条目的原下标（升序）。 */
+  indices: number[];
+}
+
+/**
+ * 删除前捕获条目撤销快照；indices 乱序与越界容忍（越界项忽略）。
+ * 条目按对象身份持有（行键 WeakMap），撤销插回原引用可保行内表单存活。
+ */
+export function captureEntryRemoval(
+  entries: readonly Record<string, unknown>[],
+  indices: readonly number[]
+): EntryRemovalSnapshot {
+  const ordered = [...new Set(indices)].filter((index) => index >= 0 && index < entries.length);
+  ordered.sort((a, b) => a - b);
+  return { items: ordered.map((index) => entries[index] ?? {}), indices: ordered };
+}
+
+/**
+ * 把撤销快照原位插回当前数组：items 按各自原下标升序重插；数组在删除后
+ * 可能又发生了增删，插入下标钳制到当前长度。返回新数组，不改动入参。
+ */
+export function restoreEntryRemoval(
+  entries: readonly Record<string, unknown>[],
+  snapshot: EntryRemovalSnapshot
+): Record<string, unknown>[] {
+  const next = [...entries];
+  snapshot.indices.forEach((index, position) => {
+    const item = snapshot.items[position];
+    if (item !== undefined) next.splice(Math.min(index, next.length), 0, item);
+  });
+  return next;
+}
+
 /** 交换位置：把第 from 项插到第 to 项位置；越界或同位时原样返回副本。 */
 export function moveItem<T>(items: readonly T[], from: number, to: number): T[] {
   if (from === to || from < 0 || to < 0 || from >= items.length || to >= items.length) {

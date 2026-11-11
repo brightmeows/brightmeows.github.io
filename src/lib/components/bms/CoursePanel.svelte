@@ -18,6 +18,7 @@
 
   import InlineEmpty from "#lib/components/ui/InlineEmpty.svelte";
   import { btnGhost, btnIconDanger } from "#lib/constants/ui-classes.js";
+  import type { EditorNotice } from "#lib/controllers/editor.js";
   import { m } from "#lib/paraglide/messages.js";
   import { createDragList } from "#lib/utils/ui/dnd-list.svelte.js";
 
@@ -35,6 +36,8 @@
     nested?: boolean | undefined;
     disabled?: boolean;
     onChange?: (() => void) | undefined;
+    /** 删除类撤销通知的出口（dock notice 区渲染撤销按钮）；缺省不通知。 */
+    onNotice?: ((notice: EditorNotice) => void) | undefined;
   }
 
   let {
@@ -46,6 +49,7 @@
     nested = undefined,
     disabled = false,
     onChange,
+    onNotice = undefined,
   }: Props = $props();
 
   interface ViewCourseItem {
@@ -220,11 +224,22 @@
     const course = model.groups[groupIndex]?.courses[courseIndex];
     if (course === undefined) return;
     const name = course.name.trim() || m["course.unnamed"]();
-    if (!window.confirm(m["course.remove_confirm"]({ name }))) return;
+    const snapshot = model;
     const key = editKey(course);
     model = removeCourseFromModel(model, groupIndex, courseIndex);
     if (expandedKey === key) expandedKey = null;
     onChange?.();
+    onNotice?.({
+      kind: "ok",
+      text: m["editor.undo_course_deleted"]({ name }),
+      action: {
+        label: m["common.undo"](),
+        run: () => {
+          model = snapshot;
+          onChange?.();
+        },
+      },
+    });
   }
 
   function moveCourse(groupIndex: number, courseIndex: number, delta: number): void {
@@ -237,13 +252,22 @@
     if (model === undefined) return;
     const group = model.groups[groupIndex];
     if (group === undefined) return;
-    const confirmed = window.confirm(
-      m["course.group_remove_confirm"]({ index: groupIndex + 1, count: group.courses.length })
-    );
-    if (!confirmed) return;
+    const snapshot = model;
+    const courseCount = group.courses.length;
     model = removeGroupFromModel(model, groupIndex);
     expandedKey = null;
     onChange?.();
+    onNotice?.({
+      kind: "ok",
+      text: m["editor.undo_group_deleted"]({ index: groupIndex + 1, count: courseCount }),
+      action: {
+        label: m["common.undo"](),
+        run: () => {
+          model = snapshot;
+          onChange?.();
+        },
+      },
+    });
   }
 </script>
 
@@ -332,6 +356,7 @@
                   onDelete={() => removeCourse(group.groupIndex, item.courseIndex)}
                   onMoveUp={() => moveCourse(group.groupIndex, item.courseIndex, -1)}
                   onMoveDown={() => moveCourse(group.groupIndex, item.courseIndex, 1)}
+                  {onNotice}
                   onedit={(mutate) => {
                     mutate(item.course);
                     onChange?.();

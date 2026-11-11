@@ -9,12 +9,12 @@
   import Trash2 from "@lucide/svelte/icons/trash-2";
   import Undo2 from "@lucide/svelte/icons/undo-2";
   import type { Snippet } from "svelte";
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
   import { cubicIn, cubicOut } from "svelte/easing";
   import { fly } from "svelte/transition";
 
   import ToggleButton from "#lib/components/ui/ToggleButton.svelte";
-  import { btnGhostMd, btnPrimary } from "#lib/constants/ui-classes.js";
+  import { btnGhostMd, btnGhostSm, btnPrimary } from "#lib/constants/ui-classes.js";
   import {
     applyDockScroll,
     createDockScrollState,
@@ -103,6 +103,11 @@
 
   // 模式变化重置初值（挂载时同样执行一次，与初始化等价）
   $effect(() => {
+    // 通知读写经 untrack 排除：notice 更新不得重跑本 effect（会重置收展态
+    // 与折叠段）；撤销闭包绑定编辑态组件作用域，模式切换时不作迁移
+    untrack(() => {
+      if (model.notice?.action !== undefined) model.notice = null;
+    });
     scrollState = createDockScrollState(mode);
     expansion = scrollState.expansion;
     tableActionsOpen = mode === "view";
@@ -139,6 +144,7 @@
     return {
       busy: model.busy,
       draftPending: model.pendingDraft !== null,
+      undoPending: model.notice?.action !== undefined,
       nearBottom: isNearDocumentBottom(
         window.scrollY,
         window.innerHeight,
@@ -159,6 +165,14 @@
   function toggleExpansion(): void {
     scrollState = toggleDockExpansion(scrollState);
     expansion = scrollState.expansion;
+  }
+
+  /** 执行通知附带的撤销并收起通知；恢复动作内部经 onChange 落 dirty。 */
+  function runPendingUndo(): void {
+    const action = model.notice?.action;
+    if (action === undefined) return;
+    model.notice = null;
+    action.run();
   }
 
   function handleFocusIn(event: FocusEvent): void {
@@ -219,7 +233,10 @@
         });
       } else {
         signals.push({
-          word: m["editor.dock_notice_ok"](),
+          word:
+            model.notice.action !== undefined
+              ? m["editor.dock_undo_pending"]()
+              : m["editor.dock_notice_ok"](),
           dot: "bg-success",
           text: "text-success",
           title: model.notice.text,
@@ -408,6 +425,12 @@
               : 'border-error/40 bg-error/10 text-error'}"
         >
           {model.notice.text}
+          {#if model.notice.action !== undefined}
+            <button class="{btnGhostSm} mt-2" type="button" onclick={runPendingUndo}>
+              <Undo2 class="size-3.5 shrink-0" aria-hidden="true" />
+              {model.notice.action.label}
+            </button>
+          {/if}
         </div>
       {/if}
     </div>

@@ -10,6 +10,7 @@
   import X from "@lucide/svelte/icons/x";
 
   import { btnGhost, btnIcon, btnIconDanger, inputEditorBase } from "#lib/constants/ui-classes.js";
+  import type { EditorNotice } from "#lib/controllers/editor.js";
   import { m } from "#lib/paraglide/messages.js";
   import { createDragList } from "#lib/utils/ui/dnd-list.svelte.js";
 
@@ -21,9 +22,16 @@
     levels: string[];
     disabled?: boolean;
     onchange?: (() => void) | undefined;
+    /** 删除类撤销通知的出口（dock notice 区渲染撤销按钮）；缺省不通知。 */
+    onNotice?: ((notice: EditorNotice) => void) | undefined;
   }
 
-  let { levels = $bindable([]), disabled = false, onchange }: Props = $props();
+  let {
+    levels = $bindable([]),
+    disabled = false,
+    onchange,
+    onNotice = undefined,
+  }: Props = $props();
 
   let textMode = $state(false);
   let textValue = $state("");
@@ -47,7 +55,21 @@
   }
 
   function handleRemove(index: number): void {
+    const removed = levels[index];
+    const snapshot = levels;
     commit(removeLevelAt(levels, index));
+    if (removed !== undefined) {
+      onNotice?.({
+        kind: "ok",
+        text: m["editor.undo_level_deleted"]({ level: removed }),
+        action: {
+          label: m["common.undo"](),
+          run: () => {
+            commit(snapshot);
+          },
+        },
+      });
+    }
   }
 
   function startTextMode(): void {

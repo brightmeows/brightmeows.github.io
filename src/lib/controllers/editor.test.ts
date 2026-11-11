@@ -6,6 +6,7 @@ import {
   decideLocalSaveGate,
   decideNewTableDraft,
   planEditorSave,
+  planImportApply,
   planSaveAsShared,
   strictErrorsNotice,
   strictWarningsNotice,
@@ -181,6 +182,18 @@ describe("planEditorSave 与 commitEditorSave", () => {
     expect(plan.kind).toBe("proceed");
   });
 
+  it("confirm 可异步（玻璃弹层）：resolve true 放行、false 拒绝", async () => {
+    const needConfirm = {
+      ...base,
+      baselineUpdatedAt: "2026-01-01T00:00:00Z",
+      conflictCheck: () => Promise.resolve("2027-01-01T00:00:00Z"),
+    };
+    const denied = await planEditorSave({ ...needConfirm, confirm: () => Promise.resolve(false) });
+    expect(denied.kind).toBe("rejected");
+    const allowed = await planEditorSave({ ...needConfirm, confirm: () => Promise.resolve(true) });
+    expect(allowed.kind).toBe("proceed");
+  });
+
   it("提交段：载荷、计数与新基线透传，草稿被清除", async () => {
     const cleared: string[] = [];
     let received: { header: unknown; data: unknown } | null = null;
@@ -217,6 +230,64 @@ describe("planEditorSave 与 commitEditorSave", () => {
       draftKey: "k",
     });
     expect(opaque).toEqual({ kind: "failed", text: m["editor.save_failed"]() });
+  });
+});
+
+describe("planImportApply 导入应用闸门", () => {
+  it("空表直通：replace 覆盖与表头套用都不拦截", () => {
+    const empty = planImportApply({
+      headerApplied: true,
+      hasData: true,
+      dataMode: "replace",
+      currentCount: 0,
+    });
+    expect(empty).toEqual({ kind: "apply" });
+  });
+
+  it("非空表 replace 覆盖：确认文案带当前条目数", () => {
+    const plan = planImportApply({
+      headerApplied: false,
+      hasData: true,
+      dataMode: "replace",
+      currentCount: 12,
+    });
+    expect(plan).toEqual({
+      kind: "confirm",
+      message: m["editor.replace_entries_confirm"]({ count: 12 }),
+    });
+  });
+
+  it("非空表套用表头：按表头覆盖确认（追加与仅表头同路）", () => {
+    const appendHeader = planImportApply({
+      headerApplied: true,
+      hasData: true,
+      dataMode: "append",
+      currentCount: 3,
+    });
+    expect(appendHeader).toEqual({
+      kind: "confirm",
+      message: m["editor.import_header_confirm"](),
+    });
+    const headerOnly = planImportApply({
+      headerApplied: true,
+      hasData: false,
+      dataMode: "replace",
+      currentCount: 3,
+    });
+    expect(headerOnly).toEqual({
+      kind: "confirm",
+      message: m["editor.import_header_confirm"](),
+    });
+  });
+
+  it("非空表纯追加数据直通", () => {
+    const plan = planImportApply({
+      headerApplied: false,
+      hasData: true,
+      dataMode: "append",
+      currentCount: 5,
+    });
+    expect(plan).toEqual({ kind: "apply" });
   });
 });
 
