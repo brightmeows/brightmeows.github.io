@@ -94,7 +94,9 @@ export const STRICT_DATA_FIELDS: readonly string[] = [
 /**
  * data 条目中要求“存在即须为字符串”的已知字段（level 单独校验非空）。
  * 真实难度表存在数字与显式 null（如 LN 表把 lr2_bmsid 发成整数），字符串
- * 之外接受数字与 null（null 视同缺失）；其余类型仍是硬错误。
+ * 之外接受数字与 null（null 视同缺失）；其余类型仍是硬错误。例外是哈希
+ * 身份字段（md5/sha256）：数字会被段位解析原样送进视图的字符串消费链，
+ * 只接受字符串与 null。
  */
 export const STRICT_DATA_STRING_FIELDS: readonly string[] = [
   "md5",
@@ -586,12 +588,10 @@ function checkDataEntry(
   }
   for (const field of STRICT_DATA_STRING_FIELDS) {
     const value = entry[field];
-    if (
-      field in entry &&
-      value !== null &&
-      typeof value !== "string" &&
-      typeof value !== "number"
-    ) {
+    // 哈希身份字段是字符串消费者硬依赖（判重与段位解析把哈希原样送进
+    // slice 类调用，数字会崩），数字不放行；其余字段按真实表形态接受数字。
+    const numberOk = !(field === "md5" || field === "sha256") && typeof value === "number";
+    if (field in entry && value !== null && typeof value !== "string" && !numberOk) {
       errors.add({
         code: "entry_field_type",
         path: "data[" + index + "]." + field,

@@ -224,6 +224,15 @@ describe("strictCheckData", () => {
     expect(report.errors[1]?.params.field).toBe("comment");
   });
 
+  it("哈希身份字段不接受数字（数字 md5 会经段位解析进视图崩掉 slice），null 视同缺失", () => {
+    const report = strictCheckData([
+      { md5: 123, sha256: "a".repeat(64), level: "1" },
+      { md5: null, sha256: "a".repeat(64), level: "1" },
+    ]);
+    expect(codesOf(report.errors)).toEqual(["entry_field_type"]);
+    expect(report.errors[0]?.params.field).toBe("md5");
+  });
+
   it("规范点名的社区常见自定义字段不出未知字段警告", () => {
     const report = strictCheckData([
       { md5: "a", level: "1", total: 480, judge: 3, note: "x", tag: "同時押し", eval: 0 },
