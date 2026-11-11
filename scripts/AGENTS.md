@@ -11,6 +11,7 @@
 - `node scripts/fetch-table-once.ts --url=<表源> --request-id=<id> --out-dir=./out` — 单表抓取（复用管线抓取与命名逻辑）：数据目录供 `fetch-table` 工作流上传到 R2，抓取结果与状态经内部接口写进 D1
 - `pnpm test:parity` — 手动新旧实现对拍（用公开 R2 基线与归档工具 v0.4.2 的二进制，逐对象比对产物；`PARITY_LIMIT` 可只对拍前 N 张表）
 - `pnpm check:quotes` — 全量中文引号检查（扩展名与 `static/` 排除规则在 `package.json`，pre-commit 与 CI 共用）
+- `pnpm check:icons` — UI 模板图标纪律检查（src 下 `.svelte` 禁 emoji 与符号图标；范围与禁用集见脚本头注，pre-commit 与 CI 共用）
 - `pnpm check:md` — markdownlint 全量检查（配置在 `.markdownlint.toml`，default 全规则、行宽 200；`content/` 文章因 CJK 软换行渲染约束关闭 MD013/MD025/MD033，分流写法在 `package.json`；pre-commit 与 CI 共用）
 - `R2_BUCKET=<桶名> node scripts/check-r2-cors.ts` — 与线上桶 CORS policy 比对（需 Cloudflare 凭据；只读）
 - `node scripts/check-redirect-rules.ts` — 与线上三个 zone 的旧主机 301 规则比对（需 `CLOUDFLARE_RULES_TOKEN`；只读）
@@ -24,6 +25,9 @@
   - `pnpm check:quotes` 调用它，pre-commit 与 CI 共用同一份扩展名清单。
   - 日语内容豁免（`messages/ja.json` 与 `*.ja.md`）：日语正式引号为 U+300C/U+300D，与简中排版规则不同，不适用本检查；其余门槛（易混淆字符、i18n 覆盖）照常约束这些文件。
 - `scripts/check-commit-msg.py` — Conventional Commits 格式校验（见根 `AGENTS.md` 的“提交格式”节），pre-commit commit-msg stage 与 CI 的 PR job 共用。
+- `scripts/check-ui-icons.py` — UI 模板图标纪律：`src/**/*.svelte` 禁用 emoji 主区（U+1F300 至 U+1FAFF）与历史图标符号（⏳⚠✓✕✗▶▼○），图标一律走 @lucide/svelte 组件。
+  - 文案层排版箭头（→，U+2192）不在禁用集；行内含 `ui-icons-ignore` 可豁免单行（新增豁免先想能否直接换 lucide）。
+  - `pnpm check:icons` 调用它，pre-commit 与 CI 共用。
 - `scripts/check-site-config.ts` — 离线一致性校验（五条断言：wrangler routes 与 worker hosts 完全一致、工作流无硬编码域名、CORS 覆盖 `origin`、版本来源唯一（devEngines 范围加工作流不传 pnpm 版本）、wrangler vars 与 R2 配置一致）。
   - `pnpm check:config` 调用它，pre-commit 与 CI 都跑。
 - `scripts/check-i18n-coverage.ts` — i18n 覆盖校验，六条断言：

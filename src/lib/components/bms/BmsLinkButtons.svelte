@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { ChartData } from "@brightmeows/bms/format";
   import { getBmsLinks } from "@brightmeows/bms/table";
+  import ChartColumn from "@lucide/svelte/icons/chart-column";
 
   import IconButton from "#lib/components/ui/IconButton.svelte";
 
@@ -30,7 +31,7 @@
     rel="noopener noreferrer"
     ariaLabel="BMS Score Viewer"
   >
-    📊
+    <ChartColumn class="size-5" aria-hidden="true" />
   </IconButton>
   <IconButton
     variant="blue"

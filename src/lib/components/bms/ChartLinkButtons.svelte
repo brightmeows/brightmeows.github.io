@@ -1,6 +1,11 @@
 <script lang="ts">
   import type { ChartData } from "@brightmeows/bms/format";
   import { getBmsLinks } from "@brightmeows/bms/table";
+  import ArrowRightLeft from "@lucide/svelte/icons/arrow-right-left";
+  import ChartColumn from "@lucide/svelte/icons/chart-column";
+  import Download from "@lucide/svelte/icons/download";
+  import Ellipsis from "@lucide/svelte/icons/ellipsis";
+  import Package from "@lucide/svelte/icons/package";
   import { onMount } from "svelte";
 
   import { chartLinkIcon } from "#lib/constants/ui-classes.js";
@@ -131,76 +136,23 @@
     class="pointer-events-none absolute -right-1 -bottom-1 flex size-3.5 items-center justify-center rounded-full border border-white-20 bg-white-10 text-accent"
     aria-hidden="true"
   >
-    <svg
-      class="size-3"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2.5"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    >
-      <path d="M12 4v12" />
-      <path d="m7 10 5 5 5-5" />
-      <path d="M6 21h12" />
-    </svg>
+    <Download class="size-3" strokeWidth={2.5} />
   </span>
 {/snippet}
 
 {#snippet icon(link: LinkItem)}
   {#if link.id === "bundle"}
     <span class="relative flex size-5 items-center justify-center">
-      <svg
-        class="size-5"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"
-      >
-        <path d="m21 8-9-5-9 5 9 5 9-5Z" />
-        <path d="M3 8v8l9 5 9-5V8" />
-        <path d="M12 13v8" />
-      </svg>
+      <Package class="size-5" aria-hidden="true" />
       {@render downloadBadge()}
     </span>
   {:else if link.id === "diff"}
     <span class="relative flex size-5 items-center justify-center">
-      <svg
-        class="size-5"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        aria-hidden="true"
-      >
-        <path d="m8 3-4 4 4 4" />
-        <path d="M4 7h16" />
-        <path d="m16 21 4-4-4-4" />
-        <path d="M20 17H4" />
-      </svg>
+      <ArrowRightLeft class="size-5" aria-hidden="true" />
       {@render downloadBadge()}
     </span>
   {:else if link.id === "score"}
-    <svg
-      class="size-5"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M4 20V10" />
-      <path d="M10 20V4" />
-      <path d="M16 20v-6" />
-      <path d="M22 20H2" />
-    </svg>
+    <ChartColumn class="size-5" aria-hidden="true" />
   {:else if link.id === "bms-ir"}
     <svg viewBox="0 0 24 24" class="size-6" aria-hidden="true">
       <text
@@ -252,11 +204,7 @@
       title={m["common.more_links"]()}
       onclick={toggleMenu}
     >
-      <svg class="size-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-        <circle cx="5" cy="12" r="1.6" />
-        <circle cx="12" cy="12" r="1.6" />
-        <circle cx="19" cy="12" r="1.6" />
-      </svg>
+      <Ellipsis class="size-5" aria-hidden="true" />
     </button>
   {/if}
 </div>

@@ -14,6 +14,7 @@
   import Copy from "@lucide/svelte/icons/copy";
   import Download from "@lucide/svelte/icons/download";
   import ExternalLink from "@lucide/svelte/icons/external-link";
+  import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
   import type { Component, Snippet } from "svelte";
   import { onMount, tick } from "svelte";
 
@@ -505,7 +506,7 @@
   onRetry: () => void | Promise<void>
 )}
   <div class="p-12 text-center">
-    <div class="mb-4 text-[4rem]">⚠️</div>
+    <TriangleAlert class="mx-auto mb-4 size-16 text-error" strokeWidth={1.5} aria-hidden="true" />
     <h3 class="mb-4 text-error">{title}</h3>
     <p class="message-error my-6">
       {message}

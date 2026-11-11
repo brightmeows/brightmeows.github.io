@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ChevronsRight from "@lucide/svelte/icons/chevrons-right";
   import type { Snippet } from "svelte";
 
   import TopBar from "./TopBar.svelte";
@@ -66,15 +67,7 @@
         aria-label={m["toc.sidebar.expand"]()}
         onclick={onExpandSidebar}
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          class="size-4"
-          fill="currentColor"
-          aria-hidden="true"
-        >
-          <path d="M9.5 6l6 6-6 6zM14.5 6l6 6-6 6z" />
-        </svg>
+        <ChevronsRight class="size-4" aria-hidden="true" />
       </button>
     {/if}
   {:else}
