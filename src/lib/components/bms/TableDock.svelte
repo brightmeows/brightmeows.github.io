@@ -5,6 +5,7 @@
   import History from "@lucide/svelte/icons/history";
   import Pencil from "@lucide/svelte/icons/pencil";
   import Save from "@lucide/svelte/icons/save";
+  import SlidersHorizontal from "@lucide/svelte/icons/sliders-horizontal";
   import Trash2 from "@lucide/svelte/icons/trash-2";
   import Undo2 from "@lucide/svelte/icons/undo-2";
   import type { Snippet } from "svelte";
@@ -27,19 +28,24 @@
 
   /**
    * 难度表页底部操作 dock：
-   * - 常驻右下角：收起态是模式胶囊（图标加状态词；状态以“色点+短词”
-   *   成对提示：黄=未保存、橙=警告、红=错误、绿=完成、浅蓝=待恢复草稿，
-   *   悬停 title 保留完整 notice 文本），展开态是 340px 玻璃面板
-   *   （窄屏回退全宽），面板头为同一状态标识，下方纵排承载模式切换、
-   *   保存、另存、放弃、notice、草稿横幅与自动保存时刻；查看态编辑
-   *   按钮下内联进入编辑说明；表整体操作（导出、查看原文、fork）与导入区以折叠段
-   *   收进面板（表操作查看态默认展开、编辑态默认收起；导入段默认收起，
-   *   空表自动展开一次，手动收起后本会话不再自动），导入段展开时面板
-   *   加宽到 480px；
+   * - 常驻右下角：查看态收起态是两枚——“编辑此表”主按钮（btnPrimary，
+   *   未保存时显“继续编辑”，点击直达编辑）加面板钮（SlidersHorizontal
+   *   图标，未保存等信号色点挂其上、title 保留完整文本，点击展开面板）；
+   *   编辑态收起态是模式胶囊（图标加状态词；状态以“色点+短词”成对提示：
+   *   黄=未保存、橙=警告、红=错误、绿=完成、浅蓝=待恢复草稿，悬停 title
+   *   保留完整 notice 文本）；展开态是 340px 玻璃面板（窄屏回退全宽），
+   *   面板头为模式状态标识，下方纵排承载模式切换、保存、另存、放弃、
+   *   notice、草稿横幅与自动保存时刻；查看态编辑按钮下内联进入编辑说明；
+   *   表整体操作（导出、查看原文、fork）与导入区以折叠段收进面板
+   *   （表操作查看态默认展开、编辑态默认收起；导入段默认收起，空表
+   *   自动展开一次，手动收起后本会话不再自动），导入段展开时面板加宽
+   *   到 480px；
    * - 收展由 controllers/table-dock 的状态机驱动：模式初值（编辑展开、
    *   查看收起）、滚动方向（下滑收起、上滑展开，累积阈值同顶栏）、
    *   距页底强制展开、键盘焦点冻结；busy 与待恢复草稿豁免滚动收起；
    * - 状态与操作自标题区迁入（2026-11），标题区只留身份信息与分区导航。
+   *   2026-11 收起态拆分：查看态主操作一步直达编辑，不再经由“查看中”
+   *   胶囊两跳，“查看中”只在展开面板头保留。
    */
   interface Props {
     /** 页面共享的内存模型门面（busy、dirty、notice、草稿与保存操作）。 */
@@ -76,7 +82,7 @@
 
   let editing = $derived(mode === "edit");
 
-  /** 面板头与收起胶囊共用的模式状态词。 */
+  /** 面板头与编辑态收起胶囊共用的模式状态词。 */
   let stateWord = $derived(
     editing ? m["editor.dock_state_editing"]() : m["editor.dock_state_viewing"]()
   );
@@ -407,32 +413,51 @@
     </div>
   </div>
 {:else}
-  <button
-    class="fixed right-4 z-999 flex items-center gap-2 rounded-full bg-glass px-3.5 py-2 shadow-[var(--glass-lighting),0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur"
+  <div
+    class="fixed right-4 z-999 flex items-center gap-2"
     style="bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem)"
-    type="button"
-    aria-label={m["editor.dock_expand"]()}
-    title={m["editor.dock_expand"]()}
-    onclick={toggleExpansion}
     onfocusin={handleFocusIn}
     onfocusout={handleFocusOut}
     in:fly={{ y: 24, opacity: 0, duration: reduceMotion ? 0 : 180, easing: cubicOut }}
     out:fly={{ y: 24, opacity: 0, duration: reduceMotion ? 0 : 140, easing: cubicIn }}
   >
     {#if editing}
-      <Pencil class="size-4 text-white-80" aria-hidden="true" />
-    {:else}
-      <Eye class="size-4 text-white-80" aria-hidden="true" />
-    {/if}
-    <span class="text-[0.85rem] whitespace-nowrap text-white-85">{stateWord}</span>
-    {#each dockSignals as signal (signal.title)}
-      <span
-        class="flex items-center gap-1 text-[0.8rem] whitespace-nowrap {signal.text}"
-        title={signal.title}
+      <button
+        class="flex items-center gap-2 rounded-full bg-glass px-3.5 py-2 shadow-[var(--glass-lighting),0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur"
+        type="button"
+        aria-label={m["editor.dock_expand"]()}
+        title={m["editor.dock_expand"]()}
+        onclick={toggleExpansion}
       >
-        <span class="size-2 shrink-0 rounded-full {signal.dot}"></span>
-        {signal.word}
-      </span>
-    {/each}
-  </button>
+        <Pencil class="size-4 text-white-80" aria-hidden="true" />
+        <span class="text-[0.85rem] whitespace-nowrap text-white-85">{stateWord}</span>
+        {#each dockSignals as signal (signal.title)}
+          <span
+            class="flex items-center gap-1 text-[0.8rem] whitespace-nowrap {signal.text}"
+            title={signal.title}
+          >
+            <span class="size-2 shrink-0 rounded-full {signal.dot}"></span>
+            {signal.word}
+          </span>
+        {/each}
+      </button>
+    {:else}
+      <button class={btnPrimary} type="button" onclick={() => onSetMode("edit")}>
+        <Pencil class="size-4 shrink-0" aria-hidden="true" />
+        {model.dirty ? m["editor.continue_edit"]() : m["editor.enter_table"]()}
+      </button>
+      <button
+        class="flex items-center gap-2 rounded-full bg-glass px-3 py-2.5 shadow-[var(--glass-lighting),0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur"
+        type="button"
+        aria-label={m["editor.dock_expand"]()}
+        title={m["editor.dock_expand"]()}
+        onclick={toggleExpansion}
+      >
+        <SlidersHorizontal class="size-4 text-white-80" aria-hidden="true" />
+        {#each dockSignals as signal (signal.title)}
+          <span class="size-2 shrink-0 rounded-full {signal.dot}" title={signal.title}></span>
+        {/each}
+      </button>
+    {/if}
+  </div>
 {/if}
