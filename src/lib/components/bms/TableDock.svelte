@@ -269,7 +269,7 @@
           title={m["editor.dock_collapse"]()}
           onclick={toggleExpansion}
         >
-          <ChevronDown class="size-4" />
+          <ChevronDown class="size-4" aria-hidden="true" />
         </button>
       </div>
 

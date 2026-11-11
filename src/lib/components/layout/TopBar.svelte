@@ -428,7 +428,7 @@
 
 <!-- 人形图标：未登录入口与头像加载失败共用 -->
 {#snippet personIcon()}
-  <User class="size-5" />
+  <User class="size-5" aria-hidden="true" />
 {/snippet}
 
 <!-- 站长资料卡：桌面 Home 悬停卡与窄屏菜单资料区共用 -->
@@ -541,7 +541,7 @@
                     );
                   }}
                 >
-                  <ChevronDown class="size-3.5" />
+                  <ChevronDown class="size-3.5" aria-hidden="true" />
                 </button>
               </div>
 
@@ -620,7 +620,7 @@
           {...triggerHoverHandlers("menu", "left")}
           onclick={(event) => togglePanel("menu", "left", event)}
         >
-          <Menu class="size-5" />
+          <Menu class="size-5" aria-hidden="true" />
         </button>
 
         {#if panels.isOpen("menu")}
@@ -678,7 +678,7 @@
               {...triggerHoverHandlers("toc", "right", () => rightPill)}
               onclick={(event) => togglePanel("toc", "right", event, rightPill)}
             >
-              <List class="size-5" />
+              <List class="size-5" aria-hidden="true" />
             </button>
 
             {#if panels.isOpen("toc")}

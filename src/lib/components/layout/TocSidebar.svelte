@@ -59,7 +59,7 @@
       aria-label={m["toc.sidebar.collapse"]()}
       onclick={onCollapse}
     >
-      <ChevronsLeft class="size-4" />
+      <ChevronsLeft class="size-4" aria-hidden="true" />
     </button>
   </div>
 
@@ -73,7 +73,10 @@
           aria-label={chapters.bookTitle}
           onclick={toggleChapters}
         >
-          <ChevronRight class="size-3.5 transition-transform {chaptersOpen ? 'rotate-90' : ''}" />
+          <ChevronRight
+            class="size-3.5 transition-transform {chaptersOpen ? 'rotate-90' : ''}"
+            aria-hidden="true"
+          />
         </button>
         <a
           href={chapters.bookHref}
@@ -105,7 +108,10 @@
         aria-label={m["toc.sidebar.headings"]()}
         onclick={toggleHeadings}
       >
-        <ChevronRight class="size-3.5 transition-transform {headingsOpen ? 'rotate-90' : ''}" />
+        <ChevronRight
+          class="size-3.5 transition-transform {headingsOpen ? 'rotate-90' : ''}"
+          aria-hidden="true"
+        />
       </button>
       <span class="text-[0.9rem] leading-snug font-semibold text-white-90">
         {m["toc.sidebar.headings"]()}

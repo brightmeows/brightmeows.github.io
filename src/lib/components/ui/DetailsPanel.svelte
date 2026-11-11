@@ -70,6 +70,7 @@
         class="size-4 flex-none text-white-50 transition-transform duration-200 {open
           ? 'rotate-180'
           : ''}"
+        aria-hidden="true"
       />
     {/if}
   </span>

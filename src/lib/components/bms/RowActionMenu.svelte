@@ -99,7 +99,7 @@
   {disabled}
   onclick={toggleMenu}
 >
-  <EllipsisVertical class="size-4" />
+  <EllipsisVertical class="size-4" aria-hidden="true" />
 </button>
 
 {#if menuOpen}

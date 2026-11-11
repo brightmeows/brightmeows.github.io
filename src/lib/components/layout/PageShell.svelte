@@ -67,7 +67,7 @@
         aria-label={m["toc.sidebar.expand"]()}
         onclick={onExpandSidebar}
       >
-        <ChevronsRight class="size-4" />
+        <ChevronsRight class="size-4" aria-hidden="true" />
       </button>
     {/if}
   {:else}

@@ -143,16 +143,16 @@
 {#snippet icon(link: LinkItem)}
   {#if link.id === "bundle"}
     <span class="relative flex size-5 items-center justify-center">
-      <Package class="size-5" />
+      <Package class="size-5" aria-hidden="true" />
       {@render downloadBadge()}
     </span>
   {:else if link.id === "diff"}
     <span class="relative flex size-5 items-center justify-center">
-      <ArrowRightLeft class="size-5" />
+      <ArrowRightLeft class="size-5" aria-hidden="true" />
       {@render downloadBadge()}
     </span>
   {:else if link.id === "score"}
-    <ChartColumn class="size-5" />
+    <ChartColumn class="size-5" aria-hidden="true" />
   {:else if link.id === "bms-ir"}
     <svg viewBox="0 0 24 24" class="size-6" aria-hidden="true">
       <text
@@ -204,7 +204,7 @@
       title={m["common.more_links"]()}
       onclick={toggleMenu}
     >
-      <Ellipsis class="size-5" />
+      <Ellipsis class="size-5" aria-hidden="true" />
     </button>
   {/if}
 </div>
