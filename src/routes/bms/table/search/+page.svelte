@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Search from "@lucide/svelte/icons/search";
   import { onMount, onDestroy } from "svelte";
   import { SvelteMap } from "svelte/reactivity";
 
@@ -322,13 +323,13 @@
       <EmptyState
         title={m["search.no_results_title"]()}
         description={m["search.no_results_desc"]()}
-        emoji="🔍"
+        icon={Search}
       />
     {:else if searchPhase === "idle"}
       <EmptyState
         title={m["search.idle_title"]()}
         description={m["search.idle_desc"]()}
-        emoji="🔎"
+        icon={Search}
       />
     {/if}
   {/if}

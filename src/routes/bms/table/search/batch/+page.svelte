@@ -1,5 +1,7 @@
 <script lang="ts">
   import type { ChartData } from "@brightmeows/bms/format";
+  import ClipboardList from "@lucide/svelte/icons/clipboard-list";
+  import Search from "@lucide/svelte/icons/search";
   import { onMount, onDestroy } from "svelte";
   import { SvelteMap } from "svelte/reactivity";
 
@@ -379,7 +381,7 @@
         <EmptyState
           title={m["batch.no_results_title"]()}
           description={m["batch.no_results_desc"]()}
-          emoji="🔍"
+          icon={Search}
         />
       {:else}
         <!-- 下载 + 摘要 -->
@@ -433,7 +435,11 @@
         </div>
       {/if}
     {:else if batchPhase === "idle" && queryCount === 0}
-      <EmptyState title={m["batch.idle_title"]()} description={m["batch.idle_desc"]()} emoji="📋" />
+      <EmptyState
+        title={m["batch.idle_title"]()}
+        description={m["batch.idle_desc"]()}
+        icon={ClipboardList}
+      />
     {/if}
   {/if}
 {/snippet}
