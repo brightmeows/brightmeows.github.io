@@ -7,7 +7,7 @@
   import DetailsPanel from "#lib/components/ui/DetailsPanel.svelte";
   import EmptyState from "#lib/components/ui/EmptyState.svelte";
   import ScrollSyncGroup from "#lib/components/ui/ScrollSyncGroup.svelte";
-  import { badgeCountMd } from "#lib/constants/ui-classes.js";
+  import { badgeCountMd, btnChip } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { MirrorAdminUi, Tag1Group, Tag2Group } from "#lib/types/bms-view.js";
   import type { JsonPreviewHandle } from "#lib/types/ui.js";
@@ -134,18 +134,14 @@
         >
           <div class="flex flex-wrap items-center gap-2">
             {#each groups as g (g.tag1)}
-              <button class="tag-scroll" type="button" onclick={() => scrollToTag1(g.tag1)}>
+              <button class={btnChip} type="button" onclick={() => scrollToTag1(g.tag1)}>
                 {g.tag1}
               </button>
               {#if g.subgroups.length > 0}
                 <span class="mx-1 text-white-40">|</span>
               {/if}
               {#each g.subgroups as sg (sg.tag2)}
-                <button
-                  class="tag-scroll"
-                  type="button"
-                  onclick={() => scrollToTag2(g.tag1, sg.tag2)}
-                >
+                <button class={btnChip} type="button" onclick={() => scrollToTag2(g.tag1, sg.tag2)}>
                   {sg.tag2}
                   <span class={badgeCountMd}>
                     ({sg.items.length})

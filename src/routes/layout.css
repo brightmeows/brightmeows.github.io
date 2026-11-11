@@ -365,11 +365,6 @@
   }
 
   /* ===== 滚动导航标签 ===== */
-  .tag-scroll {
-    @apply cursor-pointer rounded-glass-lg bg-white-10 px-4 py-2 font-bold text-white opacity-80 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:opacity-90;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  }
-
   /* ===== 进度条 ===== */
   .progress-track {
     @apply h-2 flex-1 overflow-hidden rounded-full bg-white-10;

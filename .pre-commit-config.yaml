@@ -137,6 +137,21 @@ repos:
         types: [text]
         pass_filenames: false
 
+  # 按钮与链接令牌纪律：src 下 .svelte 的按钮/筛选 chip 不得手写皮肤指纹
+  # （cursor-pointer 配圆角或描边加底色），a 元素不得裸用 text-accent；
+  # 一律走 ui-classes 令牌（按钮/chip 家族与 linkInline）或 link-accent。
+  # 玻璃与图标原语组件（src/lib/components/ui）整体豁免，圆形
+  # （rounded-full）形态豁免。指纹集与豁免口径见脚本头注；受检范围
+  # （仅 .svelte）在 package.json 的 check:ui。
+  - repo: local
+    hooks:
+      - id: ui-tokens
+        name: UI buttons/chips/links use ui-classes tokens
+        entry: pnpm check:ui
+        language: system
+        types: [text]
+        pass_filenames: false
+
   # 同一事实在不能 import 配置的地方（wrangler.jsonc、工作流 YAML、版本文件）
   # 必须与 config/site.json 一致；纯离线、毫秒级。
   - repo: local

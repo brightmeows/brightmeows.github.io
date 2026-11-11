@@ -22,10 +22,10 @@ def is_banned(ch: str) -> bool:
 
 def main() -> int:
     failed: list[str] = []
-    for raw in sys.stdin.buffer.read().split(b"\0"):
-        if not raw:
-            continue
-        path = raw.decode()
+    paths = sys.argv[1:]
+    if not paths:
+        paths = [raw.decode() for raw in sys.stdin.buffer.read().split(b"\0") if raw]
+    for path in paths:
         if not path.endswith(".svelte"):
             continue
         with open(path, encoding="utf-8") as fh:

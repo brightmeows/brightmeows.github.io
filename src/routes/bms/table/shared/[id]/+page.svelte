@@ -2,6 +2,7 @@
   import { draftStorageKey, type TableEditPayload } from "@brightmeows/bms/editor";
   import type { SharedTableItem } from "@brightmeows/mirror/shared";
   import { sharedTablePath } from "@brightmeows/mirror/urls";
+  import ArrowLeft from "@lucide/svelte/icons/arrow-left";
   import { onMount } from "svelte";
 
   import PageShell from "#lib/components/layout/PageShell.svelte";
@@ -10,7 +11,13 @@
   import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
   import { r2SharedDataUrl, r2SharedHeaderUrl } from "#lib/constants/r2.js";
-  import { btnGhostMd, btnPrimary, inputEditorBase } from "#lib/constants/ui-classes.js";
+  import {
+    btnDangerMd,
+    btnGhostMd,
+    btnGhostXs,
+    btnPrimary,
+    inputEditorBase,
+  } from "#lib/constants/ui-classes.js";
   import {
     deleteSharedTable,
     initialSharedEditState,
@@ -233,7 +240,7 @@
           {#if canDelete}
             <div class="text-center">
               <button
-                class="{btnGhostMd} text-red-200/80 hover:bg-red-400/20 hover:text-red-200"
+                class={btnDangerMd}
                 type="button"
                 disabled={busy}
                 onclick={() => void doDelete()}
@@ -267,7 +274,8 @@
       {:else if s?.phase === "notfound"}
         <p class="text-[1.05rem] text-error">{m["shared.not_found"]()}</p>
         <p class="mt-2 text-[0.9rem] text-white-60">{m["shared.not_found_hint"]()}</p>
-        <a class="link-accent mt-3 inline-block" href="/bms/table/shared/">
+        <a class="{btnGhostXs} mt-3" href="/bms/table/shared/">
+          <ArrowLeft class="size-4 shrink-0" aria-hidden="true" />
           {m["shared.back_to_list"]()}
         </a>
       {:else if s?.phase === "error"}

@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { MirrorTableItem } from "@brightmeows/mirror/types";
   import type { DisabledEntry } from "@brightmeows/mirror/user-layer";
+  import ExternalLink from "@lucide/svelte/icons/external-link";
   import { onMount, tick } from "svelte";
 
   import GroupedTablesSection from "#lib/components/bms/GroupedTablesSection.svelte";
@@ -12,7 +13,14 @@
   import Checkbox from "#lib/components/ui/Checkbox.svelte";
   import JsonPreview from "#lib/components/ui/JsonPreview.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
-  import { btnInputClear, inputPanel } from "#lib/constants/ui-classes.js";
+  import {
+    btnChip,
+    btnChipOnAccent,
+    btnChipOnWarning,
+    btnGhostXs,
+    btnInputClear,
+    inputPanel,
+  } from "#lib/constants/ui-classes.js";
   import {
     collapseAdminEdit,
     initialMirrorAdminState,
@@ -421,11 +429,12 @@
     </button>
     {m["mirror.bms_hint_after"]()}
     <a
-      class="link-accent"
+      class={btnGhostXs}
       href="https://darksabun.club/table/tablelist.html"
       target="_blank"
       rel="noopener noreferrer"
     >
+      <ExternalLink class="size-4 shrink-0" aria-hidden="true" />
       {m["mirror.tutorial"]()}
     </a>
     {#if cb.copied}
@@ -463,11 +472,7 @@
       {/if}
 
       <div class="flex flex-wrap items-center gap-2">
-        <label
-          class="flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-[0.35rem] text-[0.85rem] transition-colors duration-200 select-none {showProtectedOnly
-            ? 'border-[#ffd54f] bg-[#ffd54f]/20 text-[#ffd54f]'
-            : 'border-white-20 text-white-50 hover:border-white-40 hover:text-white-70'}"
-        >
+        <label class={showProtectedOnly ? btnChipOnWarning : btnChip}>
           <Checkbox
             size="sm"
             ariaLabel={m["mirror.protected_filter"]()}
@@ -477,11 +482,7 @@
           {m["mirror.protected_filter"]()}
         </label>
         {#if auth.user !== null}
-          <label
-            class="flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-[0.35rem] text-[0.85rem] transition-colors duration-200 select-none {operationsMode
-              ? 'border-accent bg-accent/20 text-accent'
-              : 'border-white-20 text-white-50 hover:border-white-40 hover:text-white-70'}"
-          >
+          <label class={operationsMode ? btnChipOnAccent : btnChip}>
             <Checkbox
               size="sm"
               ariaLabel={m["mirror.operations_mode"]()}
@@ -493,9 +494,7 @@
         {/if}
         {#if isAdmin}
           <button
-            class="cursor-pointer rounded-md border px-2 py-[0.35rem] text-[0.85rem] transition-colors duration-200 {adminPanelOpen
-              ? 'border-accent/60 bg-accent/20 text-accent'
-              : 'border-white-20 text-white-50 hover:border-white-40 hover:text-white-70'}"
+            class={adminPanelOpen ? btnChipOnAccent : btnChip}
             type="button"
             aria-expanded={adminPanelOpen}
             onclick={toggleAdminPanel}

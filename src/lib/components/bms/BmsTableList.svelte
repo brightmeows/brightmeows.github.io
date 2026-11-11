@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { linkInline } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { TableEntry } from "#lib/types/bms-view.js";
 
@@ -30,10 +31,7 @@
           <tr class="transition-colors hover:bg-white-5">
             <td class="table-td-glass wrap-break-word text-white-80">{table.symbol ?? ""}</td>
             <td class="table-td-glass wrap-break-word">
-              <a
-                href={`/bms/table/${table.id}`}
-                class="text-accent no-underline transition-colors hover:text-accent-light"
-              >
+              <a href={`/bms/table/${table.id}`} class={linkInline}>
                 {table.name}
               </a>
             </td>

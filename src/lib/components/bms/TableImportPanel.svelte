@@ -11,7 +11,13 @@
   import Download from "@lucide/svelte/icons/download";
 
   import { r2TableDataUrl, r2TableHeaderUrl } from "#lib/constants/r2.js";
-  import { btnGhost, inputEditorMono } from "#lib/constants/ui-classes.js";
+  import {
+    btnChip,
+    btnChipOnAccent,
+    btnGhost,
+    inputFile,
+    inputEditorMono,
+  } from "#lib/constants/ui-classes.js";
   import { strictErrorsNotice } from "#lib/controllers/editor.js";
   import { m } from "#lib/paraglide/messages.js";
 
@@ -185,13 +191,6 @@
       busy = false;
     }
   }
-
-  const tabButton = (active: boolean): string =>
-    `cursor-pointer rounded-md border px-3 py-1.5 text-[0.85rem] transition-colors duration-200 ${
-      active
-        ? "border-accent/60 bg-accent/20 text-accent"
-        : "border-white-20 text-white-50 hover:border-white-40 hover:text-white-70"
-    }`;
 </script>
 
 <details class="rounded-lg border border-white-15 bg-black-20 p-3">
@@ -202,7 +201,7 @@
   <div class="mt-3 flex flex-wrap items-center gap-2">
     {#each tabs as entry (entry.id)}
       <button
-        class={tabButton(tab === entry.id)}
+        class={tab === entry.id ? btnChipOnAccent : btnChip}
         type="button"
         {disabled}
         aria-pressed={tab === entry.id}
@@ -243,7 +242,7 @@
     {:else if tab === "file"}
       <p class="mb-2 text-[0.85rem] text-white-60">{m["editor.import_file_hint"]()}</p>
       <input
-        class="text-[0.85rem] file:cursor-pointer file:rounded-md file:border-0 file:bg-white-10 file:px-3 file:py-1.5 file:text-white-80"
+        class={inputFile}
         type="file"
         accept="application/json,.json"
         {disabled}
