@@ -9,13 +9,13 @@
 
 /** 标准主按钮。 */
 export const btnPrimary =
-  "cursor-pointer inline-flex items-center justify-center gap-[0.3rem] rounded-[25px] border-none bg-accent px-6 py-2.5 text-[1rem] font-semibold text-white transition-colors duration-300 ease-out hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50";
+  "cursor-pointer inline-flex items-center justify-center gap-[0.3rem] rounded-[25px] border-none bg-accent-deep px-6 py-2.5 text-[1rem] font-semibold text-white transition-colors duration-300 ease-out hover:bg-accent-deep-hover disabled:cursor-not-allowed disabled:opacity-50";
 /** 大号主按钮（查看页主操作）。 */
 export const btnPrimaryLarge =
-  "cursor-pointer inline-flex items-center justify-center gap-[0.3rem] rounded-[25px] border-none bg-accent px-8 py-3 text-[1rem] font-semibold text-white transition-colors duration-300 ease-out hover:bg-accent-hover";
+  "cursor-pointer inline-flex items-center justify-center gap-[0.3rem] rounded-[25px] border-none bg-accent-deep px-8 py-3 text-[1rem] font-semibold text-white transition-colors duration-300 ease-out hover:bg-accent-deep-hover";
 /** 链接形态主按钮（a 元素，去下划线）。 */
 export const btnPrimaryLink =
-  "cursor-pointer inline-flex items-center justify-center gap-[0.3rem] rounded-[25px] border-none bg-accent px-6 py-2.5 text-[1rem] font-semibold text-white no-underline transition-colors duration-300 ease-out hover:bg-accent-hover";
+  "cursor-pointer inline-flex items-center justify-center gap-[0.3rem] rounded-[25px] border-none bg-accent-deep px-6 py-2.5 text-[1rem] font-semibold text-white no-underline transition-colors duration-300 ease-out hover:bg-accent-deep-hover";
 
 // ---- 幽灵按钮（白描边玻璃） ----
 

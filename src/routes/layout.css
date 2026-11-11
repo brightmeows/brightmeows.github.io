@@ -21,6 +21,9 @@
   --color-accent: #64b5f6;
   --color-accent-hover: #42a5f5;
   --color-accent-light: #90caf9;
+  /* 主按钮白字场景的深档底色（白字对比度达 WCAG AA），取值同源 blue-to */
+  --color-accent-deep: var(--color-blue-to);
+  --color-accent-deep-hover: #0d47a1;
 
   /* 语义色 */
   --color-success: #4caf50;
@@ -32,10 +35,10 @@
   --color-warning-light: #ffb74d;
 
   /* 渐变按钮预设色 */
-  --color-blue-from: #2196f3;
+  --color-blue-from: #1976d2;
   --color-blue-to: #1565c0;
-  --color-blue-hover-from: #42a5f5;
-  --color-blue-hover-to: #1976d2;
+  --color-blue-hover-from: #1565c0;
+  --color-blue-hover-to: #0d47a1;
 
   --color-orange-from: #ff9800;
   --color-orange-to: #f57c00;
@@ -358,7 +361,7 @@
 
   /* ===== 错误信息块 ===== */
   .message-error {
-    @apply rounded-glass-sm border-l-4 border-error bg-error/10 p-4 text-[0.9rem] text-error;
+    @apply rounded-glass-sm rounded-l-none border-l-4 border-error bg-error/10 p-4 text-[0.9rem] text-error;
   }
 
   /* ===== 滚动导航标签 ===== */
