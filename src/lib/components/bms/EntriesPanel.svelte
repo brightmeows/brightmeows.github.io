@@ -24,7 +24,7 @@
     type EntryRemovalSnapshot,
   } from "@brightmeows/bms/editor";
   import type { ChartData } from "@brightmeows/bms/format";
-  import { levelSegmentColor } from "@brightmeows/bms/table";
+  import { findUnlistedLevels, levelSegmentColor } from "@brightmeows/bms/table";
   import Check from "@lucide/svelte/icons/check";
   import CheckCheck from "@lucide/svelte/icons/check-check";
   import Link2 from "@lucide/svelte/icons/link-2";
@@ -42,7 +42,13 @@
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
   import ToggleButton from "#lib/components/ui/ToggleButton.svelte";
   import ToggleJumpChip from "#lib/components/ui/ToggleJumpChip.svelte";
-  import { btnDanger, btnGhost, btnPrimary, inputEditorMono } from "#lib/constants/ui-classes.js";
+  import {
+    btnChipOnWarning,
+    btnDanger,
+    btnGhost,
+    btnPrimary,
+    inputEditorMono,
+  } from "#lib/constants/ui-classes.js";
   import { planImportApply, type EditorNotice } from "#lib/controllers/editor.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { JsonPreviewHandle } from "#lib/types/ui.js";
@@ -167,6 +173,9 @@
   );
   const filteredIndices = $derived(filterEntryIndices(entries, { level: levelFilter, query }));
   const groups = $derived(groupEntryIndices(entries, filteredIndices, levels));
+
+  /** 未列入 header level_order 的等级组：站点 fallback 显示而 beatoraja 整组丢弃，组头挂警示 chip。 */
+  const unlistedLevels = $derived(new Set(findUnlistedLevels(allLevels, levels)));
 
   /** 行下标到所属等级组的映射：组内拖拽拦截与表单排序按钮共用。 */
   const dragGroups = $derived.by(() => {
@@ -801,6 +810,11 @@
                   <span class="text-[1.1rem] text-white-80">
                     {m["table.chart_count"]({ count: group.indices.length })}
                   </span>
+                  {#if !group.unassigned && unlistedLevels.has(group.level)}
+                    <span class={btnChipOnWarning} title={m["editor.compat_unlisted_title"]()}>
+                      {m["editor.compat_unlisted_chip"]()}
+                    </span>
+                  {/if}
                 </div>
               </td>
             </tr>

@@ -105,3 +105,17 @@ export function sortDifficultyGroups(
   }
   return sorted;
 }
+
+/**
+ * 未列入 level_order 的等级集合：beatoraja 按 header 的 level_order 生成
+ * 表页等级组，不在此清单中的等级组整组不显示（条目静默消失）。站点渲染
+ * 对这些组 fallback 追加显示，组头据此标注警示 chip。数字等级与
+ * level_order 数字元素按字符串归一比较（与 crossWarnings 同口径）。
+ */
+export function findUnlistedLevels(
+  levels: readonly string[],
+  levelOrder: readonly (string | number)[]
+): string[] {
+  const listed = new Set(levelOrder.map(String));
+  return levels.filter((level) => !listed.has(level));
+}

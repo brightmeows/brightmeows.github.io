@@ -237,14 +237,24 @@ describe("strictWarningMessage 强验证警告消息映射", () => {
     expect(
       strictWarningMessage({ kind: "unknown_field", scope: "entry", field: "eval" }).params
     ).toEqual({ field: "eval" });
-    expect(strictWarningMessage({ kind: "level_not_listed", levels: ["3", "5"] }).params).toEqual({
-      levels: "3, 5",
-    });
+    expect(
+      strictWarningMessage({ kind: "level_not_listed", levels: ["3", "5"], count: 2 }).params
+    ).toEqual({ levels: "3, 5" });
     expect(
       strictWarningMessage({ kind: "course_hash_unmatched", hashes: ["a", "b"] }).params
     ).toEqual({ hashes: "a, b" });
     expect(
       strictWarningMessage({ kind: "unknown_constraint", values: ["", "grade_easy"] }).params
     ).toEqual({ values: ", grade_easy" });
+    expect(
+      strictWarningMessage({ kind: "level_order_duplicate", levels: ["3", "3"] }).params
+    ).toEqual({ levels: "3, 3" });
+    expect(strictWarningMessage({ kind: "short_hash", count: 2 }).params).toEqual({ count: 2 });
+    expect(strictWarningMessage({ kind: "nonstandard_hash", count: 1 }).params).toEqual({
+      count: 1,
+    });
+    expect(strictWarningMessage({ kind: "empty_constraint", count: 3 }).params).toEqual({
+      count: 3,
+    });
   });
 });

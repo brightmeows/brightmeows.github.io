@@ -90,14 +90,23 @@ describe("strictCheckHeader", () => {
     expect(report.errors[1]?.params.value).toBeUndefined();
   });
 
-  it("清单外的 constraint 值降为警告（真实表的 ln/自定义值不拒收）", () => {
+  it("清单外的 constraint 值降为警告，空串拆分为专项警告", () => {
     const report = strictCheckHeader({
       ...okHeader,
       course: [{ name: "a", constraint: ["gauge_lr2", "ln", "", "grade_easy"] }],
     });
     expect(report.ok).toBe(true);
     expect(report.errors).toEqual([]);
-    expect(report.warnings).toEqual([{ kind: "unknown_constraint", values: ["", "grade_easy"] }]);
+    expect(report.warnings).toEqual([
+      { kind: "unknown_constraint", values: ["grade_easy"] },
+      { kind: "empty_constraint", count: 1 },
+    ]);
+  });
+
+  it("level_order 重复项给专项警告（数字与字符串按文本归一）", () => {
+    const report = strictCheckHeader({ ...okHeader, level_order: ["1", 1, "2", "2", "3"] });
+    expect(report.ok).toBe(true);
+    expect(report.warnings).toEqual([{ kind: "level_order_duplicate", levels: ["1", "2"] }]);
   });
 
   it("beatoraja 全枚举 constraint 都接受（SSA3rd 的 ln 组合）", () => {
@@ -235,7 +244,15 @@ describe("strictCheckData", () => {
 
   it("规范点名的社区常见自定义字段不出未知字段警告", () => {
     const report = strictCheckData([
-      { md5: "a", level: "1", total: 480, judge: 3, note: "x", tag: "同時押し", eval: 0 },
+      {
+        md5: "a".repeat(32),
+        level: "1",
+        total: 480,
+        judge: 3,
+        note: "x",
+        tag: "同時押し",
+        eval: 0,
+      },
     ]);
     expect(report.ok).toBe(true);
     expect(report.warnings).toEqual([]);
@@ -243,8 +260,8 @@ describe("strictCheckData", () => {
 
   it("未知条目字段按字段名去重给警告", () => {
     const report = strictCheckData([
-      { md5: "a", level: "1", custom_x: 1, custom_y: "x" },
-      { md5: "b", level: "2", custom_x: 2 },
+      { md5: "a".repeat(32), level: "1", custom_x: 1, custom_y: "x" },
+      { md5: "b".repeat(32), level: "2", custom_x: 2 },
     ]);
     expect(report.ok).toBe(true);
     expect(report.warnings).toEqual([
@@ -259,11 +276,25 @@ describe("strictCheckData", () => {
     expect(report.truncated).toBe(true);
     expect(report.errors).toHaveLength(100);
   });
+
+  it("beatoraja 哈希兼容分级：全短跳过、超门槛非标准匹配不上、有标准长度则无警告", () => {
+    const report = strictCheckData([
+      { md5: "a".repeat(20), level: "1" },
+      { md5: "a".repeat(28), sha256: "a".repeat(28), level: "2" },
+      { md5: "a".repeat(32), level: "3" },
+      { md5: "a".repeat(20), sha256: "a".repeat(64), level: "4" },
+    ]);
+    expect(report.ok).toBe(true);
+    expect(report.warnings).toEqual([
+      { kind: "short_hash", count: 1 },
+      { kind: "nonstandard_hash", count: 1 },
+    ]);
+  });
 });
 
 describe("strictCheckSharedPayload", () => {
   it("合法载荷通过且无警告", () => {
-    const report = strictCheckSharedPayload(okHeader, [{ md5: "a", level: "1" }]);
+    const report = strictCheckSharedPayload(okHeader, [{ md5: "a".repeat(32), level: "1" }]);
     expect(report.ok).toBe(true);
     expect(report.warnings).toEqual([]);
   });
@@ -276,32 +307,45 @@ describe("strictCheckSharedPayload", () => {
   it("data 的 level 未列入 level_order 给警告", () => {
     const header = { ...okHeader, level_order: ["1", "2"] };
     const report = strictCheckSharedPayload(header, [
-      { md5: "a", level: "1" },
-      { md5: "b", level: "3" },
-      { md5: "c", level: "3" },
+      { md5: "a".repeat(32), level: "1" },
+      { md5: "b".repeat(32), level: "3" },
+      { md5: "c".repeat(32), level: "3" },
     ]);
     expect(report.ok).toBe(true);
-    expect(report.warnings).toEqual([{ kind: "level_not_listed", levels: ["3"] }]);
+    expect(report.warnings).toEqual([{ kind: "level_not_listed", levels: ["3"], count: 2 }]);
   });
 
   it("level_order 缺省时不做 level 对照", () => {
-    const report = strictCheckSharedPayload(okHeader, [{ md5: "a", level: "9" }]);
+    const report = strictCheckSharedPayload(okHeader, [{ md5: "a".repeat(32), level: "9" }]);
     expect(report.warnings).toEqual([]);
+  });
+
+  it("空串 constraint 跨段位累计计数", () => {
+    const header = {
+      ...okHeader,
+      course: [
+        { name: "a", constraint: ["grade", ""] },
+        { name: "b", constraint: ["", ""] },
+      ],
+    };
+    const report = strictCheckSharedPayload(header, [{ md5: "a".repeat(32), level: "1" }]);
+    expect(report.ok).toBe(true);
+    expect(report.warnings).toContainEqual({ kind: "empty_constraint", count: 3 });
   });
 
   it("段位哈希命中条目（大小写不敏感）不警告，未命中给样例警告", () => {
     const header = {
       ...okHeader,
-      course: [{ name: "初段", md5: ["ABC"], sha256: ["deadbeef"] }],
+      course: [{ name: "初段", md5: ["A".repeat(32)], sha256: ["D".repeat(64)] }],
     };
     const matched = strictCheckSharedPayload(header, [
-      { md5: "abc", level: "1" },
-      { sha256: "DEADBEEF", level: "2" },
+      { md5: "a".repeat(32), level: "1" },
+      { sha256: "d".repeat(64), level: "2" },
     ]);
     expect(matched.warnings).toEqual([]);
-    const unmatched = strictCheckSharedPayload(header, [{ md5: "other", level: "1" }]);
+    const unmatched = strictCheckSharedPayload(header, [{ md5: "o".repeat(32), level: "1" }]);
     expect(unmatched.warnings).toEqual([
-      { kind: "course_hash_unmatched", hashes: ["abc", "deadbeef"] },
+      { kind: "course_hash_unmatched", hashes: ["a".repeat(32), "d".repeat(64)] },
     ]);
   });
 });

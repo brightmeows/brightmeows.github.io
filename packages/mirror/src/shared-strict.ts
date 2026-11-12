@@ -162,8 +162,12 @@ export type SharedStrictWarning =
   | { kind: "missing_data_url" }
   | { kind: "unknown_field"; scope: "header" | "course" | "entry"; field: string }
   | { kind: "unknown_constraint"; values: string[] }
-  | { kind: "level_not_listed"; levels: string[] }
-  | { kind: "course_hash_unmatched"; hashes: string[] };
+  | { kind: "level_not_listed"; levels: string[]; count: number }
+  | { kind: "course_hash_unmatched"; hashes: string[] }
+  | { kind: "level_order_duplicate"; levels: string[] }
+  | { kind: "short_hash"; count: number }
+  | { kind: "nonstandard_hash"; count: number }
+  | { kind: "empty_constraint"; count: number };
 
 /** 强验证结果：ok 为 false 时 errors 非空；警告与错误互不排斥。 */
 export interface SharedStrictReport {
@@ -206,6 +210,14 @@ export const STRICT_EDITOR_MESSAGE_KEYS = {
   warnLevelNotListed: "editor.strict_warn_level_not_listed",
   warnCourseHash: "editor.strict_warn_course_hash",
   warnUnknownConstraint: "editor.strict_warn_unknown_constraint",
+  warnLevelOrderDuplicate: "editor.strict_warn_level_order_duplicate",
+  warnShortHash: "editor.strict_warn_short_hash",
+  warnNonstandardHash: "editor.strict_warn_nonstandard_hash",
+  warnEmptyConstraint: "editor.strict_warn_empty_constraint",
+  compatUnlistedChip: "editor.compat_unlisted_chip",
+  compatUnlistedTitle: "editor.compat_unlisted_title",
+  compatLevelConfirm: "editor.compat_level_confirm",
+  compatLevelCancel: "editor.compat_level_cancel",
 } as const;
 
 /** 单次校验的错误收集上限（10000 条全坏时不至于产出上万条错误对象）。 */
@@ -213,6 +225,15 @@ const MAX_STRICT_ERRORS = 100;
 
 /** 单条警告里等级或哈希样例的展示上限（完整清单以编辑器条目为准）。 */
 const MAX_WARNING_SAMPLES = 20;
+
+/** beatoraja 的条目收录取门槛：md5 与 sha256 都不超过该长度时条目被静默跳过（内置 2018 版 jar 的 decodeJSONTableData，仅 INFO 日志）。 */
+export const BEATORAJA_HASH_MIN_LENGTH = 24;
+
+/** 标准 MD5 十六进制长度；非此长度 beatoraja 会收下条目，但永远匹配不到本地谱面。 */
+export const MD5_HEX_LENGTH = 32;
+
+/** 标准 SHA-256 十六进制长度；语义同 MD5_HEX_LENGTH。 */
+export const SHA256_HEX_LENGTH = 64;
 
 // ---------------------------------------------------------------------------
 // 校验入口
@@ -250,13 +271,22 @@ export function strictCheckHeader(header: unknown): SharedStrictReport {
   } else {
     warnings.push({ kind: "missing_data_url" });
   }
-  checkLevelOrder(header, errors);
-  checkCourseField(header, errors, warnings, seenUnknown, unknownConstraints);
+  checkLevelOrder(header, errors, warnings);
+  const emptyConstraints = checkCourseField(
+    header,
+    errors,
+    warnings,
+    seenUnknown,
+    unknownConstraints
+  );
   if (unknownConstraints.size > 0) {
     warnings.push({
       kind: "unknown_constraint",
       values: [...unknownConstraints].slice(0, MAX_WARNING_SAMPLES),
     });
+  }
+  if (emptyConstraints > 0) {
+    warnings.push({ kind: "empty_constraint", count: emptyConstraints });
   }
   return finish(errors, warnings, [], header);
 }
@@ -283,10 +313,17 @@ export function strictCheckData(data: unknown): SharedStrictReport {
     return finish(errors, warnings);
   }
   const records: Record<string, unknown>[] = [];
+  const hashTally = { short: 0, nonstandard: 0 };
   data.forEach((entry, index) => {
     if (isRecord(entry)) records.push(entry);
-    checkDataEntry(entry, index, errors, warnings, seenUnknown);
+    checkDataEntry(entry, index, errors, warnings, seenUnknown, hashTally);
   });
+  if (hashTally.short > 0) {
+    warnings.push({ kind: "short_hash", count: hashTally.short });
+  }
+  if (hashTally.nonstandard > 0) {
+    warnings.push({ kind: "nonstandard_hash", count: hashTally.nonstandard });
+  }
   return finish(errors, warnings, records);
 }
 
@@ -394,7 +431,11 @@ function collectUnknownFields(
   }
 }
 
-function checkLevelOrder(header: Record<string, unknown>, errors: ErrorCollector): void {
+function checkLevelOrder(
+  header: Record<string, unknown>,
+  errors: ErrorCollector,
+  warnings: SharedStrictWarning[]
+): void {
   if (!("level_order" in header)) return;
   const levelOrder = header.level_order;
   if (!Array.isArray(levelOrder)) {
@@ -410,6 +451,21 @@ function checkLevelOrder(header: Record<string, unknown>, errors: ErrorCollector
       });
     }
   });
+  // 重复项：beatoraja 按 level_order 生成等级组，重复值产生同名双组
+  const seen = new Set<string>();
+  const duplicates = new Set<string>();
+  for (const item of levelOrder) {
+    if (typeof item !== "string" && typeof item !== "number") continue;
+    const key = String(item);
+    if (seen.has(key)) duplicates.add(key);
+    else seen.add(key);
+  }
+  if (duplicates.size > 0) {
+    warnings.push({
+      kind: "level_order_duplicate",
+      levels: [...duplicates].slice(0, MAX_WARNING_SAMPLES),
+    });
+  }
 }
 
 function checkCourseField(
@@ -418,26 +474,35 @@ function checkCourseField(
   warnings: SharedStrictWarning[],
   seenUnknown: Set<string>,
   unknownConstraints: Set<string>
-): void {
-  if (!("course" in header)) return;
+): number {
+  if (!("course" in header)) return 0;
   const course = header.course;
   if (!Array.isArray(course)) {
     errors.add({ code: "course_not_array", path: "header.course", params: {} });
-    return;
+    return 0;
   }
+  let emptyCount = 0;
   course.forEach((entry, i) => {
     if (Array.isArray(entry)) {
       entry.forEach((item, j) => {
         const path = "header.course[" + i + "][" + j + "]";
         const index = i + "." + j;
         if (isRecord(item)) {
-          checkCourseObject(item, path, index, errors, warnings, seenUnknown, unknownConstraints);
+          emptyCount += checkCourseObject(
+            item,
+            path,
+            index,
+            errors,
+            warnings,
+            seenUnknown,
+            unknownConstraints
+          );
         } else {
           errors.add({ code: "course_element", path, params: { index } });
         }
       });
     } else if (isRecord(entry)) {
-      checkCourseObject(
+      emptyCount += checkCourseObject(
         entry,
         "header.course[" + i + "]",
         String(i),
@@ -454,6 +519,7 @@ function checkCourseField(
       });
     }
   });
+  return emptyCount;
 }
 
 /** 校验单个段位对象（path 已带位置，index 是用于消息插值的段位序号）。 */
@@ -465,13 +531,14 @@ function checkCourseObject(
   warnings: SharedStrictWarning[],
   seenUnknown: Set<string>,
   unknownConstraints: Set<string>
-): void {
+): number {
+  let emptyCount = 0;
   collectUnknownFields(course, STRICT_COURSE_FIELDS, "course", warnings, seenUnknown);
   if (typeof course.name !== "string" || course.name.trim() === "") {
     errors.add({ code: "course_name", path: path + ".name", params: { index } });
   }
   if ("constraint" in course) {
-    checkCourseConstraint(course.constraint, path, index, errors, unknownConstraints);
+    emptyCount += checkCourseConstraint(course.constraint, path, index, errors, unknownConstraints);
   }
   if ("trophy" in course) {
     checkCourseTrophy(course.trophy, path, index, errors);
@@ -499,6 +566,7 @@ function checkCourseObject(
       errors.add({ code: "course_hashes", path: path + "." + field, params: { index, field } });
     }
   }
+  return emptyCount;
 }
 
 function checkCourseConstraint(
@@ -507,11 +575,12 @@ function checkCourseConstraint(
   index: string,
   errors: ErrorCollector,
   unknownConstraints: Set<string>
-): void {
+): number {
   if (!Array.isArray(constraint)) {
     errors.add({ code: "course_constraint_type", path: path + ".constraint", params: { index } });
-    return;
+    return 0;
   }
+  let emptyCount = 0;
   constraint.forEach((value, i) => {
     if (typeof value !== "string") {
       errors.add({
@@ -519,10 +588,14 @@ function checkCourseConstraint(
         path: path + ".constraint[" + i + "]",
         params: { index },
       });
+    } else if (value === "") {
+      // 空串使 beatoraja 丢弃整份段位文件（CourseDataConstraint.getValue 返回 null 的连锁），专项警告
+      emptyCount += 1;
     } else if (!SHARED_COURSE_CONSTRAINTS.includes(value)) {
       unknownConstraints.add(value);
     }
   });
+  return emptyCount;
 }
 
 function checkCourseTrophy(
@@ -566,7 +639,8 @@ function checkDataEntry(
   index: number,
   errors: ErrorCollector,
   warnings: SharedStrictWarning[],
-  seenUnknown: Set<string>
+  seenUnknown: Set<string>,
+  hashTally: { short: number; nonstandard: number }
 ): void {
   if (!isRecord(entry)) {
     errors.add({ code: "entry_invalid", path: "data[" + index + "]", params: { index } });
@@ -600,6 +674,32 @@ function checkDataEntry(
     }
   }
   collectUnknownFields(entry, STRICT_DATA_FIELDS, "entry", warnings, seenUnknown);
+  const hashClass = classifyEntryHashes(entry);
+  if (hashClass === "short") hashTally.short += 1;
+  else if (hashClass === "nonstandard") hashTally.nonstandard += 1;
+}
+
+/**
+ * 条目哈希的 beatoraja 兼容分级：所有非空哈希都不超过门槛长度时 beatoraja
+ * 静默跳过该条目（short）；有哈希超过门槛但没有标准长度哈希时 beatoraja
+ * 会收下条目，但它永远匹配不到本地谱面（nonstandard）；存在标准长度哈希
+ * 则无兼容问题（null）。
+ */
+function classifyEntryHashes(entry: Record<string, unknown>): "short" | "nonstandard" | null {
+  let longest = 0;
+  let hasStandard = false;
+  for (const [field, standard] of [
+    ["md5", MD5_HEX_LENGTH],
+    ["sha256", SHA256_HEX_LENGTH],
+  ] as const) {
+    const value = entry[field];
+    if (typeof value !== "string" || value === "") continue;
+    longest = Math.max(longest, value.length);
+    if (value.length === standard) hasStandard = true;
+  }
+  if (longest === 0) return null;
+  if (longest <= BEATORAJA_HASH_MIN_LENGTH) return "short";
+  return hasStandard ? null : "nonstandard";
 }
 
 /**
@@ -619,18 +719,21 @@ export function crossWarnings(header: unknown, data: unknown): SharedStrictWarni
         .map(String)
     );
     const unlisted = new Set<string>();
+    let unlistedCount = 0;
     for (const entry of data) {
       if (!isRecord(entry)) continue;
       const level = entry.level;
       const levelText = typeof level === "number" ? String(level) : level;
       if (typeof levelText === "string" && levelText !== "" && !listed.has(levelText)) {
         unlisted.add(levelText);
+        unlistedCount += 1;
       }
     }
     if (unlisted.size > 0) {
       warnings.push({
         kind: "level_not_listed",
         levels: [...unlisted].slice(0, MAX_WARNING_SAMPLES),
+        count: unlistedCount,
       });
     }
   }

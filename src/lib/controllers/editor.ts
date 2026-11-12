@@ -66,6 +66,30 @@ export function decideLocalSaveGate(
   return { gate: "pass", header, data: entries, warnings };
 }
 
+/**
+ * beatoraja 兼容确认：等级未列入 level_order 时站点会 fallback 显示而
+ * beatoraja 整组丢弃（chikachi-group 事件的教训），notice 已被证明会被
+ * 忽略，故放行前要求显式确认。宽容原则维持：确认后照常保存。
+ */
+async function confirmCompatLevels(
+  warnings: SharedStrictWarning[],
+  confirm: (message: string) => boolean | Promise<boolean>
+): Promise<{ kind: "approved" } | { kind: "canceled" }> {
+  const unlisted = warnings.find((warning) => warning.kind === "level_not_listed");
+  if (unlisted === undefined) {
+    return { kind: "approved" };
+  }
+  const message =
+    translateMessage(STRICT_EDITOR_MESSAGE_KEYS.compatLevelConfirm, {
+      levels: unlisted.levels.join(", "),
+      count: unlisted.count,
+    }) ?? "";
+  if (!(await confirm(message))) {
+    return { kind: "canceled" };
+  }
+  return { kind: "approved" };
+}
+
 /** 新表进入编辑时的草稿来源决策：自有草稿优先，其次认领，最后空白开始。 */
 export type NewTableDraftDecision =
   | { action: "pending"; draft: DraftPayload }
@@ -133,6 +157,16 @@ export async function planEditorSave(deps: {
     return {
       kind: "rejected",
       notice: { kind: "warn", text: m["editor.publish_unassigned_blocked"]({ count: gate.count }) },
+    };
+  }
+  const compat = await confirmCompatLevels(gate.warnings, deps.confirm);
+  if (compat.kind === "canceled") {
+    return {
+      kind: "rejected",
+      notice: {
+        kind: "warn",
+        text: translateMessage(STRICT_EDITOR_MESSAGE_KEYS.compatLevelCancel, {}) ?? "",
+      },
     };
   }
   if (deps.conflictCheck !== undefined) {

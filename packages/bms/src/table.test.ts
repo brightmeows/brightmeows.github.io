@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { getBmsLinks, sortDifficultyGroups } from "./table.ts";
+import { findUnlistedLevels, getBmsLinks, sortDifficultyGroups } from "./table.ts";
+
+describe("findUnlistedLevels", () => {
+  it("未列入 level_order 的等级按文本归一过滤（数字元素与数字等级归一比较）", () => {
+    expect(findUnlistedLevels(["1", "FROG8", "2"], ["1", 2, "3"])).toEqual(["FROG8"]);
+    expect(findUnlistedLevels([], ["1"])).toEqual([]);
+    expect(findUnlistedLevels(["a", "b"], [])).toEqual(["a", "b"]);
+  });
+});
 
 describe("getBmsLinks", () => {
   it("对 md5 与 sha256 做 trim 与 URL 编码", () => {
