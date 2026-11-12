@@ -145,7 +145,7 @@
     const outcome = await deleteSharedTable({
       tableId,
       label,
-      confirm: confirmDialog.ask,
+      confirm: (message) => confirmDialog.ask(message, { destructive: true }),
       remove: submitSharedDelete,
     });
     if (outcome.ok) {

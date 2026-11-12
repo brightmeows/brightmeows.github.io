@@ -85,7 +85,11 @@
 
   async function handleDelete(item: SharedTableItem): Promise<void> {
     const label = item.name === "" ? item.id : item.name;
-    if (!(await confirmDialog.ask(m["shared.delete_confirm"]({ name: label })))) return;
+    if (
+      !(await confirmDialog.ask(m["shared.delete_confirm"]({ name: label }), { destructive: true }))
+    ) {
+      return;
+    }
     deletingId = item.id;
     actionNotice = null;
     try {
