@@ -70,6 +70,10 @@ export default defineConfig({
     paraglideVitePlugin({
       project: "./project.inlang",
       outdir: "./src/lib/paraglide",
+      // v3 默认 virtual-modules：消息实现走 Vite 虚拟模块，worker 打包环境
+      // 解析不到（search-index-client 建 Worker 时 messages.js 进 worker 链）。
+      // 固定物理文件布局，与 2.x 产物一致。
+      outputStructure: "message-modules",
       // 渲染语言由 +layout.ts 的 overwriteGetLocale 按构建 locale 固定；
       // runtime 策略只留 cookie（切换器持久化，供边缘分发）与 baseLocale 兑底。
       strategy: ["cookie", "baseLocale"],
