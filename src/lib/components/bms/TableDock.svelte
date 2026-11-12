@@ -409,8 +409,8 @@
 
       {#if model.notice !== null}
         <div
-          class="mt-3 rounded-lg border px-3 py-2 text-center text-[0.85rem] {model.notice.kind ===
-          'ok'
+          class="mt-3 rounded-glass-sm border px-3 py-2 text-center text-[0.85rem] {model.notice
+            .kind === 'ok'
             ? 'border-success/40 bg-success/10 text-success'
             : model.notice.kind === 'warn'
               ? 'border-warning/40 bg-warning/10 text-warning-light'

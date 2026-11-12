@@ -42,7 +42,7 @@
   {#snippet content({ close })}
     {#each items as item (item.label)}
       <button
-        class="flex w-full items-center rounded-md px-2 py-1.5 text-left text-[0.85rem] transition-colors {item.danger
+        class="flex w-full items-center rounded-glass-sm px-2 py-1.5 text-left text-[0.85rem] transition-colors {item.danger
           ? 'text-error hover:bg-error/10'
           : 'text-white-80 hover:bg-white-10 hover:text-white'} disabled:pointer-events-none disabled:opacity-40"
         type="button"

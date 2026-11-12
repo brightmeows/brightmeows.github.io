@@ -293,7 +293,7 @@
           {/if}
         </div>
 
-        <div class="rounded-lg border border-white-15 bg-black-20 p-3">
+        <div class="rounded-glass-sm border border-white-15 bg-black-20 p-3">
           <div class="text-[0.85rem] text-white-50">{m["shared.id_preview_label"]()}</div>
           <div class="mt-1 flex flex-wrap items-center gap-2">
             <code class="font-mono text-[0.95rem] break-all text-accent">{preview}</code>
@@ -341,7 +341,7 @@
         </div>
         <p class="-mt-2 text-[0.85rem] text-white-50">{m["shared.seed_hint"]()}</p>
 
-        <details class="rounded-lg border border-white-15 bg-black-20 p-3">
+        <details class="rounded-glass-sm border border-white-15 bg-black-20 p-3">
           <summary class="cursor-pointer text-[0.9rem] text-white-70">
             {m["shared.import_section"]()}
           </summary>

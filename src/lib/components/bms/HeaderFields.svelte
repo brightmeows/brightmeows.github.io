@@ -76,7 +76,7 @@
       <div class="flex flex-wrap gap-2">
         {#each levels as level (level)}
           <span
-            class="rounded-md border border-white-10 bg-white-5 px-2 py-0.5 text-[0.8rem] text-white-75"
+            class="rounded-glass-sm border border-white-10 bg-white-5 px-2 py-0.5 text-[0.8rem] text-white-75"
           >
             {level}
           </span>

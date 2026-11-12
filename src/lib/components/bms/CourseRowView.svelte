@@ -112,7 +112,7 @@
                     {/if}
                     {#if chart.level}
                       <span
-                        class="ml-1.5 inline-block rounded-sm bg-white-10 px-1.5 py-0.5 font-mono text-[0.75rem] text-white-60"
+                        class="ml-1.5 inline-block rounded-glass-sm bg-white-10 px-1.5 py-0.5 font-mono text-[0.75rem] text-white-60"
                       >
                         {symbol}{chart.level}
                       </span>

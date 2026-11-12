@@ -56,9 +56,9 @@
 
 {#if variant === "compact"}
   <div class="flex items-center gap-3 {className}">
-    <div class="h-2 flex-1 overflow-hidden rounded-md bg-white-10">
+    <div class="h-2 flex-1 overflow-hidden rounded-glass-sm bg-white-10">
       <div
-        class="h-full rounded-md {isIndeterminate ? 'shimmer-bar' : 'progress-fill'}"
+        class="h-full rounded-glass-sm {isIndeterminate ? 'shimmer-bar' : 'progress-fill'}"
         style="width:{isIndeterminate ? 100 : progress}%"
       ></div>
     </div>
@@ -77,7 +77,7 @@
 
     <div class="progress-track mb-6 h-3">
       {#if isIndeterminate}
-        <div class="shimmer-bar h-full w-full rounded-md"></div>
+        <div class="shimmer-bar h-full w-full rounded-glass-sm"></div>
       {:else}
         <div class="progress-fill" style="width:{progress}%"></div>
       {/if}

@@ -413,7 +413,7 @@
     <h1 class="page-title m-0 flex w-full justify-center">
       {#if isEdit}
         <input
-          class="w-full rounded-md bg-transparent text-center outline-none [font:inherit] placeholder:text-white-30 focus-visible:ring-2 focus-visible:ring-accent/40"
+          class="w-full rounded-glass-sm bg-transparent text-center outline-none [font:inherit] placeholder:text-white-30 focus-visible:ring-2 focus-visible:ring-accent/40"
           type="text"
           bind:value={model.name}
           placeholder={model.pageTitle}
@@ -471,7 +471,7 @@
 
     {#if isEdit && sharedMode && capabilities.canWrite !== true}
       <p
-        class="rounded-lg border border-white-15 bg-black-20 px-3 py-2 text-[0.85rem] text-white-65"
+        class="rounded-glass-sm border border-white-15 bg-black-20 px-3 py-2 text-[0.85rem] text-white-65"
       >
         {m["editor.shared_local_hint"]()}
       </p>

@@ -39,17 +39,17 @@
   const plain = $derived(variant === "plain");
   const titleSize = $derived(plain && sub ? "text-[0.95rem]" : "text-[1.05rem]");
   const containerClass = $derived(
-    plain ? className : `rounded-xl border border-white-10 bg-black-20 ${className}`
+    plain ? className : `rounded-glass-md border border-white-10 bg-black-20 ${className}`
   );
   const headerClass = $derived(
     plain
       ? `flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-0 py-2.5 ${titleSize} text-white-85 transition-colors hover:text-white focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:outline-none`
-      : "flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 rounded-xl px-4 py-2.5 text-[0.95rem] text-white-85 transition-colors hover:bg-white-5 focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:outline-none [&::-webkit-details-marker]:hidden"
+      : "flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 rounded-glass-md px-4 py-2.5 text-[0.95rem] text-white-85 transition-colors hover:bg-white-5 focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:outline-none [&::-webkit-details-marker]:hidden"
   );
   const staticHeaderClass = $derived(
     plain
       ? `flex flex-wrap items-center gap-x-3 gap-y-1 px-0 py-2.5 ${titleSize} text-white-85`
-      : "flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl px-4 py-2.5 text-[0.95rem] text-white-85"
+      : "flex flex-wrap items-center gap-x-3 gap-y-1 rounded-glass-md px-4 py-2.5 text-[0.95rem] text-white-85"
   );
   const bodyClass = $derived(
     plain ? "border-t border-white-10 pt-3" : "border-t border-white-10 px-4 py-3"

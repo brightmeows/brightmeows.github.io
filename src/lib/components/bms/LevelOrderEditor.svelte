@@ -116,7 +116,7 @@
       {#each levels as level, index (index)}
         <li
           use:dnd.item={{ index, disabled }}
-          class="flex items-center gap-2 rounded-lg border border-white-10 bg-black-20 px-2 py-1.5 {dnd.dropTargetIndex ===
+          class="flex items-center gap-2 rounded-glass-sm border border-white-10 bg-black-20 px-2 py-1.5 {dnd.dropTargetIndex ===
           index
             ? 'border-accent/60'
             : ''}"
@@ -160,7 +160,7 @@
       {/each}
       {#if levels.length === 0}
         <li
-          class="rounded-lg border border-white-10 bg-black-20 px-3 py-2 text-[0.9rem] text-white-50"
+          class="rounded-glass-sm border border-white-10 bg-black-20 px-3 py-2 text-[0.9rem] text-white-50"
         >
           {m["editor.level_order_empty"]()}
         </li>

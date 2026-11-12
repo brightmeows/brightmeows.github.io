@@ -60,7 +60,7 @@
       in:fly={panel.in}
       out:fly={panel.out}
     >
-      <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
+      <GlassPanel class="rounded-glass-lg p-2" padding="none" rounded="none">
         {#each languages as language (language.code)}
           {@const active = getLocale() === language.code}
           <button

@@ -73,7 +73,9 @@
   <div
     class="bg-black-40 pointer-events-none fixed inset-0 z-999 flex items-center justify-center backdrop-blur-sm"
   >
-    <div class="bg-black-40 rounded-xl border-2 border-dashed border-accent px-8 py-6 text-center">
+    <div
+      class="bg-black-40 rounded-glass-md border-2 border-dashed border-accent px-8 py-6 text-center"
+    >
       <div class="text-[1.05rem] text-white-90">{m["editor.bms_drop_overlay_hint"]()}</div>
       <div class="mt-1 text-[0.85rem] text-white-60">{m["editor.bms_drop_hint"]()}</div>
     </div>

@@ -103,10 +103,10 @@ export const topbarIconSolid =
   "flex size-9 cursor-pointer items-center justify-center rounded-full bg-white-15 text-white transition-colors hover:bg-white-25";
 /** 顶栏弹层菜单项(主题/语言/账户下拉与窄屏菜单的行)。 */
 export const topbarMenuItem =
-  "flex items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-white-90 no-underline transition-colors duration-150 cursor-pointer hover:bg-white-10";
+  "flex items-center gap-2 rounded-glass-md px-3 py-2 text-left text-sm text-white-90 no-underline transition-colors duration-150 cursor-pointer hover:bg-white-10";
 /** 顶栏弹层分组标题(窄屏菜单的分组行，字号降档、文字更暗)。 */
 export const topbarMenuItemSm =
-  "block rounded-xl px-3 py-2.5 text-xs font-medium text-white-60 no-underline transition-colors hover:bg-white-10 hover:text-white";
+  "block rounded-glass-md px-3 py-2.5 text-xs font-medium text-white-60 no-underline transition-colors hover:bg-white-10 hover:text-white";
 
 // ---- 渐变按钮（2026-10 自 layout.css 的 .gradient-btn 全局类收敛，形态为
 // 面板行的标准尺寸；渐变色板 --color-*-from/to 单源在 layout.css 的 @theme；
@@ -123,19 +123,19 @@ export const btnGradientOrange =
 
 /** 编辑器等宽输入框。 */
 export const inputEditorMono =
-  "w-full rounded-lg border border-white-20 bg-black-20 px-3 py-2 font-mono text-[0.85rem] text-white outline-none placeholder:text-white-40 focus:border-accent/60 focus:ring-1 focus:ring-accent/30 disabled:opacity-60";
+  "w-full rounded-glass-sm border border-white-20 bg-black-20 px-3 py-2 font-mono text-[0.85rem] text-white outline-none placeholder:text-white-40 focus:border-accent/60 focus:ring-1 focus:ring-accent/30 disabled:opacity-60";
 /** 编辑器标准输入框。 */
 export const inputEditorBase =
-  "w-full rounded-lg border border-white-20 bg-black-20 px-3 py-2 text-[0.9rem] text-white outline-none placeholder:text-white-40 focus:border-accent/60 focus:ring-1 focus:ring-accent/30 disabled:opacity-60";
+  "w-full rounded-glass-sm border border-white-20 bg-black-20 px-3 py-2 text-[0.9rem] text-white outline-none placeholder:text-white-40 focus:border-accent/60 focus:ring-1 focus:ring-accent/30 disabled:opacity-60";
 /** 编辑器大号输入框。 */
 export const inputEditorLg =
-  "w-full rounded-lg border border-white-20 bg-black-20 px-3 py-2 text-[0.95rem] text-white outline-none placeholder:text-white-40 focus:border-accent/60 focus:ring-1 focus:ring-accent/30 disabled:opacity-60";
+  "w-full rounded-glass-sm border border-white-20 bg-black-20 px-3 py-2 text-[0.95rem] text-white outline-none placeholder:text-white-40 focus:border-accent/60 focus:ring-1 focus:ring-accent/30 disabled:opacity-60";
 /** 行内小输入框（无 ring）。 */
 export const inputInline =
-  "rounded-lg border border-white-20 bg-black-20 px-2 py-1.5 text-[0.9rem] text-white outline-none placeholder:text-white-40 focus:border-accent/60";
+  "rounded-glass-sm border border-white-20 bg-black-20 px-2 py-1.5 text-[0.9rem] text-white outline-none placeholder:text-white-40 focus:border-accent/60";
 /** 面板输入框（大圆角）。 */
 export const inputPanel =
-  "w-full rounded-xl border border-white-20 bg-black-20 px-4 py-2.5 text-white outline-none placeholder:text-white-50 focus:border-accent/60 focus:ring-2 focus:ring-accent/30";
+  "w-full rounded-glass-md border border-white-20 bg-black-20 px-4 py-2.5 text-white outline-none placeholder:text-white-50 focus:border-accent/60 focus:ring-2 focus:ring-accent/30";
 /** 文件选择输入框（file 段样式，2026-11 自三处本地串收敛）。 */
 export const inputFile =
   "cursor-pointer text-[0.85rem] file:cursor-pointer file:rounded-glass-sm file:border-0 file:bg-white-10 file:px-3 file:py-1.5 file:text-white-80";
@@ -145,13 +145,13 @@ export const inputFile =
 
 /** 搜索页大号输入框。 */
 export const inputSearchLg =
-  "w-full rounded-2xl border border-white-20 bg-white-10 px-6 py-4 text-[1.1rem] text-white outline-none placeholder:text-white-40 transition-colors focus:border-accent focus:bg-white-15 disabled:cursor-not-allowed disabled:opacity-40";
+  "w-full rounded-glass-lg border border-white-20 bg-white-10 px-6 py-4 text-[1.1rem] text-white outline-none placeholder:text-white-40 transition-colors focus:border-accent focus:bg-white-15 disabled:cursor-not-allowed disabled:opacity-40";
 /** 批量搜索大号文本域（等宽、可拉伸）。 */
 export const inputSearchMono =
-  "w-full resize-y rounded-2xl border border-white-20 bg-white-10 px-6 py-4 font-mono text-[1rem] leading-relaxed text-white outline-none placeholder:text-white-40 transition-colors focus:border-accent focus:bg-white-15 disabled:cursor-not-allowed disabled:opacity-40";
+  "w-full resize-y rounded-glass-lg border border-white-20 bg-white-10 px-6 py-4 font-mono text-[1rem] leading-relaxed text-white outline-none placeholder:text-white-40 transition-colors focus:border-accent focus:bg-white-15 disabled:cursor-not-allowed disabled:opacity-40";
 /** 搜索提交图标按钮（宽高与布局类由页面追加；圆角跟随其输入框，成对豁免 10px 基线）。 */
 export const btnSearchSubmit =
-  "flex shrink-0 cursor-pointer items-center justify-center rounded-2xl border border-white-20 bg-white-10 text-[1.3rem] text-white transition-colors hover:bg-white-20 disabled:cursor-not-allowed disabled:opacity-40";
+  "flex shrink-0 cursor-pointer items-center justify-center rounded-glass-lg border border-white-20 bg-white-10 text-[1.3rem] text-white transition-colors hover:bg-white-20 disabled:cursor-not-allowed disabled:opacity-40";
 /** 输入框内清空按钮（含悬浮定位，shared 与 mirror 列表共用）。 */
 export const btnInputClear =
   "absolute top-1/2 right-2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-glass-sm border border-white-20 bg-white-10 p-0 text-[1.25rem] leading-none text-white transition-all duration-200 ease-in-out hover:bg-white-20";
@@ -186,7 +186,7 @@ export const badgeAccentXs =
   "rounded-glass-sm bg-accent/20 px-2 py-[0.1rem] text-[0.85rem] text-accent";
 /** warning 小号提示徽章。 */
 export const badgeWarningSm =
-  "inline-block rounded-md border border-warning/40 bg-warning/10 px-2 py-0.5 text-[0.75rem] text-warning";
+  "inline-block rounded-glass-sm border border-warning/40 bg-warning/10 px-2 py-0.5 text-[0.75rem] text-warning";
 /** warning 标准提示徽章。 */
 export const badgeWarningMd =
-  "inline-block rounded-md border border-warning/40 bg-warning/10 px-2.5 py-0.5 text-[0.8rem] text-warning";
+  "inline-block rounded-glass-sm border border-warning/40 bg-warning/10 px-2.5 py-0.5 text-[0.8rem] text-warning";
