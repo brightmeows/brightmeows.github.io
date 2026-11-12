@@ -117,6 +117,20 @@
       details.open = true;
       await tick();
     }
+    // content-visibility 占位组要等滚近才渲染成真实高度，scrollIntoView 按
+    // 占位高度算终点会在途中漂移（实测偏差 300px 级）；跳转前把目标上方的
+    // 延迟组强制按真实布局渲染，scrollend 后还原。
+    const deferred = el
+      ? [...document.querySelectorAll<HTMLElement>(".cv-defer")].filter(
+          (g) => g.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_PRECEDING
+        )
+      : [];
+    for (const g of deferred) g.style.contentVisibility = "visible";
+    const restore = (): void => {
+      for (const g of deferred) g.style.contentVisibility = "";
+    };
+    window.addEventListener("scrollend", restore, { once: true });
+    setTimeout(restore, 1500);
     el?.scrollIntoView({ behavior: "smooth", block: "start" });
     history.replaceState(null, "", `#${encodeURIComponent(id)}`);
     onNavigate?.();
