@@ -188,6 +188,7 @@
   "content.reading.prev_chapter": "← 前の章",
   "content.reading.next_chapter": "次の章 →",
   "content.no_posts": "記事はまだありません",
+  "content.table_scroll_region": "横スクロール可能なテーブル",
   "content.no_preview": "プレビューなし",
   "course.course_count": "{count} コース",
   "course.no_charts": "譜面データなし",
