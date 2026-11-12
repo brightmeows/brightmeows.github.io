@@ -38,13 +38,27 @@ const RELATIVE_UNITS: { limit: number; unit: Intl.RelativeTimeFormatUnit }[] = [
   { limit: Number.POSITIVE_INFINITY, unit: "year" },
 ];
 
+/** 把字符串或毫秒数归一为 epoch 毫秒；非法输入返回 NaN。 */
+function toEpoch(value: string | number): number {
+  return typeof value === "number" ? value : Date.parse(value);
+}
+
+/** 非法时间戳的原样回退：数字转字符串，其余原样。 */
+function rawFallback(value: string | number): string {
+  return typeof value === "number" ? String(value) : value;
+}
+
 /**
- * 把 ISO 时间戳格式化为相对时间（“3 天前”），经 Intl.RelativeTimeFormat
+ * 把时间戳格式化为相对时间（“3 天前”），经 Intl.RelativeTimeFormat
  * 按 locale 输出；非法时间戳原样返回输入，未来时间按“刚刚”处理。
  */
-export function formatRelativeTime(value: string, locale: string, now = Date.now()): string {
-  const at = Date.parse(value);
-  if (!Number.isFinite(at)) return value;
+export function formatRelativeTime(
+  value: string | number,
+  locale: string,
+  now = Date.now()
+): string {
+  const at = toEpoch(value);
+  if (!Number.isFinite(at)) return rawFallback(value);
   const delta = Math.max(0, now - at);
   const fmt = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
   let previousLimit = 0;
@@ -55,5 +69,12 @@ export function formatRelativeTime(value: string, locale: string, now = Date.now
     }
     previousLimit = limit;
   }
-  return value;
+  return rawFallback(value);
+}
+
+/** 把时间戳格式化为绝对时间（日期加时刻，medium 档）；非法输入原样返回。 */
+export function formatAbsolute(value: string | number, locale: string): string {
+  const at = toEpoch(value);
+  if (!Number.isFinite(at)) return rawFallback(value);
+  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "medium" }).format(at);
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { EPOCH_DATE, extractDateFromSlug, formatRelativeTime } from "./date.js";
+import { EPOCH_DATE, extractDateFromSlug, formatAbsolute, formatRelativeTime } from "./date.js";
 
 describe("extractDateFromSlug", () => {
   it("识别三种目录日期形态", () => {
@@ -37,6 +37,29 @@ describe("formatRelativeTime", () => {
 
   it("英文 locale 输出 ago 形态", () => {
     expect(formatRelativeTime("2026-11-06T11:30:00Z", "en", now)).toMatch(/ago/);
+  });
+
+  it("接受毫秒数输入", () => {
+    expect(formatRelativeTime(Date.parse("2026-10-10T12:00:00Z"), "en", now)).toMatch(/ago/);
+  });
+
+  it("非法毫秒数返回字符串形态", () => {
+    expect(formatRelativeTime(Number.NaN, "en", now)).toBe("NaN");
+  });
+});
+
+describe("formatAbsolute", () => {
+  it("输出日期与时刻", () => {
+    expect(formatAbsolute("2026-11-06T12:00:00Z", "en")).toMatch(/Nov 6, 2026/);
+  });
+
+  it("接受毫秒数输入", () => {
+    expect(formatAbsolute(Date.parse("2026-11-06T12:00:00Z"), "en")).toMatch(/Nov 6, 2026/);
+  });
+
+  it("非法输入原样返回", () => {
+    expect(formatAbsolute("not-a-date", "en")).toBe("not-a-date");
+    expect(formatAbsolute(Number.NaN, "en")).toBe("NaN");
   });
 });
 

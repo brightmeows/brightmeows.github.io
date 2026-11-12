@@ -9,7 +9,9 @@
   import { btnGhost, inputInline } from "#lib/constants/ui-classes.js";
   import type { AdminOverview, TrashEntry } from "#lib/data/api/mirror-admin-api.js";
   import { m } from "#lib/paraglide/messages.js";
+  import { getLocale } from "#lib/paraglide/runtime.js";
   import type { MirrorOverviewState } from "#lib/types/bms-view.js";
+  import { formatAbsolute, formatRelativeTime } from "#lib/utils/infra/date.js";
 
   interface Props {
     overviewState: MirrorOverviewState;
@@ -46,12 +48,6 @@
       replaceFrom = "";
       replaceTo = "";
     }
-  }
-
-  function formatTime(value: string | number): string {
-    const at = typeof value === "number" ? value : Date.parse(value);
-    if (!Number.isFinite(at)) return String(value);
-    return new Date(at).toLocaleString();
   }
 </script>
 
@@ -153,10 +149,13 @@
           <ul class="flex flex-col gap-1 text-[0.85rem] text-white-70">
             {#each overview.trash as item (item.trash_prefix)}
               <li class="flex flex-wrap items-center justify-between gap-2">
-                <span
-                  >{item.dir_name}<span class="ml-2 text-white-50">{formatTime(item.uploaded)}</span
-                  ></span
-                >
+                <span>
+                  {item.dir_name}<span
+                    class="ml-2 text-white-50"
+                    title={formatAbsolute(item.uploaded, getLocale())}
+                    >{formatRelativeTime(item.uploaded, getLocale())}</span
+                  >
+                </span>
                 <button
                   class={btnGhost}
                   type="button"
@@ -180,7 +179,9 @@
           <ul class="flex flex-col gap-1 text-[0.85rem] text-white-70">
             {#each overview.audit as entry}
               <li>
-                <span class="text-white-50">{formatTime(entry.at)}</span>
+                <span class="text-white-50" title={formatAbsolute(entry.at, getLocale())}>
+                  {formatRelativeTime(entry.at, getLocale())}
+                </span>
                 <span class="ml-2 text-white-90">{entry.actor}</span>
                 <span class="ml-2 text-accent">{entry.action}</span>
                 <span class="ml-2">{entry.dir_name ?? entry.url ?? ""}</span>
