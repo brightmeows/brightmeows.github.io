@@ -7,6 +7,8 @@
 
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import BmsTablePage from "#lib/components/pages/BmsTablePage.svelte";
+  import { createConfirmDialog } from "#lib/components/ui/confirm-dialog.svelte.js";
+  import ConfirmDialog from "#lib/components/ui/ConfirmDialog.svelte";
   import EmptyState from "#lib/components/ui/EmptyState.svelte";
   import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
@@ -50,6 +52,7 @@
    * 首次保存才创建，管理块（改 id、删除）进编辑态的概览区。
    */
   const tableId = $derived(page.params.id ?? "");
+  const confirmDialog = createConfirmDialog();
 
   // 共享表子树由 SPA 外壳客户端渲染（无 SSR 水合歧义）：初始模式直接读地址栏。
   // SvelteKit 的 pushState 不更新 page.url，前进后退用 popstate 从地址栏同步。
@@ -121,7 +124,7 @@
     const outcome = await renameSharedTable({
       tableId,
       newId: result.id,
-      confirm: (message) => window.confirm(message),
+      confirm: confirmDialog.ask,
       rename: submitSharedRename,
     });
     if (outcome.ok) {
@@ -142,7 +145,7 @@
     const outcome = await deleteSharedTable({
       tableId,
       label,
-      confirm: (message) => window.confirm(message),
+      confirm: confirmDialog.ask,
       remove: submitSharedDelete,
     });
     if (outcome.ok) {
@@ -264,6 +267,8 @@
     />
   </GlassPanel>
 {/snippet}
+
+<ConfirmDialog dialog={confirmDialog} />
 
 {#snippet messagePane()}
   <GlassPanel>
