@@ -46,7 +46,6 @@
           ? 'text-error hover:bg-error/10'
           : 'text-white-80 hover:bg-white-10 hover:text-white'} disabled:pointer-events-none disabled:opacity-40"
         type="button"
-        role="menuitem"
         disabled={item.disabled}
         onclick={() => {
           close();

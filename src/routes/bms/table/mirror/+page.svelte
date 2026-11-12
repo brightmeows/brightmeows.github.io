@@ -443,6 +443,8 @@
     </a>
     {#if cb.copied}
       <span class="ml-2 text-success">{m["common.copied"]()}</span>
+    {:else if cb.failed}
+      <span class="ml-2 text-error">{m["common.copy_failed"]()}</span>
     {/if}
   </div>
   <div class="mt-4">

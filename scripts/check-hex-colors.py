@@ -3,8 +3,9 @@
 
 语义色与调色板色一律走令牌工具类、var(--color-*) 或 @theme 令牌；
 layout.css 是唯一允许出现 hex 的源文件（@theme 变量与主题块集中在那
-里），不在受检清单内。本扫描拦字符串与模板中的 #RGB/#RRGGBB（含
-#RGBA/#RRGGBBAA）字面量：
+里），不在受检清单内。本扫描拦字符串与模板中的 #RRGGBB 与 #RRGGBBAA
+字面量；三、四位 shorthand 刻意不拦（#feed/#bed 这类全 hex 英文词会撞
+锚点串误报，取舍是只守设计常用的六与八位）：
 
 - 行内含 color-literal-ignore 可豁免单行（新增豁免先想能否直接换令牌）。
 - #lib 导入别名、#mirror-admin 锚点这类井号后跟非 hex 字符的串不构成
@@ -18,7 +19,8 @@ layout.css 是唯一允许出现 hex 的源文件（@theme 变量与主题块集
 import re
 import sys
 
-HEX = re.compile(r"#[0-9a-fA-F]{3,8}\b")
+# 六或八位 hex；负向断言排除锚点 slug 连字符（#facade-pattern 不命中）
+HEX = re.compile(r"#[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?(?![0-9a-fA-F-])")
 
 
 def main() -> int:

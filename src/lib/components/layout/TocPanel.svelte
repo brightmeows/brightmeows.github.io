@@ -166,6 +166,7 @@
         itemActive ? "bg-white-10 text-sky-200" : "text-white-85 hover:bg-white-8 hover:text-white",
       ].join(" ")}
       style={`padding-left: ${12 + item.depth * 14}px;`}
+      aria-current={itemActive ? "true" : undefined}
       onclick={(event) => void handleNavigate(item, event)}
     >
       {item.title}
