@@ -282,6 +282,21 @@
       0 6px 20px rgba(0, 0, 0, 0.25);
   }
 
+  /* ===== 原生确认弹层（ConfirmDialog）：样式壳，开关行为在组件 ===== */
+  .confirm-dialog {
+    @apply w-[min(24rem,calc(100vw-2rem))] rounded-glass-lg bg-glass p-4 backdrop-blur;
+  }
+
+  .confirm-dialog::backdrop {
+    backdrop-filter: blur(4px);
+    overflow: hidden;
+    overscroll-behavior: contain;
+  }
+
+  .confirm-dialog:modal {
+    overscroll-behavior: contain;
+  }
+
   /* ===== 加载状态容器 ===== */
   .glass-loading-container {
     @apply rounded-glass-md border-white-10 bg-black-20 p-8;

@@ -1,7 +1,5 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { cubicOut } from "svelte/easing";
-  import { fade, fly } from "svelte/transition";
 
   import type { ConfirmDialog } from "./confirm-dialog.svelte.js";
 
@@ -9,8 +7,12 @@
   import { m } from "#lib/paraglide/messages.js";
 
   /**
-   * 玻璃确认弹层：消息、取消与确定三件套。Escape 与弹层外点击取消，
-   * 确定键默认聚焦（回车即确认，与原生 confirm 的默认键位一致）。
+   * 玻璃确认弹层（原生 <dialog> showModal 承载）：top layer、背景 inert、
+   * 焦点圈闭、Esc 与移动端返回手势、关闭后焦点归还触发钮全部由浏览器
+   * 承担，组件不再手写 role/focus trap/焦点存取。滚动锁经 layout.css 的
+   * overscroll-behavior 渐进增强（Safari 渐进跟进），禁 body 锁滚。
+   * 破坏性确认初始焦点落取消键（安全动作），普通确认落确认键；
+   * closedby="any" 的外点关闭在 Safari 缺席，按指南以指针坐标回退判定。
    */
   interface Props {
     /** 状态模块实例（页面持有一份，经 ask 得到 Promise）。 */
@@ -19,100 +21,67 @@
 
   let { dialog }: Props = $props();
 
-  let panel = $state<HTMLDivElement | null>(null);
-  let confirmButton = $state<HTMLButtonElement | null>(null);
-  let reduceMotion = $state(false);
-  let lastFocused: HTMLElement | null = null;
+  let dialogEl = $state<HTMLDialogElement | undefined>(undefined);
+  let closedBySupported = true;
 
   onMount(() => {
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    reduceMotion = query.matches;
-    const onChange = (event: MediaQueryListEvent): void => {
-      reduceMotion = event.matches;
-    };
-    query.addEventListener("change", onChange);
-    return () => query.removeEventListener("change", onChange);
+    closedBySupported = "closedBy" in HTMLDialogElement.prototype;
+    dialogEl?.setAttribute("closedby", "any");
   });
 
-  // 打开时记录来源焦点并聚焦确定键；关闭归还焦点（控件已卸载则不还）
+  // open 状态驱动原生开关：showModal 进 top layer；结算后经 effect 收口
   $effect(() => {
-    if (dialog.open) {
-      lastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-      confirmButton?.focus();
-    } else if (lastFocused !== null) {
-      if (lastFocused.isConnected) lastFocused.focus();
-      lastFocused = null;
+    const el = dialogEl;
+    if (el === undefined) return;
+    if (dialog.open && !el.open) {
+      el.showModal();
+      // 初始焦点：破坏性确认落取消键（安全动作），普通确认落确认键；等价
+      // 指南的 autofocus 口径（模板 autofocus 属性会触发 a11y_autofocus 警告）
+      const selector = dialog.destructive ? "[data-cancel]" : "[data-confirm]";
+      el.querySelector<HTMLButtonElement>(selector)?.focus();
+    } else if (!dialog.open && el.open) {
+      el.close();
     }
   });
 
-  /** 弹层内 Tab 循环：模态期间焦点不出弹层。 */
-  function handlePanelKeydown(event: KeyboardEvent): void {
-    if (event.key !== "Tab" || panel === null) return;
-    const focusables = [...panel.querySelectorAll<HTMLElement>("button:not([disabled])")];
-    const first = focusables[0];
-    const last = focusables[focusables.length - 1];
-    if (focusables.length === 0 || first === undefined || last === undefined) return;
-    const active = document.activeElement;
-    const inPanel = active instanceof HTMLElement && focusables.includes(active);
-    if (!inPanel) {
-      event.preventDefault();
-      first.focus();
-    } else if (event.shiftKey && active === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && active === last) {
-      event.preventDefault();
-      first.focus();
-    }
+  /** Esc 与 closedby 外点关闭都先发 cancel：拦下交状态层结算，保持单一状态源。 */
+  function handleCancel(event: Event): void {
+    event.preventDefault();
+    dialog.cancel();
   }
 
-  // 弹层外按下即取消（与顶栏弹层的外点关闭同语义，经 document 监听
-  // 而非遮罩 onclick，避免给装饰层挂交互）
-  $effect(() => {
-    if (!dialog.open) return;
-    function onPointerDown(event: PointerEvent): void {
-      if (panel === null || !(event.target instanceof Node) || panel.contains(event.target)) {
-        return;
-      }
-      dialog.cancel();
-    }
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
-  });
+  /** closedby 缺席浏览器的外点关闭：pointerdown 目标是 dialog 本体且落在内容矩形外。 */
+  function handleWindowPointerDown(event: PointerEvent): void {
+    if (closedBySupported || !dialog.open) return;
+    const el = dialogEl;
+    if (el === undefined || event.target !== el) return;
+    const rect = el.getBoundingClientRect();
+    const inside =
+      rect.left <= event.clientX &&
+      event.clientX <= rect.left + rect.width &&
+      rect.top <= event.clientY &&
+      event.clientY <= rect.top + rect.height;
+    if (!inside) dialog.cancel();
+  }
 </script>
 
-<svelte:window
-  onkeydown={(event) => {
-    if (dialog.open && event.key === "Escape") dialog.cancel();
-  }}
-/>
+<svelte:window onpointerdown={handleWindowPointerDown} />
 
-{#if dialog.open}
-  <div
-    class="bg-black-40 fixed inset-0 z-1001 flex items-center justify-center p-4 backdrop-blur-sm"
-    in:fade={{ duration: reduceMotion ? 0 : 120 }}
-    out:fade={{ duration: reduceMotion ? 0 : 100 }}
-  >
-    <div
-      bind:this={panel}
-      role="dialog"
-      tabindex="-1"
-      aria-modal="true"
-      aria-label={m["common.confirm"]()}
-      onkeydown={handlePanelKeydown}
-      class="w-full max-w-sm rounded-glass-lg bg-glass p-4 shadow-[var(--glass-lighting),0_12px_32px_rgba(0,0,0,0.35)] backdrop-blur"
-      in:fly={{ y: 10, opacity: 0, duration: reduceMotion ? 0 : 150, easing: cubicOut }}
-      out:fade={{ duration: reduceMotion ? 0 : 100 }}
-    >
-      <p class="text-[0.95rem] leading-relaxed text-white-85">{dialog.message}</p>
-      <div class="mt-4 flex justify-end gap-2">
-        <button class={btnGhostMd} type="button" onclick={dialog.cancel}>
-          {m["common.cancel"]()}
-        </button>
-        <button bind:this={confirmButton} class={btnPrimary} type="button" onclick={dialog.accept}>
-          {m["common.confirm"]()}
-        </button>
-      </div>
-    </div>
+<dialog
+  bind:this={dialogEl}
+  class="confirm-dialog glass-shadow-float"
+  aria-labelledby="confirm-dialog-message"
+  oncancel={handleCancel}
+>
+  <p id="confirm-dialog-message" class="text-[0.95rem] leading-relaxed text-white-85">
+    {dialog.message}
+  </p>
+  <div class="mt-4 flex justify-end gap-2">
+    <button class={btnGhostMd} type="button" data-cancel onclick={dialog.cancel}>
+      {m["common.cancel"]()}
+    </button>
+    <button class={btnPrimary} type="button" data-confirm onclick={dialog.accept}>
+      {m["common.confirm"]()}
+    </button>
   </div>
-{/if}
+</dialog>
