@@ -459,6 +459,8 @@
         {/if}
         {#if cb.copied}
           <span class="text-success">{m["common.copied"]()}</span>
+        {:else if cb.failed}
+          <span class="text-error">{m["common.copy_failed"]()}</span>
         {/if}
       {/if}
     </div>

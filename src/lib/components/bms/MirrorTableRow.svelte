@@ -129,6 +129,8 @@
       </GradientButton>
       {#if cb.copiedField === "mirror"}
         <span class="badge-copied">{m["common.copied_bang"]()}</span>
+      {:else if cb.failedField === "mirror"}
+        <span class="text-error">{m["common.copy_failed"]()}</span>
       {:else}
         <button
           class="flex-none {btnGhostXs}"
@@ -156,6 +158,8 @@
         </GradientButton>
         {#if cb.copiedField === "original"}
           <span class="badge-copied">{m["common.copied_bang"]()}</span>
+        {:else if cb.failedField === "original"}
+          <span class="text-error">{m["common.copy_failed"]()}</span>
         {:else}
           <button
             class="flex-none {btnGhostXs}"

@@ -62,12 +62,29 @@
     }
   }
 
+  /** 正文表格包滚动容器：语义表格保持 display:table，横向溢出由容器承载。 */
+  function wrapTables(): void {
+    if (!container) return;
+    for (const table of container.querySelectorAll("table")) {
+      const parent = table.parentElement;
+      if (parent?.classList.contains("md-table-wrapper")) continue;
+      const wrapper = document.createElement("div");
+      wrapper.className = "md-table-wrapper";
+      wrapper.setAttribute("role", "region");
+      wrapper.setAttribute("tabindex", "0");
+      wrapper.setAttribute("aria-label", m["content.table_scroll_region"]());
+      table.replaceWith(wrapper);
+      wrapper.appendChild(table);
+    }
+  }
+
   function scheduleEnsureHeadingAnchors(): void {
     if (scheduled) return;
     scheduled = true;
     requestAnimationFrame(() => {
       scheduled = false;
       ensureHeadingAnchors();
+      wrapTables();
       lazyLoadImages();
 
       if (location.hash.length > 1) {
@@ -111,7 +128,7 @@
     "[&_blockquote]:my-4 [&_blockquote]:border-l-4 [&_blockquote]:border-sky-300/50 [&_blockquote]:pl-4 [&_blockquote]:text-white-80 [&_blockquote]:italic",
     "[&_ol]:mb-4 [&_ol]:pl-6 [&_ul]:mb-4 [&_ul]:pl-6",
     "[&_li]:mb-2 [&_li]:text-white-90",
-    "[&_table]:mb-4 [&_table]:block [&_table]:w-full [&_table]:border-collapse [&_table]:overflow-x-auto [&_table]:rounded-glass-sm [&_table]:bg-white-5",
+    "[&_table]:w-full [&_table]:border-collapse [&_table]:rounded-glass-sm [&_table]:bg-white-5",
     "[&_th]:border [&_th]:border-white-10 [&_th]:bg-sky-300/20 [&_th]:px-3 [&_th]:py-3 [&_th]:text-left [&_th]:font-bold [&_th]:text-white",
     "[&_td]:border [&_td]:border-white-10 [&_td]:px-3 [&_td]:py-3 [&_td]:text-left",
     "[&_.katex]:text-[1.1em]",
