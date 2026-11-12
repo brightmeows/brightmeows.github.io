@@ -98,6 +98,8 @@
       <div class="flex flex-nowrap items-center gap-3">
         {#if cb.copiedField === "mirror"}
           <span class="badge-copied">{m["common.copied_bang"]()}</span>
+        {:else if cb.failedField === "mirror"}
+          <span class="text-error">{m["common.copy_failed"]()}</span>
         {:else}
           <button
             class={btnGradientBlue}
@@ -118,6 +120,8 @@
         {/if}
         {#if cb.copiedField === "origin"}
           <span class="badge-copied">{m["common.copied_bang"]()}</span>
+        {:else if cb.failedField === "origin"}
+          <span class="text-error">{m["common.copy_failed"]()}</span>
         {:else}
           <button
             class={btnGradientOrange}

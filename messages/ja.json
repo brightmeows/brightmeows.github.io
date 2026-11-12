@@ -152,6 +152,7 @@
   "common.copied": "コピーしました",
   "common.copied_bang": "コピーしました！",
   "common.copy": "コピー",
+  "common.copy_failed": "コピーに失敗しました",
   "common.delete": "削除",
   "common.details": "詳細",
   "common.diff": "差分",

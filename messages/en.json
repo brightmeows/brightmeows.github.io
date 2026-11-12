@@ -152,6 +152,7 @@
   "common.copied": "Copied",
   "common.copied_bang": "Copied!",
   "common.copy": "Copy",
+  "common.copy_failed": "Copy failed",
   "common.delete": "Delete",
   "common.details": "Details",
   "common.diff": "Diff",

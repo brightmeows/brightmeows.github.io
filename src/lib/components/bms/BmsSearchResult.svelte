@@ -51,6 +51,13 @@
   );
 
   let cb = clipboardFieldFeedback();
+
+  /** 复制字段的三态文案：已复制、失败、缺省提示。 */
+  function fieldText(field: string, fallback: string): string {
+    if (cb.copiedField === field) return m["common.copied"]();
+    if (cb.failedField === field) return m["common.copy_failed"]();
+    return fallback;
+  }
 </script>
 
 <GlassContainer padding="lg" rounded="lg" class="mb-6">
@@ -67,22 +74,20 @@
         <button
           type="button"
           onclick={() => void cb.copy("md5", result.md5!)}
-          title={cb.copiedField === "md5" ? m["common.copied"]() : `MD5: ${result.md5}`}
+          title={fieldText("md5", `MD5: ${result.md5}`)}
           class={cb.copiedField === "md5" ? btnChipOnSuccess : btnChip}
         >
-          {cb.copiedField === "md5" ? m["common.copied"]() : m["search.copy_md5"]()}
+          {fieldText("md5", m["search.copy_md5"]())}
         </button>
       {/if}
       {#if result.sha256}
         <button
           type="button"
           onclick={() => void cb.copy("sha256", result.sha256!)}
-          title={cb.copiedField === "sha256"
-            ? m["common.copied"]()
-            : `SHA256: ${result.sha256.slice(0, 16)}...`}
+          title={fieldText("sha256", `SHA256: ${result.sha256.slice(0, 16)}...`)}
           class={cb.copiedField === "sha256" ? btnChipOnSuccess : btnChip}
         >
-          {cb.copiedField === "sha256" ? m["common.copied"]() : m["search.copy_sha256"]()}
+          {fieldText("sha256", m["search.copy_sha256"]())}
         </button>
       {/if}
       <BmsLinkButtons chart={chartLike} />
