@@ -257,6 +257,7 @@
 
   let hideTimer: ReturnType<typeof setTimeout> | undefined;
   let copied = $state(false);
+  let failed = $state(false);
   let copiedTimer: ReturnType<typeof setTimeout> | undefined;
 
   let jsonText = $derived(formatJsonPreview(value));
@@ -351,16 +352,19 @@
   }
 
   async function copyJson(): Promise<void> {
+    let ok = true;
     if (onCopy) {
       await onCopy(jsonText);
     } else {
-      await writeToClipboard(jsonText);
+      ok = await writeToClipboard(jsonText);
     }
 
-    copied = true;
+    copied = ok;
+    failed = !ok;
     if (copiedTimer) clearTimeout(copiedTimer);
     copiedTimer = setTimeout(() => {
       copied = false;
+      failed = false;
       copiedTimer = undefined;
     }, 1000);
   }
@@ -398,7 +402,7 @@
       <div id="json-preview-label" class="text-[0.9rem] font-semibold text-white-90">{label}</div>
       <div class="flex gap-2">
         <button class={btnGhostSm} type="button" onclick={copyJson}>
-          {copied ? m["common.copied"]() : m["common.copy"]()}
+          {copied ? m["common.copied"]() : failed ? m["common.copy_failed"]() : m["common.copy"]()}
         </button>
         <button class={btnGhostSm} type="button" onclick={hideNow}>
           {m["common.close"]()}

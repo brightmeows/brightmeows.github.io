@@ -243,7 +243,9 @@
     const dirName = item.dir_name;
     if (dirName === undefined || dirName === "") return;
     const label = item.name === "" ? dirName : item.name;
-    if (!(await confirmDialog.ask(m["mirror.delete_confirm"]({ name: label })))) {
+    if (
+      !(await confirmDialog.ask(m["mirror.delete_confirm"]({ name: label }), { destructive: true }))
+    ) {
       return;
     }
     deletingDir = dirName;
@@ -293,7 +295,7 @@
       action === "add"
         ? m["mirror.auth_confirm_add"]({ name: label })
         : m["mirror.auth_confirm_remove"]({ name: label });
-    if (!(await confirmDialog.ask(confirmText))) return;
+    if (!(await confirmDialog.ask(confirmText, { destructive: action === "remove" }))) return;
     void runAdmin(
       async () => {
         await adminAuthorize(sourceUrlOf(item), item.dir_name, action);
@@ -307,7 +309,13 @@
   async function handleDisable(item: MirrorTableItem, note: string): Promise<void> {
     if (!isAdmin) return;
     const label = tableLabelOf(item);
-    if (!(await confirmDialog.ask(m["mirror.disable_confirm"]({ name: label })))) return;
+    if (
+      !(await confirmDialog.ask(m["mirror.disable_confirm"]({ name: label }), {
+        destructive: true,
+      }))
+    ) {
+      return;
+    }
     void runAdmin(
       async () => {
         await adminDisable(sourceUrlOf(item), item.dir_name, "add", note === "" ? undefined : note);
@@ -443,6 +451,8 @@
     </a>
     {#if cb.copied}
       <span class="ml-2 text-success">{m["common.copied"]()}</span>
+    {:else if cb.failed}
+      <span class="ml-2 text-error">{m["common.copy_failed"]()}</span>
     {/if}
   </div>
   <div class="mt-4">

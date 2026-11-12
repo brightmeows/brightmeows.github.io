@@ -82,7 +82,7 @@
     source: () => source,
     publish: () => publish,
     capabilities: () => capabilities,
-    confirm: () => confirmDialog.ask,
+    confirm: () => (message: string) => confirmDialog.ask(message, { destructive: true }),
   });
   const headerUrl = $derived(source.headerUrl);
   const showLevelRefPane = $derived(headerUrl !== null && levelRefLoadState !== "not-found");
@@ -459,6 +459,8 @@
         {/if}
         {#if cb.copied}
           <span class="text-success">{m["common.copied"]()}</span>
+        {:else if cb.failed}
+          <span class="text-error">{m["common.copy_failed"]()}</span>
         {/if}
       {/if}
     </div>
@@ -589,7 +591,7 @@
       onRetry={model.retryData}
       onChange={model.markDirty}
       onNotice={(value: EditorNotice) => (model.notice = value)}
-      confirm={confirmDialog.ask}
+      confirm={(message) => confirmDialog.ask(message, { destructive: true })}
       bind:hiddenLevels
       bind:hideUnassigned
     />
@@ -612,7 +614,7 @@
       disabled={model.busy || model.dataLoadState !== "loaded"}
       onChange={model.markDirty}
       onNotice={(value: EditorNotice | null) => (model.notice = value)}
-      confirm={confirmDialog.ask}
+      confirm={(message) => confirmDialog.ask(message, { destructive: true })}
     />
   {/if}
 {/snippet}

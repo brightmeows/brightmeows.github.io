@@ -34,7 +34,7 @@
   - button/label 元素的 class 禁 cursor-pointer 配圆角或“描边加底色”的 chip 皮肤指纹；a 元素禁裸用 text-accent（行内主链接走 linkInline、正文强调链走 link-accent）。
   - 皮肤指纹规则豁免玻璃与图标原语组件（`src/lib/components/ui/`，视觉形态定义本体）；圆角尺规则对 ui/ 同样生效。行内含 `ui-tokens-ignore` 可豁免单行（新增豁免先想能否直接换令牌）。
   - `pnpm check:ui` 调用它，pre-commit 与 CI 共用。
-- `scripts/check-hex-colors.py` — 语义色十六进制字面量守门：src 下 `.svelte`/`.ts` 禁 `#RGB/#RRGGBB`（含 #RGBA/#RRGGBBAA）字面量，一律走令牌工具类、var(--color-*) 或 @theme。
+- `scripts/check-hex-colors.py` — 语义色十六进制字面量守门：src 下 `.svelte`/`.ts` 禁 `#RRGGBB`/`#RRGGBBAA` 六与八位字面量（三、四位 shorthand 刻意不拦，全 hex 英文词会撞锚点串误报），一律走令牌工具类、var(--color-*) 或 @theme。
   - `src/routes/layout.css`（@theme 与主题块）是唯一豁免源，不在受检清单；行内含 `color-literal-ignore` 可豁免单行（新增豁免先想能否直接换令牌）。packages 的画布段位色板（levelSegmentColor）属领域计算色，不在范围。
   - `pnpm check:colors` 调用它，pre-commit 与 CI 共用。
 - `scripts/check-site-config.ts` — 离线一致性校验（五条断言：wrangler routes 与 worker hosts 完全一致、工作流无硬编码域名、CORS 覆盖 `origin`、版本来源唯一（devEngines 范围加工作流不传 pnpm 版本）、wrangler vars 与 R2 配置一致）。

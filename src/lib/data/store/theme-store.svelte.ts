@@ -37,7 +37,18 @@ class ThemeStore {
       if (this.preference === "system") this.#apply(event.matches ? "dark" : "light");
     };
     this.#media.addEventListener("change", onMediaChange);
-    return () => this.#media?.removeEventListener("change", onMediaChange);
+    // 跨页签同步：其他标签页写入或清除主题键时跟随（本页写入不触发 storage）
+    const onStorage = (event: StorageEvent): void => {
+      if (event.key !== null && event.key !== THEME_STORAGE_KEY) return;
+      const nextStored = this.#readStored();
+      this.preference = parseThemeName(nextStored) ?? "system";
+      this.#apply(resolveTheme(nextStored, this.#systemPrefersDark()));
+    };
+    window.addEventListener("storage", onStorage);
+    return () => {
+      this.#media?.removeEventListener("change", onMediaChange);
+      window.removeEventListener("storage", onStorage);
+    };
   }
 
   /** 设置主题偏好并持久化；“跟随系统”清除存储键，此后随系统偏好实时变化。 */
@@ -68,9 +79,12 @@ class ThemeStore {
     }
   }
 
+  #systemPrefersDark(): boolean {
+    return (this.#media ?? window.matchMedia("(prefers-color-scheme: dark)")).matches;
+  }
+
   #systemTheme(): ThemeName {
-    const media = this.#media ?? window.matchMedia("(prefers-color-scheme: dark)");
-    return media.matches ? "dark" : "light";
+    return this.#systemPrefersDark() ? "dark" : "light";
   }
 
   #apply(next: ThemeName): void {

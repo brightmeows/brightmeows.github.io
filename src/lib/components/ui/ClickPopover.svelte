@@ -7,8 +7,10 @@
   /**
    * 点击型浮动菜单原语：触发钮加 popover-glass 弹层，封装视口钳制定位、
    * 外点/Esc/滚动关闭与 top-layer 提升（经 popoverLayer，backdrop-filter
-   * 不被玻璃祖先截断）。菜单项的布局、role 与选中行为由 content snippet
-   * 承担，close 供其点击后收起。悬停型下拉不走这里（dropdown-panel 原语）。
+   * 不被玻璃祖先截断）。作普通弹层按钮组用：未实现方向键契约就不占 menu
+   * 角色；Esc 与菜单项激活后焦点归还触发钮；弹层自身可滚动时内部滚动不
+   * 关闭。菜单项布局与选中行为由 content snippet 承担，close 供其点击后
+   * 收起。悬停型下拉不走这里（dropdown-panel 原语）。
    */
 
   interface Props {
@@ -48,6 +50,12 @@
   let open = $state(false);
   let posStyle = $state("");
 
+  /** 关闭并归还触发钮焦点：Esc 与菜单项激活走这里，外点与滚动不打扰焦点。 */
+  function close(): void {
+    open = false;
+    trigger?.focus();
+  }
+
   function toggle(): void {
     if (open) {
       open = false;
@@ -75,9 +83,11 @@
       open = false;
     };
     const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === "Escape") open = false;
+      if (event.key === "Escape") close();
     };
-    const onScroll = (): void => {
+    const onScroll = (event: Event): void => {
+      // 弹层自身可滚动（overflow-auto）时内部滚动不算页面滚动
+      if (event.target instanceof Node && menuEl?.contains(event.target)) return;
       open = false;
     };
 
@@ -106,13 +116,7 @@
 </button>
 
 {#if open}
-  <div
-    class="popover-glass {menuClass}"
-    style={posStyle}
-    bind:this={menuEl}
-    role="menu"
-    use:popoverLayer
-  >
-    {@render content({ close: () => (open = false) })}
+  <div class="popover-glass {menuClass}" style={posStyle} bind:this={menuEl} use:popoverLayer>
+    {@render content({ close })}
   </div>
 {/if}

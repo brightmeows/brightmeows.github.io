@@ -199,7 +199,9 @@
   }
 
   function onKeydown(e: KeyboardEvent): void {
-    if (e.key === "Enter") void performSearch();
+    // IME 确认键不触发搜索；229 兜旧 Safari compositionend 先于 keydown 派发的乱序
+    if (e.key !== "Enter" || e.isComposing || e.keyCode === 229) return;
+    void performSearch();
   }
 
   // ---- 挂载 ----
