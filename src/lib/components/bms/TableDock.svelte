@@ -10,7 +10,6 @@
   import Undo2 from "@lucide/svelte/icons/undo-2";
   import type { Snippet } from "svelte";
   import { onMount, untrack } from "svelte";
-  import { cubicIn, cubicOut } from "svelte/easing";
   import { fly } from "svelte/transition";
 
   import ToggleButton from "#lib/components/ui/ToggleButton.svelte";
@@ -25,6 +24,7 @@
   import type { TableModel } from "#lib/data/table-page-model.svelte.js";
   import { m } from "#lib/paraglide/messages.js";
   import { isNearDocumentBottom } from "#lib/utils/ui/topbar-scroll.js";
+  import { panelFly } from "#lib/utils/ui/transitions.js";
 
   /**
    * 难度表页底部操作 dock：
@@ -93,7 +93,6 @@
   let expansion = $state<DockExpansion>(scrollState.expansion);
   let keyboardFocus = $state(false);
   let lastScrollY = 0;
-  let reduceMotion = $state(false);
 
   // ---- 折叠段：表操作与导入 ----
   let tableActionsOpen = $state(false);
@@ -191,16 +190,9 @@
 
   onMount(() => {
     lastScrollY = window.scrollY;
-    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    reduceMotion = motionQuery.matches;
-    const onMotionChange = (event: MediaQueryListEvent): void => {
-      reduceMotion = event.matches;
-    };
-    motionQuery.addEventListener("change", onMotionChange);
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => {
       window.removeEventListener("scroll", handleScroll);
-      motionQuery.removeEventListener("change", onMotionChange);
     };
   });
 
@@ -259,11 +251,11 @@
   <div
     class="pointer-events-none fixed right-0 bottom-0 z-999 flex justify-end px-4 pb-4 max-sm:left-0 max-sm:justify-center max-sm:px-0"
     style="padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem)"
-    in:fly={{ y: 24, opacity: 0, duration: reduceMotion ? 0 : 180, easing: cubicOut }}
-    out:fly={{ y: 24, opacity: 0, duration: reduceMotion ? 0 : 140, easing: cubicIn }}
+    in:fly={panelFly().in}
+    out:fly={panelFly().out}
   >
     <div
-      class="pointer-events-auto max-h-full w-[340px] max-w-full overflow-y-auto rounded-glass-lg bg-glass p-3 shadow-[var(--glass-lighting),0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur transition-[width] duration-200 max-sm:w-full {importOpen
+      class="glass-shadow-float pointer-events-auto max-h-full w-[340px] max-w-full overflow-y-auto rounded-glass-lg bg-glass p-3 backdrop-blur transition-[width] duration-200 max-sm:w-full {importOpen
         ? 'sm:w-[480px]'
         : 'sm:w-[340px]'}"
       style="max-height: calc(100dvh - 2rem - env(safe-area-inset-bottom, 0px))"
@@ -441,12 +433,12 @@
     style="bottom: calc(env(safe-area-inset-bottom, 0px) + 1rem)"
     onfocusin={handleFocusIn}
     onfocusout={handleFocusOut}
-    in:fly={{ y: 24, opacity: 0, duration: reduceMotion ? 0 : 180, easing: cubicOut }}
-    out:fly={{ y: 24, opacity: 0, duration: reduceMotion ? 0 : 140, easing: cubicIn }}
+    in:fly={panelFly().in}
+    out:fly={panelFly().out}
   >
     {#if editing}
       <button
-        class="flex items-center gap-2 rounded-full bg-glass px-3.5 py-2 shadow-[var(--glass-lighting),0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur"
+        class="glass-shadow-float flex items-center gap-2 rounded-full bg-glass px-3.5 py-2 backdrop-blur"
         type="button"
         aria-label={m["editor.dock_expand"]()}
         title={m["editor.dock_expand"]()}
@@ -470,7 +462,7 @@
         {model.dirty ? m["editor.continue_edit"]() : m["editor.enter_table"]()}
       </button>
       <button
-        class="flex items-center gap-2 rounded-full bg-glass px-3 py-2.5 shadow-[var(--glass-lighting),0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur"
+        class="glass-shadow-float flex items-center gap-2 rounded-full bg-glass px-3 py-2.5 backdrop-blur"
         type="button"
         aria-label={m["editor.dock_expand"]()}
         title={m["editor.dock_expand"]()}

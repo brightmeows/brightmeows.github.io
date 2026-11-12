@@ -238,12 +238,12 @@
 
 <script lang="ts">
   import { onDestroy, tick } from "svelte";
-  import { cubicOut } from "svelte/easing";
   import { fade, fly } from "svelte/transition";
 
   import { popoverLayer } from "#lib/components/ui/popover-layer.js";
   import { formatJsonPreview } from "#lib/utils/infra/json.js";
   import { writeToClipboard } from "#lib/utils/ui/clipboard.svelte.js";
+  import { popoverFly } from "#lib/utils/ui/transitions.js";
 
   let open = $state(false);
   let pinnedOpen = $state(false);
@@ -386,8 +386,8 @@
     use:popoverLayer
     class="popover-glass w-[min(44rem,calc(100vw-2rem))]"
     style={popoverStyle}
-    in:fly={{ y: 10, opacity: 0, duration: 160, easing: cubicOut }}
-    out:fade={{ duration: 120 }}
+    in:fly={popoverFly().in}
+    out:fade={popoverFly().out}
     onpointerenter={cancelHide}
     onpointerleave={scheduleHide}
     role="dialog"

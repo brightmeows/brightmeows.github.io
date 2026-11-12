@@ -1,6 +1,5 @@
 <script lang="ts">
   import type { MirrorTableItem } from "@brightmeows/mirror/types";
-  import { cubicIn, cubicOut } from "svelte/easing";
   import { fly } from "svelte/transition";
 
   import Checkbox from "#lib/components/ui/Checkbox.svelte";
@@ -10,6 +9,7 @@
   import type { JsonPreviewHandle } from "#lib/types/ui.js";
   import { formatJsonPreview } from "#lib/utils/infra/json.js";
   import { clipboardFieldFeedback } from "#lib/utils/ui/clipboard.svelte.js";
+  import { panelFly } from "#lib/utils/ui/transitions.js";
 
   interface Props {
     tables?: MirrorTableItem[];
@@ -80,11 +80,11 @@
 {#if selectedCount > 0}
   <div
     class="fixed bottom-4 left-1/2 z-999 max-w-[calc(100vw-2rem)] translate-x-[-50%] overflow-x-auto"
-    in:fly={{ y: 24, opacity: 0, duration: 180, easing: cubicOut }}
-    out:fly={{ y: 24, opacity: 0, duration: 140, easing: cubicIn }}
+    in:fly={panelFly().in}
+    out:fly={panelFly().out}
   >
     <div
-      class="flex w-max flex-nowrap items-center gap-4 rounded-xl bg-glass p-3 px-4 shadow-[var(--glass-lighting),0_6px_20px_rgba(0,0,0,0.25)] backdrop-blur"
+      class="glass-shadow-float flex w-max flex-nowrap items-center gap-4 rounded-xl bg-glass p-3 px-4 backdrop-blur"
     >
       <Checkbox
         ariaLabel={m["common.select_all_aria"]()}
