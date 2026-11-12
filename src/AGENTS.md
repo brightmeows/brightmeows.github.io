@@ -183,7 +183,8 @@
   - 点击型浮动菜单（行内“...”溢出、行级操作）统一走 `ClickPopover` 原语（视口钳制定位、外点/Esc/滚动关闭、popover-glass 加 top-layer 一并封装，定位纯函数在 `utils/ui/menu-position`）；悬停型下拉走 dropdown-panel 原语，显式预览弹层（JSON 预览）自挂 popoverLayer。
   - 按钮与输入框的类串用 `constants/ui-classes.ts` 的令牌（2026-10 自 16 个组件的本地复制收敛，按家族与尺寸逐变体命名；同月 layout.css 的 `.gradient-btn` 全局类一并收敛为 `btnGradientBlue`/`btnGradientOrange` 令牌），不要再本地复制类串；变体之间不组合，新视觉形态加新令牌。
 - **样式令牌纪律（2026-11 全站收敛）** — 玻璃圆角阶梯 glass-sm/md/lg/xl（10/14/18/20px）兼作全站圆角尺，徽章等非玻璃元素同阶梯取值；非胶囊按钮统一 glass-sm（10px），25px 胶囊（主按钮）、圆形（rounded-full）与搜索提交钮（跟随输入框成对）是仅有的豁免形态。
-  - 语义色（accent、success、error、warning 及其透明度）一律走令牌工具类或 var(--color-*)，禁止十六进制字面量（含组件 style 块）。
+  - 语义色（accent、success、error、warning 及其透明度）一律走令牌工具类或 var(--color-*)，禁止十六进制字面量（含组件 style 块）；品牌渐变 `--gradient-brand` 与未指派灰 `--color-unassigned` 单源在 layout.css 的 @theme。
+    机械守门是 `pnpm check:colors`（layout.css 是唯一 hex 豁免源，行内豁免标记见 `scripts/check-hex-colors.py` 头注）。
   - 渐变按钮双轨分工：面板行标准尺寸用 btnGradientBlue/Orange 令牌，行内紧凑尺寸与 green/custom 变体用 GradientButton、IconButton 组件（圆角已对齐 10px 阶梯）。
   - 三套图标按钮分工：btnIcon 族方形透明（含 size-6 的 btnIconSm）、chartLinkIcon 表内方形描边、IconButton 圆形渐变。
   - 筛选 chip 家族是完整状态令牌：btnChip（灰态）加 btnChipOnAccent/btnChipOnWarning（按语义分激活色）加 btnChipOnSuccess（复制反馈态）；chip 是状态控件，不做部分类组合。

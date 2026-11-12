@@ -243,7 +243,7 @@
         level: "",
         unassigned: true,
         count: unassignedCount,
-        color: "#607d8b",
+        color: "var(--color-unassigned)",
       });
     }
     return items;
@@ -278,7 +278,7 @@
   }
 
   function colorFor(level: string, unassigned: boolean): string {
-    if (unassigned) return "#607d8b";
+    if (unassigned) return "var(--color-unassigned)";
     const index = visibleLevels.indexOf(level);
     return levelSegmentColor(index < 0 ? 0 : index, visibleLevels.length);
   }

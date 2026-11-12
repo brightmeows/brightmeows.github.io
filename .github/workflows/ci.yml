@@ -27,6 +27,7 @@ jobs:
       - run: pnpm check:md
       - run: pnpm check:icons
       - run: pnpm check:ui
+      - run: pnpm check:colors
 
   check:
     runs-on: ubuntu-latest
