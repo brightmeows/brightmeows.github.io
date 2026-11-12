@@ -14,8 +14,6 @@
     rounded?: "sm" | "md" | "lg" | "xl";
     /** 是否添加动画 */
     animate?: boolean;
-    /** 背景透明度变体 */
-    variant?: "default" | "light" | "dark";
     /** 自定义样式对象 */
     style?: Record<string, string>;
     /** 元素ID */
@@ -28,7 +26,6 @@
     padding = "lg",
     rounded = "xl",
     animate = false,
-    variant = "default",
     style = {},
     id,
   }: Props = $props();
@@ -47,15 +44,11 @@
     lg: "rounded-glass-lg",
     xl: "rounded-glass-xl",
   };
-
-  const variantClass = $derived(
-    variant === "default" ? "bg-glass" : variant === "light" ? "bg-glass-light" : "bg-black-20"
-  );
 </script>
 
 <div
   {id}
-  class="glass-base glass-shadow-md block {variantClass} {paddingConfig[padding]} {roundedConfig[
+  class="glass-base glass-shadow-md block bg-glass {paddingConfig[padding]} {roundedConfig[
     rounded
   ]} {className}"
   class:animate-fadeIn={animate}
