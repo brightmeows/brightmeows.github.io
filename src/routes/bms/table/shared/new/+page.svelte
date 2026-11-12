@@ -11,6 +11,8 @@
   import { onMount } from "svelte";
 
   import PageShell from "#lib/components/layout/PageShell.svelte";
+  import { createConfirmDialog } from "#lib/components/ui/confirm-dialog.svelte.js";
+  import ConfirmDialog from "#lib/components/ui/ConfirmDialog.svelte";
   import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
   import {
@@ -217,10 +219,12 @@
     importText = "";
   }
 
+  const confirmDialog = createConfirmDialog();
+
   async function submit(): Promise<void> {
     if (idResult === null || !idResult.ok || busy) return;
     if (checkState === "aliased") {
-      const ok = window.confirm(m["shared.id_was_aliased_confirm"]({ id: idResult.id }));
+      const ok = await confirmDialog.ask(m["shared.id_was_aliased_confirm"]({ id: idResult.id }));
       if (!ok) return;
     }
     busy = true;
@@ -396,3 +400,5 @@
     {/if}
   </GlassPanel>
 {/snippet}
+
+<ConfirmDialog dialog={confirmDialog} />

@@ -17,6 +17,8 @@
   import SharedTrashPanel from "#lib/components/bms/SharedTrashPanel.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import Checkbox from "#lib/components/ui/Checkbox.svelte";
+  import { createConfirmDialog } from "#lib/components/ui/confirm-dialog.svelte.js";
+  import ConfirmDialog from "#lib/components/ui/ConfirmDialog.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
   import {
     btnChip,
@@ -79,9 +81,11 @@
     }
   }
 
+  const confirmDialog = createConfirmDialog();
+
   async function handleDelete(item: SharedTableItem): Promise<void> {
     const label = item.name === "" ? item.id : item.name;
-    if (!window.confirm(m["shared.delete_confirm"]({ name: label }))) return;
+    if (!(await confirmDialog.ask(m["shared.delete_confirm"]({ name: label })))) return;
     deletingId = item.id;
     actionNotice = null;
     try {
@@ -236,3 +240,5 @@
     <BmsTableList tables={data.tables} />
   </section>
 {/snippet}
+
+<ConfirmDialog dialog={confirmDialog} />

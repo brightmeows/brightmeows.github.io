@@ -11,6 +11,8 @@
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import CardSwitcher, { type CardSwitchItem } from "#lib/components/ui/CardSwitcher.svelte";
   import Checkbox from "#lib/components/ui/Checkbox.svelte";
+  import { createConfirmDialog } from "#lib/components/ui/confirm-dialog.svelte.js";
+  import ConfirmDialog from "#lib/components/ui/ConfirmDialog.svelte";
   import JsonPreview from "#lib/components/ui/JsonPreview.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
   import {
@@ -235,11 +237,13 @@
     return result.ok;
   }
 
+  const confirmDialog = createConfirmDialog();
+
   async function handleDelete(item: MirrorTableItem): Promise<void> {
     const dirName = item.dir_name;
     if (dirName === undefined || dirName === "") return;
     const label = item.name === "" ? dirName : item.name;
-    if (!window.confirm(m["mirror.delete_confirm"]({ name: label }))) {
+    if (!(await confirmDialog.ask(m["mirror.delete_confirm"]({ name: label })))) {
       return;
     }
     deletingDir = dirName;
@@ -281,7 +285,7 @@
     if (adminPanelOpen) void loadOverview(false);
   }
 
-  function handleAuthorize(item: MirrorTableItem): void {
+  async function handleAuthorize(item: MirrorTableItem): Promise<void> {
     if (!isAdmin) return;
     const action: "add" | "remove" = item.protected === true ? "remove" : "add";
     const label = tableLabelOf(item);
@@ -289,7 +293,7 @@
       action === "add"
         ? m["mirror.auth_confirm_add"]({ name: label })
         : m["mirror.auth_confirm_remove"]({ name: label });
-    if (!window.confirm(confirmText)) return;
+    if (!(await confirmDialog.ask(confirmText))) return;
     void runAdmin(
       async () => {
         await adminAuthorize(sourceUrlOf(item), item.dir_name, action);
@@ -300,10 +304,10 @@
     );
   }
 
-  function handleDisable(item: MirrorTableItem, note: string): void {
+  async function handleDisable(item: MirrorTableItem, note: string): Promise<void> {
     if (!isAdmin) return;
     const label = tableLabelOf(item);
-    if (!window.confirm(m["mirror.disable_confirm"]({ name: label }))) return;
+    if (!(await confirmDialog.ask(m["mirror.disable_confirm"]({ name: label })))) return;
     void runAdmin(
       async () => {
         await adminDisable(sourceUrlOf(item), item.dir_name, "add", note === "" ? undefined : note);
@@ -591,3 +595,5 @@
 
 <SelectedTablesPanel {tables} bind:selectedMap {mirrorPreview} {displayOrderUrls} />
 <JsonPreview bind:this={mirrorPreview} />
+
+<ConfirmDialog dialog={confirmDialog} />

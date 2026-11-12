@@ -195,12 +195,12 @@ export type SharedMutateOutcome =
 export async function renameSharedTable(deps: {
   tableId: string;
   newId: string;
-  confirm: (message: string) => boolean;
+  confirm: (message: string) => boolean | Promise<boolean>;
   rename: (from: string, to: string) => Promise<unknown>;
 }): Promise<
   { ok: true; id: string } | { ok: false; canceled: true } | { ok: false; text: string }
 > {
-  const confirmed = deps.confirm(
+  const confirmed = await deps.confirm(
     m["shared.rename_confirm"]({ from: deps.tableId, to: deps.newId })
   );
   if (!confirmed) return { ok: false, canceled: true };
@@ -219,10 +219,10 @@ export async function renameSharedTable(deps: {
 export async function deleteSharedTable(deps: {
   tableId: string;
   label: string;
-  confirm: (message: string) => boolean;
+  confirm: (message: string) => boolean | Promise<boolean>;
   remove: (id: string) => Promise<unknown>;
 }): Promise<{ ok: true } | { ok: false; canceled: true } | { ok: false; text: string }> {
-  const confirmed = deps.confirm(m["shared.delete_confirm"]({ name: deps.label }));
+  const confirmed = await deps.confirm(m["shared.delete_confirm"]({ name: deps.label }));
   if (!confirmed) return { ok: false, canceled: true };
   try {
     await deps.remove(deps.tableId);
