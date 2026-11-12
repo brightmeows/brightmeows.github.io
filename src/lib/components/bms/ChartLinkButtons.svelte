@@ -8,6 +8,7 @@
   import Package from "@lucide/svelte/icons/package";
   import { onMount } from "svelte";
 
+  import ClickPopover from "#lib/components/ui/ClickPopover.svelte";
   import { chartLinkIcon, topbarMenuItem } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
 
@@ -29,11 +30,7 @@
   const GAP = 4;
 
   let wrapper = $state<HTMLDivElement | undefined>(undefined);
-  let menuButton = $state<HTMLButtonElement | undefined>(undefined);
-  let menuEl = $state<HTMLDivElement | undefined>(undefined);
   let availableWidth = $state(0);
-  let menuOpen = $state(false);
-  let menuStyle = $state("");
 
   const bmsLinks = $derived(getBmsLinks(chart));
   const hasMd5 = $derived(typeof chart.md5 === "string" && chart.md5.trim().length > 0);
@@ -68,24 +65,6 @@
   });
   const hiddenLinks = $derived(links.slice(visibleLinks.length));
 
-  function closeMenu(): void {
-    menuOpen = false;
-  }
-
-  function toggleMenu(): void {
-    if (menuOpen) {
-      closeMenu();
-      return;
-    }
-    if (menuButton === undefined) return;
-    const rect = menuButton.getBoundingClientRect();
-    const width = 208;
-    const left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8));
-    const top = Math.min(rect.bottom + 6, window.innerHeight - 260);
-    menuStyle = `inset:auto;left:${left}px;top:${Math.max(8, top)}px;background-color:#17142b;`;
-    menuOpen = true;
-  }
-
   onMount(() => {
     if (wrapper !== undefined) {
       const observer = new ResizeObserver((entries) => {
@@ -96,38 +75,6 @@
       return () => observer.disconnect();
     }
     return undefined;
-  });
-
-  $effect(() => {
-    if (!menuOpen) return;
-    const onPointerDown = (event: PointerEvent): void => {
-      if (event.target instanceof Node) {
-        if (menuEl?.contains(event.target) || menuButton?.contains(event.target)) return;
-      }
-      closeMenu();
-    };
-    const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === "Escape") closeMenu();
-    };
-    const onScroll = (): void => closeMenu();
-
-    document.addEventListener("pointerdown", onPointerDown, true);
-    document.addEventListener("keydown", onKeyDown, true);
-    window.addEventListener("scroll", onScroll, true);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown, true);
-      document.removeEventListener("keydown", onKeyDown, true);
-      window.removeEventListener("scroll", onScroll, true);
-    };
-  });
-
-  $effect(() => {
-    if (menuEl === undefined) return;
-    if (menuOpen && !menuEl.matches(":popover-open")) {
-      menuEl.showPopover();
-    } else if (!menuOpen && menuEl.matches(":popover-open")) {
-      menuEl.hidePopover();
-    }
   });
 </script>
 
@@ -195,40 +142,30 @@
     </a>
   {/each}
   {#if hiddenLinks.length > 0}
-    <button
-      class={chartLinkIcon}
-      type="button"
-      bind:this={menuButton}
-      aria-label={m["common.more_links"]()}
-      aria-expanded={menuOpen}
-      title={m["common.more_links"]()}
-      onclick={toggleMenu}
+    <ClickPopover
+      label={m["common.more_links"]()}
+      triggerClass={chartLinkIcon}
+      menuClass="max-h-64 min-w-52 overflow-auto p-1"
+      align="left"
+      width={208}
+      bottomReserve={260}
     >
       <Ellipsis class="size-5" aria-hidden="true" />
-    </button>
+      {#snippet content({ close })}
+        {#each hiddenLinks as link (link.id)}
+          <a
+            class={topbarMenuItem}
+            href={link.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            role="menuitem"
+            onclick={close}
+          >
+            {@render icon(link)}
+            <span>{link.label}</span>
+          </a>
+        {/each}
+      {/snippet}
+    </ClickPopover>
   {/if}
 </div>
-
-{#if hiddenLinks.length > 0}
-  <div
-    class="popover-glass max-h-64 min-w-52 overflow-auto p-1"
-    style={menuStyle}
-    bind:this={menuEl}
-    role="menu"
-    popover="manual"
-  >
-    {#each hiddenLinks as link (link.id)}
-      <a
-        class={topbarMenuItem}
-        href={link.href}
-        target="_blank"
-        rel="noopener noreferrer"
-        role="menuitem"
-        onclick={closeMenu}
-      >
-        {@render icon(link)}
-        <span>{link.label}</span>
-      </a>
-    {/each}
-  </div>
-{/if}

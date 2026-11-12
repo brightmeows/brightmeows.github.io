@@ -1,13 +1,14 @@
 <script lang="ts">
   import EllipsisVertical from "@lucide/svelte/icons/ellipsis-vertical";
 
+  import ClickPopover from "#lib/components/ui/ClickPopover.svelte";
   import { btnIcon } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
 
   /**
-   * 行级操作菜单：kebab 按钮加 popover-glass 弹层，借条目链接列溢出菜单的
-   * 定位与关闭机制。拖拽为主的行头把低频操作（上移、下移、删除）收进来，
-   * 触屏点两步可达，键盘可聚焦。
+   * 行级操作菜单：kebab 触发钮加浮层菜单，定位与关闭由 ClickPopover 原语
+   * 承担。拖拽为主的行头把低频操作（上移、下移、删除）收进来，触屏点两步
+   * 可达，键盘可聚焦。
    */
 
   /** 菜单项：选中回调与禁用态；danger 项按语义错误色渲染。 */
@@ -26,90 +27,19 @@
   }
 
   let { items, disabled = false, label = m["common.more_actions"]() }: Props = $props();
-
-  let menuButton = $state<HTMLButtonElement | undefined>(undefined);
-  let menuEl = $state<HTMLDivElement | undefined>(undefined);
-  let menuOpen = $state(false);
-  let menuStyle = $state("");
-
-  function toggleMenu(): void {
-    if (menuOpen) {
-      menuOpen = false;
-      return;
-    }
-    if (menuButton === undefined) return;
-    const rect = menuButton.getBoundingClientRect();
-    const width = 168;
-    // 行尾 kebab：弹层右缘对齐按钮右缘，越界时收进视口
-    const left = Math.max(8, Math.min(rect.right - width, window.innerWidth - width - 8));
-    const top = Math.min(rect.bottom + 6, window.innerHeight - 200);
-    menuStyle = `inset:auto;left:${left}px;top:${Math.max(8, top)}px;`;
-    menuOpen = true;
-  }
-
-  function closeMenu(): void {
-    menuOpen = false;
-  }
-
-  function select(item: RowActionItem): void {
-    closeMenu();
-    item.onselect();
-  }
-
-  $effect(() => {
-    if (!menuOpen) return;
-    const onPointerDown = (event: PointerEvent): void => {
-      if (event.target instanceof Node) {
-        if (menuEl?.contains(event.target) || menuButton?.contains(event.target)) return;
-      }
-      closeMenu();
-    };
-    const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === "Escape") closeMenu();
-    };
-    const onScroll = (): void => closeMenu();
-
-    document.addEventListener("pointerdown", onPointerDown, true);
-    document.addEventListener("keydown", onKeyDown, true);
-    window.addEventListener("scroll", onScroll, true);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown, true);
-      document.removeEventListener("keydown", onKeyDown, true);
-      window.removeEventListener("scroll", onScroll, true);
-    };
-  });
-
-  $effect(() => {
-    if (menuEl === undefined) return;
-    if (menuOpen && !menuEl.matches(":popover-open")) {
-      menuEl.showPopover();
-    } else if (!menuOpen && menuEl.matches(":popover-open")) {
-      menuEl.hidePopover();
-    }
-  });
 </script>
 
-<button
-  class={btnIcon}
-  type="button"
-  bind:this={menuButton}
-  aria-label={label}
-  aria-expanded={menuOpen}
-  title={label}
+<ClickPopover
+  {label}
+  triggerClass={btnIcon}
+  menuClass="min-w-40 p-1"
+  align="right"
+  width={168}
+  bottomReserve={200}
   {disabled}
-  onclick={toggleMenu}
 >
   <EllipsisVertical class="size-4" aria-hidden="true" />
-</button>
-
-{#if menuOpen}
-  <div
-    class="popover-glass min-w-40 p-1"
-    style={menuStyle}
-    bind:this={menuEl}
-    role="menu"
-    popover="manual"
-  >
+  {#snippet content({ close })}
     {#each items as item (item.label)}
       <button
         class="flex w-full items-center rounded-md px-2 py-1.5 text-left text-[0.85rem] transition-colors {item.danger
@@ -118,10 +48,13 @@
         type="button"
         role="menuitem"
         disabled={item.disabled}
-        onclick={() => select(item)}
+        onclick={() => {
+          close();
+          item.onselect();
+        }}
       >
         {item.label}
       </button>
     {/each}
-  </div>
-{/if}
+  {/snippet}
+</ClickPopover>
