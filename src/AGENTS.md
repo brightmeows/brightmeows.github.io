@@ -188,6 +188,6 @@
   - 筛选 chip 家族是完整状态令牌：btnChip（灰态）加 btnChipOnAccent/btnChipOnWarning（按语义分激活色）加 btnChipOnSuccess（复制反馈态）；chip 是状态控件，不做部分类组合。
   - 文字按钮家族（primary、ghost、danger、toggle、chip）统一带 focus-visible ring；btnBar 已并入 btnGhostMd，标准尺寸的危险动作用 btnDangerMd。
   - 链接两族分工：行内主链接（表名等）用 linkInline 令牌（accent 无下划线悬停提亮），正文强调链用 link-accent 全局类；动作性链接（教程、格式参考、返回列表、查看全部、搜索互链）按钮化为 btnGhostXs——保留 a 元素只换视觉不换元素（href、target、中键行为不动），导航与内容链接（顶栏、TOC、卡片、表名行内链）保持链接形态。
-  - 搜索域与徽章控件各用 ui-classes 的对应家族令牌，新变体先进 ui-classes 再使用。
+  - 搜索域、徽章与行内加载指示（spinnerSm/Md/Lg）各用 ui-classes 的对应家族令牌，新变体先进 ui-classes 再使用。
   - 机械守门是 `pnpm check:ui`（指纹集与豁免口径见 `scripts/check-ui-tokens.py` 头注），图标纪律守门是 `pnpm check:icons`。
 - **图标单源 lucide（2026-11 全站收敛）** — UI 图标一律 @lucide/svelte 组件（stroke 线性画法），emoji 与文本符号不当图标用；手绘 SVG 仅剩品牌资产（GIF logo、BMS-IR 文字徽标）与 innerHTML 场景（标题锚点，path 数据取自 lucide 并注明来源）。机械守门是 `pnpm check:icons`（禁用集与豁免口径见脚本头注）。

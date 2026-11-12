@@ -10,7 +10,13 @@
 
   import GlassContainer from "#lib/components/ui/GlassContainer.svelte";
   import GradientButton from "#lib/components/ui/GradientButton.svelte";
-  import { btnChip, btnChipOnSuccess, btnGhostSm, linkInline } from "#lib/constants/ui-classes.js";
+  import {
+    btnChip,
+    btnChipOnSuccess,
+    btnGhostSm,
+    linkInline,
+    spinnerSm,
+  } from "#lib/constants/ui-classes.js";
   import type { SearchResult } from "#lib/data/api/search-aggregator.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { TableLoadState } from "#lib/types/bms-view.js";
@@ -165,9 +171,7 @@
       {:else if loadState?.status === "loading-header" || loadState?.status === "parsing"}
         <!-- 表头加载/解析中 -->
         <div class="card-dark flex items-center gap-3">
-          <div
-            class="h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-white-30 border-t-accent"
-          ></div>
+          <div class={spinnerSm}></div>
           <a class="flex-1 {linkInline}" href={tableHref}>
             {loadState.name}
           </a>
