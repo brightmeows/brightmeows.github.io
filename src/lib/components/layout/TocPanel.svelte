@@ -122,7 +122,7 @@
     // 延迟组强制按真实布局渲染，scrollend 后还原。
     const deferred = el
       ? [...document.querySelectorAll<HTMLElement>(".cv-defer")].filter(
-          (g) => g.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_PRECEDING
+          (g) => el.compareDocumentPosition(g) & Node.DOCUMENT_POSITION_PRECEDING
         )
       : [];
     for (const g of deferred) g.style.contentVisibility = "visible";
