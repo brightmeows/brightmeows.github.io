@@ -24,8 +24,14 @@
     bottomReserve: number;
     /** 弹层对齐：right 为右缘对齐触发钮（行尾钮），left 为左缘对齐。 */
     align?: "left" | "right";
-    /** 弹层附加类（宽度、内边距、溢出滚动）。 */
+    /** 弹层附加类（宽度、内边距）。 */
     menuClass?: string;
+    /**
+     * 内层滚动容器类（max-h 与 overflow-auto）。[popover] 的 UA 重置在
+     * layout.css 未分层写 overflow: visible，会压过外层的溢出工具类，滚动
+     * 类必须挂到这层内层容器才生效；缺省不包内层。
+     */
+    scrollClass?: string;
     disabled?: boolean;
     /** 触发钮内容（图标）。 */
     children: Snippet;
@@ -40,6 +46,7 @@
     bottomReserve,
     align = "left",
     menuClass = "",
+    scrollClass = "",
     disabled = false,
     children,
     content,
@@ -117,6 +124,10 @@
 
 {#if open}
   <div class="popover-glass {menuClass}" style={posStyle} bind:this={menuEl} use:popoverLayer>
-    {@render content({ close })}
+    {#if scrollClass}
+      <div class={scrollClass}>{@render content({ close })}</div>
+    {:else}
+      {@render content({ close })}
+    {/if}
   </div>
 {/if}

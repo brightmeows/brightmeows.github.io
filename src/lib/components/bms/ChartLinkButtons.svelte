@@ -145,7 +145,8 @@
     <ClickPopover
       label={m["common.more_links"]()}
       triggerClass={chartLinkIcon}
-      menuClass="max-h-64 min-w-52 overflow-auto p-1"
+      menuClass="min-w-52 p-1"
+      scrollClass="max-h-64 overflow-auto"
       align="left"
       width={208}
       bottomReserve={260}

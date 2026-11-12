@@ -291,7 +291,7 @@
 
   /* ===== 原生确认弹层（ConfirmDialog）：样式壳，开关行为在组件 ===== */
   .confirm-dialog {
-    @apply w-[min(24rem,calc(100vw-2rem))] rounded-glass-lg bg-glass p-4 backdrop-blur;
+    @apply m-auto w-[min(24rem,calc(100vw-2rem))] rounded-glass-lg bg-glass p-4 backdrop-blur;
   }
 
   .confirm-dialog::backdrop {
