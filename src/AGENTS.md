@@ -180,6 +180,7 @@
   - **组件导入一律用直接路径**（`#lib/components/<域>/<组件>.svelte`）：2026-09 移除了五个 barrel 文件（`ui`/`bms`/`layout`/`content`/`pages` 下的 `index.ts`），原因是它们与实际使用漂移——knip 报出一批只被直接路径引用、在 barrel 里却仍挂着导出的冗余项。
   - 直接路径无维护面、语义无歧义，不要再新增 barrel。
   - 写 UI 前 `glob src/lib/components/**/*.svelte` 检索已有组件。
+  - 点击型浮动菜单（行内“...”溢出、行级操作）统一走 `ClickPopover` 原语（视口钳制定位、外点/Esc/滚动关闭、popover-glass 加 top-layer 一并封装，定位纯函数在 `utils/ui/menu-position`）；悬停型下拉走 dropdown-panel 原语，显式预览弹层（JSON 预览）自挂 popoverLayer。
   - 按钮与输入框的类串用 `constants/ui-classes.ts` 的令牌（2026-10 自 16 个组件的本地复制收敛，按家族与尺寸逐变体命名；同月 layout.css 的 `.gradient-btn` 全局类一并收敛为 `btnGradientBlue`/`btnGradientOrange` 令牌），不要再本地复制类串；变体之间不组合，新视觉形态加新令牌。
 - **样式令牌纪律（2026-11 全站收敛）** — 玻璃圆角阶梯 glass-sm/md/lg/xl（10/14/18/20px）兼作全站圆角尺，徽章等非玻璃元素同阶梯取值；非胶囊按钮统一 glass-sm（10px），25px 胶囊（主按钮）、圆形（rounded-full）与搜索提交钮（跟随输入框成对）是仅有的豁免形态。
   - 语义色（accent、success、error、warning 及其透明度）一律走令牌工具类或 var(--color-*)，禁止十六进制字面量（含组件 style 块）。
