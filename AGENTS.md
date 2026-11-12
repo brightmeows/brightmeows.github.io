@@ -183,6 +183,13 @@ Hooks：
 - Node 版本以 `.nvmrc` 为准（工作流用 `node-version-file: .nvmrc`）；pnpm 版本以 `package.json` 的 `devEngines.packageManager` 范围为准（工作流不传 `version`，解析结果记入 lockfile）。两者都由 `pnpm check:config` 断言
 - Paraglide JS（i18n，全站三语 en/zh-cn/ja，边缘分发）
 
+## 浏览器支持口径
+
+- **Baseline Widely available 为默认目标（2026-11-12 grilling 裁决）** — 不设 browserslist，构建目标走 Vite 默认档；特性取舍以本口径为统一判据。
+  - 达标特性直接用，不为旧浏览器写回退；未达标特性按指南给回退（如 dialog `closedby` 的外点关闭回退）或任其优雅降级（如 content-visibility 不支持即忽略、popoverLayer 无 Popover API 即跳过 top-layer）。
+  - JS 硬依赖型 API 在口径内视为不可用（toSorted 禁令维持）；CSS 渐进增强型允许提前引入。
+  - 特性支持数据以 modern-web-guidance 指南的 Baseline 数据为准，不凭记忆判断。
+
 ## 依赖升级挂起项
 
 以下升级经评估后刻意挂起，勿随批升级，各等触发条件；有 dependabot 击穿风险的条目在 `.github/dependabot.yml` 用 ignore 机械挡住（2026-10-06 katex 曾被自动升穿无兜底的挂起项，见下）。
