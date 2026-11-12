@@ -12,6 +12,8 @@
   } from "#lib/data/api/shared-api.js";
   import { auth } from "#lib/data/store/auth-store.svelte.js";
   import { m } from "#lib/paraglide/messages.js";
+  import { getLocale } from "#lib/paraglide/runtime.js";
+  import { formatAbsolute, formatRelativeTime } from "#lib/utils/infra/date.js";
 
   /**
    * 共享表回收站：登录后展示自己的删除记录（admin 看全部），30 天内可恢复；
@@ -70,12 +72,6 @@
     }
   }
 
-  function formatRemovedAt(value: string): string {
-    const at = Date.parse(value);
-    if (!Number.isFinite(at)) return value;
-    return new Date(at).toLocaleString();
-  }
-
   onMount(() => {
     void auth.ensureLoaded();
   });
@@ -110,7 +106,12 @@
                   <span>
                     {record.name}
                     <span class="ml-2 font-mono text-[0.8rem] text-white-50">{record.id}</span>
-                    <span class="ml-2 text-white-50">{formatRemovedAt(record.removed_at)}</span>
+                    <span
+                      class="ml-2 text-white-50"
+                      title={formatAbsolute(record.removed_at, getLocale())}
+                    >
+                      {formatRelativeTime(record.removed_at, getLocale())}
+                    </span>
                   </span>
                   <button
                     class={btnGhostXs}

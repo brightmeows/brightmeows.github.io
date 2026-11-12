@@ -18,6 +18,8 @@
   } from "#lib/data/api/mirror-user-api.js";
   import { auth } from "#lib/data/store/auth-store.svelte.js";
   import { m } from "#lib/paraglide/messages.js";
+  import { getLocale } from "#lib/paraglide/runtime.js";
+  import { formatAbsolute, formatRelativeTime } from "#lib/utils/infra/date.js";
 
   interface Props {
     /** 添加或恢复成功后回调（用于刷新清单）。 */
@@ -153,12 +155,6 @@
       restoring = null;
     }
   }
-
-  function formatRemovedAt(value: string): string {
-    const at = Date.parse(value);
-    if (!Number.isFinite(at)) return value;
-    return new Date(at).toLocaleString();
-  }
 </script>
 
 {#if auth.status === "ready"}
@@ -251,7 +247,12 @@
                   >
                     <span>
                       {record.dir_name}
-                      <span class="ml-2 text-white-50">{formatRemovedAt(record.removed_at)}</span>
+                      <span
+                        class="ml-2 text-white-50"
+                        title={formatAbsolute(record.removed_at, getLocale())}
+                      >
+                        {formatRelativeTime(record.removed_at, getLocale())}
+                      </span>
                     </span>
                     <button
                       class={btnGhost}
