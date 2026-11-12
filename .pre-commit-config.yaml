@@ -152,6 +152,19 @@ repos:
         types: [text]
         pass_filenames: false
 
+  # 语义色十六进制字面量纪律：src 下 .svelte/.ts 禁裸写颜色 hex，一律走
+  # 令牌工具类、var(--color-*) 或 @theme；layout.css 是唯一豁免源（不在
+  # 受检清单），行内 color-literal-ignore 豁免单行。packages 的画布段位
+  # 色板属领域计算色，不在范围（见 scripts/check-hex-colors.py 头注）。
+  - repo: local
+    hooks:
+      - id: color-tokens
+        name: no raw hex colors outside token sources
+        entry: pnpm check:colors
+        language: system
+        types: [text]
+        pass_filenames: false
+
   # 同一事实在不能 import 配置的地方（wrangler.jsonc、工作流 YAML、版本文件）
   # 必须与 config/site.json 一致；纯离线、毫秒级。
   - repo: local

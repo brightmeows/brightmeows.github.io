@@ -97,7 +97,7 @@
         {#if item.protected === true}
           <Check class="size-4 text-success" aria-hidden="true" strokeWidth={2.5} />
         {:else}
-          <TriangleAlert class="size-4 text-[#ffd54f]" aria-hidden="true" />
+          <TriangleAlert class="size-4 text-amber-300" aria-hidden="true" />
         {/if}
       </button>
     {:else}
@@ -110,7 +110,7 @@
         {#if item.protected === true}
           <Check class="size-4 text-success" aria-hidden="true" strokeWidth={2.5} />
         {:else}
-          <TriangleAlert class="size-4 text-[#ffd54f]" aria-hidden="true" />
+          <TriangleAlert class="size-4 text-amber-300" aria-hidden="true" />
         {/if}
       </span>
     {/if}

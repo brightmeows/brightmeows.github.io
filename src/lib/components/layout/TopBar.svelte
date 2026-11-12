@@ -446,11 +446,11 @@
     />
     <h2
       id="profile-card-title"
-      class="m-0 bg-[linear-gradient(90deg,#a78bfa,#f472b6,#60a5fa)] bg-clip-text text-3xl text-transparent"
+      class="m-0 bg-[image:var(--gradient-brand)] bg-clip-text text-3xl text-transparent"
     >
       {m["topbar.nickname"]()}
     </h2>
-    <p class="mt-1 mb-4 text-[#a5b4fc]">{m["topbar.motto"]()}</p>
+    <p class="mt-1 mb-4 text-indigo-300">{m["topbar.motto"]()}</p>
     <p class="mb-5 text-sm leading-relaxed text-white-90">{m["topbar.bio"]()}</p>
     <div class="flex flex-wrap justify-center gap-3">
       <GlassButton

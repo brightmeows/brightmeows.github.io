@@ -25,7 +25,7 @@ pre-commit run --all-files    # 手动触发全部 hooks
 Hooks：
 
 - `pnpm format:check`、`pnpm check:md`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`、`pnpm check:bms`、`pnpm check:worker`、`pnpm check:config`；
-- `pnpm check:i18n`、`pnpm check:jsdoc`、`pnpm check:quotes`、`pnpm check:icons`、`pnpm check:ui`、`pnpm test`；
+- `pnpm check:i18n`、`pnpm check:jsdoc`、`pnpm check:quotes`、`pnpm check:icons`、`pnpm check:ui`、`pnpm check:colors`、`pnpm test`；
 - no-confusable-unicode、site-config、i18n-coverage、jsdoc-coverage、conventional-commit（commit-msg stage 校验提交信息）。
 
 ### 手动命令
@@ -39,6 +39,7 @@ Hooks：
 - `pnpm check:quotes` — 全量中文引号检查（扩展名与 `static/` 排除规则在 `package.json`，pre-commit 与 CI 共用；离线，毫秒级）
 - `pnpm check:icons` — UI 模板图标纪律检查（src 下 `.svelte` 禁 emoji 与符号图标；离线，毫秒级）
 - `pnpm check:ui` — 按钮与链接令牌纪律检查（src 下 `.svelte` 禁手写按钮/chip 皮肤指纹与裸 text-accent 链接；离线，毫秒级）
+- `pnpm check:colors` — 语义色十六进制字面量守门（src 下 `.svelte`/`.ts` 禁裸写颜色 hex，layout.css 是唯一豁免源；离线，毫秒级）
 
 域内命令见子文档：部署与 wrangler 相关在 `packages/worker/AGENTS.md`；管线、抓取、对拍与校验脚本在 `scripts/AGENTS.md`。
 

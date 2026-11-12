@@ -65,6 +65,10 @@
   --color-cyan-hover-from: #4dd0e1;
   --color-cyan-hover-to: #00bcd4;
 
+  /* 品牌渐变（TopBar 用户面板标题）与未指派灰：本文件是语义色 hex 的唯一豁免源 */
+  --gradient-brand: linear-gradient(90deg, #a78bfa, #f472b6, #60a5fa);
+  --color-unassigned: #607d8b;
+
   /* 玻璃面板底色体系（单一来源：bg-glass / bg-glass-light / bg-glass-hover） */
   --color-glass: rgb(255 255 255 / 0.07);
   --color-glass-light: rgb(255 255 255 / 0.12);
