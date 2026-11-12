@@ -418,8 +418,8 @@
   }
 
   const linkBase =
-    "rounded-lg px-3 py-2 text-sm no-underline transition-colors duration-150 cursor-pointer";
-  const pillClass = "pointer-events-auto rounded-2xl p-1.5";
+    "rounded-glass-sm px-3 py-2 text-sm no-underline transition-colors duration-150 cursor-pointer";
+  const pillClass = "pointer-events-auto rounded-glass-lg p-1.5";
 </script>
 
 <!-- 下拉子页条目，宽屏各导航下拉共用 -->
@@ -511,7 +511,7 @@
             {@const dropdownActive = isActiveDropdown(item)}
             <div class="relative">
               <div
-                class="flex items-center rounded-lg transition-colors duration-150 {dropdownActive
+                class="flex items-center rounded-glass-sm transition-colors duration-150 {dropdownActive
                   ? 'bg-white-15 text-white'
                   : 'text-white-85 hover:bg-white-10 hover:text-white'}"
                 {...triggerHoverHandlers(item.id, "left")}
@@ -558,7 +558,7 @@
                   in:fly={panelIn}
                   out:fly={panelOut}
                 >
-                  <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
+                  <GlassPanel class="rounded-glass-lg p-2" padding="none" rounded="none">
                     {@render dropdownEntries(item.children)}
                   </GlassPanel>
                 </div>
@@ -591,7 +591,7 @@
                   in:fly={panelIn}
                   out:fly={panelOut}
                 >
-                  <GlassPanel class="rounded-2xl p-5" padding="none" rounded="none">
+                  <GlassPanel class="rounded-glass-lg p-5" padding="none" rounded="none">
                     {@render profileContent(false)}
                   </GlassPanel>
                 </div>
@@ -636,7 +636,7 @@
             in:fly={panelIn}
             out:fly={panelOut}
           >
-            <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
+            <GlassPanel class="rounded-glass-lg p-2" padding="none" rounded="none">
               <div class="max-h-[calc(100vh-6rem)] overflow-y-auto">
                 <div class="px-2 pt-2 pb-1">{@render profileContent(true)}</div>
                 <div class="mx-2 my-1 border-t border-white-15"></div>
@@ -690,7 +690,7 @@
                 in:fly={panelIn}
                 out:fly={panelOut}
               >
-                <GlassPanel class="rounded-2xl p-4" padding="none" rounded="none">
+                <GlassPanel class="rounded-glass-lg p-4" padding="none" rounded="none">
                   <TocPanel items={tocItems} onNavigate={closePanels} />
                 </GlassPanel>
               </div>
@@ -775,7 +775,7 @@
                 in:fly={panelIn}
                 out:fly={panelOut}
               >
-                <GlassPanel class="rounded-2xl p-2" padding="none" rounded="none">
+                <GlassPanel class="rounded-glass-lg p-2" padding="none" rounded="none">
                   <div class="px-3 py-2">
                     <div class="truncate text-sm font-medium text-white">{user.login}</div>
                   </div>

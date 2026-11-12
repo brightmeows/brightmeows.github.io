@@ -12,7 +12,7 @@
 - `pnpm test:parity` — 手动新旧实现对拍（用公开 R2 基线与归档工具 v0.4.2 的二进制，逐对象比对产物；`PARITY_LIMIT` 可只对拍前 N 张表）
 - `pnpm check:quotes` — 全量中文引号检查（扩展名与 `static/` 排除规则在 `package.json`，pre-commit 与 CI 共用）
 - `pnpm check:icons` — UI 模板图标纪律检查（src 下 `.svelte` 禁 emoji 与符号图标；范围与禁用集见脚本头注，pre-commit 与 CI 共用）
-- `pnpm check:ui` — 按钮与链接令牌纪律检查（src 下 `.svelte` 的按钮/chip 禁手写皮肤指纹、a 元素禁裸用 text-accent；范围与指纹集见脚本头注，pre-commit 与 CI 共用）
+- `pnpm check:ui` — 按钮与链接令牌纪律检查（src 下 `.svelte` 的按钮/chip 禁手写皮肤指纹、a 元素禁裸用 text-accent、圆角默认档越出玻璃阶梯；范围与指纹集见脚本头注，pre-commit 与 CI 共用）
 - `pnpm check:md` — markdownlint 全量检查（配置在 `.markdownlint.toml`，default 全规则、行宽 200；`content/` 文章因 CJK 软换行渲染约束关闭 MD013/MD025/MD033，
   `src/routes/` 路由级 md 的 h1 由标题卡组件承担故关闭 MD041，分流写法在 `package.json`；pre-commit 与 CI 共用）
 - `R2_BUCKET=<桶名> node scripts/check-r2-cors.ts` — 与线上桶 CORS policy 比对（需 Cloudflare 凭据；只读）
@@ -30,8 +30,9 @@
 - `scripts/check-ui-icons.py` — UI 模板图标纪律：`src/**/*.svelte` 禁用 emoji 主区（U+1F300 至 U+1FAFF）与历史图标符号（⏳⚠✓✕✗▶▼○），图标一律走 @lucide/svelte 组件。
   - 文案层排版箭头（→，U+2192）不在禁用集；行内含 `ui-icons-ignore` 可豁免单行（新增豁免先想能否直接换 lucide）。
   - `pnpm check:icons` 调用它，pre-commit 与 CI 共用。
-- `scripts/check-ui-tokens.py` — 按钮与链接令牌纪律：button/label 元素的 class 禁 cursor-pointer 配圆角工具类（rounded-full 圆形豁免）或“描边加底色”的 chip 皮肤指纹，a 元素禁裸用 text-accent（行内主链接走 linkInline、正文强调链走 link-accent）。
-  - 玻璃与图标原语组件（`src/lib/components/ui/`）整体豁免；行内含 `ui-tokens-ignore` 可豁免单行（新增豁免先想能否直接换令牌）。
+- `scripts/check-ui-tokens.py` — 按钮与链接令牌纪律：任意元素的 class 禁圆角默认档 rounded-sm/md/lg/xl/2xl（rounded-full 圆形豁免，玻璃阶梯 rounded-glass-* 兼作全站圆角尺）。
+  - button/label 元素的 class 禁 cursor-pointer 配圆角或“描边加底色”的 chip 皮肤指纹；a 元素禁裸用 text-accent（行内主链接走 linkInline、正文强调链走 link-accent）。
+  - 皮肤指纹规则豁免玻璃与图标原语组件（`src/lib/components/ui/`，视觉形态定义本体）；圆角尺规则对 ui/ 同样生效。行内含 `ui-tokens-ignore` 可豁免单行（新增豁免先想能否直接换令牌）。
   - `pnpm check:ui` 调用它，pre-commit 与 CI 共用。
 - `scripts/check-hex-colors.py` — 语义色十六进制字面量守门：src 下 `.svelte`/`.ts` 禁 `#RGB/#RRGGBB`（含 #RGBA/#RRGGBBAA）字面量，一律走令牌工具类、var(--color-*) 或 @theme。
   - `src/routes/layout.css`（@theme 与主题块）是唯一豁免源，不在受检清单；行内含 `color-literal-ignore` 可豁免单行（新增豁免先想能否直接换令牌）。packages 的画布段位色板（levelSegmentColor）属领域计算色，不在范围。

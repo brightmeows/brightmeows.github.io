@@ -46,7 +46,7 @@
 <div
   role="region"
   aria-label={m["editor.bms_drop_title"]()}
-  class="rounded-lg border border-dashed px-4 py-4 transition-colors duration-200 {dragging
+  class="rounded-glass-sm border border-dashed px-4 py-4 transition-colors duration-200 {dragging
     ? 'border-accent bg-accent/10'
     : 'border-white-25 bg-black-10'}"
   ondragover={(event) => {

@@ -38,7 +38,7 @@ Hooks：
 - `pnpm check:jsdoc` — 导出函数 JSDoc 覆盖校验（离线，毫秒级，见 `scripts/AGENTS.md`）
 - `pnpm check:quotes` — 全量中文引号检查（扩展名与 `static/` 排除规则在 `package.json`，pre-commit 与 CI 共用；离线，毫秒级）
 - `pnpm check:icons` — UI 模板图标纪律检查（src 下 `.svelte` 禁 emoji 与符号图标；离线，毫秒级）
-- `pnpm check:ui` — 按钮与链接令牌纪律检查（src 下 `.svelte` 禁手写按钮/chip 皮肤指纹与裸 text-accent 链接；离线，毫秒级）
+- `pnpm check:ui` — 按钮与链接令牌纪律检查（src 下 `.svelte` 禁手写按钮/chip 皮肤指纹与裸 text-accent 链接，圆角默认档越出玻璃阶梯；离线，毫秒级）
 - `pnpm check:colors` — 语义色十六进制字面量守门（src 下 `.svelte`/`.ts` 禁裸写颜色 hex，layout.css 是唯一豁免源；离线，毫秒级）
 
 域内命令见子文档：部署与 wrangler 相关在 `packages/worker/AGENTS.md`；管线、抓取、对拍与校验脚本在 `scripts/AGENTS.md`。

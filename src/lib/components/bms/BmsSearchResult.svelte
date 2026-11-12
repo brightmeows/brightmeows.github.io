@@ -106,7 +106,7 @@
           <div class="min-w-0">
             <div class="flex items-center gap-3">
               <span
-                class="inline-block rounded-lg bg-success/20 px-3 py-1 text-[0.9rem] font-bold text-success"
+                class="inline-block rounded-glass-sm bg-success/20 px-3 py-1 text-[0.9rem] font-bold text-success"
               >
                 {entry.symbol ?? ""}{entry.chart.level ?? "?"}
               </span>

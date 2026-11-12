@@ -336,7 +336,7 @@
 
   /* ===== 弹出框 ===== */
   .popover-glass {
-    @apply fixed z-2000 overflow-hidden rounded-xl bg-glass shadow-[var(--glass-lighting),0_10px_24px_rgba(0,0,0,0.45)] backdrop-blur-sm;
+    @apply fixed z-2000 overflow-hidden rounded-glass-md bg-glass shadow-[var(--glass-lighting),0_10px_24px_rgba(0,0,0,0.45)] backdrop-blur-sm;
   }
 
   /* ===== 分段标题下边框 ===== */
@@ -393,7 +393,7 @@
 
   /* ===== 已复制状态徽章 ===== */
   .badge-copied {
-    @apply flex-none rounded-md border border-success/30 bg-success/10 px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-green-300;
+    @apply flex-none rounded-glass-sm border border-success/30 bg-success/10 px-2 py-[0.35rem] text-[0.85rem] whitespace-nowrap text-green-300;
   }
 
   /* ===== 标题组合行（flex 换行 + 间距） ===== */

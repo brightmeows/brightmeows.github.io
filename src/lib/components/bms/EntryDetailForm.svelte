@@ -239,7 +239,7 @@
 </script>
 
 <section
-  class="rounded-lg border border-accent/40 bg-accent/10 p-3 {fileDragOver
+  class="rounded-glass-sm border border-accent/40 bg-accent/10 p-3 {fileDragOver
     ? 'ring-2 ring-accent/60'
     : ''}"
   role="group"

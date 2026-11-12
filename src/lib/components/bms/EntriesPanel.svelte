@@ -634,7 +634,7 @@
     {/if}
 
     {#if editing && batchOpen}
-      <div class="rounded-lg border border-white-15 bg-black-20 p-3">
+      <div class="rounded-glass-sm border border-white-15 bg-black-20 p-3">
         <div class="flex flex-wrap items-center gap-2">
           <span class="text-[0.85rem] text-white-60">
             {m["editor.entries_selected"]({ count: selectedCount })}
@@ -649,7 +649,7 @@
               {m["editor.entries_clear_selection"]()}
             </button>
             <select
-              class="rounded-md border border-white-20 bg-black-30 px-2 py-1 text-[0.85rem] text-white outline-none"
+              class="rounded-glass-sm border border-white-20 bg-black-30 px-2 py-1 text-[0.85rem] text-white outline-none"
               bind:value={batchChoice}
               {disabled}
             >
@@ -726,7 +726,7 @@
 
     {#if notice}
       <div
-        class="rounded-lg border border-amber-300/40 bg-amber-300/10 px-3 py-2 text-[0.85rem] text-amber-200"
+        class="rounded-glass-sm border border-amber-300/40 bg-amber-300/10 px-3 py-2 text-[0.85rem] text-amber-200"
       >
         {notice}
       </div>

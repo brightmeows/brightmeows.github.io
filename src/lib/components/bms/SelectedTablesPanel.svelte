@@ -84,7 +84,7 @@
     out:fly={panelFly().out}
   >
     <div
-      class="glass-shadow-float flex w-max flex-nowrap items-center gap-4 rounded-xl bg-glass p-3 px-4 backdrop-blur"
+      class="glass-shadow-float flex w-max flex-nowrap items-center gap-4 rounded-glass-md bg-glass p-3 px-4 backdrop-blur"
     >
       <Checkbox
         ariaLabel={m["common.select_all_aria"]()}

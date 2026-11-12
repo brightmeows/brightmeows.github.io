@@ -170,7 +170,7 @@
 
     <div class="relative w-full">
       <input
-        class="w-full rounded-xl border border-white-20 bg-black-20 px-4 py-3 pr-12 text-white outline-none placeholder:text-white-50 focus:border-accent/60 focus:ring-2 focus:ring-accent/30"
+        class="w-full rounded-glass-md border border-white-20 bg-black-20 px-4 py-3 pr-12 text-white outline-none placeholder:text-white-50 focus:border-accent/60 focus:ring-2 focus:ring-accent/30"
         type="text"
         placeholder={m["shared.search_placeholder"]()}
         bind:value={searchQuery}
@@ -200,7 +200,7 @@
       <span class="text-[0.85rem] text-white-50">{m["shared.sort_label"]()}</span>
       {#each sortOptions as option (option.value)}
         <button
-          class="rounded-md border px-2 py-[0.35rem] text-[0.85rem] transition-colors duration-200 select-none {sortKey ===
+          class="rounded-glass-sm border px-2 py-[0.35rem] text-[0.85rem] transition-colors duration-200 select-none {sortKey ===
           option.value
             ? 'border-accent/60 bg-accent/15 text-accent'
             : 'border-white-20 text-white-50 hover:border-white-40 hover:text-white-70'}"

@@ -162,7 +162,7 @@
     <a
       href={item.href.startsWith("#") ? item.href : item.href || "/"}
       class={[
-        "block rounded-lg py-2 pr-3 text-[0.9rem] leading-snug transition-colors",
+        "block rounded-glass-sm py-2 pr-3 text-[0.9rem] leading-snug transition-colors",
         itemActive ? "bg-white-10 text-sky-200" : "text-white-85 hover:bg-white-8 hover:text-white",
       ].join(" ")}
       style={`padding-left: ${12 + item.depth * 14}px;`}

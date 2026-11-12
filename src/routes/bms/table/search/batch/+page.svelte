@@ -434,7 +434,7 @@
                   <span class="truncate font-mono text-[0.95rem]">{query}</span>
                 </span>
                 <span
-                  class="shrink-0 rounded-md bg-white-10 px-2.5 py-1 text-[0.85rem] text-white-70"
+                  class="shrink-0 rounded-glass-sm bg-white-10 px-2.5 py-1 text-[0.85rem] text-white-70"
                 >
                   {m["batch.chart_count"]({ count: results.length })}
                 </span>

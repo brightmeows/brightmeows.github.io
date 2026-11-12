@@ -409,7 +409,7 @@
         {/snippet}
 
         {#if pickerOpen}
-          <div class="mb-2 rounded-lg border border-accent/40 bg-accent/10 p-2">
+          <div class="mb-2 rounded-glass-sm border border-accent/40 bg-accent/10 p-2">
             <div class="mb-2 flex items-center gap-2">
               <input
                 class="{inputEditorMono} flex-1"
@@ -460,7 +460,7 @@
               {@const resolved = courseChartResolvedIn(knownHashes, chart)}
               <div
                 use:chartDnd.item={{ index, disabled }}
-                class="rounded-lg border border-white-10 bg-black-10 p-2 {chartDnd.dropTargetIndex ===
+                class="rounded-glass-sm border border-white-10 bg-black-10 p-2 {chartDnd.dropTargetIndex ===
                 index
                   ? 'border-accent/60'
                   : ''}"
@@ -546,7 +546,7 @@
       </DetailsPanel>
 
       {#if Object.keys(course.extra).length > 0}
-        <details class="rounded-md border border-white-10 p-2">
+        <details class="rounded-glass-sm border border-white-10 p-2">
           <summary class="cursor-pointer text-[0.78rem] text-white-50">
             {m["editor.course_extra"]()}
           </summary>
