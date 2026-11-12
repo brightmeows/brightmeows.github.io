@@ -108,7 +108,7 @@
   - 放弃未保存修改在两态都可用（删草稿并回载远端）。旧 `/edit/` 地址已移除并直接 404。
 - **玻璃家族无实线边框，边界信号是光照** — GlassContainer/GlassPanel/GlassCard/GlassButton 与 `popover-glass` 不带 `border`（2026-10 去边框改造）。
   - 容器边界由 `layout.css` 的 `--glass-lighting`（顶部内侧天光加底部内侧遮蔽）与各组件原有外阴影合成表达，深浅两主题共用一组参数（已截图对比验证两主题边界均清晰）。
-  - 新玻璃组件引用该令牌（无外阴影用 `shadow-(--glass-lighting)`，有则 `shadow-[var(--glass-lighting),<外阴影>]` 合成），本地复制光照值会在令牌调整时漏改。
+  - 新玻璃组件引用该令牌（无外阴影用 `shadow-(--glass-lighting)`，有则 `shadow-[var(--glass-lighting),<外阴影>]` 合成），本地复制光照值会在令牌调整时漏改；浮动面板（dock、选中栏等悬浮操作件）的外阴影统一 `glass-shadow-float` 全局档（2026-11 自四处任意值串收敛），不要再写任意值合成。
   - 黑卡（`bg-black-20` 系）、输入框、控件描边、语义边框与表格结构线的边框各有职责，刻意保留，不要“顺手”统一。
   - `prefers-reduced-transparency: reduce` 时玻璃回退为主题实色（`--glass-fallback` 随主题取值，是玻璃系统唯一随主题分叉的点）：停用 backdrop-filter、光照保留。
 - **JSON 预览在行内文本上是右键或长按手势** — 难度表条目标题与镜像表名称的 JSON 预览由 `contextmenu`（桌面右键）与 500ms 长按（触屏）触发；悬停 300ms 或左键只显示“右键/长按查看 JSON”小气泡，不打开弹层。
@@ -162,7 +162,7 @@
   - 约束由 oxlint 机械守住（本仓唯一按目录限定导入源的规则）：禁导入组件、`.svelte` 与 Svelte 运行时，禁触碰 `#lib/loaders`——DOM effect（`scrollIntoView`、`tick`、hash 监听）留在组件。
   - 异步编排以依赖注入收编 fetch 调用（页面传真实现、单测传假实现），保持“纯函数层可测”的既有口径；页面私有编排与跨页共享编排同层，靠文件名前缀区分域。
 - **`src/lib/utils/`** — 纯函数。无副作用、无平台特定 API 依赖（轻量 DOM 工具除外）。任何环境可调用。2026-10 起按域分三个子目录。
-  - `ui/`（`clipboard`、`style`、`toc` 与标题目录构建、`topbar-scroll` 顶栏显隐阈值、`starfield` 粒子物理、`theme` 主题纯逻辑）；
+  - `ui/`（`clipboard`、`style`、`toc` 与标题目录构建、`topbar-scroll` 顶栏显隐阈值、`starfield` 粒子物理、`theme` 主题纯逻辑、`transitions` 过渡预设）；
   - `infra/`（`fetch-stream`、`download`、`md5`、`url`、`date`、`format`、`slugify`）；
   - `i18n/`（`i18n` 消息翻译、`opencc-loader`）。
   - BMS 域逻辑已在 `@brightmeows/bms`（见 `packages/bms/AGENTS.md`），镜像域（`mirror-tables`）与标题格式化（`title`）留顶层（共享表域已迁 `@brightmeows/bms/shared`、头部编辑态拆分已迁 `@brightmeows/bms/header`，均为 2026-10 入包）。

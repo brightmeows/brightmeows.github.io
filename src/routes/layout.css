@@ -271,6 +271,13 @@
       0 8px 32px rgba(0, 0, 0, 0.3);
   }
 
+  /* 浮动面板档（dock 面板与胶囊、选中栏等悬浮操作件） */
+  .glass-shadow-float {
+    box-shadow:
+      var(--glass-lighting),
+      0 6px 20px rgba(0, 0, 0, 0.25);
+  }
+
   /* ===== 加载状态容器 ===== */
   .glass-loading-container {
     @apply rounded-glass-md border-white-10 bg-black-20 p-8;
