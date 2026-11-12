@@ -152,7 +152,7 @@
           </div>
         </DetailsPanel>
 
-        <div class="table-wrapper lg:overflow-visible" use:setRef>
+        <div class="table-wrapper cv-defer lg:overflow-visible" use:setRef>
           <table class="w-full min-w-200 table-fixed border-collapse">
             <colgroup>
               <col class="w-15" />

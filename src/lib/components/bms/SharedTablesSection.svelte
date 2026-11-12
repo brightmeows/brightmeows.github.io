@@ -45,7 +45,7 @@
   </div>
 {:else}
   <div class="mt-8">
-    {#each groups as group (group.author)}
+    {#each groups as group, gi (group.author)}
       <div id={`shared-author-${slugifyTag(group.author)}`} class="mb-12 scroll-mt-5">
         <div class="section-divider">
           <div class="flex items-center gap-3">
@@ -60,7 +60,7 @@
             </span>
           </div>
         </div>
-        <div class="table-wrapper mt-4">
+        <div class="table-wrapper mt-4" class:cv-defer={gi > 0}>
           <table class="w-full min-w-150 table-fixed border-collapse">
             <colgroup>
               <col class="w-24" />

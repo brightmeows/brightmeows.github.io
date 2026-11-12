@@ -282,6 +282,13 @@
       0 6px 20px rgba(0, 0, 0, 0.25);
   }
 
+  /* ===== 首屏以下大块延迟渲染（content-visibility 渐进增强） =====
+     仅容器级：table 内部盒（tbody 等）按规范吃不到布局包含，逐组挂载无效 */
+  .cv-defer {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 480px;
+  }
+
   /* ===== 加载状态容器 ===== */
   .glass-loading-container {
     @apply rounded-glass-md border-white-10 bg-black-20 p-8;
