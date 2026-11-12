@@ -18,7 +18,13 @@
   import EmptyState from "#lib/components/ui/EmptyState.svelte";
   import GradientButton from "#lib/components/ui/GradientButton.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
-  import { btnGhostXs, btnSearchSubmit, inputSearchMono } from "#lib/constants/ui-classes.js";
+  import {
+    btnGhostXs,
+    btnSearchSubmit,
+    inputSearchMono,
+    spinnerLg,
+    spinnerMd,
+  } from "#lib/constants/ui-classes.js";
   import { createEpochGuard, runTableLoad } from "#lib/controllers/table-load.js";
   import type { CandidateEntry, QueryType } from "#lib/data/api/bms-search.js";
   import {
@@ -279,9 +285,7 @@
         {#each indexClient.progress as item (item.name)}
           <div class="flex items-center gap-3 text-[0.9rem]">
             {#if item.status === "loading"}
-              <div
-                class="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-white-30 border-t-accent"
-              ></div>
+              <div class={spinnerMd}></div>
               <span class="text-white-60">{item.name}.json</span>
             {:else if item.status === "done"}
               <Check class="size-4 shrink-0 text-success" aria-hidden="true" />
@@ -334,9 +338,7 @@
             {#if batchPhase === "loading-tables" || batchPhase === "index-searching"}
               <X class="size-5" aria-hidden="true" />
             {:else if batchPhase === "aggregating"}
-              <div
-                class="h-5 w-5 animate-spin rounded-full border-2 border-white-30 border-t-accent"
-              ></div>
+              <div class={spinnerLg}></div>
             {:else}
               <Search class="size-5" aria-hidden="true" />
             {/if}

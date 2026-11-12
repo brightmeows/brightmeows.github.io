@@ -161,6 +161,18 @@ export const btnInputClear =
 /** 谱面行内的统一方形图标按钮（链接与“...”共用）。 */
 export const chartLinkIcon =
   "flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-glass-sm border border-white-20 bg-white-10 text-white-80 transition-colors duration-200 hover:bg-white-20 hover:text-white focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:outline-none";
+
+// ---- 行内加载指示（2026-11 自搜索三页五处本地串收敛；shrink-0 统一防 flex 压缩） ----
+
+/** 迷你行内 spinner（结果行内）。 */
+export const spinnerSm =
+  "h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-white-30 border-t-accent";
+/** 标准行内 spinner（按钮行内）。 */
+export const spinnerMd =
+  "h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-white-30 border-t-accent";
+/** 大号行内 spinner（区块级加载行）。 */
+export const spinnerLg =
+  "h-5 w-5 shrink-0 animate-spin rounded-full border-2 border-white-30 border-t-accent";
 // ---- 徽章（2026-11 自计数与 warning 徽章的本地复制收敛） ----
 
 /** 黑底小号计数徽章（等级行芯片）。 */
