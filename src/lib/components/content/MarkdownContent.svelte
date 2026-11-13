@@ -78,6 +78,17 @@
     }
   }
 
+  /** GFM 任务列表 checkbox 补可访问名：读屏用户听到列表项文本而非裸控件。 */
+  function enhanceTaskLists(): void {
+    if (!container) return;
+    for (const item of container.querySelectorAll("li.task-list-item")) {
+      const checkbox = item.querySelector(":scope > input[type=checkbox]");
+      if (!checkbox || checkbox.hasAttribute("aria-label")) continue;
+      const text = (item.textContent ?? "").trim();
+      if (text) checkbox.setAttribute("aria-label", text);
+    }
+  }
+
   function scheduleEnsureHeadingAnchors(): void {
     if (scheduled) return;
     scheduled = true;
@@ -85,6 +96,7 @@
       scheduled = false;
       ensureHeadingAnchors();
       wrapTables();
+      enhanceTaskLists();
       lazyLoadImages();
 
       if (location.hash.length > 1) {
