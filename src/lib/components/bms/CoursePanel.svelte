@@ -349,9 +349,8 @@
                   expanded={expandedKey === item.key}
                   canMoveUp={item.courseIndex > 0}
                   canMoveDown={item.courseIndex < group.items.length - 1}
-                  dragItem={dnd.item}
+                  dragList={dnd}
                   dragIndex={flatIndex}
-                  dragDropTargetIndex={dnd.dropTargetIndex}
                   onToggle={() => toggle(item.key)}
                   onDelete={() => removeCourse(group.groupIndex, item.courseIndex)}
                   onMoveUp={() => moveCourse(group.groupIndex, item.courseIndex, -1)}

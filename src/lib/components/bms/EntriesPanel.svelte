@@ -177,6 +177,14 @@
     return map;
   });
 
+  /** 菜单组内移动：与拖拽共用 canDrop 口径，跨组移动静默不动。 */
+  function moveEntryWithinGroup(index: number, delta: number): void {
+    const group = dragGroups.get(index);
+    const to = index + delta;
+    if (group === undefined || dragGroups.get(to) !== group) return;
+    entries = moveItem(entries, index, to);
+  }
+
   const dnd = createDragList({
     enabled: () => editing && !disabled,
     canDrop: (from, to) => {
@@ -202,7 +210,7 @@
 
   const unassignedCount = $derived(countUnassigned(entries));
   const selectedCount = $derived(selected.size);
-  const columnCount = $derived(editing ? 5 : 4);
+  const columnCount = $derived(editing ? 6 : 4);
   const filtering = $derived(query.trim() !== "" || hiddenLevels.size > 0 || hideUnassigned);
   const hintApplicableCount = $derived(
     entries.reduce((total, entry) => {
@@ -755,6 +763,7 @@
           <col />
           <col />
           <col />
+          {#if editing}<col class="w-10" />{/if}
         </colgroup>
         <thead>
           <tr>
@@ -771,6 +780,7 @@
             <th class="table-th-compact text-center whitespace-nowrap">
               {m["table.th_comment"]()}
             </th>
+            {#if editing}<th class="table-th-compact px-2"></th>{/if}
           </tr>
         </thead>
         {#each groups as group (group.unassigned ? "__unassigned__" : group.level)}
@@ -794,7 +804,7 @@
                 </div>
               </td>
             </tr>
-            {#each group.indices as index (entryKey(entries[index]))}
+            {#each group.indices as index, groupPos (entryKey(entries[index]))}
               {@const entry = entries[index] ?? {}}
               {@const levelHint =
                 editing && isUnassigned(entry) && hintFor(entry) !== null
@@ -812,14 +822,11 @@
                 selectable={editing}
                 selected={selected.has(index)}
                 {disabled}
-                drag={editing
-                  ? {
-                      item: dnd.item,
-                      index,
-                      dropTargetIndex: dnd.dropTargetIndex,
-                      disabled,
-                    }
-                  : undefined}
+                drag={editing ? { dnd, index, disabled } : undefined}
+                canMoveUp={groupPos > 0}
+                canMoveDown={groupPos < group.indices.length - 1}
+                onMoveUp={() => moveEntryWithinGroup(index, -1)}
+                onMoveDown={() => moveEntryWithinGroup(index, 1)}
                 onSelect={(checked: boolean) => setSelected(index, checked)}
                 onEdit={editing ? () => startEdit(index) : undefined}
               />

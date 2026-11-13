@@ -5,9 +5,10 @@
   import ChevronDown from "@lucide/svelte/icons/chevron-down";
   import ChevronUp from "@lucide/svelte/icons/chevron-up";
   import ClipboardList from "@lucide/svelte/icons/clipboard-list";
-  import GripVertical from "@lucide/svelte/icons/grip-vertical";
   import Plus from "@lucide/svelte/icons/plus";
   import X from "@lucide/svelte/icons/x";
+
+  import DragHandle from "./DragHandle.svelte";
 
   import { btnGhost, btnIcon, btnIconDanger, inputEditorBase } from "#lib/constants/ui-classes.js";
   import type { EditorNotice } from "#lib/controllers/editor.js";
@@ -113,17 +114,12 @@
     <p class="mt-1 text-[0.8rem] text-white-50">{m["editor.level_order_text_hint"]()}</p>
   {:else}
     <ul class="flex flex-col gap-1.5">
-      {#each levels as level, index (index)}
+      {#each levels as level, index (level)}
         <li
           use:dnd.item={{ index, disabled }}
-          class="flex items-center gap-2 rounded-glass-sm border border-white-10 bg-black-20 px-2 py-1.5 {dnd.dropTargetIndex ===
-          index
-            ? 'border-accent/60'
-            : ''}"
+          class="flex items-center gap-2 rounded-glass-sm border border-white-10 bg-black-20 px-2 py-1.5"
         >
-          <span class="cursor-grab text-white-35" aria-hidden="true">
-            <GripVertical class="size-4" />
-          </span>
+          <DragHandle {dnd} {index} name={level} {disabled} />
           <span class="min-w-0 flex-1 truncate font-mono text-[0.95rem] text-white-90">{level}</span
           >
           <button
