@@ -72,7 +72,7 @@
       wrapper.className = "md-table-wrapper";
       wrapper.setAttribute("role", "region");
       wrapper.setAttribute("tabindex", "0");
-      wrapper.setAttribute("aria-label", m["content.table_scroll_region"]());
+      wrapper.setAttribute("aria-label", m["common.table_scroll_region"]());
       table.replaceWith(wrapper);
       wrapper.appendChild(table);
     }

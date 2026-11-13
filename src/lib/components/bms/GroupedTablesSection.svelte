@@ -152,7 +152,15 @@
           </div>
         </DetailsPanel>
 
-        <div class="table-wrapper cv-defer lg:overflow-visible" use:setRef>
+        <!-- 键盘滚动入口是响应式表格指南的强制项，region 非交互属 a11y 规则误报 -->
+        <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+        <div
+          class="table-wrapper cv-defer lg:overflow-visible"
+          use:setRef
+          role="region"
+          tabindex="0"
+          aria-label={m["common.table_scroll_region"]()}
+        >
           <table class="w-full min-w-200 table-fixed border-collapse">
             <colgroup>
               <col class="w-15" />
@@ -165,16 +173,25 @@
             </colgroup>
             <thead>
               <tr>
-                <th class="table-th-compact table-th-sticky">{m["common.th_select"]()}</th>
-                <th class="table-th-compact table-th-sticky">{m["common.th_symbol"]()}</th>
-                <th class="table-th-compact table-th-sticky">{m["common.th_name"]()}</th>
-                <th class="table-th-compact table-th-sticky px-2 whitespace-nowrap"
+                <th class="table-th-compact table-th-sticky" scope="col"
+                  >{m["common.th_select"]()}</th
+                >
+                <th class="table-th-compact table-th-sticky" scope="col"
+                  >{m["common.th_symbol"]()}</th
+                >
+                <th class="table-th-compact table-th-sticky" scope="col">{m["common.th_name"]()}</th
+                >
+                <th class="table-th-compact table-th-sticky px-2 whitespace-nowrap" scope="col"
                   >{m["mirror.th_auth"]()}</th
                 >
-                <th class="table-th-compact table-th-sticky">{m["common.th_mirror"]()}</th>
-                <th class="table-th-compact table-th-sticky">{m["common.th_origin"]()}</th>
+                <th class="table-th-compact table-th-sticky" scope="col"
+                  >{m["common.th_mirror"]()}</th
+                >
+                <th class="table-th-compact table-th-sticky" scope="col"
+                  >{m["common.th_origin"]()}</th
+                >
                 {#if showActions}
-                  <th class="table-th-compact table-th-sticky px-2 whitespace-nowrap"
+                  <th class="table-th-compact table-th-sticky px-2 whitespace-nowrap" scope="col"
                     >{m["mirror.th_actions"]()}</th
                   >
                 {/if}
