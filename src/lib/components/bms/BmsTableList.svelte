@@ -11,8 +11,15 @@
 </script>
 
 <div>
-  <h2 class="section-title text-center">{m["table.list_heading"]()}</h2>
-  <div class="table-wrapper mt-4">
+  <h2 id="bms-table-list-heading" class="section-title text-center">{m["table.list_heading"]()}</h2>
+  <!-- 键盘滚动入口是响应式表格指南的强制项，region 非交互属 a11y 规则误报 -->
+  <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+  <div
+    class="table-wrapper mt-4"
+    role="region"
+    tabindex="0"
+    aria-labelledby="bms-table-list-heading"
+  >
     <table class="table-glass">
       <colgroup>
         <col class="w-40" />
@@ -21,9 +28,9 @@
       </colgroup>
       <thead>
         <tr>
-          <th class="table-th-glass">{m["common.th_symbol"]()}</th>
-          <th class="table-th-glass">{m["common.th_name"]()}</th>
-          <th class="table-th-glass">ID</th>
+          <th class="table-th-glass" scope="col">{m["common.th_symbol"]()}</th>
+          <th class="table-th-glass" scope="col">{m["common.th_name"]()}</th>
+          <th class="table-th-glass" scope="col">ID</th>
         </tr>
       </thead>
       <tbody>

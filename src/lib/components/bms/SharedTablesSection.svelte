@@ -60,7 +60,15 @@
             </span>
           </div>
         </div>
-        <div class="table-wrapper mt-4" class:cv-defer={gi > 0}>
+        <!-- 键盘滚动入口是响应式表格指南的强制项，region 非交互属 a11y 规则误报 -->
+        <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+        <div
+          class="table-wrapper mt-4"
+          class:cv-defer={gi > 0}
+          role="region"
+          tabindex="0"
+          aria-label={m["common.table_scroll_region"]()}
+        >
           <table class="w-full min-w-150 table-fixed border-collapse">
             <colgroup>
               <col class="w-24" />
@@ -71,12 +79,14 @@
             </colgroup>
             <thead>
               <tr>
-                <th class="table-th-glass">{m["common.th_symbol"]()}</th>
-                <th class="table-th-glass">{m["common.th_name"]()}</th>
-                <th class="table-th-glass">{m["shared.th_entries"]()}</th>
-                <th class="table-th-glass">{m["shared.th_updated"]()}</th>
+                <th class="table-th-glass" scope="col">{m["common.th_symbol"]()}</th>
+                <th class="table-th-glass" scope="col">{m["common.th_name"]()}</th>
+                <th class="table-th-glass" scope="col">{m["shared.th_entries"]()}</th>
+                <th class="table-th-glass" scope="col">{m["shared.th_updated"]()}</th>
                 {#if showActions}
-                  <th class="table-th-glass px-2 whitespace-nowrap">{m["shared.th_actions"]()}</th>
+                  <th class="table-th-glass px-2 whitespace-nowrap" scope="col"
+                    >{m["shared.th_actions"]()}</th
+                  >
                 {/if}
               </tr>
             </thead>

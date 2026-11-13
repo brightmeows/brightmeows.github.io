@@ -115,7 +115,14 @@
   <div class="flex flex-wrap items-start justify-center gap-8">
     {#each tableHalves as half (half.id)}
       <div class="min-w-[18rem] flex-1">
-        <div class="table-wrapper">
+        <!-- 键盘滚动入口是响应式表格指南的强制项，region 非交互属 a11y 规则误报 -->
+        <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+        <div
+          class="table-wrapper"
+          role="region"
+          tabindex="0"
+          aria-label={m["common.table_scroll_region"]()}
+        >
           <table class="w-full table-fixed border-collapse">
             <colgroup>
               {#each ["40%", "60%"] as w (w)}
@@ -125,7 +132,7 @@
             <thead>
               <tr>
                 {#each [m["levelref.col_level"](), m["levelref.col_ref"]()] as label (label)}
-                  <th class="table-th-roomy text-center">
+                  <th class="table-th-roomy text-center" scope="col">
                     {label}
                   </th>
                 {/each}

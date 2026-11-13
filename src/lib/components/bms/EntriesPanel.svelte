@@ -764,7 +764,14 @@
       {/key}
     {/if}
 
-    <div class="table-wrapper">
+    <!-- 键盘滚动入口是响应式表格指南的强制项，region 非交互属 a11y 规则误报 -->
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+    <div
+      class="table-wrapper"
+      role="region"
+      tabindex="0"
+      aria-label={m["common.table_scroll_region"]()}
+    >
       <table class="w-full min-w-200 table-fixed border-collapse">
         <colgroup>
           {#if editing}<col class="w-10" />{/if}
@@ -776,20 +783,20 @@
         </colgroup>
         <thead>
           <tr>
-            {#if editing}<th class="table-th-compact px-2"></th>{/if}
-            <th class="table-th-compact text-center whitespace-nowrap">
+            {#if editing}<th class="table-th-compact px-2" scope="col"></th>{/if}
+            <th class="table-th-compact text-center whitespace-nowrap" scope="col">
               {m["table.th_links"]()}
             </th>
-            <th class="table-th-compact text-center whitespace-nowrap">
+            <th class="table-th-compact text-center whitespace-nowrap" scope="col">
               {m["table.th_title"]()}
             </th>
-            <th class="table-th-compact text-center whitespace-nowrap">
+            <th class="table-th-compact text-center whitespace-nowrap" scope="col">
               {m["table.th_artist"]()}
             </th>
-            <th class="table-th-compact text-center whitespace-nowrap">
+            <th class="table-th-compact text-center whitespace-nowrap" scope="col">
               {m["table.th_comment"]()}
             </th>
-            {#if editing}<th class="table-th-compact px-2"></th>{/if}
+            {#if editing}<th class="table-th-compact px-2" scope="col"></th>{/if}
           </tr>
         </thead>
         {#each groups as group (group.unassigned ? "__unassigned__" : group.level)}

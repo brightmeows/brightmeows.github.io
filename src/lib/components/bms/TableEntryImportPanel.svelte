@@ -314,7 +314,14 @@
           </button>
         </div>
 
-        <div class="table-wrapper">
+        <!-- 键盘滚动入口是响应式表格指南的强制项，region 非交互属 a11y 规则误报 -->
+        <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+        <div
+          class="table-wrapper"
+          role="region"
+          tabindex="0"
+          aria-label={m["common.table_scroll_region"]()}
+        >
           <table class="w-full min-w-100 table-fixed border-collapse">
             <colgroup>
               <col class="w-10" />
@@ -324,7 +331,7 @@
             </colgroup>
             <thead>
               <tr>
-                <th class="table-th-glass px-2">
+                <th class="table-th-glass px-2" scope="col">
                   <Checkbox
                     size="sm"
                     checked={pageAllSelected}
@@ -334,9 +341,9 @@
                     onchange={togglePageSelection}
                   />
                 </th>
-                <th class="table-th-glass">{m["editor.f_level"]()}</th>
-                <th class="table-th-glass">{m["editor.f_title"]()}</th>
-                <th class="table-th-glass">MD5 / SHA256</th>
+                <th class="table-th-glass" scope="col">{m["editor.f_level"]()}</th>
+                <th class="table-th-glass" scope="col">{m["editor.f_title"]()}</th>
+                <th class="table-th-glass" scope="col">MD5 / SHA256</th>
               </tr>
             </thead>
             <tbody>
