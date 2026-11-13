@@ -67,9 +67,9 @@
       onchange={(v: boolean) => onchange(v)}
     />
   </td>
-  <td class="table-td-compact wrap-break-word">
+  <th scope="row" class="table-td-compact text-left font-normal wrap-break-word">
     {item.symbol ?? ""}
-  </td>
+  </th>
   <td class="table-td-compact min-w-50 wrap-break-word">
     <strong
       use:jsonPreview={{

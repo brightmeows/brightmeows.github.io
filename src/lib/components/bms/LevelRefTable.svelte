@@ -141,9 +141,9 @@
             <tbody>
               {#each half.items as item (item.level)}
                 <tr class="hover:bg-white-5 last:[&>td]:border-b-0">
-                  <td class="table-td-roomy text-center">
+                  <th scope="row" class="table-td-roomy text-center font-normal">
                     {item.level}
-                  </td>
+                  </th>
                   <td class="table-td-roomy text-center">
                     {item.ref}
                   </td>

@@ -783,7 +783,11 @@
         </colgroup>
         <thead>
           <tr>
-            {#if editing}<th class="table-th-compact px-2" scope="col"></th>{/if}
+            {#if editing}<th
+                class="table-th-compact px-2"
+                scope="col"
+                aria-label={m["common.th_actions"]()}
+              ></th>{/if}
             <th class="table-th-compact text-center whitespace-nowrap" scope="col">
               {m["table.th_links"]()}
             </th>
@@ -796,7 +800,11 @@
             <th class="table-th-compact text-center whitespace-nowrap" scope="col">
               {m["table.th_comment"]()}
             </th>
-            {#if editing}<th class="table-th-compact px-2" scope="col"></th>{/if}
+            {#if editing}<th
+                class="table-th-compact px-2"
+                scope="col"
+                aria-label={m["common.th_actions"]()}
+              ></th>{/if}
           </tr>
         </thead>
         {#each groups as group (group.unassigned ? "__unassigned__" : group.level)}

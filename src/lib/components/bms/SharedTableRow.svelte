@@ -33,7 +33,9 @@
 </script>
 
 <tr class="hover:bg-white-5 last:[&>td]:border-b-0">
-  <td class="table-td-glass wrap-break-word text-white-80">{item.symbol ?? ""}</td>
+  <th scope="row" class="table-td-glass text-left font-normal wrap-break-word text-white-80"
+    >{item.symbol ?? ""}</th
+  >
   <td class="table-td-glass min-w-50 wrap-break-word">
     <a href={item.url} class={linkInline}>
       {label}

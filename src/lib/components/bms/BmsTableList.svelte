@@ -36,7 +36,11 @@
       <tbody>
         {#each tables as table (table.id)}
           <tr class="transition-colors hover:bg-white-5">
-            <td class="table-td-glass wrap-break-word text-white-80">{table.symbol ?? ""}</td>
+            <th
+              scope="row"
+              class="table-td-glass text-left font-normal wrap-break-word text-white-80"
+              >{table.symbol ?? ""}</th
+            >
             <td class="table-td-glass wrap-break-word">
               <a href={`/bms/table/${table.id}`} class={linkInline}>
                 {table.name}
