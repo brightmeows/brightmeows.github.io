@@ -31,8 +31,8 @@
     login = null,
     isAdmin = false,
     deletingId = null,
-    emptyTitle = m["shared.empty_title"](),
-    emptyDescription = m["shared.empty_desc"](),
+    emptyTitle = m["shared.list.empty_title"](),
+    emptyDescription = m["shared.list.empty_desc"](),
     ondelete,
   }: Props = $props();
 
@@ -52,11 +52,11 @@
             <span class="tag-accent">{group.author}</span>
             {#if group.isSelf}
               <span class={badgeAccentXs}>
-                {m["shared.mine_badge"]()}
+                {m["shared.mine.badge"]()}
               </span>
             {/if}
             <span class="text-[0.9rem] text-white-50">
-              {m["shared.group_count"]({ count: group.items.length })}
+              {m["shared.list.count"]({ count: group.items.length })}
             </span>
           </div>
         </div>
@@ -81,11 +81,11 @@
               <tr>
                 <th class="table-th-glass" scope="col">{m["common.th_symbol"]()}</th>
                 <th class="table-th-glass" scope="col">{m["common.th_name"]()}</th>
-                <th class="table-th-glass" scope="col">{m["shared.th_entries"]()}</th>
-                <th class="table-th-glass" scope="col">{m["shared.th_updated"]()}</th>
+                <th class="table-th-glass" scope="col">{m["shared.th.entries"]()}</th>
+                <th class="table-th-glass" scope="col">{m["shared.th.updated"]()}</th>
                 {#if showActions}
                   <th class="table-th-glass px-2 whitespace-nowrap" scope="col"
-                    >{m["shared.th_actions"]()}</th
+                    >{m["shared.th.actions"]()}</th
                   >
                 {/if}
               </tr>

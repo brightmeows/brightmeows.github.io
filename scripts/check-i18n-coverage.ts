@@ -1,7 +1,7 @@
 /**
  * i18n 覆盖校验：把“漏译 / 漏抽 / 死 key”机械挡在提交之外。
  *
- * 六条断言，前五条的核心均为纯函数（输入为文本），便于单测：
+ * 七条断言，前五条的核心均为纯函数（输入为文本），便于单测：
  * 1. 三语（en/zh-cn/ja）的 key 集合以 en 为基准逐语对称
  * 2. 同一 key 的占位符集合（`{name}`）各语与 en 一致
  * 3. 源码引用的消息 key（src 下 `m["key"]`，Worker 侧 `API_ERROR_CODES`
@@ -12,7 +12,10 @@
  * 5. src 下用户可见文本不得残留中日韩字符——注释、测试、console 输出、
  *    豁免清单（见 `EXEMPT_FILES` 与行级规则）除外
  * 6. `messages/en.json` 的值不得含中日韩字符（漏翻的中文值在这里落网；
- *    语言自称键 `topbar.lang_ja`/`topbar.lang_zh` 白名单除外，它们各语固定）
+ *    语言自称键 `topbar.lang.ja`/`topbar.lang.zh` 白名单除外，它们各语固定）
+ * 7. 参与分层命名的域（`TWO_LEVEL_DOMAINS`）的 key 必须是 `<域>.<组>.<名>`
+ *    （至少三层段）；散装域（mirror/common/search/batch）一层合法，api 为
+ *    Worker 错误码协议域豁免（2026-11-13 盘问定案）
  *
  * 豁免口径（与“注释/测试非内容、领域术语照搬、博客正文不翻”的决策一致）：
  * - `src/lib/constants/bms.ts`：LR2 领域约束标签（日文原词，数据级术语）
@@ -56,7 +59,18 @@ const EXEMPT_FILES: RegExp[] = [
 /** 参与 CJK 扫描的扩展名。 */
 const SCANNED_EXTENSIONS = new Set([".ts", ".svelte", ".js", ".md"]);
 /** en 值允许 CJK 的显式豁免：语言自称（日本語 / 简体中文）在所有语言目录中固定。 */
-const EN_CJK_ALLOWED_KEYS = new Set(["topbar.lang_ja", "topbar.lang_zh"]);
+const EN_CJK_ALLOWED_KEYS = new Set(["topbar.lang.ja", "topbar.lang.zh"]);
+/** 断言 7 的参与域清单：这些域的 key 必须 >= 两层（域.组.名）。
+ *  mirror/common/search/batch 首段几乎全为单例，一层合法；api 是跨包错误码
+ *  协议面（API_ERROR_CODES），命名即协议 ID，豁免。 */
+export const TWO_LEVEL_DOMAINS = [
+  "editor",
+  "shared",
+  "admin",
+  "bmsdata",
+  "topbar",
+  "table",
+] as const;
 
 export type Messages = Record<string, string>;
 
@@ -218,6 +232,23 @@ export function enValueIssues(en: Messages): string[] {
     .map(([key]) => `en.json 值残留中日韩字符（未翻译？）：${key}`);
 }
 
+/** 断言 7：参与域的 key 必须是 `<域>.<组>.<名>`，组与名各至少一段，名可再分层。 */
+export function twoLevelKeyIssues(
+  messages: Messages,
+  domains: readonly string[] = TWO_LEVEL_DOMAINS
+): string[] {
+  const issues: string[] = [];
+  for (const domain of domains) {
+    const pattern = new RegExp(`^${domain}\\.[a-z][a-z0-9_]*\\.[a-z][a-z0-9_.]*$`);
+    for (const key of Object.keys(messages)) {
+      if (key.startsWith(`${domain}.`) && !pattern.test(key)) {
+        issues.push(`${domain} 域 key 不合两层命名（域.组.名）：${key}`);
+      }
+    }
+  }
+  return issues;
+}
+
 /** 递归收集待扫描文件（路径相对仓库根）。 */
 export function walkFiles(repoRoot: string, scanDir: string, extensions: Set<string>): string[] {
   const results: string[] = [];
@@ -279,6 +310,7 @@ function main(): void {
     ...deadKeyIssues(en, [...refs, ...workerCodes]),
     ...srcTexts.flatMap(([rel, text]) => cjkLineIssues(rel, text)),
     ...enValueIssues(en),
+    ...twoLevelKeyIssues(en),
   ];
 
   if (issues.length > 0) {

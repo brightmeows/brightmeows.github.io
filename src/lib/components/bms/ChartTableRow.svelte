@@ -85,7 +85,7 @@
           size="sm"
           checked={selected}
           {disabled}
-          ariaLabel={m["editor.entries_select_row"]()}
+          ariaLabel={m["editor.entries.select_row"]()}
           onchange={(checked: boolean) => onSelect?.(checked)}
         />
       </div>
@@ -114,11 +114,11 @@
       <button
         class="link-accent ml-2 text-[0.8rem] whitespace-nowrap"
         type="button"
-        title={m["editor.entry_edit"]()}
-        aria-label={m["editor.entry_edit_title"]()}
+        title={m["editor.entry.edit"]()}
+        aria-label={m["editor.entry.edit_title"]()}
         onclick={onEdit}
       >
-        {m["editor.entry_edit_short"]()}
+        {m["editor.entry.edit_short"]()}
       </button>
     {/if}
     {#if levelHint}
@@ -137,12 +137,12 @@
         {disabled}
         items={[
           {
-            label: m["editor.level_order_move_up"](),
+            label: m["editor.level.order_move_up"](),
             disabled: disabled || !canMoveUp,
             onselect: onMoveUp,
           },
           {
-            label: m["editor.level_order_move_down"](),
+            label: m["editor.level.order_move_down"](),
             disabled: disabled || !canMoveDown,
             onselect: onMoveDown,
           },

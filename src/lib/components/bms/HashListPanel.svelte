@@ -22,7 +22,7 @@
   function applyText(text: string): boolean {
     const parsed = parseHashList(text);
     if (parsed.rows.length === 0) {
-      error = m["editor.hashlist_invalid"]({ count: parsed.invalidLines });
+      error = m["editor.hashlist.invalid"]({ count: parsed.invalidLines });
       return false;
     }
     error = null;
@@ -46,19 +46,19 @@
 
 <details class="rounded-glass-sm border border-white-15 bg-black-20 p-3">
   <summary class="cursor-pointer text-[0.9rem] text-white-70">
-    {m["editor.hashlist_section"]()}
+    {m["editor.hashlist.section"]()}
   </summary>
 
   <div class="mt-3">
-    <p class="mb-2 text-[0.85rem] text-white-60">{m["editor.hashlist_hint"]()}</p>
+    <p class="mb-2 text-[0.85rem] text-white-60">{m["editor.hashlist.hint"]()}</p>
     <textarea
       class="{inputEditorMono} min-h-32"
       bind:value={listText}
-      placeholder={m["editor.hashlist_placeholder"]()}
+      placeholder={m["editor.hashlist.placeholder"]()}
       {disabled}></textarea>
     <div class="mt-2 flex flex-wrap items-center gap-3">
       <button class={btnGhost} type="button" {disabled} onclick={applyList}>
-        {m["editor.import_apply"]()}
+        {m["editor.import.apply"]()}
       </button>
       <input
         class={inputFile}
@@ -71,7 +71,7 @@
         }}
       />
       {#if busy}
-        <span class="text-[0.85rem] text-white-60">{m["editor.import_busy"]()}</span>
+        <span class="text-[0.85rem] text-white-60">{m["editor.import.busy"]()}</span>
       {/if}
     </div>
     {#if error !== null}

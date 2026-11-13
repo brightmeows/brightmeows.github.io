@@ -65,13 +65,13 @@
   function idErrorMessage(error: SharedIdError): string {
     switch (error) {
       case "empty":
-        return m["shared.id_error_empty"]();
+        return m["shared.id.error_empty"]();
       case "too_long":
-        return m["shared.id_error_too_long"]();
+        return m["shared.id.error_too_long"]();
       case "charset":
-        return m["shared.id_error_charset"]();
+        return m["shared.id.error_charset"]();
       case "reserved":
-        return m["shared.id_error_reserved"]();
+        return m["shared.id.error_reserved"]();
     }
   }
 
@@ -149,11 +149,11 @@
     }
     const kind =
       importedHeader !== null && importedData !== null
-        ? m["shared.import_kind_combined"]()
+        ? m["shared.import.kind_combined"]()
         : importedHeader !== null
-          ? m["shared.import_kind_header"]()
-          : (m["shared.import_kind_data"]() as string);
-    importSummary = m["shared.import_summary"]({ kind, entries, levels, courses });
+          ? m["shared.import.kind_header"]()
+          : (m["shared.import.kind_data"]() as string);
+    importSummary = m["shared.import.summary"]({ kind, entries, levels, courses });
     const warnings: SharedStrictWarning[] = [];
     if (importedHeader !== null) warnings.push(...strictCheckHeader(importedHeader).warnings);
     if (importedData !== null) warnings.push(...strictCheckData(importedData).warnings);
@@ -169,14 +169,14 @@
     try {
       raw = JSON.parse(text);
     } catch (parseError) {
-      importErrors = m["editor.json_parse_failed"]({
+      importErrors = m["editor.import.parse_failed"]({
         detail: parseError instanceof Error ? parseError.message : String(parseError),
       });
       return;
     }
     const detected = detectTableImportJson(raw);
     if (detected.kind === "invalid") {
-      importErrors = m["shared.import_invalid"]();
+      importErrors = m["shared.import.invalid"]();
       return;
     }
     const errors: SharedStrictError[] = [];
@@ -224,7 +224,7 @@
   async function submit(): Promise<void> {
     if (idResult === null || !idResult.ok || busy) return;
     if (checkState === "aliased") {
-      const ok = await confirmDialog.ask(m["shared.id_was_aliased_confirm"]({ id: idResult.id }));
+      const ok = await confirmDialog.ask(m["shared.id.was_aliased_confirm"]({ id: idResult.id }));
       if (!ok) return;
     }
     busy = true;
@@ -250,8 +250,8 @@
 <PageShell panes={[titlePane, contentPane]} />
 
 {#snippet titlePane()}
-  <h1 class="page-title text-center">{m["shared.new_title"]()}</h1>
-  <p class="mt-2 text-center text-[1.1rem] text-white-70">{m["shared.new_subtitle"]()}</p>
+  <h1 class="page-title text-center">{m["shared.create.title"]()}</h1>
+  <p class="mt-2 text-center text-[1.1rem] text-white-70">{m["shared.create.subtitle"]()}</p>
 {/snippet}
 
 {#snippet contentPane()}
@@ -259,13 +259,13 @@
     {#if auth.status === "idle" || auth.status === "loading"}
       <LoadingProgress
         variant="indeterminate"
-        message={m["shared.checking_auth"]()}
-        title={m["shared.new_title"]()}
+        message={m["shared.auth.checking"]()}
+        title={m["shared.create.title"]()}
       />
     {:else if !loggedIn}
       <div class="flex flex-col items-center gap-4 py-4 text-center">
-        <p class="text-[1rem] text-white-75">{m["shared.login_required"]()}</p>
-        <a class={btnPrimary} href={loginHref}>{m["topbar.login"]()}</a>
+        <p class="text-[1rem] text-white-75">{m["shared.auth.login_required"]()}</p>
+        <a class={btnPrimary} href={loginHref}>{m["topbar.account.login"]()}</a>
       </div>
     {:else}
       <form
@@ -277,38 +277,38 @@
       >
         <div>
           <label class="mb-1.5 block text-[0.95rem] text-white-80" for="shared-id">
-            {m["shared.id_label"]()}
+            {m["shared.id.label"]()}
           </label>
           <input
             class={inputPanel}
             id="shared-id"
             type="text"
             bind:value={id}
-            placeholder={m["shared.id_placeholder"]()}
+            placeholder={m["shared.id.placeholder"]()}
             autocomplete="off"
           />
-          <p class="mt-1.5 text-[0.85rem] text-white-50">{m["shared.id_hint"]()}</p>
+          <p class="mt-1.5 text-[0.85rem] text-white-50">{m["shared.id.hint"]()}</p>
           {#if idError !== null}
             <p class="mt-2 text-[0.9rem] text-error">{idErrorMessage(idError)}</p>
           {/if}
         </div>
 
         <div class="rounded-glass-sm border border-white-15 bg-black-20 p-3">
-          <div class="text-[0.85rem] text-white-50">{m["shared.id_preview_label"]()}</div>
+          <div class="text-[0.85rem] text-white-50">{m["shared.id.preview_label"]()}</div>
           <div class="mt-1 flex flex-wrap items-center gap-2">
             <code class="font-mono text-[0.95rem] break-all text-accent">{preview}</code>
           </div>
           <div class="mt-2 text-[0.9rem]">
             {#if checkState === "checking"}
-              <span class="text-white-60">{m["shared.id_checking"]()}</span>
+              <span class="text-white-60">{m["shared.id.checking"]()}</span>
             {:else if checkState === "available"}
-              <span class="text-success">{m["shared.id_available"]()}</span>
+              <span class="text-success">{m["shared.id.available"]()}</span>
             {:else if checkState === "aliased"}
-              <span class="text-amber-300">{m["shared.id_was_aliased"]()}</span>
+              <span class="text-amber-300">{m["shared.id.was_aliased"]()}</span>
             {:else if checkState === "taken"}
-              <span class="text-error">{m["shared.id_taken"]()}</span>
+              <span class="text-error">{m["shared.id.taken"]()}</span>
             {:else if checkState === "failed"}
-              <span class="text-error">{m["shared.id_check_failed"]()}</span>
+              <span class="text-error">{m["shared.id.check_failed"]()}</span>
             {/if}
           </div>
         </div>
@@ -316,40 +316,40 @@
         <div class="grid gap-4 sm:grid-cols-2">
           <div>
             <label class="mb-1.5 block text-[0.95rem] text-white-80" for="shared-name">
-              {m["shared.field_name"]()}
+              {m["shared.detail.name"]()}
             </label>
             <input
               class={inputPanel}
               id="shared-name"
               type="text"
               bind:value={name}
-              placeholder={m["shared.seed_name_placeholder"]()}
+              placeholder={m["shared.seed.name_placeholder"]()}
             />
           </div>
           <div>
             <label class="mb-1.5 block text-[0.95rem] text-white-80" for="shared-symbol">
-              {m["shared.field_symbol"]()}
+              {m["shared.detail.symbol"]()}
             </label>
             <input
               class={inputPanel}
               id="shared-symbol"
               type="text"
               bind:value={symbol}
-              placeholder={m["shared.seed_symbol_placeholder"]()}
+              placeholder={m["shared.seed.symbol_placeholder"]()}
             />
           </div>
         </div>
-        <p class="-mt-2 text-[0.85rem] text-white-50">{m["shared.seed_hint"]()}</p>
+        <p class="-mt-2 text-[0.85rem] text-white-50">{m["shared.seed.hint"]()}</p>
 
         <details class="rounded-glass-sm border border-white-15 bg-black-20 p-3">
           <summary class="cursor-pointer text-[0.9rem] text-white-70">
-            {m["shared.import_section"]()}
+            {m["shared.import.section"]()}
           </summary>
-          <p class="mt-2 text-[0.85rem] text-white-60">{m["shared.import_hint"]()}</p>
+          <p class="mt-2 text-[0.85rem] text-white-60">{m["shared.import.hint"]()}</p>
           <textarea
             class="mt-2 {inputEditorMono} min-h-32"
             bind:value={importText}
-            placeholder={m["shared.import_json_placeholder"]()}
+            placeholder={m["shared.import.json_placeholder"]()}
             disabled={importBusy}></textarea>
           <div class="mt-2 flex flex-wrap items-center gap-2">
             <button
@@ -358,7 +358,7 @@
               disabled={importBusy}
               onclick={() => applyImportText(importText)}
             >
-              {importBusy ? m["shared.import_busy"]() : m["shared.import_apply"]()}
+              {importBusy ? m["shared.import.busy"]() : m["shared.import.apply"]()}
             </button>
             <input
               class={inputFile}
@@ -376,7 +376,7 @@
                 type="button"
                 onclick={clearImport}
               >
-                {m["shared.import_clear"]()}
+                {m["shared.import.clear"]()}
               </button>
             {/if}
           </div>
@@ -393,7 +393,7 @@
 
         <div class="text-center">
           <button class={btnPrimary} type="submit" disabled={idResult?.ok !== true || busy}>
-            {m["shared.new_next"]()}
+            {m["shared.create.next"]()}
           </button>
         </div>
       </form>

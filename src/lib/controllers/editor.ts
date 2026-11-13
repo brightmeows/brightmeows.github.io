@@ -156,7 +156,7 @@ export async function planEditorSave(deps: {
   if (gate.gate === "unassigned") {
     return {
       kind: "rejected",
-      notice: { kind: "warn", text: m["editor.publish_unassigned_blocked"]({ count: gate.count }) },
+      notice: { kind: "warn", text: m["editor.publish.unassigned_blocked"]({ count: gate.count }) },
     };
   }
   const compat = await confirmCompatLevels(gate.warnings, deps.confirm);
@@ -172,11 +172,11 @@ export async function planEditorSave(deps: {
   if (deps.conflictCheck !== undefined) {
     const online = await deps.conflictCheck();
     if (shouldWarnOverwrite(deps.baselineUpdatedAt, online)) {
-      const approved = await deps.confirm(m["editor.save_conflict_confirm"]());
+      const approved = await deps.confirm(m["editor.save.conflict_confirm"]());
       if (!approved) {
         return {
           kind: "rejected",
-          notice: { kind: "warn", text: m["editor.save_conflict_canceled"]() },
+          notice: { kind: "warn", text: m["editor.save.conflict_canceled"]() },
         };
       }
     }
@@ -211,11 +211,11 @@ export function planImportApply(deps: {
   if (deps.hasData && deps.dataMode === "replace") {
     return {
       kind: "confirm",
-      message: m["editor.replace_entries_confirm"]({ count: deps.currentCount }),
+      message: m["editor.import.replace_confirm"]({ count: deps.currentCount }),
     };
   }
   if (deps.headerApplied) {
-    return { kind: "confirm", message: m["editor.import_header_confirm"]() };
+    return { kind: "confirm", message: m["editor.import.header_confirm"]() };
   }
   return { kind: "apply" };
 }
@@ -238,7 +238,7 @@ export async function commitEditorSave(deps: {
   } catch (error) {
     return {
       kind: "failed",
-      text: error instanceof Error ? error.message : m["editor.save_failed"](),
+      text: error instanceof Error ? error.message : m["editor.save.failed"](),
     };
   }
 }

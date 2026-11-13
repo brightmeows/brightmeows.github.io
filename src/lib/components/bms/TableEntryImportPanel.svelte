@@ -141,7 +141,7 @@
       const dataRes = await fetch(new URL(dataUrl, headerUrl).toString());
       if (!dataRes.ok) throw new Error(String(dataRes.status));
       const data: unknown = await dataRes.json();
-      if (!Array.isArray(data)) throw new Error(m["editor.import_invalid"]());
+      if (!Array.isArray(data)) throw new Error(m["editor.import.invalid"]());
       sourceEntries = data as Record<string, unknown>[];
       sourceName = typeof header.name === "string" && header.name !== "" ? header.name : source.id;
     } catch (error) {
@@ -220,23 +220,23 @@
 
 <details class="rounded-glass-sm border border-white-15 bg-black-20 p-3">
   <summary class="cursor-pointer text-[0.9rem] text-white-70">
-    {m["editor.entry_import_section"]()}
+    {m["editor.entry.import.section"]()}
   </summary>
 
   <div class="mt-3">
     {#if selectedSource === null}
-      <p class="mb-2 text-[0.85rem] text-white-60">{m["editor.entry_import_source_hint"]()}</p>
+      <p class="mb-2 text-[0.85rem] text-white-60">{m["editor.entry.import.source_hint"]()}</p>
       <input
         class="{inputEditorMono} max-w-96"
         type="text"
         bind:value={sourceQuery}
-        placeholder={m["editor.entry_import_source_search"]()}
+        placeholder={m["editor.entry.import.source_search"]()}
         {disabled}
       />
       {#if !sourcesLoaded}
-        <p class="mt-2 text-[0.85rem] text-white-50">{m["editor.entry_import_loading"]()}</p>
+        <p class="mt-2 text-[0.85rem] text-white-50">{m["editor.entry.import.loading"]()}</p>
       {:else if sources.length === 0}
-        <p class="mt-2 text-[0.85rem] text-white-50">{m["editor.entry_import_no_sources"]()}</p>
+        <p class="mt-2 text-[0.85rem] text-white-50">{m["editor.entry.import.no_sources"]()}</p>
       {:else}
         <ul class="mt-2 max-h-64 overflow-auto">
           {#each sourceMatches as source (source.kind + ":" + source.id)}
@@ -256,11 +256,11 @@
     {:else}
       <div class="mb-2 flex flex-wrap items-center gap-2">
         <span class="text-[0.9rem] text-white-80">
-          {m["editor.entry_import_source_label"]()}
+          {m["editor.entry.import.source_label"]()}
           <span class="text-white-60">{sourceName === "" ? selectedSource.id : sourceName}</span>
         </span>
         <span class="text-[0.85rem] text-white-50">
-          {m["editor.entry_import_source_count"]({ count: sourceEntries.length })}
+          {m["editor.entry.import.source_count"]({ count: sourceEntries.length })}
         </span>
         <button class="{btnGhost} ml-auto" type="button" {disabled} onclick={closeSource}>
           {m["common.cancel"]()}
@@ -268,10 +268,10 @@
       </div>
 
       {#if loading}
-        <p class="text-[0.85rem] text-white-50">{m["editor.entry_import_loading"]()}</p>
+        <p class="text-[0.85rem] text-white-50">{m["editor.entry.import.loading"]()}</p>
       {:else if loadError !== null}
         <p class="text-[0.85rem] text-error">
-          {m["editor.entry_import_failed"]({ detail: loadError })}
+          {m["editor.entry.import.failed"]({ detail: loadError })}
         </p>
       {:else}
         <div class="mb-2 flex flex-wrap items-center gap-2">
@@ -280,14 +280,14 @@
             type="text"
             bind:value={chartQuery}
             oninput={() => (currentPage = 1)}
-            placeholder={m["editor.entry_import_search_charts"]()}
+            placeholder={m["editor.entry.import.search_charts"]()}
             {disabled}
           />
           <span class="text-[0.85rem] text-white-60">
-            {m["editor.entries_selected"]({ count: selectedCount })}
+            {m["editor.entries.selected"]({ count: selectedCount })}
           </span>
           <button class={btnGhost} type="button" {disabled} onclick={selectAllFiltered}>
-            {m["editor.entries_select_filtered"]()}
+            {m["editor.entries.select_filtered"]()}
           </button>
           <button
             class={btnGhost}
@@ -295,14 +295,14 @@
             disabled={disabled || sourceEntries.length === 0}
             onclick={applyFillAll}
           >
-            {m["editor.entry_import_fill_missing"]()}
+            {m["editor.entry.import.fill_missing"]()}
           </button>
           <button class={btnGhost} type="button" {disabled} onclick={clearSelection}>
-            {m["editor.entries_clear_selection"]()}
+            {m["editor.entries.clear_selection"]()}
           </button>
           <label class="flex items-center gap-1.5 text-[0.85rem] text-white-70">
             <input type="checkbox" bind:checked={keepLevel} {disabled} />
-            {m["editor.entry_import_keep_level"]()}
+            {m["editor.entry.import.keep_level"]()}
           </label>
           <button
             class={btnGhost}
@@ -310,7 +310,7 @@
             disabled={disabled || selectedCount === 0}
             onclick={applySelection}
           >
-            {m["editor.entry_import_apply"]()}
+            {m["editor.entry.import.apply"]()}
           </button>
         </div>
 
@@ -337,12 +337,12 @@
                     checked={pageAllSelected}
                     indeterminate={pageSomeSelected}
                     {disabled}
-                    ariaLabel={m["editor.entries_select_page"]()}
+                    ariaLabel={m["editor.entries.select_page"]()}
                     onchange={togglePageSelection}
                   />
                 </th>
-                <th class="table-th-glass" scope="col">{m["editor.f_level"]()}</th>
-                <th class="table-th-glass" scope="col">{m["editor.f_title"]()}</th>
+                <th class="table-th-glass" scope="col">{m["editor.columns.level"]()}</th>
+                <th class="table-th-glass" scope="col">{m["editor.columns.title"]()}</th>
                 <th class="table-th-glass" scope="col">MD5 / SHA256</th>
               </tr>
             </thead>
@@ -355,7 +355,7 @@
                       size="sm"
                       checked={selected.has(index)}
                       {disabled}
-                      ariaLabel={m["editor.entries_select_row"]()}
+                      ariaLabel={m["editor.entries.select_row"]()}
                       onchange={() => toggleSelected(index)}
                     />
                   </td>
@@ -367,7 +367,7 @@
                     class="table-td-glass min-w-50 text-left font-normal wrap-break-word"
                   >
                     <div class="text-white-90">
-                      {entryLabel(entry) || m["editor.entry_unnamed"]()}
+                      {entryLabel(entry) || m["editor.entry.unnamed"]()}
                     </div>
                     {#if typeof entry.artist === "string" && entry.artist !== ""}
                       <div class="text-[0.8rem] text-white-50">{entry.artist}</div>
@@ -381,7 +381,7 @@
               {#if pageIndices.length === 0}
                 <tr>
                   <td class="table-td-glass text-center text-white-50" colspan="4">
-                    {m["editor.entries_empty_filtered"]()}
+                    {m["editor.entries.empty_filtered"]()}
                   </td>
                 </tr>
               {/if}
@@ -397,10 +397,10 @@
               disabled={safePage <= 1}
               onclick={() => (currentPage = safePage - 1)}
             >
-              {m["shared.page_prev"]()}
+              {m["shared.page.prev"]()}
             </button>
             <span class="text-white-60">
-              {m["shared.page_indicator"]({ page: safePage, pages })}
+              {m["shared.page.indicator"]({ page: safePage, pages })}
             </span>
             <button
               class={btnGhost}
@@ -408,7 +408,7 @@
               disabled={safePage >= pages}
               onclick={() => (currentPage = safePage + 1)}
             >
-              {m["shared.page_next"]()}
+              {m["shared.page.next"]()}
             </button>
           </div>
         {/if}

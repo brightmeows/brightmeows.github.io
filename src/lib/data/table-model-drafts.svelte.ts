@@ -150,16 +150,16 @@ export function createDraftLifecycle(deps: DraftLifecycleDeps) {
       case "idle":
         return "";
       case "saving":
-        return m["editor.draft_saving"]();
+        return m["editor.draft.saving"]();
       case "saved":
         return lastSavedAt === null
           ? ""
-          : m["editor.draft_saved_at"]({ time: formatClock(lastSavedAt) });
+          : m["editor.draft.saved_at"]({ time: formatClock(lastSavedAt) });
       case "unavailable":
       case "quota":
-        return m["editor.draft_unavailable"]();
+        return m["editor.draft.unavailable"]();
       case "error":
-        return m["editor.draft_error"]();
+        return m["editor.draft.error"]();
       default:
         return "";
     }

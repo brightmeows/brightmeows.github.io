@@ -84,7 +84,7 @@
 
   /** 面板头与编辑态收起胶囊共用的模式状态词。 */
   let stateWord = $derived(
-    editing ? m["editor.dock_state_editing"]() : m["editor.dock_state_viewing"]()
+    editing ? m["editor.dock.state_editing"]() : m["editor.dock.state_viewing"]()
   );
 
   // ---- 收展状态：滚动累积无需触发渲染，放普通变量；expansion 单独响应式 ----
@@ -202,23 +202,23 @@
     const signals: { word: string; dot: string; text: string; title: string }[] = [];
     if (model.dirty) {
       signals.push({
-        word: m["editor.dock_state_unsaved"](),
+        word: m["editor.dock.state_unsaved"](),
         dot: "bg-amber-300",
         text: "text-amber-300",
-        title: m["editor.unsaved_badge"](),
+        title: m["editor.dock.unsaved_badge"](),
       });
     }
     if (model.notice !== null) {
       if (model.notice.kind === "error") {
         signals.push({
-          word: m["editor.dock_notice_error"](),
+          word: m["editor.dock.notice_error"](),
           dot: "bg-error",
           text: "text-error",
           title: model.notice.text,
         });
       } else if (model.notice.kind === "warn") {
         signals.push({
-          word: m["editor.dock_notice_warn"](),
+          word: m["editor.dock.notice_warn"](),
           dot: "bg-warning",
           text: "text-warning-light",
           title: model.notice.text,
@@ -227,8 +227,8 @@
         signals.push({
           word:
             model.notice.action !== undefined
-              ? m["editor.dock_undo_pending"]()
-              : m["editor.dock_notice_ok"](),
+              ? m["editor.dock.undo_pending"]()
+              : m["editor.dock.notice_ok"](),
           dot: "bg-success",
           text: "text-success",
           title: model.notice.text,
@@ -237,10 +237,10 @@
     }
     if (model.pendingDraft !== null) {
       signals.push({
-        word: m["editor.dock_draft_pending"](),
+        word: m["editor.dock.draft_pending"](),
         dot: "bg-accent-light",
         text: "text-accent-light",
-        title: m["editor.draft_found_title"](),
+        title: m["editor.draft.found_title"](),
       });
     }
     return signals;
@@ -280,8 +280,8 @@
         <button
           class="p-1 text-white-60 transition-colors duration-150 hover:text-white"
           type="button"
-          aria-label={m["editor.dock_collapse"]()}
-          title={m["editor.dock_collapse"]()}
+          aria-label={m["editor.dock.collapse"]()}
+          title={m["editor.dock.collapse"]()}
           onclick={toggleExpansion}
         >
           <ChevronDown class="size-4" aria-hidden="true" />
@@ -293,7 +293,7 @@
           {#if !createMode}
             <button class="{btnGhostMd} w-full" type="button" onclick={() => onSetMode("view")}>
               <Eye class="size-4 shrink-0" aria-hidden="true" />
-              {m["editor.view"]()}
+              {m["editor.dock.preview"]()}
             </button>
           {/if}
           {#if model.canSave}
@@ -315,13 +315,13 @@
               onclick={() => void model.saveAsSharedNow()}
             >
               <Copy class="size-4 shrink-0" aria-hidden="true" />
-              {m["editor.save_as_shared"]()}
+              {m["editor.save.as_shared"]()}
             </button>
           {/if}
         {:else}
           <button class="{btnPrimary} w-full" type="button" onclick={() => onSetMode("edit")}>
             <Pencil class="size-4 shrink-0" aria-hidden="true" />
-            {model.dirty ? m["editor.continue_edit"]() : m["editor.enter_table"]()}
+            {model.dirty ? m["editor.dock.continue_edit"]() : m["editor.enter.table"]()}
           </button>
           <p class="text-center text-[0.8rem] text-white-50">{editHint}</p>
         {/if}
@@ -345,7 +345,7 @@
             onclick={() => void model.discardEdits()}
           >
             <Undo2 class="size-4 shrink-0" aria-hidden="true" />
-            {m["editor.discard_unsaved"]()}
+            {m["editor.discard.unsaved"]()}
           </button>
         {/if}
       </div>
@@ -354,7 +354,7 @@
         <div class="mt-3 border-t border-white-15 pt-2">
           <ToggleButton
             expanded={tableActionsOpen}
-            label={m["editor.dock_table_actions"]()}
+            label={m["editor.dock.table_actions"]()}
             onToggle={toggleTableActions}
           />
           {#if tableActionsOpen}
@@ -369,7 +369,7 @@
         <div class="mt-3 border-t border-white-15 pt-2">
           <ToggleButton
             expanded={importOpen}
-            label={m["editor.import_section"]()}
+            label={m["editor.import.section"]()}
             onToggle={toggleImport}
           />
           {#if importOpen}
@@ -386,14 +386,14 @@
 
       {#if model.pendingDraft !== null}
         <div class="mt-3 border-t border-white-15 pt-3 text-center">
-          <p class="text-[1.05rem] text-amber-200">{m["editor.draft_found_title"]()}</p>
+          <p class="text-[1.05rem] text-amber-200">{m["editor.draft.found_title"]()}</p>
           <p class="mx-auto mt-2 max-w-120 text-[0.9rem] text-white-65">
-            {m["editor.draft_found_desc"]({ time: model.formatClock(model.pendingDraft.savedAt) })}
+            {m["editor.draft.found_desc"]({ time: model.formatClock(model.pendingDraft.savedAt) })}
           </p>
           <div class="mt-3 flex flex-wrap justify-center gap-3">
             <button class={btnPrimary} type="button" onclick={model.restorePendingDraft}>
               <History class="size-4 shrink-0" aria-hidden="true" />
-              {m["editor.draft_restore"]()}
+              {m["editor.draft.restore"]()}
             </button>
             <button
               class={btnGhostMd}
@@ -401,7 +401,7 @@
               onclick={() => void model.discardPendingDraft()}
             >
               <Trash2 class="size-4 shrink-0" aria-hidden="true" />
-              {m["editor.draft_discard"]()}
+              {m["editor.draft.discard"]()}
             </button>
           </div>
         </div>
@@ -440,8 +440,8 @@
       <button
         class="glass-shadow-float flex items-center gap-2 rounded-full bg-glass px-3.5 py-2 backdrop-blur"
         type="button"
-        aria-label={m["editor.dock_expand"]()}
-        title={m["editor.dock_expand"]()}
+        aria-label={m["editor.dock.expand"]()}
+        title={m["editor.dock.expand"]()}
         onclick={toggleExpansion}
       >
         <Pencil class="size-4 text-white-80" aria-hidden="true" />
@@ -459,13 +459,13 @@
     {:else}
       <button class={btnPrimary} type="button" onclick={() => onSetMode("edit")}>
         <Pencil class="size-4 shrink-0" aria-hidden="true" />
-        {model.dirty ? m["editor.continue_edit"]() : m["editor.enter_table"]()}
+        {model.dirty ? m["editor.dock.continue_edit"]() : m["editor.enter.table"]()}
       </button>
       <button
         class="glass-shadow-float flex items-center gap-2 rounded-full bg-glass px-3 py-2.5 backdrop-blur"
         type="button"
-        aria-label={m["editor.dock_expand"]()}
-        title={m["editor.dock_expand"]()}
+        aria-label={m["editor.dock.expand"]()}
+        title={m["editor.dock.expand"]()}
         onclick={toggleExpansion}
       >
         <SlidersHorizontal class="size-4 text-white-80" aria-hidden="true" />

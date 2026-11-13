@@ -28,7 +28,7 @@
   async function processFiles(files: File[]): Promise<void> {
     error = null;
     if (!isHashingAvailable()) {
-      error = m["editor.bms_drop_unavailable"]();
+      error = m["editor.drop.unavailable"]();
       return;
     }
     busy = true;
@@ -45,7 +45,7 @@
 
 <div
   role="region"
-  aria-label={m["editor.bms_drop_title"]()}
+  aria-label={m["editor.drop.title"]()}
   class="rounded-glass-sm border border-dashed px-4 py-4 transition-colors duration-200 {dragging
     ? 'border-accent bg-accent/10'
     : 'border-white-25 bg-black-10'}"
@@ -65,11 +65,11 @@
 >
   <div class="flex flex-wrap items-center gap-3">
     <div class="min-w-0 flex-1">
-      <div class="text-[0.9rem] text-white-75">{m["editor.bms_drop_title"]()}</div>
-      <div class="text-[0.82rem] text-white-50">{m["editor.bms_drop_hint"]()}</div>
+      <div class="text-[0.9rem] text-white-75">{m["editor.drop.title"]()}</div>
+      <div class="text-[0.82rem] text-white-50">{m["editor.drop.hint"]()}</div>
     </div>
     <button class={btnGhost} type="button" {disabled} onclick={() => fileInput?.click()}>
-      {m["editor.bms_drop_button"]()}
+      {m["editor.drop.button"]()}
     </button>
     <input
       class="hidden"
@@ -87,7 +87,7 @@
   </div>
   {#if busy}
     <div class="mt-2 text-[0.85rem] text-accent-light">
-      {m["editor.bms_drop_busy"]({ done: progress.done, total: progress.total })}
+      {m["editor.drop.busy"]({ done: progress.done, total: progress.total })}
     </div>
   {/if}
   {#if error !== null}

@@ -88,19 +88,19 @@
   const initial = untrack(() => snapshot(entry, prefill));
 
   const FIELD_LABELS: Record<CoreEntryField, string> = {
-    level: m["editor.f_level"](),
-    title: m["editor.f_title"](),
-    artist: m["editor.f_artist"](),
-    md5: m["editor.f_md5"](),
-    sha256: m["editor.f_sha256"](),
-    url: m["editor.f_url"](),
-    url_diff: m["editor.f_url_diff"](),
-    name_diff: m["editor.f_name_diff"](),
-    url_pack: m["editor.f_url_pack"](),
-    name_pack: m["editor.f_name_pack"](),
-    comment: m["editor.f_comment"](),
-    org_md5: m["editor.f_org_md5"](),
-    mode: m["editor.f_mode"](),
+    level: m["editor.columns.level"](),
+    title: m["editor.columns.title"](),
+    artist: m["editor.columns.artist"](),
+    md5: m["editor.columns.md5"](),
+    sha256: m["editor.columns.sha256"](),
+    url: m["editor.columns.url"](),
+    url_diff: m["editor.columns.url_diff"](),
+    name_diff: m["editor.columns.name_diff"](),
+    url_pack: m["editor.columns.url_pack"](),
+    name_pack: m["editor.columns.name_pack"](),
+    comment: m["editor.columns.comment"](),
+    org_md5: m["editor.columns.org_md5"](),
+    mode: m["editor.columns.mode"](),
   };
 
   const LEVEL_OPTIONS_ID = "editor-level-options";
@@ -167,7 +167,7 @@
     const decoded = isHashingAvailable() ? await decodeBmsFile(file) : null;
     fileBusy = false;
     if (decoded === null) {
-      fileError = m["editor.entry_file_failed"]();
+      fileError = m["editor.entry.file_failed"]();
       return;
     }
     applyDecoded(decoded);
@@ -208,22 +208,22 @@
     if (error === null) return "";
     switch (error.code) {
       case "identity":
-        return m["editor.entry_identity_required"]();
+        return m["editor.entry.identity_required"]();
       case "hash_format": {
         const field = error.detail === "sha256" ? "SHA256" : "MD5";
-        return m["editor.entry_hash_invalid"]({
+        return m["editor.entry.hash_invalid"]({
           field,
           length: error.detail === "sha256" ? 64 : 32,
         });
       }
       case "custom_key_empty":
-        return m["editor.entry_custom_key_empty"]();
+        return m["editor.entry.custom.key_empty"]();
       case "custom_key_duplicate":
-        return m["editor.entry_custom_key_duplicate"]({ key: error.detail ?? "" });
+        return m["editor.entry.custom.key_duplicate"]({ key: error.detail ?? "" });
       case "custom_key_core":
-        return m["editor.entry_custom_key_core"]({ key: error.detail ?? "" });
+        return m["editor.entry.custom.key_core"]({ key: error.detail ?? "" });
       case "custom_value":
-        return m["editor.entry_custom_value_invalid"]({ key: error.detail ?? "" });
+        return m["editor.entry.custom.value_invalid"]({ key: error.detail ?? "" });
     }
   });
 
@@ -243,14 +243,14 @@
     ? 'ring-2 ring-accent/60'
     : ''}"
   role="group"
-  aria-label={entry === null ? m["editor.entry_add_title"]() : m["editor.entry_edit_title"]()}
+  aria-label={entry === null ? m["editor.entry.add_title"]() : m["editor.entry.edit_title"]()}
   ondragenter={sectionDragEnter}
   ondragover={sectionDragEnter}
   ondragleave={() => (fileDragOver = false)}
   ondrop={sectionDrop}
 >
   <div class="mb-2 text-[0.9rem] text-accent-light">
-    {entry === null ? m["editor.entry_add_title"]() : m["editor.entry_edit_title"]()}
+    {entry === null ? m["editor.entry.add_title"]() : m["editor.entry.edit_title"]()}
   </div>
 
   <div class="mb-3 flex flex-wrap items-center gap-2">
@@ -261,7 +261,7 @@
       onclick={() => fileInput?.click()}
     >
       <FileUp class="size-4 shrink-0" aria-hidden="true" />
-      {m["editor.entry_file_pick"]()}
+      {m["editor.entry.file_pick"]()}
     </button>
     <input
       bind:this={fileInput}
@@ -276,11 +276,11 @@
     {#if fileLevelHint !== null}
       <div class="ml-auto flex items-center gap-2">
         <span class="text-[0.85rem] text-accent-light">
-          {m["editor.entry_level_hint"]({ level: fileLevelHint })}
+          {m["editor.entry.level_hint"]({ level: fileLevelHint })}
         </span>
         <button class={btnGhost} type="button" {disabled} onclick={adoptLevelHint}>
           <Check class="size-4 shrink-0" aria-hidden="true" />
-          {m["editor.entry_level_adopt"]()}
+          {m["editor.entry.level_adopt"]()}
         </button>
       </div>
     {/if}
@@ -330,7 +330,7 @@
   </datalist>
 
   <div class="mt-4">
-    <DetailsPanel summary={m["editor.entry_advanced"]()} variant="plain" sub={true}>
+    <DetailsPanel summary={m["editor.entry.advanced"]()} variant="plain" sub={true}>
       <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {#each ADVANCED_FIELDS as field (field)}
           <label class={field === "comment" ? "block sm:col-span-2" : "block"}>
@@ -342,8 +342,8 @@
 
       <div class="mt-4">
         <div class="mb-2 flex flex-wrap items-center gap-2">
-          <span class="text-[0.85rem] text-white-70">{m["editor.entry_custom_title"]()}</span>
-          <span class="text-[0.8rem] text-white-50">{m["editor.entry_custom_hint"]()}</span>
+          <span class="text-[0.85rem] text-white-70">{m["editor.entry.custom.title"]()}</span>
+          <span class="text-[0.8rem] text-white-50">{m["editor.entry.custom.hint"]()}</span>
           <button
             class="{btnGhost} ml-auto"
             type="button"
@@ -351,11 +351,11 @@
             onclick={() => custom.push({ key: "", valueText: "" })}
           >
             <Plus class="size-4 shrink-0" aria-hidden="true" />
-            {m["editor.entry_custom_add"]()}
+            {m["editor.entry.custom.add"]()}
           </button>
         </div>
         {#if custom.length === 0}
-          <p class="text-[0.85rem] text-white-50">{m["editor.entry_custom_empty"]()}</p>
+          <p class="text-[0.85rem] text-white-50">{m["editor.entry.custom.empty"]()}</p>
         {:else}
           <div class="flex flex-col gap-2">
             {#each custom as row, index (index)}
@@ -364,7 +364,7 @@
                   class="{inputEditorMono} max-w-48 flex-1"
                   type="text"
                   value={row.key}
-                  placeholder={m["editor.entry_custom_key"]()}
+                  placeholder={m["editor.entry.custom.key"]()}
                   oninput={(event) => (custom[index] = { ...row, key: event.currentTarget.value })}
                   {disabled}
                 />
@@ -372,7 +372,7 @@
                   class="{inputEditorMono} min-w-40 flex-[2]"
                   type="text"
                   value={row.valueText}
-                  placeholder={m["editor.entry_custom_value_placeholder"]()}
+                  placeholder={m["editor.entry.custom.value_placeholder"]()}
                   oninput={(event) =>
                     (custom[index] = { ...row, valueText: event.currentTarget.value })}
                   {disabled}
@@ -381,8 +381,8 @@
                   class={btnIconDanger}
                   type="button"
                   {disabled}
-                  title={m["editor.entry_custom_remove"]()}
-                  aria-label={m["editor.entry_custom_remove"]()}
+                  title={m["editor.entry.custom.remove"]()}
+                  aria-label={m["editor.entry.custom.remove"]()}
                   onclick={() => custom.splice(index, 1)}
                 >
                   <X class="size-4" aria-hidden="true" />
@@ -406,8 +406,8 @@
           class={btnIcon}
           type="button"
           disabled={disabled || !canmoveup}
-          title={m["editor.entry_move_up"]()}
-          aria-label={m["editor.entry_move_up"]()}
+          title={m["editor.entry.move_up"]()}
+          aria-label={m["editor.entry.move_up"]()}
           onclick={onmoveup}
         >
           <ChevronUp class="size-4" aria-hidden="true" />
@@ -416,8 +416,8 @@
           class={btnIcon}
           type="button"
           disabled={disabled || !canmovedown}
-          title={m["editor.entry_move_down"]()}
-          aria-label={m["editor.entry_move_down"]()}
+          title={m["editor.entry.move_down"]()}
+          aria-label={m["editor.entry.move_down"]()}
           onclick={onmovedown}
         >
           <ChevronDown class="size-4" aria-hidden="true" />
@@ -427,7 +427,7 @@
     {#if entry !== null && ondelete}
       <button class={btnDanger} type="button" {disabled} onclick={ondelete}>
         <Trash2 class="size-4 shrink-0" aria-hidden="true" />
-        {m["editor.entry_delete"]()}
+        {m["editor.entry.delete"]()}
       </button>
     {/if}
     <button class={btnGhost} type="button" {disabled} onclick={oncancel}>
@@ -436,7 +436,7 @@
     </button>
     <button class={btnPrimary} type="button" {disabled} onclick={handleSave}>
       <Check class="size-4 shrink-0" aria-hidden="true" />
-      {m["editor.entry_save"]()}
+      {m["editor.entry.save"]()}
     </button>
   </div>
 </section>

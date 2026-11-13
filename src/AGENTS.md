@@ -14,7 +14,9 @@
   - strategy 收敛为 `["cookie","baseLocale"]`（cookie 仅为切换器持久化），`hooks.ts` 的 reroute 随 URL 不再承载语言而删除。
   - 切换器是 TopBar 的语言下拉菜单（三语自称固定，选择后写 cookie 并整页 reload，交边缘分发）。
   - 路由级 markdown（`bms/index.md`）2026-11 起收敛为单份中文源——markdown 类内容不做三语适配，en/ja flavor 同 URL 显示中文正文，页面骨架仍三语；内容正文与 frontmatter、注释、测试不翻。
-  - 覆盖由 `pnpm check:i18n` 机械守住（三语 key 对称、占位符一致、引用存在、死 key、源码 CJK 残留、英文值漏翻；语言自称键豁免 en 值 CJK 扫描，豁免口径见 `scripts/check-i18n-coverage.ts` 头注）。
+  - 覆盖由 `pnpm check:i18n` 机械守住（三语 key 对称、占位符一致、引用存在、死 key、源码 CJK 残留、英文值漏翻、参与域 key 两层命名；语言自称键豁免 en 值 CJK 扫描，豁免口径见 `scripts/check-i18n-coverage.ts` 头注）。
+  - 消息 key 分层命名（2026-11-13 盘问定案）：editor/shared/admin/bmsdata/topbar/table 六域的 key 必须 `<域>.<组>.<名>`（子族 >= 8 key 才拆第三层，如 `editor.entry.import.apply`），由 check:i18n 的 `TWO_LEVEL_DOMAINS` 断言守住。
+  - mirror/common/search/batch 保持一层，api 为 Worker 错误码协议域豁免；新增 key 进这六个域时按组挂，别再回退 `域.蛇形名` 单层形态。
   - oxlint 的 `import/namespace` 因点号 key 必须计算访问而显式关停——key 存在性由 svelte-check 与该门槛兜住。
 - **Svelte 模板 HTML 注释单行或挪进 script 块** — i18n 的源码 CJK 残留扫描剥不掉多行 HTML 注释的续行，续行文本被当用户可见文案误报（DustTrailCanvas 曾两次触发）；说明性注释写在 script 块内（TS 注释不扫描）或压缩成单行。
 - **`vite.config.ts` 中 `server.fs.allow: ["content"]`** — Vite dev server 默认仅允许 `src/`、`.svelte-kit/`、`node_modules/` 内的文件被访问。

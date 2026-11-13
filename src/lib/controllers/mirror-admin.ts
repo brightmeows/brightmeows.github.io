@@ -122,7 +122,7 @@ export async function runAdminAction(
       state: {
         ...busy,
         busy: false,
-        notice: { kind: "error", text: errorText(error, m["admin.action_failed"]()) },
+        notice: { kind: "error", text: errorText(error, m["admin.misc.action_failed"]()) },
       },
       ok: false,
     };

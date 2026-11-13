@@ -66,7 +66,7 @@
 
   const tagOrderPlaceholder = $derived.by(() => {
     if (shouldSuggestTagOrder(tag1, tag1Options)) {
-      return m["admin.tag_order_suggest"]({ order: nextTagOrder });
+      return m["admin.meta.tag_order_suggest"]({ order: nextTagOrder });
     }
     return item.tag_order === undefined ? "" : String(item.tag_order);
   });
@@ -74,10 +74,10 @@
   const deleteDisabled = $derived(busy || deleting || item.protected === true);
   const deleteTitle = $derived(
     item.protected === true
-      ? m["admin.delete_protected"]()
+      ? m["admin.auth.delete_protected"]()
       : deleting
         ? m["mirror.deleting"]()
-        : m["admin.delete_table"]()
+        : m["admin.danger.delete_table"]()
   );
 
   function submitDisable(): void {
@@ -99,8 +99,8 @@
   <td colspan={colCount} class="table-td-compact">
     <div class="flex flex-col gap-3 rounded-glass-sm border border-white-10 bg-black-20 p-3">
       <section class="flex flex-col gap-2">
-        <h4 class="text-[0.95rem] font-semibold text-white-90">{m["admin.auth_section"]()}</h4>
-        <p class={helpText}>{m["admin.auth_help"]()}</p>
+        <h4 class="text-[0.95rem] font-semibold text-white-90">{m["admin.auth.section"]()}</h4>
+        <p class={helpText}>{m["admin.auth.help"]()}</p>
         <div class="flex flex-wrap items-center justify-between gap-2">
           <span class="text-[0.85rem] text-white-70">
             {item.protected === true
@@ -118,7 +118,7 @@
             {:else}
               <ShieldCheck class="size-4 shrink-0" aria-hidden="true" />
             {/if}
-            {item.protected === true ? m["admin.authorize_remove"]() : m["admin.authorize_add"]()}
+            {item.protected === true ? m["admin.auth.remove"]() : m["admin.auth.add"]()}
           </button>
         </div>
       </section>
@@ -126,12 +126,12 @@
       <div class="border-t border-white-10"></div>
 
       <section class="flex flex-col gap-2">
-        <h4 class="text-[0.95rem] font-semibold text-white-90">{m["admin.danger_section"]()}</h4>
-        <p class={helpText}>{m["admin.danger_help"]()}</p>
+        <h4 class="text-[0.95rem] font-semibold text-white-90">{m["admin.danger.section"]()}</h4>
+        <p class={helpText}>{m["admin.danger.help"]()}</p>
         <div class="flex flex-wrap items-end gap-2">
           <div class="flex min-w-60 flex-1 flex-col gap-1">
             <label class="text-[0.8rem] text-white-60" for="mirror-edit-disable-note">
-              {m["admin.disable_note_aria"]()}
+              {m["admin.disable.note_aria"]()}
             </label>
             <input
               id="mirror-edit-disable-note"
@@ -145,7 +145,7 @@
           <div class="ml-auto flex flex-wrap items-center gap-2">
             <button class={btnDanger} type="button" disabled={busy} onclick={submitDisable}>
               <Ban class="size-4 shrink-0" aria-hidden="true" />
-              {m["admin.disable"]()}
+              {m["admin.disable.button"]()}
             </button>
             {#if canDelete && ondelete}
               <button
@@ -156,27 +156,27 @@
                 onclick={() => ondelete(item)}
               >
                 <Trash2 class="size-4 shrink-0" aria-hidden="true" />
-                {m["admin.delete_table"]()}
+                {m["admin.danger.delete_table"]()}
               </button>
             {/if}
           </div>
         </div>
         {#if item.protected === true && canDelete && ondelete}
-          <p class="text-[0.8rem] text-white-50">{m["admin.delete_protected"]()}</p>
+          <p class="text-[0.8rem] text-white-50">{m["admin.auth.delete_protected"]()}</p>
         {/if}
       </section>
 
       <div class="border-t border-white-10"></div>
 
       <DetailsPanel
-        summary={m["admin.meta_heading"]()}
-        hint={override === null ? m["admin.meta_summary_empty"]() : m["admin.meta_summary_set"]()}
+        summary={m["admin.meta.heading"]()}
+        hint={override === null ? m["admin.meta.summary_empty"]() : m["admin.meta.summary_set"]()}
       >
-        <p class="mb-3 {helpText}">{m["admin.meta_help"]()}</p>
+        <p class="mb-3 {helpText}">{m["admin.meta.help"]()}</p>
         <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <div class="flex flex-col gap-1">
             <label class="text-[0.8rem] text-white-60" for="mirror-edit-name">
-              {m["admin.meta_name"]()}
+              {m["admin.meta.name"]()}
             </label>
             <input
               id="mirror-edit-name"
@@ -189,7 +189,7 @@
           </div>
           <div class="flex flex-col gap-1">
             <label class="text-[0.8rem] text-white-60" for="mirror-edit-symbol">
-              {m["admin.meta_symbol"]()}
+              {m["admin.meta.symbol"]()}
             </label>
             <input
               id="mirror-edit-symbol"
@@ -201,11 +201,11 @@
             />
           </div>
           <div class="flex flex-col gap-1 sm:col-span-2 xl:col-span-1">
-            <span class="text-[0.8rem] text-white-60">{m["admin.meta_tag1"]()}</span>
+            <span class="text-[0.8rem] text-white-60">{m["admin.meta.tag1"]()}</span>
             <div class="grid grid-cols-2 gap-2">
               <div class="flex flex-col gap-1">
                 <label class="text-[0.75rem] text-white-50" for="mirror-edit-tag-order">
-                  {m["admin.meta_tag_order"]()}
+                  {m["admin.meta.tag_order"]()}
                 </label>
                 <input
                   id="mirror-edit-tag-order"
@@ -214,13 +214,13 @@
                   inputmode="numeric"
                   bind:value={tagOrder}
                   placeholder={tagOrderPlaceholder}
-                  title={m["admin.tag_order_help"]()}
+                  title={m["admin.meta.tag_order_help"]()}
                   disabled={busy}
                 />
               </div>
               <div class="flex flex-col gap-1">
                 <label class="text-[0.75rem] text-white-50" for="mirror-edit-tag1">
-                  {m["admin.meta_name"]()}
+                  {m["admin.meta.name"]()}
                 </label>
                 <input
                   id="mirror-edit-tag1"
@@ -229,7 +229,7 @@
                   bind:value={tag1}
                   list="mirror-tag1-options"
                   placeholder={item.tag1 ?? ""}
-                  title={m["admin.tag1_help"]()}
+                  title={m["admin.meta.tag1_help"]()}
                   disabled={busy}
                 />
               </div>
@@ -237,7 +237,7 @@
           </div>
           <div class="flex flex-col gap-1">
             <label class="text-[0.8rem] text-white-60" for="mirror-edit-tag2">
-              {m["admin.meta_tag2"]()}
+              {m["admin.meta.tag2"]()}
             </label>
             <input
               id="mirror-edit-tag2"
@@ -246,7 +246,7 @@
               bind:value={tag2}
               list="mirror-tag2-options"
               placeholder={item.tag2 ?? ""}
-              title={m["admin.tag2_help"]()}
+              title={m["admin.meta.tag2_help"]()}
               disabled={busy}
             />
           </div>
@@ -254,7 +254,7 @@
         <div class="flex flex-wrap justify-end gap-2">
           <button class={btnGhostXs} type="button" disabled={busy} onclick={submitMeta}>
             <Save class="size-4 shrink-0" aria-hidden="true" />
-            {m["admin.meta_save"]()}
+            {m["admin.meta.save"]()}
           </button>
           <button
             class={btnGhostXs}
@@ -263,7 +263,7 @@
             onclick={onmetaclear}
           >
             <Eraser class="size-4 shrink-0" aria-hidden="true" />
-            {m["admin.meta_clear"]()}
+            {m["admin.meta.clear"]()}
           </button>
         </div>
       </DetailsPanel>

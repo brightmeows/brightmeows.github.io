@@ -231,7 +231,7 @@
     onChange?.();
     onNotice?.({
       kind: "ok",
-      text: m["editor.undo_course_deleted"]({ name }),
+      text: m["editor.undo.course_deleted"]({ name }),
       action: {
         label: m["common.undo"](),
         run: () => {
@@ -259,7 +259,7 @@
     onChange?.();
     onNotice?.({
       kind: "ok",
-      text: m["editor.undo_group_deleted"]({ index: groupIndex + 1, count: courseCount }),
+      text: m["editor.undo.group_deleted"]({ index: groupIndex + 1, count: courseCount }),
       action: {
         label: m["common.undo"](),
         run: () => {
@@ -274,18 +274,18 @@
 <div class="flex flex-col gap-3">
   <div class="flex flex-col gap-3">
     <div class="flex flex-wrap items-center gap-2">
-      <span class="text-[0.85rem] text-white-50">{m["editor.course_hint"]()}</span>
+      <span class="text-[0.85rem] text-white-50">{m["editor.course.hint"]()}</span>
       {#if editing}
         <div class="ml-auto flex flex-wrap gap-2">
           {#if showGroups}
             <button class={btnGhost} type="button" {disabled} onclick={addGroup}>
               <Plus class="size-4 shrink-0" aria-hidden="true" />
-              {m["editor.course_group_add"]()}
+              {m["editor.course.group_add"]()}
             </button>
           {:else}
             <button class={btnGhost} type="button" {disabled} onclick={() => addCourse(0)}>
               <Plus class="size-4 shrink-0" aria-hidden="true" />
-              {m["editor.course_add"]()}
+              {m["editor.course.add"]()}
             </button>
           {/if}
         </div>
@@ -293,14 +293,14 @@
     </div>
 
     {#if displayGroups.length === 0}
-      <InlineEmpty text={m["editor.course_empty"]()} />
+      <InlineEmpty text={m["editor.course.empty"]()} />
     {:else}
       {#each displayGroups as group (group.key)}
         <section class="flex flex-col gap-2">
           {#if showGroups}
             <div class="flex flex-wrap items-center gap-2">
               <h3 class="text-[1rem] font-semibold text-white-90">
-                {m["editor.course_group"]({ index: group.groupIndex + 1 })}
+                {m["editor.course.group"]({ index: group.groupIndex + 1 })}
               </h3>
               <span class="text-[0.8rem] text-white-50">
                 {m["course.course_count"]({ count: group.items.length })}
@@ -314,14 +314,14 @@
                     onclick={() => addCourse(group.groupIndex)}
                   >
                     <Plus class="size-4 shrink-0" aria-hidden="true" />
-                    {m["editor.course_add"]()}
+                    {m["editor.course.add"]()}
                   </button>
                   <button
                     class={btnIconDanger}
                     type="button"
                     {disabled}
-                    title={m["editor.course_group_remove"]()}
-                    aria-label={m["editor.course_group_remove"]()}
+                    title={m["editor.course.group_remove"]()}
+                    aria-label={m["editor.course.group_remove"]()}
                     onclick={() => removeGroup(group.groupIndex)}
                   >
                     <Trash2 class="size-4" aria-hidden="true" />
@@ -365,7 +365,7 @@
             {/each}
             {#if group.items.length === 0}
               <InlineEmpty
-                text={showGroups ? m["editor.course_group_empty"]() : m["editor.course_empty"]()}
+                text={showGroups ? m["editor.course.group_empty"]() : m["editor.course.empty"]()}
               />
             {/if}
           </div>

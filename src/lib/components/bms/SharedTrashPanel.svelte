@@ -59,13 +59,13 @@
     notice = null;
     try {
       await submitSharedRestore(id);
-      notice = { kind: "ok", text: m["shared.restored"]({ id }) };
+      notice = { kind: "ok", text: m["shared.restore.done"]({ id }) };
       await load();
       onchanged?.();
     } catch (error) {
       notice = {
         kind: "error",
-        text: error instanceof Error ? error.message : m["shared.restore_failed"](),
+        text: error instanceof Error ? error.message : m["shared.restore.failed"](),
       };
     } finally {
       restoring = null;
@@ -83,7 +83,7 @@
       <div class="flex justify-end">
         <ToggleButton
           expanded={open}
-          label={m["shared.trash_count"]({ count: entries.length })}
+          label={m["shared.trash.heading"]({ count: entries.length })}
           size="xs"
           onToggle={() => (open = !open)}
         />
@@ -96,7 +96,7 @@
       {#if open}
         <div class="rounded-glass-sm border border-white-15 bg-black-20 p-3">
           {#if entries.length === 0}
-            <div class="text-[0.9rem] text-white-60">{m["shared.no_trash"]()}</div>
+            <div class="text-[0.9rem] text-white-60">{m["shared.trash.empty"]()}</div>
           {:else}
             <ul class="flex flex-col gap-2">
               {#each entries as record (record.id)}
@@ -121,8 +121,8 @@
                   >
                     <Undo2 class="size-4 shrink-0" aria-hidden="true" />
                     {restoring === record.id
-                      ? m["shared.restoring"]()
-                      : m["shared.restore_button"]()}
+                      ? m["shared.restore.progress"]()
+                      : m["shared.restore.button"]()}
                   </button>
                 </li>
               {/each}

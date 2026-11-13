@@ -135,7 +135,7 @@ describe("planEditorSave 与 commitEditorSave", () => {
     if (plan.kind !== "rejected") throw new Error("want rejected");
     expect(plan.notice).toEqual({
       kind: "warn",
-      text: m["editor.publish_unassigned_blocked"]({ count: 1 }),
+      text: m["editor.publish.unassigned_blocked"]({ count: 1 }),
     });
   });
 
@@ -157,7 +157,7 @@ describe("planEditorSave 与 commitEditorSave", () => {
     expect(confirmed).toBe(1);
     expect(askCancel.notice).toEqual({
       kind: "warn",
-      text: m["editor.save_conflict_canceled"](),
+      text: m["editor.save.conflict_canceled"](),
     });
 
     const askProceed = await planEditorSave({
@@ -260,7 +260,7 @@ describe("planEditorSave 与 commitEditorSave", () => {
       deleteDraft: () => Promise.resolve(),
       draftKey: "k",
     });
-    expect(opaque).toEqual({ kind: "failed", text: m["editor.save_failed"]() });
+    expect(opaque).toEqual({ kind: "failed", text: m["editor.save.failed"]() });
   });
 });
 
@@ -284,7 +284,7 @@ describe("planImportApply 导入应用闸门", () => {
     });
     expect(plan).toEqual({
       kind: "confirm",
-      message: m["editor.replace_entries_confirm"]({ count: 12 }),
+      message: m["editor.import.replace_confirm"]({ count: 12 }),
     });
   });
 
@@ -297,7 +297,7 @@ describe("planImportApply 导入应用闸门", () => {
     });
     expect(appendHeader).toEqual({
       kind: "confirm",
-      message: m["editor.import_header_confirm"](),
+      message: m["editor.import.header_confirm"](),
     });
     const headerOnly = planImportApply({
       headerApplied: true,
@@ -307,7 +307,7 @@ describe("planImportApply 导入应用闸门", () => {
     });
     expect(headerOnly).toEqual({
       kind: "confirm",
-      message: m["editor.import_header_confirm"](),
+      message: m["editor.import.header_confirm"](),
     });
   });
 
@@ -351,7 +351,7 @@ describe("strictErrorsNotice 强验证错误清单", () => {
     });
     expect(text).toContain("data[0].level");
     expect(text).toContain("header.tag");
-    expect(text).toContain(translateMessage("editor.strict_failed", { list: "" }) ?? "");
+    expect(text).toContain(translateMessage("editor.strict.failed", { list: "" }) ?? "");
   });
 
   it("超过 10 条时封顶并追加余量计数", () => {
@@ -369,7 +369,7 @@ describe("strictErrorsNotice 强验证错误清单", () => {
       error("entry_level", "data[" + index + "].level")
     );
     const text = strictErrorsNotice({ errors, truncated: true });
-    expect(text).toContain(translateMessage("editor.strict_error_truncated") ?? "");
+    expect(text).toContain(translateMessage("editor.strict.error_truncated") ?? "");
   });
 });
 
@@ -384,6 +384,6 @@ describe("strictWarningsNotice 强验证警告清单", () => {
       { kind: "unknown_field", scope: "entry", field: "eval" },
     ]);
     expect(text).toContain("eval");
-    expect(text).toContain(translateMessage("editor.strict_warn_missing_data_url") ?? "");
+    expect(text).toContain(translateMessage("editor.strict.warn.missing_data_url") ?? "");
   });
 });

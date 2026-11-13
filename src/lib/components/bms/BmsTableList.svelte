@@ -11,7 +11,7 @@
 </script>
 
 <div>
-  <h2 id="bms-table-list-heading" class="section-title text-center">{m["table.list_heading"]()}</h2>
+  <h2 id="bms-table-list-heading" class="section-title text-center">{m["table.list.heading"]()}</h2>
   <!-- 键盘滚动入口是响应式表格指南的强制项，region 非交互属 a11y 规则误报 -->
   <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
   <div

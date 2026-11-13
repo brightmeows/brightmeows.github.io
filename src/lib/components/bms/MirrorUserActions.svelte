@@ -160,12 +160,12 @@
 {#if auth.status === "ready"}
   <div class="flex flex-col gap-3">
     <div class="text-[0.9rem] text-white-60">
-      {m["shared.cross_before"]()}
+      {m["shared.detail.promo_before"]()}
       <a class={btnGhostXs} href="/bms/table">
         <ArrowLeft class="size-4 shrink-0" aria-hidden="true" />
         {m["nav.table"]()}
       </a>
-      {m["shared.cross_after"]()}
+      {m["shared.detail.promo_after"]()}
     </div>
     {#if user === null}
       <div class="text-[0.95rem] text-white-75">
