@@ -123,8 +123,8 @@ export async function loadSharedTables(
   const data = await fetchSiteTableList<SharedTableItem>(
     tablesJsonPath,
     {
-      loadFailed: (status) => m["shared.tables_load_failed"]({ status }),
-      invalid: () => m["shared.tables_invalid"](),
+      loadFailed: (status) => m["shared.tables.load_failed"]({ status }),
+      invalid: () => m["shared.tables.invalid"](),
     },
     options,
     isSharedTableItem

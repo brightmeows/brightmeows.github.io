@@ -13,6 +13,7 @@ import {
   placeholders,
   refIssues,
   stripLineComment,
+  twoLevelKeyIssues,
   workerCodeLiteralIssues,
   workerCodeIssues,
 } from "./check-i18n-coverage.ts";
@@ -86,6 +87,20 @@ describe("Worker 错误码", () => {
   });
 });
 
+describe("两层命名断言", () => {
+  it("参与域的 key 必须 域.组.名", () => {
+    expect(twoLevelKeyIssues({ "editor.bulk.apply": "x" }, ["editor"])).toEqual([]);
+    expect(twoLevelKeyIssues({ "editor.bulk_apply": "x" }, ["editor"])).toEqual([
+      "editor 域 key 不合两层命名（域.组.名）：editor.bulk_apply",
+    ]);
+  });
+
+  it("名可再分层，非参与域不检查", () => {
+    expect(twoLevelKeyIssues({ "editor.entry.import.apply": "x" }, ["editor"])).toEqual([]);
+    expect(twoLevelKeyIssues({ "common.ok": "x", "api.x": "e" }, ["editor"])).toEqual([]);
+  });
+});
+
 describe("CJK 扫描", () => {
   it("注释、console 与 i18n-exempt 行豁免", () => {
     expect(isExemptLine("  // 中文注释")).toBe(true);
@@ -124,6 +139,6 @@ describe("enValueIssues", () => {
   });
 
   it("语言自称键豁免（各语固定，非漏翻）", () => {
-    expect(enValueIssues({ "topbar.lang_ja": "日本語", "topbar.lang_zh": "简体中文" })).toEqual([]);
+    expect(enValueIssues({ "topbar.lang.ja": "日本語", "topbar.lang.zh": "简体中文" })).toEqual([]);
   });
 });

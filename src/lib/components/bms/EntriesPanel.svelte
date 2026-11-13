@@ -277,7 +277,7 @@
     const result = assignHintLevels(entries, levelHints);
     if (result.assigned === 0) return;
     entries = result.entries;
-    notice = m["editor.entries_assign_hint_done"]({ count: result.assigned });
+    notice = m["editor.entries.assign_hint_done"]({ count: result.assigned });
     onChange?.();
   }
 
@@ -380,7 +380,7 @@
     onChange?.();
     onNotice?.({
       kind: "ok",
-      text: m["editor.undo_entries_deleted"]({ count: snapshot.items.length }),
+      text: m["editor.undo.entries_deleted"]({ count: snapshot.items.length }),
       action: { label: m["common.undo"](), run: () => restoreRemoval(snapshot) },
     });
   }
@@ -405,18 +405,18 @@
     if (raw === "") return;
     const parsed = extractBmsIrSongMd5(raw);
     if (!parsed.ok) {
-      notice = m["editor.entry_bmsir_invalid"]();
+      notice = m["editor.entry.bmsir_invalid"]();
       return;
     }
     const duplicate = duplicateEntryLabel(entries, { md5: parsed.md5 }, null);
     if (duplicate !== null) {
-      notice = m["editor.entry_duplicate_notice"]({
-        title: duplicate || m["editor.entry_unnamed"](),
+      notice = m["editor.entry.duplicate_notice"]({
+        title: duplicate || m["editor.entry.unnamed"](),
       });
       return;
     }
     startAdd({ md5: parsed.md5 });
-    notice = m["editor.entry_bmsir_prefilled"]({ hash: shortenHash(parsed.md5) });
+    notice = m["editor.entry.bmsir_prefilled"]({ hash: shortenHash(parsed.md5) });
   }
 
   /** 编辑中条目在所属等级组内上移或下移；保持详情表单跟随移动后的行。 */
@@ -446,8 +446,8 @@
     if (wasAdding || target === null) {
       const duplicate = duplicateEntryLabel(entries, entry, null);
       if (duplicate !== null) {
-        notice = m["editor.entry_duplicate_notice"]({
-          title: duplicate || m["editor.entry_unnamed"](),
+        notice = m["editor.entry.duplicate_notice"]({
+          title: duplicate || m["editor.entry.unnamed"](),
         });
         return;
       }
@@ -458,8 +458,8 @@
       notice =
         duplicate === null
           ? null
-          : m["editor.entry_duplicate_notice"]({
-              title: duplicate || m["editor.entry_unnamed"](),
+          : m["editor.entry.duplicate_notice"]({
+              title: duplicate || m["editor.entry.unnamed"](),
             });
       entries = entries.map((item, index) => (index === target ? entry : item));
     }
@@ -471,7 +471,7 @@
   function removeEntry(index: number): void {
     const entry = entries[index];
     if (entry === undefined) return;
-    const label = entryLabel(entry) || m["editor.entry_unnamed"]();
+    const label = entryLabel(entry) || m["editor.entry.unnamed"]();
     const snapshot = captureEntryRemoval(entries, [index]);
     entries = removeIndices(entries, snapshot.indices);
     selected = new Set();
@@ -480,7 +480,7 @@
     onChange?.();
     onNotice?.({
       kind: "ok",
-      text: m["editor.undo_entry_deleted"]({ title: label }),
+      text: m["editor.undo.entry_deleted"]({ title: label }),
       action: { label: m["common.undo"](), run: () => restoreRemoval(snapshot) },
     });
   }
@@ -514,27 +514,27 @@
     try {
       parsed = JSON.parse(bulkText);
     } catch (error) {
-      bulkError = m["editor.json_parse_failed"]({
+      bulkError = m["editor.import.parse_failed"]({
         detail: error instanceof Error ? error.message : String(error),
       });
       return;
     }
     if (!Array.isArray(parsed)) {
-      bulkError = m["editor.bulk_not_array"]();
+      bulkError = m["editor.bulk.not_array"]();
       return;
     }
     for (let i = 0; i < parsed.length; i += 1) {
       const item: unknown = parsed[i];
       const isObject = typeof item === "object" && item !== null && !Array.isArray(item);
       if (!isObject) {
-        bulkError = m["editor.bulk_entry_invalid"]({ index: i + 1 });
+        bulkError = m["editor.bulk.entry_invalid"]({ index: i + 1 });
         return;
       }
       const record = item as Record<string, unknown>;
       const md5 = typeof record.md5 === "string" ? record.md5 : "";
       const sha256 = typeof record.sha256 === "string" ? record.sha256 : "";
       if (md5 === "" && sha256 === "") {
-        bulkError = m["editor.bulk_entry_invalid"]({ index: i + 1 });
+        bulkError = m["editor.bulk.entry_invalid"]({ index: i + 1 });
         return;
       }
     }
@@ -544,7 +544,7 @@
       bulkText = "";
       bulkOpen = false;
       selected = new Set();
-      notice = m["editor.bulk_done"]({ added: added.length, skipped });
+      notice = m["editor.bulk.done"]({ added: added.length, skipped });
       onChange?.();
       return;
     }
@@ -571,7 +571,7 @@
 <div class="flex flex-col gap-3">
   {#if loadState === "idle" || loadState === "loading"}
     <LoadingProgress
-      title={m["table.loading_charts"]()}
+      title={m["table.loading.charts"]()}
       message={loadMessage}
       progress={loadPercent}
       detail={loadDetail}
@@ -579,13 +579,13 @@
     />
   {:else if loadState === "error"}
     <div class="py-8 text-center">
-      <h2 class="mb-3 text-error">{m["table.data_load_failed_title"]()}</h2>
+      <h2 class="mb-3 text-error">{m["table.data.load_failed_title"]()}</h2>
       <p class="message-error my-4">{dataError ?? m["common.unknown_error"]()}</p>
-      <p class="mb-4 text-white-70">{m["table.data_load_failed_tip"]()}</p>
+      <p class="mb-4 text-white-70">{m["table.data.load_failed_tip"]()}</p>
       {#if onRetry}
         <button class={btnPrimary} type="button" onclick={() => void onRetry?.()}>
           <RotateCcw class="size-4 shrink-0" aria-hidden="true" />
-          {m["table.retry_load_charts"]()}
+          {m["table.data.retry_charts"]()}
         </button>
       {/if}
     </div>
@@ -595,7 +595,7 @@
         class="{inputEditorMono} max-w-64 flex-1"
         type="text"
         bind:value={query}
-        placeholder={m["editor.entries_search_placeholder"]()}
+        placeholder={m["editor.entries.search_placeholder"]()}
         {disabled}
       />
       {#if filtering}
@@ -607,23 +607,23 @@
         <div class="ml-auto flex flex-wrap gap-2">
           <button class={btnGhost} type="button" {disabled} onclick={() => startAdd()}>
             <Plus class="size-4 shrink-0" aria-hidden="true" />
-            {m["editor.entries_add"]()}
+            {m["editor.entries.add"]()}
           </button>
           <input
             class="{inputEditorMono} max-w-72"
             type="text"
             bind:value={addUrl}
-            placeholder={m["editor.entry_bmsir_url_placeholder"]()}
+            placeholder={m["editor.entry.bmsir_url_placeholder"]()}
             {disabled}
             onchange={addFromUrl}
           />
           <button class={btnGhost} type="button" {disabled} onclick={addFromUrl}>
             <Link2 class="size-4 shrink-0" aria-hidden="true" />
-            {m["editor.entry_bmsir_add"]()}
+            {m["editor.entry.bmsir_add"]()}
           </button>
           <ToggleButton
             expanded={batchOpen}
-            label={m["editor.entries_batch_toggle"]()}
+            label={m["editor.entries.batch_toggle"]()}
             {disabled}
             onToggle={() => (batchOpen = !batchOpen)}
           />
@@ -637,7 +637,7 @@
           <ToggleJumpChip
             checked={item.unassigned ? !hideUnassigned : !hiddenLevels.has(item.level)}
             label={item.unassigned
-              ? m["editor.entries_filter_unassigned"]()
+              ? m["editor.entries.filter_unassigned"]()
               : `${symbol}${item.level}`}
             count={item.count}
             tone="level"
@@ -654,27 +654,27 @@
       <div class="rounded-glass-sm border border-white-15 bg-black-20 p-3">
         <div class="flex flex-wrap items-center gap-2">
           <span class="text-[0.85rem] text-white-60">
-            {m["editor.entries_selected"]({ count: selectedCount })}
+            {m["editor.entries.selected"]({ count: selectedCount })}
           </span>
           <div class="ml-auto flex flex-wrap items-center gap-2">
             <button class={btnGhost} type="button" {disabled} onclick={selectAllFiltered}>
               <CheckCheck class="size-4 shrink-0" aria-hidden="true" />
-              {m["editor.entries_select_filtered"]()}
+              {m["editor.entries.select_filtered"]()}
             </button>
             <button class={btnGhost} type="button" {disabled} onclick={clearSelection}>
               <X class="size-4 shrink-0" aria-hidden="true" />
-              {m["editor.entries_clear_selection"]()}
+              {m["editor.entries.clear_selection"]()}
             </button>
             <select
               class="rounded-glass-sm border border-white-20 bg-black-30 px-2 py-1 text-[0.85rem] text-white outline-none"
               bind:value={batchChoice}
               {disabled}
             >
-              <option value={BATCH_NONE} disabled>{m["editor.entries_batch_choose"]()}</option>
+              <option value={BATCH_NONE} disabled>{m["editor.entries.batch_choose"]()}</option>
               {#each levels as level (level)}
                 <option value={encodeLevelFilterOption(level)}>{level}</option>
               {/each}
-              <option value="">{m["editor.entries_batch_clear"]()}</option>
+              <option value="">{m["editor.entries.batch_clear"]()}</option>
             </select>
             <button
               class={btnGhost}
@@ -683,7 +683,7 @@
               onclick={assignSelected}
             >
               <ListChecks class="size-4 shrink-0" aria-hidden="true" />
-              {m["editor.entries_batch_apply"]()}
+              {m["editor.entries.batch_apply"]()}
             </button>
             <button
               class={btnDanger}
@@ -692,12 +692,12 @@
               onclick={deleteSelected}
             >
               <Trash2 class="size-4 shrink-0" aria-hidden="true" />
-              {m["editor.entries_batch_delete"]()}
+              {m["editor.entries.batch_delete"]()}
             </button>
             {#if hintApplicableCount > 0}
               <button class={btnGhost} type="button" {disabled} onclick={assignFromHints}>
                 <WandSparkles class="size-4 shrink-0" aria-hidden="true" />
-                {m["editor.entries_assign_hint"]({ count: hintApplicableCount })}
+                {m["editor.entries.assign_hint"]({ count: hintApplicableCount })}
               </button>
             {/if}
           </div>
@@ -705,27 +705,27 @@
         <div class="mt-3 border-t border-white-10 pt-2">
           <ToggleButton
             expanded={bulkOpen}
-            label={m["editor.bulk_paste"]()}
+            label={m["editor.bulk.paste"]()}
             {disabled}
             onToggle={() => (bulkOpen = !bulkOpen)}
           />
           {#if bulkOpen}
             <div class="mt-2">
-              <p class="mb-2 text-[0.85rem] text-white-60">{m["editor.bulk_paste_hint"]()}</p>
+              <p class="mb-2 text-[0.85rem] text-white-60">{m["editor.bulk.paste_hint"]()}</p>
               <textarea class="{inputEditorMono} min-h-32" bind:value={bulkText} placeholder="[…]"
               ></textarea>
               <div class="mt-2 flex flex-wrap items-center gap-3">
                 <label class="flex items-center gap-1.5 text-[0.85rem] text-white-70">
                   <input type="radio" bind:group={bulkMode} value="append" />
-                  {m["editor.bulk_mode_append"]()}
+                  {m["editor.bulk.mode_append"]()}
                 </label>
                 <label class="flex items-center gap-1.5 text-[0.85rem] text-white-70">
                   <input type="radio" bind:group={bulkMode} value="replace" />
-                  {m["editor.bulk_mode_replace"]()}
+                  {m["editor.bulk.mode_replace"]()}
                 </label>
                 <button class={btnGhost} type="button" onclick={applyBulk}>
                   <Check class="size-4 shrink-0" aria-hidden="true" />
-                  {m["editor.bulk_apply"]()}
+                  {m["editor.bulk.apply"]()}
                 </button>
                 <button class={btnGhost} type="button" onclick={() => (bulkOpen = false)}>
                   <X class="size-4 shrink-0" aria-hidden="true" />
@@ -789,16 +789,16 @@
                 aria-label={m["common.th_actions"]()}
               ></th>{/if}
             <th class="table-th-compact text-center whitespace-nowrap" scope="col">
-              {m["table.th_links"]()}
+              {m["table.th.links"]()}
             </th>
             <th class="table-th-compact text-center whitespace-nowrap" scope="col">
-              {m["table.th_title"]()}
+              {m["table.th.title"]()}
             </th>
             <th class="table-th-compact text-center whitespace-nowrap" scope="col">
-              {m["table.th_artist"]()}
+              {m["table.th.artist"]()}
             </th>
             <th class="table-th-compact text-center whitespace-nowrap" scope="col">
-              {m["table.th_comment"]()}
+              {m["table.th.comment"]()}
             </th>
             {#if editing}<th
                 class="table-th-compact px-2"
@@ -810,7 +810,7 @@
         {#each groups as group (group.unassigned ? "__unassigned__" : group.level)}
           {@const groupColor = colorFor(group.level, group.unassigned)}
           {@const groupLabel = group.unassigned
-            ? m["editor.entries_filter_unassigned"]()
+            ? m["editor.entries.filter_unassigned"]()
             : `${symbol}${group.level}`}
           <tbody id={entryGroupAnchorId(group.level, group.unassigned)} class="scroll-mt-5">
             <tr>
@@ -823,11 +823,11 @@
                     {groupLabel}
                   </span>
                   <span class="text-[1.1rem] text-white-80">
-                    {m["table.chart_count"]({ count: group.indices.length })}
+                    {m["table.stats.chart_count"]({ count: group.indices.length })}
                   </span>
                   {#if !group.unassigned && unlistedLevels.has(group.level)}
-                    <span class={btnChipOnWarning} title={m["editor.compat_unlisted_title"]()}>
-                      {m["editor.compat_unlisted_chip"]()}
+                    <span class={btnChipOnWarning} title={m["editor.compat.unlisted_title"]()}>
+                      {m["editor.compat.unlisted_chip"]()}
                     </span>
                   {/if}
                 </div>
@@ -837,12 +837,12 @@
               {@const entry = entries[index] ?? {}}
               {@const levelHint =
                 editing && isUnassigned(entry) && hintFor(entry) !== null
-                  ? m["editor.entry_level_hint"]({ level: hintFor(entry) ?? "" })
+                  ? m["editor.entry.level_hint"]({ level: hintFor(entry) ?? "" })
                   : null}
               <ChartTableRow
                 chart={toChart(entry)}
                 groupLevel={group.unassigned
-                  ? m["editor.entries_filter_unassigned"]()
+                  ? m["editor.entries.filter_unassigned"]()
                   : group.level}
                 bundleUrl={resolvedBundleUrl(entry)}
                 diffUrl={resolvedDiffUrl(entry)}
@@ -887,8 +887,8 @@
             <tr>
               <td class="table-td-compact text-center text-white-50" colspan={columnCount}>
                 {entries.length === 0
-                  ? m["editor.entries_empty"]()
-                  : m["editor.entries_empty_filtered"]()}
+                  ? m["editor.entries.empty"]()
+                  : m["editor.entries.empty_filtered"]()}
               </td>
             </tr>
           </tbody>

@@ -217,14 +217,14 @@ describe("strictIssueMessage 强验证错误消息映射", () => {
       params: { index: 3 },
     });
     expect(level).toEqual({
-      key: "editor.strict_entry_level",
+      key: "editor.strict.entry_level",
       params: { path: "data[3].level", index: 3 },
     });
     expect(strictIssueMessage(error("field_type", "header.tag")).key).toBe(
-      "editor.strict_field_type"
+      "editor.strict.field_type"
     );
     expect(strictIssueMessage(error("course_not_array", "header.course")).key).toBe(
-      "editor.strict_not_array"
+      "editor.strict.not_array"
     );
   });
 });
@@ -232,7 +232,7 @@ describe("strictIssueMessage 强验证错误消息映射", () => {
 describe("strictWarningMessage 强验证警告消息映射", () => {
   it("各类警告映射到对应键并携带插值参数", () => {
     expect(strictWarningMessage({ kind: "missing_data_url" }).key).toBe(
-      "editor.strict_warn_missing_data_url"
+      "editor.strict.warn.missing_data_url"
     );
     expect(
       strictWarningMessage({ kind: "unknown_field", scope: "entry", field: "eval" }).params

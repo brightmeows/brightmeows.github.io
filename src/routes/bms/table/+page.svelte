@@ -40,7 +40,7 @@
    * 共享表（主体）与自托管表（SSG 枚举）的单页总览：共享表按作者分组、
    * 我的组置顶、“只看我的”筛选、搜索；创建入口在标题区；删除/恢复走主站 API。
    */
-  const pageTitle = m["table.page_title"]();
+  const pageTitle = m["table.page.title"]();
 
   let tocItems = $state<TocItem[]>([]);
   let loading = $state(true);
@@ -64,10 +64,10 @@
 
   /** 排序键选项：value 是 SharedSortKey，label 走三语消息。 */
   const sortOptions: { value: SharedSortKey; label: () => string }[] = [
-    { value: "default", label: m["shared.sort_default"] },
-    { value: "updated", label: m["shared.sort_updated"] },
-    { value: "entries", label: m["shared.sort_entries"] },
-    { value: "name", label: m["shared.sort_name"] },
+    { value: "default", label: m["shared.sort.default"] },
+    { value: "updated", label: m["shared.sort.updated"] },
+    { value: "entries", label: m["shared.sort.entries"] },
+    { value: "name", label: m["shared.sort.name"] },
   ];
 
   async function loadTables(cacheBust = false): Promise<void> {
@@ -86,7 +86,7 @@
   async function handleDelete(item: SharedTableItem): Promise<void> {
     const label = item.name === "" ? item.id : item.name;
     if (
-      !(await confirmDialog.ask(m["shared.delete_confirm"]({ name: label }), { destructive: true }))
+      !(await confirmDialog.ask(m["shared.delete.confirm"]({ name: label }), { destructive: true }))
     ) {
       return;
     }
@@ -94,14 +94,14 @@
     actionNotice = null;
     try {
       await submitSharedDelete(item.id);
-      actionNotice = { kind: "ok", text: m["shared.deleted"]({ name: label }) };
+      actionNotice = { kind: "ok", text: m["shared.delete.done"]({ name: label }) };
       await loadTables(true);
       await trashPanel?.refresh();
       await auth.refresh();
     } catch (e) {
       actionNotice = {
         kind: "error",
-        text: e instanceof Error ? e.message : m["shared.delete_failed"](),
+        text: e instanceof Error ? e.message : m["shared.delete.failed"](),
       };
     } finally {
       deletingId = null;
@@ -124,10 +124,10 @@
 
 {#snippet titlePane()}
   <h1 class="page-title text-center">{pageTitle}</h1>
-  <p class="mt-2 text-center text-[1.1rem] text-white-70">{m["table.subtitle"]()}</p>
+  <p class="mt-2 text-center text-[1.1rem] text-white-70">{m["table.page.subtitle"]()}</p>
   <div class="mt-4 text-center">
     <a class={btnPrimaryLink} href={resolve("/bms/table/shared/new")}>
-      {m["shared.create_button"]()}
+      {m["shared.create.button"]()}
     </a>
   </div>
   <p class="mt-2 text-center text-[0.85rem] text-white-50">
@@ -138,7 +138,7 @@
       rel="noopener noreferrer"
     >
       <BookOpen class="size-4 shrink-0" aria-hidden="true" />
-      {m["table.format_reference"]()}
+      {m["table.page.reference"]()}
     </a>
   </p>
 {/snippet}
@@ -158,16 +158,16 @@
     {/if}
 
     <div class="flex flex-wrap items-center justify-center gap-3">
-      <h2 class="section-title">{m["shared.all_tables"]()}</h2>
+      <h2 class="section-title">{m["shared.list.title"]()}</h2>
       {#if login !== null}
         <label class={mineOnly ? btnChipOnWarning : btnChip}>
           <Checkbox
             size="sm"
-            ariaLabel={m["shared.mine_filter"]()}
+            ariaLabel={m["shared.mine.filter"]()}
             checked={mineOnly}
             onchange={(v: boolean) => (mineOnly = v)}
           />
-          {m["shared.mine_filter"]()}
+          {m["shared.mine.filter"]()}
         </label>
       {/if}
     </div>
@@ -176,7 +176,7 @@
       <input
         class="w-full rounded-glass-md border border-white-20 bg-black-20 px-4 py-3 pr-12 text-white outline-none placeholder:text-white-50 focus:border-accent/60 focus:ring-2 focus:ring-accent/30"
         type="text"
-        placeholder={m["shared.search_placeholder"]()}
+        placeholder={m["shared.list.search_placeholder"]()}
         bind:value={searchQuery}
         onfocus={searchConverters.ensureLoaded}
       />
@@ -201,7 +201,7 @@
     {/if}
 
     <div class="flex flex-wrap items-center justify-center gap-2">
-      <span class="text-[0.85rem] text-white-50">{m["shared.sort_label"]()}</span>
+      <span class="text-[0.85rem] text-white-50">{m["shared.sort.label"]()}</span>
       {#each sortOptions as option (option.value)}
         <button
           class="rounded-glass-sm border px-2 py-[0.35rem] text-[0.85rem] transition-colors duration-200 select-none {sortKey ===
@@ -221,7 +221,7 @@
       <div class="mt-6">
         <LoadingProgress
           variant="indeterminate"
-          message={m["shared.loading"]()}
+          message={m["shared.list.loading"]()}
           title={pageTitle}
         />
       </div>
@@ -233,8 +233,10 @@
         {login}
         {isAdmin}
         {deletingId}
-        emptyTitle={showFilterRow ? m["shared.no_match"]() : m["shared.empty_title"]()}
-        emptyDescription={showFilterRow ? m["shared.no_match_desc"]() : m["shared.empty_desc"]()}
+        emptyTitle={showFilterRow ? m["shared.list.no_match"]() : m["shared.list.empty_title"]()}
+        emptyDescription={showFilterRow
+          ? m["shared.list.no_match_desc"]()
+          : m["shared.list.empty_desc"]()}
         ondelete={(item) => void handleDelete(item)}
       />
     {/if}

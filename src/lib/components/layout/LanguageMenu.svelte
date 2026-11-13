@@ -18,9 +18,9 @@
   // messages,保持用户可见文本单一来源;label 延迟求值,模块顶层不触碰 m
   // (与 nav.ts 同一约定)。
   const languages: { code: "en" | "zh-cn" | "ja"; label: () => string }[] = [
-    { code: "ja", label: () => m["topbar.lang_ja"]() },
-    { code: "zh-cn", label: () => m["topbar.lang_zh"]() },
-    { code: "en", label: () => m["topbar.lang_en"]() },
+    { code: "ja", label: () => m["topbar.lang.ja"]() },
+    { code: "zh-cn", label: () => m["topbar.lang.zh"]() },
+    { code: "en", label: () => m["topbar.lang.en"]() },
   ];
 </script>
 
@@ -28,8 +28,8 @@
   <button
     type="button"
     class={topbarIcon}
-    title={m["topbar.language"]()}
-    aria-label={m["topbar.language"]()}
+    title={m["topbar.lang.label"]()}
+    aria-label={m["topbar.lang.label"]()}
     aria-expanded={panel.isOpen()}
     {...panel.hover}
     onclick={(event) => panel.onToggle(event)}

@@ -62,7 +62,7 @@
     if (removed !== undefined) {
       onNotice?.({
         kind: "ok",
-        text: m["editor.undo_level_deleted"]({ level: removed }),
+        text: m["editor.undo.level_deleted"]({ level: removed }),
         action: {
           label: m["common.undo"](),
           run: () => {
@@ -90,7 +90,7 @@
       {#if textMode}
         <button class={btnGhost} type="button" {disabled} onclick={applyTextMode}>
           <Check class="size-4 shrink-0" aria-hidden="true" />
-          {m["editor.level_order_apply_text"]()}
+          {m["editor.level.order_apply_text"]()}
         </button>
         <button class={btnGhost} type="button" onclick={() => (textMode = false)}>
           <X class="size-4 shrink-0" aria-hidden="true" />
@@ -99,7 +99,7 @@
       {:else}
         <button class={btnGhost} type="button" {disabled} onclick={startTextMode}>
           <ClipboardList class="size-4 shrink-0" aria-hidden="true" />
-          {m["editor.level_order_text_mode"]()}
+          {m["editor.level.order_text_mode"]()}
         </button>
       {/if}
     </div>
@@ -109,9 +109,9 @@
     <textarea
       class="{inputEditorBase} min-h-40 font-mono text-[0.85rem]"
       bind:value={textValue}
-      placeholder={m["editor.level_order_placeholder"]()}
+      placeholder={m["editor.level.order_placeholder"]()}
       {disabled}></textarea>
-    <p class="mt-1 text-[0.8rem] text-white-50">{m["editor.level_order_text_hint"]()}</p>
+    <p class="mt-1 text-[0.8rem] text-white-50">{m["editor.level.order_text_hint"]()}</p>
   {:else}
     <ul class="flex flex-col gap-1.5">
       {#each levels as level, index (level)}
@@ -126,8 +126,8 @@
             class={btnIcon}
             type="button"
             {disabled}
-            title={m["editor.level_order_move_up"]()}
-            aria-label={m["editor.level_order_move_up"]()}
+            title={m["editor.level.order_move_up"]()}
+            aria-label={m["editor.level.order_move_up"]()}
             onclick={() => commit(moveItem(levels, index, index - 1))}
           >
             <ChevronUp class="size-4" aria-hidden="true" />
@@ -136,8 +136,8 @@
             class={btnIcon}
             type="button"
             {disabled}
-            title={m["editor.level_order_move_down"]()}
-            aria-label={m["editor.level_order_move_down"]()}
+            title={m["editor.level.order_move_down"]()}
+            aria-label={m["editor.level.order_move_down"]()}
             onclick={() => commit(moveItem(levels, index, index + 1))}
           >
             <ChevronDown class="size-4" aria-hidden="true" />
@@ -146,8 +146,8 @@
             class={btnIconDanger}
             type="button"
             {disabled}
-            title={m["editor.level_order_remove"]()}
-            aria-label={m["editor.level_order_remove"]()}
+            title={m["editor.level.order_remove"]()}
+            aria-label={m["editor.level.order_remove"]()}
             onclick={() => handleRemove(index)}
           >
             <X class="size-4" aria-hidden="true" />
@@ -158,7 +158,7 @@
         <li
           class="rounded-glass-sm border border-white-10 bg-black-20 px-3 py-2 text-[0.9rem] text-white-50"
         >
-          {m["editor.level_order_empty"]()}
+          {m["editor.level.order_empty"]()}
         </li>
       {/if}
     </ul>
@@ -167,7 +167,7 @@
         class="{inputEditorBase} min-w-40 flex-1"
         type="text"
         bind:value={newLevel}
-        placeholder={m["editor.level_order_add_placeholder"]()}
+        placeholder={m["editor.level.order_add_placeholder"]()}
         {disabled}
         onkeydown={(event) => {
           if (event.key === "Enter") {
@@ -179,7 +179,7 @@
       />
       <button class={btnGhost} type="button" {disabled} onclick={handleAdd}>
         <Plus class="size-4 shrink-0" aria-hidden="true" />
-        {m["editor.level_order_add"]()}
+        {m["editor.level.order_add"]()}
       </button>
     </div>
   {/if}

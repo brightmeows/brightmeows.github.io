@@ -302,7 +302,9 @@
         tables = setTableProtected(tables, item.url, action === "add");
         await loadTables(true);
       },
-      action === "add" ? m["admin.joined"]({ name: label }) : m["admin.removed"]({ name: label })
+      action === "add"
+        ? m["admin.auth.added"]({ name: label })
+        : m["admin.auth.removed"]({ name: label })
     );
   }
 
@@ -324,7 +326,7 @@
         await loadTables(true);
         await loadOverview(true);
       },
-      m["admin.disabled"]({ name: label })
+      m["admin.disabled.disabled"]({ name: label })
     );
   }
 
@@ -338,7 +340,7 @@
         await loadTables(true);
         await loadOverview(true);
       },
-      m["admin.meta_saved"]({ name: label })
+      m["admin.meta.saved"]({ name: label })
     );
   }
 
@@ -352,7 +354,7 @@
         await loadTables(true);
         await loadOverview(true);
       },
-      m["admin.meta_cleared"]({ name: label })
+      m["admin.meta.cleared"]({ name: label })
     );
   }
 
@@ -361,7 +363,7 @@
       await adminReplace(from, to, "add");
       await loadTables(true);
       await loadOverview(true);
-    }, m["admin.rule_added"]());
+    }, m["admin.replace.added"]());
   }
 
   function handleReplaceRemove(from: string): Promise<boolean> {
@@ -369,7 +371,7 @@
       await adminReplace(from, undefined, "remove");
       await loadTables(true);
       await loadOverview(true);
-    }, m["admin.rule_removed"]());
+    }, m["admin.replace.removed"]());
   }
 
   function handleEnable(entry: DisabledEntry): Promise<boolean> {
@@ -379,7 +381,7 @@
         await loadTables(true);
         await loadOverview(true);
       },
-      m["admin.enabled"]({ name: entry.dir_name ?? entry.url })
+      m["admin.disable.enabled"]({ name: entry.dir_name ?? entry.url })
     );
   }
 
@@ -390,7 +392,7 @@
         await loadTables(true);
         await loadOverview(true);
       },
-      m["admin.restored"]({ dir: entry.dir_name })
+      m["admin.trash.restored"]({ dir: entry.dir_name })
     );
   }
 
@@ -458,7 +460,7 @@
   <div class="mt-4">
     <CardSwitcher
       items={cardItems}
-      ariaLabel={m["table.sections"]()}
+      ariaLabel={m["table.page.sections"]()}
       align="center"
       onToggle={toggleCard}
       onJump={(id) => void jumpToCard(id)}

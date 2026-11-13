@@ -43,7 +43,7 @@
         </span>
       {/if}
       <span class="text-[0.8rem] text-white-40">
-        {m["table.chart_count"]({ count: course.charts.length })}
+        {m["table.stats.chart_count"]({ count: course.charts.length })}
       </span>
     </div>
   {/snippet}
@@ -61,7 +61,7 @@
     <div class="flex flex-col gap-3">
       {#if course.constraint && course.constraint.length > 0}
         <div>
-          <div class="mb-1 text-[0.8rem] text-white-60">{m["editor.course_constraint"]()}</div>
+          <div class="mb-1 text-[0.8rem] text-white-60">{m["editor.course.constraint"]()}</div>
           <div class="flex flex-wrap gap-2">
             {#each course.constraint as constraint (constraint)}
               <span class={badgeWarningMd}>
@@ -74,7 +74,7 @@
 
       {#if course.trophy && course.trophy.length > 0}
         <div>
-          <div class="mb-1 text-[0.8rem] text-white-60">{m["editor.course_trophy"]()}</div>
+          <div class="mb-1 text-[0.8rem] text-white-60">{m["editor.course.trophy"]()}</div>
           <div class="flex flex-col gap-1">
             {#each course.trophy as trophy, index (index)}
               <div class="flex flex-wrap items-center gap-2 text-[0.85rem] text-white-70">
@@ -96,7 +96,7 @@
       {/if}
 
       <div>
-        <div class="mb-1 text-[0.8rem] text-white-60">{m["editor.course_charts"]()}</div>
+        <div class="mb-1 text-[0.8rem] text-white-60">{m["editor.course.charts"]()}</div>
         {#if course.charts.length > 0}
           <ol class="space-y-1.5">
             {#each course.charts as chart, chi (chart.md5 ?? chart.sha256 ?? chi)}

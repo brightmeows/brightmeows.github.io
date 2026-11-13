@@ -65,22 +65,22 @@
   {:else}
     <div class="flex flex-col gap-5">
       <section>
-        <h3 class={sectionTitle}>{m["admin.replace_heading"]()}</h3>
+        <h3 class={sectionTitle}>{m["admin.replace.heading"]()}</h3>
         <div class="flex flex-wrap items-center gap-2">
           <input
             class={inputInline}
             type="text"
             bind:value={replaceFrom}
-            placeholder={m["admin.replace_from"]()}
-            aria-label={m["admin.replace_from_aria"]()}
+            placeholder={m["admin.replace.from"]()}
+            aria-label={m["admin.replace.from_aria"]()}
             disabled={busy}
           />
           <input
             class={inputInline}
             type="text"
             bind:value={replaceTo}
-            placeholder={m["admin.replace_to"]()}
-            aria-label={m["admin.replace_to_aria"]()}
+            placeholder={m["admin.replace.to"]()}
+            aria-label={m["admin.replace.to_aria"]()}
             disabled={busy}
           />
           <button
@@ -90,14 +90,14 @@
             onclick={() => void submitReplace()}
           >
             <Plus class="size-4 shrink-0" aria-hidden="true" />
-            {m["admin.replace_add"]()}
+            {m["admin.replace.add"]()}
           </button>
         </div>
         {#if overview.replace.length > 0}
           <ul class="mt-2 flex flex-col gap-1 text-[0.85rem] text-white-70">
             {#each overview.replace as rule (rule.from)}
               <li class="flex flex-wrap items-center justify-between gap-2">
-                <span>{m["admin.replace_item"]({ from: rule.from, to: rule.to })}</span>
+                <span>{m["admin.replace.item"]({ from: rule.from, to: rule.to })}</span>
                 <button
                   class={btnGhost}
                   type="button"
@@ -105,7 +105,7 @@
                   onclick={() => void onreplaceremove(rule.from)}
                 >
                   <X class="size-4 shrink-0" aria-hidden="true" />
-                  {m["admin.replace_remove"]()}
+                  {m["admin.replace.remove"]()}
                 </button>
               </li>
             {/each}
@@ -114,16 +114,16 @@
       </section>
 
       <section>
-        <h3 class={sectionTitle}>{m["admin.disabled_list"]()}</h3>
+        <h3 class={sectionTitle}>{m["admin.disable.list"]()}</h3>
         {#if overview.disabled.length === 0}
-          <div class="text-[0.85rem] text-white-50">{m["admin.empty"]()}</div>
+          <div class="text-[0.85rem] text-white-50">{m["admin.misc.empty"]()}</div>
         {:else}
           <ul class="flex flex-col gap-1 text-[0.85rem] text-white-70">
             {#each overview.disabled as item (item.url)}
               <li class="flex flex-wrap items-center justify-between gap-2">
                 <span>
                   {item.dir_name ?? item.url}{#if item.note}<span class="ml-1 text-white-50"
-                      >{m["admin.note_wrap"]({ note: item.note })}</span
+                      >{m["admin.disable.note_wrap"]({ note: item.note })}</span
                     >{/if}
                 </span>
                 <button
@@ -133,7 +133,7 @@
                   onclick={() => void onenable(item)}
                 >
                   <CircleCheck class="size-4 shrink-0" aria-hidden="true" />
-                  {m["admin.enable"]()}
+                  {m["admin.disable.enable"]()}
                 </button>
               </li>
             {/each}
@@ -142,9 +142,9 @@
       </section>
 
       <section>
-        <h3 class={sectionTitle}>{m["admin.trash_heading"]({ count: overview.trash.length })}</h3>
+        <h3 class={sectionTitle}>{m["admin.trash.heading"]({ count: overview.trash.length })}</h3>
         {#if overview.trash.length === 0}
-          <div class="text-[0.85rem] text-white-50">{m["admin.empty"]()}</div>
+          <div class="text-[0.85rem] text-white-50">{m["admin.misc.empty"]()}</div>
         {:else}
           <ul class="flex flex-col gap-1 text-[0.85rem] text-white-70">
             {#each overview.trash as item (item.trash_prefix)}
@@ -163,7 +163,7 @@
                   onclick={() => void onrestore(item)}
                 >
                   <Undo2 class="size-4 shrink-0" aria-hidden="true" />
-                  {m["admin.restore"]()}
+                  {m["admin.trash.restore"]()}
                 </button>
               </li>
             {/each}
@@ -172,9 +172,9 @@
       </section>
 
       <section>
-        <h3 class={sectionTitle}>{m["admin.audit_heading"]({ count: overview.audit.length })}</h3>
+        <h3 class={sectionTitle}>{m["admin.audit.heading"]({ count: overview.audit.length })}</h3>
         {#if overview.audit.length === 0}
-          <div class="text-[0.85rem] text-white-50">{m["admin.empty"]()}</div>
+          <div class="text-[0.85rem] text-white-50">{m["admin.misc.empty"]()}</div>
         {:else}
           <ul class="flex flex-col gap-1 text-[0.85rem] text-white-70">
             {#each overview.audit as entry}

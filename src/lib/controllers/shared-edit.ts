@@ -201,7 +201,7 @@ export async function renameSharedTable(deps: {
   { ok: true; id: string } | { ok: false; canceled: true } | { ok: false; text: string }
 > {
   const confirmed = await deps.confirm(
-    m["shared.rename_confirm"]({ from: deps.tableId, to: deps.newId })
+    m["shared.rename.confirm"]({ from: deps.tableId, to: deps.newId })
   );
   if (!confirmed) return { ok: false, canceled: true };
   try {
@@ -210,7 +210,7 @@ export async function renameSharedTable(deps: {
   } catch (error) {
     return {
       ok: false,
-      text: error instanceof Error ? error.message : m["shared.rename_failed"](),
+      text: error instanceof Error ? error.message : m["shared.rename.failed"](),
     };
   }
 }
@@ -222,7 +222,7 @@ export async function deleteSharedTable(deps: {
   confirm: (message: string) => boolean | Promise<boolean>;
   remove: (id: string) => Promise<unknown>;
 }): Promise<{ ok: true } | { ok: false; canceled: true } | { ok: false; text: string }> {
-  const confirmed = await deps.confirm(m["shared.delete_confirm"]({ name: deps.label }));
+  const confirmed = await deps.confirm(m["shared.delete.confirm"]({ name: deps.label }));
   if (!confirmed) return { ok: false, canceled: true };
   try {
     await deps.remove(deps.tableId);
@@ -230,7 +230,7 @@ export async function deleteSharedTable(deps: {
   } catch (error) {
     return {
       ok: false,
-      text: error instanceof Error ? error.message : m["shared.delete_failed"](),
+      text: error instanceof Error ? error.message : m["shared.delete.failed"](),
     };
   }
 }

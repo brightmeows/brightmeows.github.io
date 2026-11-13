@@ -39,13 +39,14 @@
   - `pnpm check:colors` 调用它，pre-commit 与 CI 共用。
 - `scripts/check-site-config.ts` — 离线一致性校验（五条断言：wrangler routes 与 worker hosts 完全一致、工作流无硬编码域名、CORS 覆盖 `origin`、版本来源唯一（devEngines 范围加工作流不传 pnpm 版本）、wrangler vars 与 R2 配置一致）。
   - `pnpm check:config` 调用它，pre-commit 与 CI 都跑。
-- `scripts/check-i18n-coverage.ts` — i18n 覆盖校验，六条断言：
+- `scripts/check-i18n-coverage.ts` — i18n 覆盖校验，七条断言：
   - 三语 key 对称、占位符一致；
   - 源码引用与 Worker 错误码常量表（`@brightmeows/mirror/api` 的 `API_ERROR_CODES` 全部值）与共享表强验证消息键表（`@brightmeows/mirror/shared-strict` 的 `STRICT_EDITOR_MESSAGE_KEYS`，动态键的单一来源）存在于 messages；
   - Worker 源码里的 `code:` 字面量视为漂移；
   - 死 key；
   - src 残留中日韩字符（注释/console/测试/AGENTS/领域术语按豁免清单）；
   - en 值漏翻（语言自称键豁免）。
+  - 参与域两层命名：editor/shared/admin/bmsdata/topbar/table 的 key 必须 `<域>.<组>.<名>`（`TWO_LEVEL_DOMAINS` 清单；api 协议域与 mirror/common/search/batch 散装域豁免）。
   - `pnpm check:i18n` 调用它，pre-commit 与 CI 都跑；豁免口径见脚本头注。
 - `scripts/check-jsdoc.ts` — 导出函数 JSDoc 覆盖校验：`export function` 与 `export const` 箭头/函数表达式必须有 `/** */` 且去掉 tag 行后有非空描述。
   - 范围 `src/`、`packages/`、`scripts/` 的非测试 `.ts`（`.svelte` 组件脚本与 `*.test.ts` 豁免，`.d.ts` 与 paraglide 生成物不参与）。

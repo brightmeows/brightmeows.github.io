@@ -39,7 +39,7 @@
 <div class="flex flex-col gap-4">
   <div class="grid gap-4 sm:grid-cols-2">
     <HeaderField
-      label={m["editor.field_name"]()}
+      label={m["editor.fields.name"]()}
       bind:value={name}
       {editing}
       required={true}
@@ -47,16 +47,22 @@
       {onchange}
     />
     <HeaderField
-      label={m["editor.field_symbol"]()}
+      label={m["editor.fields.symbol"]()}
       bind:value={symbol}
       {editing}
       required={true}
       {disabled}
       {onchange}
     />
-    <HeaderField label={m["editor.field_tag"]()} bind:value={tag} {editing} {disabled} {onchange} />
     <HeaderField
-      label={m["editor.field_mode"]()}
+      label={m["editor.fields.tag"]()}
+      bind:value={tag}
+      {editing}
+      {disabled}
+      {onchange}
+    />
+    <HeaderField
+      label={m["editor.fields.mode"]()}
       bind:value={mode}
       {editing}
       {disabled}
@@ -65,8 +71,8 @@
   </div>
 
   <DetailsPanel
-    summary={m["editor.field_level_order"]()}
-    hint={editing ? m["editor.level_order_hint"]() : ""}
+    summary={m["editor.fields.level_order"]()}
+    hint={editing ? m["editor.level.order_hint"]() : ""}
     variant="plain"
     sub={true}
   >
@@ -87,7 +93,7 @@
     {/if}
   </DetailsPanel>
 
-  <DetailsPanel summary={m["editor.extra_json_title"]()} variant="plain" sub={true}>
+  <DetailsPanel summary={m["editor.fields.extra_title"]()} variant="plain" sub={true}>
     {#if extraJson.trim() !== "" && extraJson.trim() !== "{}"}
       <pre
         class="max-h-64 overflow-auto font-mono text-[0.8rem] whitespace-pre-wrap text-white-70">{extraJson}</pre>

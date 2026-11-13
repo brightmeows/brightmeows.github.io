@@ -334,7 +334,7 @@ export function createDragList(options: {
   }
 
   function movedMessage(name: string, position: number): string {
-    return m["editor.drag_moved"]({ name, position: String(position + 1) });
+    return m["editor.drag.moved"]({ name, position: String(position + 1) });
   }
 
   /** 放下（空格/Enter 或失焦）：位置与抓起时不同才播最终位置（指南口径）。 */
@@ -358,7 +358,7 @@ export function createDragList(options: {
         keyboardGrab = null;
         dragIndex = null;
         if (moved) await commitMove(grab.index, restoreTo);
-        announce(m["editor.drag_canceled"]());
+        announce(m["editor.drag.canceled"]());
       })
       .catch(() => undefined);
   }
@@ -473,7 +473,7 @@ export function createDragList(options: {
             handleNode: node,
           };
           dragIndex = current.index;
-          announce(m["editor.drag_grabbed"]({ name: current.name }));
+          announce(m["editor.drag.grabbed"]({ name: current.name }));
         }
         return;
       }

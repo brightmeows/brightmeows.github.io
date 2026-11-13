@@ -41,7 +41,7 @@ export function createTableLoader(deps: TableLoaderDeps) {
   let dataSourceUrl = $state<string | null>(null);
   let dataFetchUrl = $state<string | null>(null);
   let loadPercent = $state(0);
-  let loadMessage = $state<string>(m["editor.loading"]());
+  let loadMessage = $state<string>(m["editor.frame.loading"]());
   let loadDetail = $state("");
 
   const ready = $derived(headerLoadState === "loaded" && dataLoadState === "loaded");
@@ -61,7 +61,7 @@ export function createTableLoader(deps: TableLoaderDeps) {
     headerLoadState = "loading";
     headerError = null;
     loadPercent = 0;
-    loadMessage = m["editor.loading"]();
+    loadMessage = m["editor.frame.loading"]();
     loadDetail = "";
     deps.initBaseline();
     try {
@@ -73,7 +73,7 @@ export function createTableLoader(deps: TableLoaderDeps) {
       dataSourceUrl = dataUrl;
       headerLoadState = "loaded";
       if (dataUrl === null) {
-        dataError = m["table.data_url_missing"]();
+        dataError = m["table.data.url_missing"]();
         dataLoadState = "error";
         return;
       }
@@ -91,7 +91,7 @@ export function createTableLoader(deps: TableLoaderDeps) {
     dataFetchUrl = null;
     deps.setEntries([]);
     loadPercent = 0;
-    loadMessage = m["table.loading_charts"]();
+    loadMessage = m["table.loading.charts"]();
     loadDetail = "";
     try {
       const result = await fetchBmsTableData(dataUrl, resolveUrl(baseUrl ?? ""), progressCallback);

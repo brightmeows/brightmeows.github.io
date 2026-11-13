@@ -448,10 +448,10 @@
       id="profile-card-title"
       class="m-0 bg-[image:var(--gradient-brand)] bg-clip-text text-3xl text-transparent"
     >
-      {m["topbar.nickname"]()}
+      {m["topbar.account.nickname"]()}
     </h2>
-    <p class="mt-1 mb-4 text-indigo-300">{m["topbar.motto"]()}</p>
-    <p class="mb-5 text-sm leading-relaxed text-white-90">{m["topbar.bio"]()}</p>
+    <p class="mt-1 mb-4 text-indigo-300">{m["topbar.account.motto"]()}</p>
+    <p class="mb-5 text-sm leading-relaxed text-white-90">{m["topbar.account.bio"]()}</p>
     <div class="flex flex-wrap justify-center gap-3">
       <GlassButton
         href="https://codeberg.org/brightmeows"
@@ -505,7 +505,7 @@
   <div class="flex items-center justify-between gap-3">
     <!-- 左胶囊：桌面导航；窄屏只剩菜单入口 -->
     <GlassPanel class={pillClass} padding="none" rounded="none" overflow={false}>
-      <nav aria-label={m["topbar.nav_aria"]()} class="hidden items-center md:flex">
+      <nav aria-label={m["topbar.nav.aria"]()} class="hidden items-center md:flex">
         {#each topLevelNav as item, i (i)}
           {#if "children" in item}
             {@const dropdownActive = isActiveDropdown(item)}
@@ -532,7 +532,7 @@
                 <button
                   type="button"
                   class="flex cursor-pointer items-center rounded-r-lg py-2 pr-2 pl-1 text-current opacity-70 transition-opacity hover:opacity-100"
-                  aria-label={m["topbar.expand_nav"]({ name: item.label() })}
+                  aria-label={m["topbar.nav.expand"]({ name: item.label() })}
                   aria-expanded={panels.isOpen(item.id)}
                   onclick={(event) => {
                     const wrapper = event.currentTarget.parentElement;
@@ -617,8 +617,8 @@
         <button
           type="button"
           class="flex size-9 cursor-pointer items-center justify-center rounded-full text-white-85 transition-colors hover:bg-white-10 hover:text-white"
-          aria-label={m["topbar.menu"]()}
-          title={m["topbar.menu"]()}
+          aria-label={m["topbar.nav.menu"]()}
+          title={m["topbar.nav.menu"]()}
           aria-expanded={panels.isOpen("menu")}
           {...triggerHoverHandlers("menu", "left")}
           onclick={(event) => togglePanel("menu", "left", event)}
@@ -733,8 +733,8 @@
             <a
               href={loginHref}
               class={topbarIconSolid}
-              aria-label={m["topbar.login"]()}
-              title={m["topbar.login"]()}
+              aria-label={m["topbar.account.login"]()}
+              title={m["topbar.account.login"]()}
             >
               {@render personIcon()}
             </a>
@@ -743,7 +743,7 @@
             <button
               type="button"
               class="{topbarIcon} border-2 border-transparent hover:border-white-40"
-              aria-label={m["topbar.account_menu"]()}
+              aria-label={m["topbar.account.menu"]()}
               title={user.login}
               aria-expanded={panels.isOpen("user")}
               {...triggerHoverHandlers("user", "right")}
@@ -784,7 +784,7 @@
                     class="{topbarMenuItem} w-full"
                     onclick={() => void doLogout()}
                   >
-                    {m["topbar.logout"]()}
+                    {m["topbar.account.logout"]()}
                   </button>
                 </GlassPanel>
               </div>

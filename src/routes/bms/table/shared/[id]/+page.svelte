@@ -115,7 +115,7 @@
     if ("error" in result) {
       notice = {
         kind: "error",
-        text: result.error === "same" ? m["shared.rename_same"]() : m["shared.rename_invalid"](),
+        text: result.error === "same" ? m["shared.rename.same"]() : m["shared.rename.invalid"](),
       };
       return;
     }
@@ -204,7 +204,7 @@
     {#snippet actions()}
       {#if s?.item != null}
         <span class="text-[0.95rem] text-white-60">
-          {m["shared.author_label"]({ name: s.item.author })}
+          {m["shared.detail.author"]({ name: s.item.author })}
         </span>
       {/if}
       {#if notice}
@@ -219,13 +219,13 @@
         <div class="flex flex-col gap-4">
           {#if canRename}
             <div class="rounded-glass-sm border border-white-15 bg-black-20 p-3">
-              <div class="mb-2 text-[0.9rem] text-white-70">{m["shared.rename_section"]()}</div>
+              <div class="mb-2 text-[0.9rem] text-white-70">{m["shared.rename.section"]()}</div>
               <div class="flex flex-wrap gap-2">
                 <input
                   class="{inputEditorBase} min-w-50 flex-1"
                   type="text"
                   bind:value={newIdInput}
-                  placeholder={m["shared.rename_placeholder"]({ id: tableId })}
+                  placeholder={m["shared.rename.placeholder"]({ id: tableId })}
                   disabled={busy}
                 />
                 <button
@@ -234,10 +234,10 @@
                   disabled={busy}
                   onclick={() => void doRename()}
                 >
-                  {m["shared.rename_button"]()}
+                  {m["shared.rename.button"]()}
                 </button>
               </div>
-              <p class="mt-2 text-[0.8rem] text-white-50">{m["shared.rename_hint"]()}</p>
+              <p class="mt-2 text-[0.8rem] text-white-50">{m["shared.rename.hint"]()}</p>
             </div>
           {/if}
           {#if canDelete}
@@ -248,7 +248,7 @@
                 disabled={busy}
                 onclick={() => void doDelete()}
               >
-                {m["shared.actions_delete"]()}
+                {m["shared.delete.action"]()}
               </button>
             </div>
           {/if}
@@ -262,8 +262,8 @@
   <GlassPanel>
     <LoadingProgress
       variant="indeterminate"
-      message={m["shared.editor_loading"]()}
-      title={m["shared.new_title"]()}
+      message={m["shared.detail.loading"]()}
+      title={m["shared.create.title"]()}
     />
   </GlassPanel>
 {/snippet}
@@ -274,14 +274,14 @@
   <GlassPanel>
     <div class="py-6 text-center">
       {#if s?.phase === "login"}
-        <p class="text-[1rem] text-white-75">{m["shared.login_required"]()}</p>
-        <a class="{btnPrimary} mt-4 inline-block" href={loginHref}>{m["topbar.login"]()}</a>
+        <p class="text-[1rem] text-white-75">{m["shared.auth.login_required"]()}</p>
+        <a class="{btnPrimary} mt-4 inline-block" href={loginHref}>{m["topbar.account.login"]()}</a>
       {:else if s?.phase === "notfound"}
-        <p class="text-[1.05rem] text-error">{m["shared.not_found"]()}</p>
-        <p class="mt-2 text-[0.9rem] text-white-60">{m["shared.not_found_hint"]()}</p>
+        <p class="text-[1.05rem] text-error">{m["shared.detail.not_found"]()}</p>
+        <p class="mt-2 text-[0.9rem] text-white-60">{m["shared.detail.not_found_hint"]()}</p>
         <a class="{btnGhostXs} mt-3" href="/bms/table/shared/">
           <ArrowLeft class="size-4 shrink-0" aria-hidden="true" />
-          {m["shared.back_to_list"]()}
+          {m["shared.list.back"]()}
         </a>
       {:else if s?.phase === "error"}
         <p class="message-error">

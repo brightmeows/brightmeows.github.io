@@ -17,9 +17,9 @@
 
   // 三档偏好文案走 messages 保持单一来源;label 延迟求值,模块顶层不触碰 m。
   const options: { value: ThemePreference; label: () => string }[] = [
-    { value: "light", label: () => m["topbar.theme_light"]() },
-    { value: "dark", label: () => m["topbar.theme_dark"]() },
-    { value: "system", label: () => m["topbar.theme_system"]() },
+    { value: "light", label: () => m["topbar.theme.light"]() },
+    { value: "dark", label: () => m["topbar.theme.dark"]() },
+    { value: "system", label: () => m["topbar.theme.system"]() },
   ];
 </script>
 
@@ -27,8 +27,8 @@
   <button
     type="button"
     class={topbarIcon}
-    title={m["topbar.theme"]()}
-    aria-label={m["topbar.theme"]()}
+    title={m["topbar.theme.label"]()}
+    aria-label={m["topbar.theme.label"]()}
     aria-expanded={panel.isOpen()}
     {...panel.hover}
     onclick={(event) => panel.onToggle(event)}

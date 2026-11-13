@@ -23,9 +23,9 @@
 
   const label = $derived(item.name !== "" ? item.name : item.id);
   const deleteLabel = $derived(
-    deleting ? m["shared.deleting"]() : m["shared.delete_aria"]({ name: label })
+    deleting ? m["shared.delete.progress"]() : m["shared.delete.aria"]({ name: label })
   );
-  const editLabel = $derived(m["shared.edit_aria"]({ name: label }));
+  const editLabel = $derived(m["shared.detail.edit_aria"]({ name: label }));
 
   function formatUpdatedAt(value: string): string {
     return formatRelativeTime(value, getLocale());
@@ -43,7 +43,7 @@
     <div class="mt-0.5 font-mono text-[0.8rem] text-white-50">{item.id}</div>
   </td>
   <td class="table-td-glass wrap-break-word text-white-70">
-    {m["shared.entries_count"]({ count: item.entries })}
+    {m["shared.detail.entries"]({ count: item.entries })}
   </td>
   <td class="table-td-glass wrap-break-word whitespace-nowrap text-white-60">
     <span title={item.updated_at}>{formatUpdatedAt(item.updated_at)}</span>

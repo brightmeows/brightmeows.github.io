@@ -98,7 +98,7 @@
   });
 
   function chartFallbackName(index: number): string {
-    return m["editor.drag_chart_fallback"]({ position: String(index + 1) });
+    return m["editor.drag.chart_fallback"]({ position: String(index + 1) });
   }
 
   const knownHashes = $derived(buildEntryHashSet(entries));
@@ -115,7 +115,7 @@
     const md5 = typeof entry.md5 === "string" ? entry.md5 : "";
     const sha256 = typeof entry.sha256 === "string" ? entry.sha256 : "";
     const hash = md5 !== "" ? md5 : sha256;
-    return { label: entryLabel(entry) || hash || m["editor.entry_unnamed"](), hash };
+    return { label: entryLabel(entry) || hash || m["editor.entry.unnamed"](), hash };
   }
 
   // mutator 形参统一命名 target（可写写入目标），避开与只读 prop course 的遮蔽
@@ -170,7 +170,7 @@
     });
     onNotice?.({
       kind: "ok",
-      text: m["editor.undo_trophy_deleted"]({ name: removed.name }),
+      text: m["editor.undo.trophy_deleted"]({ name: removed.name }),
       action: {
         label: m["common.undo"](),
         run: () => {
@@ -262,7 +262,7 @@
         </span>
       {/if}
       <span class="text-[0.8rem] text-white-40">
-        {m["table.chart_count"]({ count: course.charts.length })}
+        {m["table.stats.chart_count"]({ count: course.charts.length })}
       </span>
     </div>
   {/snippet}
@@ -281,16 +281,16 @@
       {disabled}
       items={[
         {
-          label: m["editor.level_order_move_up"](),
+          label: m["editor.level.order_move_up"](),
           disabled: disabled || !canMoveUp,
           onselect: onMoveUp,
         },
         {
-          label: m["editor.level_order_move_down"](),
+          label: m["editor.level.order_move_down"](),
           disabled: disabled || !canMoveDown,
           onselect: onMoveDown,
         },
-        { label: m["editor.course_remove"](), danger: true, disabled, onselect: onDelete },
+        { label: m["editor.course.remove"](), danger: true, disabled, onselect: onDelete },
       ]}
     />
   {/snippet}
@@ -298,12 +298,12 @@
   {#snippet children()}
     <div class="flex flex-col gap-4">
       <label class="block">
-        <span class="mb-1 block text-[0.8rem] text-white-60">{m["editor.course_name"]()}</span>
+        <span class="mb-1 block text-[0.8rem] text-white-60">{m["editor.course.name"]()}</span>
         <input
           class="{inputEditorMono} max-w-120"
           type="text"
           value={course.name}
-          placeholder={m["editor.course_name_placeholder"]()}
+          placeholder={m["editor.course.name_placeholder"]()}
           oninput={(event) =>
             onedit((target) => {
               target.name = event.currentTarget.value;
@@ -312,7 +312,7 @@
         />
       </label>
 
-      <DetailsPanel summary={m["editor.course_constraint"]()} variant="plain" sub={true}>
+      <DetailsPanel summary={m["editor.course.constraint"]()} variant="plain" sub={true}>
         <div class="flex flex-wrap gap-x-4 gap-y-1">
           {#each [...COURSE_CONSTRAINTS, ...course.constraints.filter((item) => !COURSE_CONSTRAINTS.includes(item))] as constraint (constraint)}
             <label class="flex cursor-pointer items-center gap-1.5 text-[0.85rem] text-white-75">
@@ -328,11 +328,11 @@
         </div>
       </DetailsPanel>
 
-      <DetailsPanel summary={m["editor.course_trophy"]()} variant="plain" sub={true}>
+      <DetailsPanel summary={m["editor.course.trophy"]()} variant="plain" sub={true}>
         {#snippet actions()}
           <button class={btnGhost} type="button" {disabled} onclick={addTrophy}>
             <Plus class="size-4 shrink-0" aria-hidden="true" />
-            {m["editor.course_trophy_add"]()}
+            {m["editor.course.trophy_add"]()}
           </button>
         {/snippet}
         {#if course.trophies.length > 0}
@@ -344,7 +344,7 @@
                   type="text"
                   list="editor-trophy-names"
                   value={trophy.name}
-                  placeholder={m["editor.course_trophy_name"]()}
+                  placeholder={m["editor.course.trophy_name"]()}
                   oninput={(event) => setTrophyName(index, event.currentTarget.value)}
                   {disabled}
                 />
@@ -353,7 +353,7 @@
                   type="text"
                   inputmode="decimal"
                   value={trophy.missrateText}
-                  placeholder={m["editor.course_trophy_missrate"]()}
+                  placeholder={m["editor.course.trophy_missrate"]()}
                   oninput={(event) => setTrophyMissrate(index, event.currentTarget.value)}
                   {disabled}
                 />
@@ -362,7 +362,7 @@
                   type="text"
                   inputmode="decimal"
                   value={trophy.scorerateText}
-                  placeholder={m["editor.course_trophy_scorate"]()}
+                  placeholder={m["editor.course.trophy_scorate"]()}
                   oninput={(event) => setTrophyScorerate(index, event.currentTarget.value)}
                   {disabled}
                 />
@@ -370,8 +370,8 @@
                   class={btnIconDanger}
                   type="button"
                   {disabled}
-                  title={m["editor.course_trophy_remove"]()}
-                  aria-label={m["editor.course_trophy_remove"]()}
+                  title={m["editor.course.trophy_remove"]()}
+                  aria-label={m["editor.course.trophy_remove"]()}
                   onclick={() => removeTrophy(index)}
                 >
                   <Trash2 class="size-4" aria-hidden="true" />
@@ -380,13 +380,13 @@
             {/each}
           </div>
         {:else}
-          <p class="text-[0.85rem] text-white-50">{m["editor.course_trophy_empty"]()}</p>
+          <p class="text-[0.85rem] text-white-50">{m["editor.course.trophy_empty"]()}</p>
         {/if}
       </DetailsPanel>
 
       <DetailsPanel
-        summary={m["editor.course_charts"]()}
-        hint={m["editor.course_charts_hint"]()}
+        summary={m["editor.course.charts"]()}
+        hint={m["editor.course.charts_hint"]()}
         defaultOpen={true}
         variant="plain"
         sub={true}
@@ -395,11 +395,11 @@
           <div class="flex gap-2">
             <button class={btnGhost} type="button" {disabled} onclick={openPicker}>
               <Search class="size-4 shrink-0" aria-hidden="true" />
-              {m["editor.course_chart_pick"]()}
+              {m["editor.course.chart.pick"]()}
             </button>
             <button class={btnGhost} type="button" {disabled} onclick={addEmptyChart}>
               <Plus class="size-4 shrink-0" aria-hidden="true" />
-              {m["editor.course_chart_add"]()}
+              {m["editor.course.chart.add"]()}
             </button>
           </div>
         {/snippet}
@@ -411,7 +411,7 @@
                 class="{inputEditorMono} flex-1"
                 type="text"
                 bind:value={pickerQuery}
-                placeholder={m["editor.course_picker_search"]()}
+                placeholder={m["editor.course.picker_search"]()}
                 {disabled}
               />
               <button class={btnGhost} type="button" onclick={openPicker}>
@@ -420,7 +420,7 @@
               </button>
             </div>
             {#if pickerResults.length === 0}
-              <p class="text-[0.85rem] text-white-50">{m["editor.course_picker_empty"]()}</p>
+              <p class="text-[0.85rem] text-white-50">{m["editor.course.picker_empty"]()}</p>
             {:else}
               <ul class="max-h-64 overflow-auto">
                 {#each pickerResults as index (index)}
@@ -440,7 +440,7 @@
                       onclick={() => addFromPicker(entry)}
                     >
                       <Plus class="size-4 shrink-0" aria-hidden="true" />
-                      {m["editor.course_picker_add"]()}
+                      {m["editor.course.picker_add"]()}
                     </button>
                   </li>
                 {/each}
@@ -471,7 +471,7 @@
                       : ''}"
                     type="text"
                     value={chart.md5}
-                    placeholder={m["editor.course_chart_md5"]()}
+                    placeholder={m["editor.course.chart.md5"]()}
                     oninput={(event) => setChartMd5(index, event.currentTarget.value)}
                     {disabled}
                   />
@@ -481,7 +481,7 @@
                       : ''}"
                     type="text"
                     value={chart.sha256}
-                    placeholder={m["editor.course_chart_sha256"]()}
+                    placeholder={m["editor.course.chart.sha256"]()}
                     oninput={(event) => setChartSha256(index, event.currentTarget.value)}
                     {disabled}
                   />
@@ -489,7 +489,7 @@
                     class="{inputEditorMono} max-w-24"
                     type="text"
                     value={chart.levelText}
-                    placeholder={m["editor.course_chart_level"]()}
+                    placeholder={m["editor.course.chart.level"]()}
                     oninput={(event) => setChartLevel(index, event.currentTarget.value)}
                     {disabled}
                   />
@@ -497,16 +497,16 @@
                 <div class="mt-1.5 flex flex-wrap items-center gap-2">
                   <span class="text-[0.78rem] {resolved ? 'text-success' : 'text-amber-300'}">
                     {resolved
-                      ? m["editor.course_chart_resolved"]()
-                      : m["editor.course_chart_unresolved"]()}
+                      ? m["editor.course.chart.resolved"]()
+                      : m["editor.course.chart.unresolved"]()}
                   </span>
                   {#if issue === "missing"}
                     <span class="text-[0.78rem] text-error">
-                      {m["editor.course_chart_identity"]()}
+                      {m["editor.course.chart.identity"]()}
                     </span>
                   {:else if issue !== "ok"}
                     <span class="text-[0.78rem] text-error">
-                      {m["editor.course_chart_hash_invalid"]({ field: issue })}
+                      {m["editor.course.chart.hash_invalid"]({ field: issue })}
                     </span>
                   {/if}
                   <div class="ml-auto flex items-center gap-1">
@@ -514,17 +514,17 @@
                       {disabled}
                       items={[
                         {
-                          label: m["editor.level_order_move_up"](),
+                          label: m["editor.level.order_move_up"](),
                           disabled,
                           onselect: () => moveChart(index, -1),
                         },
                         {
-                          label: m["editor.level_order_move_down"](),
+                          label: m["editor.level.order_move_down"](),
                           disabled,
                           onselect: () => moveChart(index, 1),
                         },
                         {
-                          label: m["editor.course_chart_remove"](),
+                          label: m["editor.course.chart.remove"](),
                           danger: true,
                           disabled,
                           onselect: () => removeChart(index),
@@ -537,14 +537,14 @@
             {/each}
           </div>
         {:else}
-          <p class="text-[0.85rem] text-white-50">{m["editor.course_charts_empty"]()}</p>
+          <p class="text-[0.85rem] text-white-50">{m["editor.course.charts_empty"]()}</p>
         {/if}
       </DetailsPanel>
 
       {#if Object.keys(course.extra).length > 0}
         <details class="rounded-glass-sm border border-white-10 p-2">
           <summary class="cursor-pointer text-[0.78rem] text-white-50">
-            {m["editor.course_extra"]()}
+            {m["editor.course.extra"]()}
           </summary>
           <pre
             class="mt-1 max-h-40 overflow-auto font-mono text-[0.75rem] whitespace-pre-wrap text-white-60">{JSON.stringify(

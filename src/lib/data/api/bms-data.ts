@@ -89,14 +89,18 @@ export async function fetchBmsHeader(
 ): Promise<Record<string, unknown>> {
   const headerUrlBase = resolveUrl(headerUrl);
 
-  onProgress?.({ percent: 0, phase: "connecting", message: m["bmsdata.requesting_header"]() });
+  onProgress?.({
+    percent: 0,
+    phase: "connecting",
+    message: m["bmsdata.status.requesting_header"](),
+  });
 
   let headerResponse: Response;
   try {
     headerResponse = await fetchWithProgress(headerUrlBase, onProgress);
   } catch (err) {
     throw new Error(
-      m["bmsdata.header_load_failed"]({
+      m["bmsdata.header.load_failed"]({
         error: err instanceof Error ? err.message : String(err),
       }),
       { cause: err }
@@ -104,13 +108,13 @@ export async function fetchBmsHeader(
   }
 
   // percent=100 确保经上级 *0.35 映射后不低于下载阶段已达的 35%
-  onProgress?.({ percent: 100, phase: "parsing", message: m["bmsdata.parsing_header"]() });
+  onProgress?.({ percent: 100, phase: "parsing", message: m["bmsdata.parsing.header"]() });
   let data: unknown;
   try {
     data = await headerResponse.json();
   } catch (err) {
     throw new Error(
-      m["bmsdata.header_format_invalid"]({
+      m["bmsdata.header.format_invalid"]({
         error: err instanceof Error ? err.message : String(err),
       }),
       { cause: err }
@@ -120,13 +124,13 @@ export async function fetchBmsHeader(
   // 运行时校验：确保 header.json 是对象而非数组或其他类型
   if (!isRecord(data)) {
     throw new Error(
-      m["bmsdata.header_invalid_type"]({
-        actual: Array.isArray(data) ? m["bmsdata.actual_array"]() : String(typeof data),
+      m["bmsdata.header.invalid_type"]({
+        actual: Array.isArray(data) ? m["bmsdata.header.actual_array"]() : String(typeof data),
       })
     );
   }
 
-  onProgress?.({ percent: 100, phase: "done", message: m["bmsdata.header_done"]() });
+  onProgress?.({ percent: 100, phase: "done", message: m["bmsdata.header.done"]() });
   return data;
 }
 
@@ -151,18 +155,18 @@ export async function fetchBmsTableData(
 
   let tableDataRaw: unknown;
   if (isJsonp) {
-    onProgress?.({ percent: 0, phase: "connecting", message: m["bmsdata.waiting_jsonp"]() });
+    onProgress?.({ percent: 0, phase: "connecting", message: m["bmsdata.jsonp.waiting"]() });
     try {
       tableDataRaw = await fetchJsonp(finalDataUrl);
     } catch (err) {
       throw new Error(
-        m["bmsdata.jsonp_failed"]({ error: err instanceof Error ? err.message : String(err) }),
+        m["bmsdata.jsonp.failed"]({ error: err instanceof Error ? err.message : String(err) }),
         { cause: err }
       );
     }
-    onProgress?.({ percent: 85, phase: "parsing", message: m["bmsdata.jsonp_received"]() });
+    onProgress?.({ percent: 85, phase: "parsing", message: m["bmsdata.jsonp.received"]() });
   } else {
-    onProgress?.({ percent: 5, phase: "connecting", message: m["bmsdata.connecting"]() });
+    onProgress?.({ percent: 5, phase: "connecting", message: m["bmsdata.status.connecting"]() });
     try {
       const { response: dataResponse } = await fetchStream(
         finalDataUrl,
@@ -178,12 +182,12 @@ export async function fetchBmsTableData(
             }
           : undefined
       );
-      onProgress?.({ percent: 88, phase: "parsing", message: m["bmsdata.parsing_charts"]() });
+      onProgress?.({ percent: 88, phase: "parsing", message: m["bmsdata.parsing.charts"]() });
       try {
         tableDataRaw = await dataResponse.json();
       } catch (err) {
         throw new Error(
-          m["bmsdata.chart_format_invalid"]({
+          m["bmsdata.chart.format_invalid"]({
             error: err instanceof Error ? err.message : String(err),
           }),
           { cause: err }
@@ -191,14 +195,14 @@ export async function fetchBmsTableData(
       }
     } catch (err) {
       throw new Error(
-        m["bmsdata.chart_load_failed"]({ error: err instanceof Error ? err.message : String(err) }),
+        m["bmsdata.chart.load_failed"]({ error: err instanceof Error ? err.message : String(err) }),
         { cause: err }
       );
     }
   }
 
   if (!Array.isArray(tableDataRaw)) {
-    let apiError: string = m["bmsdata.chart_invalid"]();
+    let apiError: string = m["bmsdata.chart.invalid"]();
     if (typeof tableDataRaw === "object" && tableDataRaw !== null && "error" in tableDataRaw) {
       const err = (tableDataRaw as Record<string, unknown>).error;
       if (err !== undefined) {
@@ -207,10 +211,10 @@ export async function fetchBmsTableData(
         apiError = m["common.unknown_error"]();
       }
     }
-    throw new Error(m["bmsdata.chart_parse_failed"]({ error: apiError }));
+    throw new Error(m["bmsdata.chart.parse_failed"]({ error: apiError }));
   }
 
-  onProgress?.({ percent: 100, phase: "done", message: m["bmsdata.chart_done"]() });
+  onProgress?.({ percent: 100, phase: "done", message: m["bmsdata.chart.done"]() });
   // ChartData 全字段可选，元素级 schema 无信息增益；下游模型层按字段兜底
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion
   return { data: tableDataRaw as ChartData[], fetchUrl: finalDataUrl };

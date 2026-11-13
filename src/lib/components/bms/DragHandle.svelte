@@ -26,7 +26,7 @@
     class="btnIcon dnd-handle opacity-60 hover:opacity-100 focus-visible:opacity-100 aria-pressed:opacity-100"
     type="button"
     {disabled}
-    aria-label={m["editor.drag_row_label"]({ name })}
+    aria-label={m["editor.drag.row_label"]({ name })}
     aria-pressed={grabbed}
     use:dnd.handle={{ index, name, disabled }}
   >
@@ -34,9 +34,9 @@
   </button>
   <span class="dnd-keyhint" aria-hidden="true">
     {#if grabbed}
-      {m["editor.drag_hint_grabbed"]()}
+      {m["editor.drag.hint_grabbed"]()}
     {:else}
-      {m["editor.drag_hint_idle"]()}
+      {m["editor.drag.hint_idle"]()}
     {/if}
   </span>
 </span>

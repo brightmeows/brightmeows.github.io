@@ -78,27 +78,27 @@
     if (result.header !== null) applyImportedHeader(result.header);
     const sourceLabel =
       result.source === "paste"
-        ? m["editor.import_source_paste"]()
+        ? m["editor.import.source_paste"]()
         : result.source === "file"
-          ? m["editor.import_source_file"]()
-          : m["editor.import_source_fork"]();
+          ? m["editor.import.source_file"]()
+          : m["editor.import.source_fork"]();
     let noticeText: string;
     if (result.data !== null) {
       const imported = result.data.map((item) => ({ ...item }) as ChartData);
       if (result.dataMode === "append") {
         const { added, skipped } = splitNewEntries(entries, imported);
         entries = [...entries, ...(added as ChartData[])];
-        noticeText = m["editor.import_dedup_done"]({
+        noticeText = m["editor.import.dedup_done"]({
           source: sourceLabel,
           added: added.length,
           skipped,
         });
       } else {
         entries = imported;
-        noticeText = m["editor.import_done"]({ source: sourceLabel });
+        noticeText = m["editor.import.done"]({ source: sourceLabel });
       }
     } else {
-      noticeText = m["editor.import_done"]({ source: sourceLabel });
+      noticeText = m["editor.import.done"]({ source: sourceLabel });
     }
     onChange();
     const warningsText = strictWarningsNotice(result.warnings);
@@ -117,7 +117,7 @@
     }
     onNotice({
       kind: result.added.length > 0 ? "ok" : "warn",
-      text: m["editor.bms_drop_done"]({
+      text: m["editor.drop.done"]({
         added: result.added.length,
         skipped: result.skipped,
         failed: result.failed,
@@ -130,7 +130,7 @@
     onChange();
     onNotice({
       kind: result.added.length > 0 ? "ok" : "warn",
-      text: m["editor.entry_import_done"]({
+      text: m["editor.entry.import.done"]({
         source: result.sourceLabel,
         added: result.added.length,
         skipped: result.skipped,
@@ -143,7 +143,7 @@
     const applied = applyHashList(entries, courseModel, parsed.rows);
     entries = applied.entries as ChartData[];
     courseModel = applied.courseModel;
-    let text: string = m["editor.hashlist_done"]({
+    let text: string = m["editor.hashlist.done"]({
       filled: applied.filled,
       entries: applied.entryRows,
       courses: applied.courseRows,
@@ -151,7 +151,7 @@
       unmatched: applied.unmatched,
     });
     if (parsed.invalidLines > 0) {
-      text += " " + m["editor.hashlist_invalid"]({ count: parsed.invalidLines });
+      text += " " + m["editor.hashlist.invalid"]({ count: parsed.invalidLines });
     }
     onChange();
     onNotice({ kind: applied.filled > 0 ? "ok" : "warn", text });

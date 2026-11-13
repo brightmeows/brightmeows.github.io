@@ -90,9 +90,9 @@
   const sharedMode = $derived(capabilities.mode === "shared");
   const createMode = $derived(capabilities.createMode ?? false);
   const editHint = $derived.by(() => {
-    if (createMode) return m["editor.enter_table_hint_create"]();
-    if (sharedMode && capabilities.canWrite === true) return m["editor.enter_table_hint_save"]();
-    return m["editor.enter_table_hint_local"]();
+    if (createMode) return m["editor.enter.table_hint_create"]();
+    if (sharedMode && capabilities.canWrite === true) return m["editor.enter.table_hint_save"]();
+    return m["editor.enter.table_hint_local"]();
   });
 
   // ---- 模式（?edit=1 浅层路由；深链与刷新保持编辑态） ----
@@ -168,7 +168,7 @@
     }
     model.notice = {
       kind: result.added.length > 0 ? "ok" : "warn",
-      text: m["editor.bms_drop_done"]({
+      text: m["editor.drop.done"]({
         added: result.added.length,
         skipped: result.skipped,
         failed: result.failed,
@@ -225,12 +225,12 @@
   const cardItems = $derived<CardSwitchItem[]>([
     {
       id: "overview",
-      label: m["editor.header_section"](),
+      label: m["editor.frame.header"](),
       checked: visibleCards.overview,
     },
     {
       id: "course-list",
-      label: m["editor.course_section"](),
+      label: m["editor.course.section"](),
       checked: visibleCards["course-list"],
       count: courseCount,
     },
@@ -245,7 +245,7 @@
       : []),
     {
       id: "charts-list",
-      label: m["editor.entries_section"](),
+      label: m["editor.entries.section"](),
       checked: visibleCards["charts-list"],
       count: model.entries.length,
     },
@@ -270,10 +270,10 @@
     model.headerLoadState === "loaded"
       ? [
           ...(visibleCards.overview
-            ? [{ id: "overview", title: m["editor.header_section"](), href: "#overview" }]
+            ? [{ id: "overview", title: m["editor.frame.header"](), href: "#overview" }]
             : []),
           ...(visibleCards["course-list"]
-            ? [{ id: "course-list", title: m["editor.course_section"](), href: "#course-list" }]
+            ? [{ id: "course-list", title: m["editor.course.section"](), href: "#course-list" }]
             : []),
           ...(visibleCards["level-ref"] && levelRefHasData
             ? [{ id: "level-ref", title: m["levelref.heading"](), href: "#level-ref" }]
@@ -282,7 +282,7 @@
             ? [
                 {
                   id: "charts-list",
-                  title: m["editor.entries_section"](),
+                  title: m["editor.entries.section"](),
                   href: "#charts-list",
                 },
               ]
@@ -349,7 +349,7 @@
     onclick={() => model.exportTable("header")}
   >
     <Download class="size-4 shrink-0" aria-hidden="true" />
-    {m["editor.export_header"]()}
+    {m["editor.export.header"]()}
   </button>
   <button
     class="{btnGhost} w-full"
@@ -358,7 +358,7 @@
     onclick={() => model.exportTable("data")}
   >
     <Download class="size-4 shrink-0" aria-hidden="true" />
-    {m["editor.export_data"]()}
+    {m["editor.export.data"]()}
   </button>
   <button
     class="{btnGhost} w-full"
@@ -367,12 +367,12 @@
     onclick={() => model.exportTable("package")}
   >
     <Download class="size-4 shrink-0" aria-hidden="true" />
-    {m["editor.export_package"]()}
+    {m["editor.export.package"]()}
   </button>
   {#if headerUrl !== null}
     <a class="{btnGhost} w-full" href={headerUrl} target="_blank" rel="noopener noreferrer">
       <ExternalLink class="size-4 shrink-0" aria-hidden="true" />
-      {m["table.view_header"]()}
+      {m["table.view.header"]()}
     </a>
   {/if}
   {#if model.dataFetchUrl !== null}
@@ -383,7 +383,7 @@
       rel="noopener noreferrer"
     >
       <ExternalLink class="size-4 shrink-0" aria-hidden="true" />
-      {m["table.view_data"]()}
+      {m["table.view.data"]()}
     </a>
   {/if}
   <a
@@ -393,7 +393,7 @@
     rel="noopener noreferrer"
   >
     <BookOpen class="size-4 shrink-0" aria-hidden="true" />
-    {m["table.format_reference"]()}
+    {m["table.page.reference"]()}
   </a>
   {#if !isEdit && saveAsShared === "same-origin"}
     <button
@@ -403,7 +403,7 @@
       onclick={() => void model.saveAsSharedNow()}
     >
       <Copy class="size-4 shrink-0" aria-hidden="true" />
-      {sharedMode ? m["shared.fork"]() : m["editor.save_as_shared"]()}
+      {sharedMode ? m["shared.detail.fork"]() : m["editor.save.as_shared"]()}
     </button>
   {/if}
 {/snippet}
@@ -418,7 +418,7 @@
           bind:value={model.name}
           placeholder={model.pageTitle}
           disabled={model.busy || model.dataLoadState !== "loaded"}
-          aria-label={m["editor.field_name"]()}
+          aria-label={m["editor.fields.name"]()}
           oninput={() => model.markDirty()}
         />
       {:else}
@@ -427,7 +427,7 @@
     </h1>
     {#if model.symbol.trim() !== ""}
       <div class="text-[1.1rem] text-white-70 italic">
-        {m["table.symbol"]({ symbol: model.symbol })}
+        {m["table.page.symbol"]({ symbol: model.symbol })}
       </div>
     {/if}
 
@@ -436,7 +436,7 @@
     >
       {#if model.ready && model.tableStats}
         <span>
-          {m["table.stats"]({
+          {m["table.stats.summary"]({
             total: model.tableStats.totalCharts,
             difficulties: model.tableStats.difficulties.length,
           })}
@@ -446,7 +446,7 @@
         {#if model.ready && model.tableStats}
           <span class="text-white-40">·</span>
         {/if}
-        <span>{m["table.import_url_short"]()}</span>
+        <span>{m["table.list.import_url"]()}</span>
         {#if importUrl}
           <span class="max-w-full font-mono text-[0.85rem] break-all text-white-75">
             {importUrl}
@@ -455,7 +455,7 @@
             {m["common.click_copy"]()}
           </button>
         {:else}
-          <span class="text-white-50">{m["table.reading"]()}</span>
+          <span class="text-white-50">{m["table.loading.reading"]()}</span>
         {/if}
         {#if cb.copied}
           <span class="text-success">{m["common.copied"]()}</span>
@@ -475,13 +475,13 @@
       <p
         class="rounded-glass-sm border border-white-15 bg-black-20 px-3 py-2 text-[0.85rem] text-white-65"
       >
-        {m["editor.shared_local_hint"]()}
+        {m["editor.frame.shared_local_hint"]()}
       </p>
     {/if}
 
     <CardSwitcher
       items={cardItems}
-      ariaLabel={m["table.sections"]()}
+      ariaLabel={m["table.page.sections"]()}
       align="center"
       onToggle={toggleCard}
       onJump={(id) => void jumpToCard(id)}
@@ -492,8 +492,8 @@
 {#snippet headerLoadingPane()}
   <div class="p-8">
     <LoadingProgress
-      title={m["table.loading_data_title"]()}
-      message={m["table.loading_header_request"]()}
+      title={m["table.loading.data_title"]()}
+      message={m["table.loading.header_request"]()}
       progress={0}
       variant="indeterminate"
     />

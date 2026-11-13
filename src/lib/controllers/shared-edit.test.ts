@@ -229,7 +229,7 @@ describe("renameSharedTable", () => {
         return Promise.resolve();
       },
     });
-    expect(message).toBe(m["shared.rename_confirm"]({ from: "old-id", to: "new-id" }));
+    expect(message).toBe(m["shared.rename.confirm"]({ from: "old-id", to: "new-id" }));
     expect(called).toEqual(["old-id", "new-id"]);
     expect(outcome).toEqual({ ok: true, id: "new-id" });
   });
@@ -259,7 +259,7 @@ describe("renameSharedTable", () => {
       ...base,
       rename: () => Promise.reject(nonErrorReason),
     });
-    expect(opaque).toEqual({ ok: false, text: m["shared.rename_failed"]() });
+    expect(opaque).toEqual({ ok: false, text: m["shared.rename.failed"]() });
   });
 });
 
@@ -285,7 +285,7 @@ describe("deleteSharedTable", () => {
         return Promise.resolve();
       },
     });
-    expect(message).toBe(m["shared.delete_confirm"]({ name: "我的表" }));
+    expect(message).toBe(m["shared.delete.confirm"]({ name: "我的表" }));
     expect(called).toBe("t");
     expect(outcome).toEqual({ ok: true });
   });
@@ -315,6 +315,6 @@ describe("deleteSharedTable", () => {
       ...base,
       remove: () => Promise.reject(nonErrorReason),
     });
-    expect(opaque).toEqual({ ok: false, text: m["shared.delete_failed"]() });
+    expect(opaque).toEqual({ ok: false, text: m["shared.delete.failed"]() });
   });
 });

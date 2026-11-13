@@ -119,13 +119,17 @@ export function createTableModel(input: TableModelInput) {
   const courseGroups = $derived(resolveCourses(headerRecord.course, entries));
   const canSave = $derived.by(() => onSave !== undefined && canWrite);
   const saveLabel = $derived.by(() =>
-    busy ? m["editor.saving"]() : createMode ? m["editor.create_shared"]() : m["editor.save"]()
+    busy
+      ? m["editor.save.progress"]()
+      : createMode
+        ? m["editor.save.create_label"]()
+        : m["editor.save.save"]()
   );
   const pageTitle = $derived(
     name.trim() === ""
       ? createMode
-        ? m["editor.page_title"]()
-        : m["table.loading_header"]()
+        ? m["editor.frame.title"]()
+        : m["table.loading.header"]()
       : name.trim()
   );
 
@@ -215,7 +219,7 @@ export function createTableModel(input: TableModelInput) {
 
   /** 放弃未保存修改：删草稿并回载远端（新表回到种子态）。 */
   async function discardEdits(): Promise<void> {
-    if (!(await askConfirm(m["editor.discard_unsaved_confirm"]()))) return;
+    if (!(await askConfirm(m["editor.discard.unsaved_confirm"]()))) return;
     await drafts.resetAfterDiscard();
     notice = null;
     levelHints = {};
@@ -244,7 +248,7 @@ export function createTableModel(input: TableModelInput) {
     if (outcome.kind === "saved") {
       if (outcome.nextBaseline !== undefined) baselineUpdatedAt = outcome.nextBaseline;
       drafts.markSaved();
-      notice = { kind: "ok", text: m["editor.saved"]({ count: outcome.count }) };
+      notice = { kind: "ok", text: m["editor.save.done"]({ count: outcome.count }) };
     } else {
       notice = { kind: "error", text: outcome.text };
     }
@@ -260,7 +264,7 @@ export function createTableModel(input: TableModelInput) {
     }
     const draftResult = await drafts.persist(buildDraftPayload());
     if (draftResult !== "ok") {
-      notice = { kind: "error", text: m["editor.draft_unavailable"]() };
+      notice = { kind: "error", text: m["editor.draft.unavailable"]() };
       return;
     }
     writeDraftClaim({ sourceDraftKey: draftKey, at: new Date().toISOString() });
@@ -270,7 +274,7 @@ export function createTableModel(input: TableModelInput) {
 
   function ensureValid(): boolean {
     if (name.trim() === "" || symbol.trim() === "") {
-      notice = { kind: "error", text: m["editor.export_missing_identity"]() };
+      notice = { kind: "error", text: m["editor.export.missing_identity"]() };
       return false;
     }
     return true;
@@ -281,7 +285,7 @@ export function createTableModel(input: TableModelInput) {
     if (unassignedCount > 0) {
       notice = {
         kind: "warn",
-        text: m["editor.export_unassigned_warning"]({ count: unassignedCount }),
+        text: m["editor.export.unassigned_warning"]({ count: unassignedCount }),
       };
     } else if (notice?.kind === "warn") {
       notice = null;
