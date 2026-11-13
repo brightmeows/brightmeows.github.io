@@ -8,3 +8,11 @@ allowBuilds:
   esbuild: true
   unrs-resolver: true
   workerd: true
+
+# dependabot 告警清理（2026-11-13）：传递依赖修复版强制钉版；deepmerge 上游
+# 未发修复版（4.3.1 即最新），告警走 dismiss 不入此表。
+overrides:
+  re2js: 2.8.7
+  minimatch: 11.0.1
+  postcss-selector-parser: 6.1.5
+  katex: ^0.18.2
