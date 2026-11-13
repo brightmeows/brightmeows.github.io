@@ -96,7 +96,7 @@
       <ChartLinkButtons {chart} {bundleUrl} {diffUrl} />
     </div>
   </td>
-  <td class="table-td-compact wrap-break-word">
+  <th scope="row" class="table-td-compact text-left font-normal wrap-break-word">
     <strong
       use:jsonPreview={{
         preview: chartPreview,
@@ -124,7 +124,7 @@
     {#if levelHint}
       <div class="mt-1 text-[0.75rem] text-white-40">{levelHint}</div>
     {/if}
-  </td>
+  </th>
   <td class="table-td-compact wrap-break-word">
     {chart.artist ?? m["common.unknown_artist"]()}
   </td>

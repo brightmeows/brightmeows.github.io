@@ -263,7 +263,11 @@
   }
 </style>
 
-<canvas bind:this={canvasRef} class="pointer-events-none fixed top-0 left-0 z-0 h-full w-full">
+<canvas
+  bind:this={canvasRef}
+  aria-hidden="true"
+  class="pointer-events-none fixed top-0 left-0 z-0 h-full w-full"
+>
 </canvas>
 
 <div

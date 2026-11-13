@@ -362,14 +362,17 @@
                   <td class="table-td-glass wrap-break-word text-white-80">
                     {typeof entry.level === "string" ? entry.level : ""}
                   </td>
-                  <td class="table-td-glass min-w-50 wrap-break-word">
+                  <th
+                    scope="row"
+                    class="table-td-glass min-w-50 text-left font-normal wrap-break-word"
+                  >
                     <div class="text-white-90">
                       {entryLabel(entry) || m["editor.entry_unnamed"]()}
                     </div>
                     {#if typeof entry.artist === "string" && entry.artist !== ""}
                       <div class="text-[0.8rem] text-white-50">{entry.artist}</div>
                     {/if}
-                  </td>
+                  </th>
                   <td class="table-td-glass font-mono text-[0.8rem] wrap-break-word text-white-55">
                     {shortHash(entry)}
                   </td>

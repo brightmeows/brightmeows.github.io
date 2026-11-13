@@ -78,6 +78,31 @@
     }
   }
 
+  /** GFM 任务列表 checkbox 补可访问名：读屏用户听到列表项文本而非裸控件。 */
+  function enhanceTaskLists(): void {
+    if (!container) return;
+    for (const item of container.querySelectorAll("li.task-list-item")) {
+      const checkbox = item.querySelector(":scope > input[type=checkbox]");
+      if (!checkbox || checkbox.hasAttribute("aria-label")) continue;
+      const text = (item.textContent ?? "").trim();
+      if (text) checkbox.setAttribute("aria-label", text);
+    }
+  }
+
+  /** 数据表行头化：tbody 每行首个 td 升为 th scope=row，读屏可按行头导航。 */
+  function addRowHeaders(): void {
+    if (!container) return;
+    for (const row of container.querySelectorAll("table tbody tr")) {
+      const first = row.querySelector(":scope > td");
+      if (!first) continue;
+      const th = document.createElement("th");
+      th.setAttribute("scope", "row");
+      th.className = first.className;
+      th.replaceChildren(...first.childNodes);
+      first.replaceWith(th);
+    }
+  }
+
   function scheduleEnsureHeadingAnchors(): void {
     if (scheduled) return;
     scheduled = true;
@@ -85,6 +110,8 @@
       scheduled = false;
       ensureHeadingAnchors();
       wrapTables();
+      addRowHeaders();
+      enhanceTaskLists();
       lazyLoadImages();
 
       if (location.hash.length > 1) {
@@ -131,6 +158,7 @@
     "[&_table]:w-full [&_table]:border-collapse [&_table]:rounded-glass-sm [&_table]:bg-white-5",
     "[&_th]:border [&_th]:border-white-10 [&_th]:bg-sky-300/20 [&_th]:px-3 [&_th]:py-3 [&_th]:text-left [&_th]:font-bold [&_th]:text-white",
     "[&_td]:border [&_td]:border-white-10 [&_td]:px-3 [&_td]:py-3 [&_td]:text-left",
+    "[&_tbody_th]:bg-transparent [&_tbody_th]:text-left [&_tbody_th]:font-normal",
     "[&_.katex]:text-[1.1em]",
     "[&_.katex-display]:overflow-x-auto [&_.katex-display]:overflow-y-hidden [&_.katex-display]:py-4",
     "[&_.info]:my-4 [&_.info]:rounded [&_.info]:border-l-4 [&_.info]:border-sky-300 [&_.info]:bg-white-5 [&_.info]:p-4",
