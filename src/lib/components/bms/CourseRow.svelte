@@ -16,7 +16,6 @@
     children: Snippet;
     dragItem?: Action<HTMLElement, DragItemOptions> | undefined;
     dragIndex?: number | undefined;
-    dropTarget?: boolean | undefined;
     dragDisabled?: boolean | undefined;
   }
 
@@ -27,16 +26,13 @@
     children,
     dragItem = inertDragItem,
     dragIndex = -1,
-    dropTarget = false,
     dragDisabled = true,
   }: Props = $props();
 </script>
 
 <div
   use:dragItem={{ index: dragIndex, disabled: dragDisabled }}
-  class="border-b border-white-10 transition-colors last:border-b-0 hover:bg-white-5 {dropTarget
-    ? 'bg-accent/10'
-    : ''}"
+  class="border-b border-white-10 transition-colors last:border-b-0 hover:bg-white-5"
 >
   <div class="flex flex-wrap items-start gap-3 px-1 py-3">
     <div class="min-w-0 flex-1">{@render summary()}</div>

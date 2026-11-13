@@ -1,21 +1,20 @@
 <script lang="ts">
   import type { ChartData } from "@brightmeows/bms/format";
-  import GripVertical from "@lucide/svelte/icons/grip-vertical";
-  import type { Action } from "svelte/action";
 
   import ChartLinkButtons from "./ChartLinkButtons.svelte";
+  import DragHandle from "./DragHandle.svelte";
+  import RowActionMenu from "./RowActionMenu.svelte";
 
   import Checkbox from "#lib/components/ui/Checkbox.svelte";
   import { jsonPreview } from "#lib/components/ui/JsonPreview.svelte";
   import { m } from "#lib/paraglide/messages.js";
   import type { JsonPreviewHandle } from "#lib/types/ui.js";
-  import { inertDragItem, type DragItemOptions } from "#lib/utils/ui/dnd-list.svelte.js";
+  import { inertDragItem, type DragList } from "#lib/utils/ui/dnd-list.svelte.js";
 
-  /** 行拖拽上下文：行动作、本行排序下标、当前落点下标与禁拖标志。 */
+  /** 行拖拽上下文：列表实例（把手用 handle）、本行排序下标与禁拖标志。 */
   interface RowDrag {
-    item: Action<HTMLElement, DragItemOptions>;
+    dnd: DragList;
     index: number;
-    dropTargetIndex: number | null;
     disabled: boolean;
   }
 
@@ -36,6 +35,11 @@
     onEdit?: (() => void) | undefined;
     /** 编辑态：未指派条目的文件等级建议。 */
     levelHint?: string | null;
+    /** 编辑态菜单：组内是否可上移/下移与移动回调。 */
+    canMoveUp?: boolean;
+    canMoveDown?: boolean;
+    onMoveUp?: (() => void) | undefined;
+    onMoveDown?: (() => void) | undefined;
   }
 
   let {
@@ -51,25 +55,31 @@
     onSelect,
     onEdit,
     levelHint = null,
+    canMoveUp = false,
+    canMoveDown = false,
+    onMoveUp = undefined,
+    onMoveDown = undefined,
   }: Props = $props();
 
-  const rowAction = $derived(drag === undefined ? inertDragItem : drag.item);
+  const rowAction = $derived(drag === undefined ? inertDragItem : drag.dnd.item);
   const rowParams = $derived(
     drag === undefined
       ? { index: -1, disabled: true }
       : { index: drag.index, disabled: drag.disabled }
   );
-  const isDropTarget = $derived(drag !== undefined && drag.dropTargetIndex === drag.index);
 </script>
 
-<tr use:rowAction={rowParams} class="hover:bg-white-5 {isDropTarget ? 'bg-accent/10' : ''}">
+<tr use:rowAction={rowParams} class="hover:bg-white-5">
   {#if selectable}
     <td class="table-td-compact px-2">
       <div class="flex items-center justify-center gap-1">
         {#if drag}
-          <span class="cursor-grab text-white-35" aria-hidden="true">
-            <GripVertical class="size-4" />
-          </span>
+          <DragHandle
+            dnd={drag.dnd}
+            index={drag.index}
+            name={chart.title ?? m["common.unknown_title"]()}
+            {disabled}
+          />
         {/if}
         <Checkbox
           size="sm"
@@ -121,4 +131,23 @@
   <td class="table-td-compact wrap-break-word">
     {chart.comment ?? ""}
   </td>
+  {#if drag !== undefined && onMoveUp !== undefined && onMoveDown !== undefined}
+    <td class="table-td-compact w-10 px-1 text-center">
+      <RowActionMenu
+        {disabled}
+        items={[
+          {
+            label: m["editor.level_order_move_up"](),
+            disabled: disabled || !canMoveUp,
+            onselect: onMoveUp,
+          },
+          {
+            label: m["editor.level_order_move_down"](),
+            disabled: disabled || !canMoveDown,
+            onselect: onMoveDown,
+          },
+        ]}
+      />
+    </td>
+  {/if}
 </tr>

@@ -13,14 +13,13 @@
     filterEntryIndices,
     moveItem,
   } from "@brightmeows/bms/editor";
-  import GripVertical from "@lucide/svelte/icons/grip-vertical";
   import Plus from "@lucide/svelte/icons/plus";
   import Search from "@lucide/svelte/icons/search";
   import Trash2 from "@lucide/svelte/icons/trash-2";
   import X from "@lucide/svelte/icons/x";
-  import type { Action } from "svelte/action";
 
   import CourseRow from "./CourseRow.svelte";
+  import DragHandle from "./DragHandle.svelte";
   import RowActionMenu from "./RowActionMenu.svelte";
 
   import DetailsPanel from "#lib/components/ui/DetailsPanel.svelte";
@@ -34,7 +33,7 @@
   import type { EditorNotice } from "#lib/controllers/editor.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { DeepReadonly } from "#lib/types/bms-view.js";
-  import { createDragList, type DragItemOptions } from "#lib/utils/ui/dnd-list.svelte.js";
+  import { createDragList, type DragList } from "#lib/utils/ui/dnd-list.svelte.js";
 
   /**
    * 编辑态段位行：摘要、行头操作与展开后的全宽表单。
@@ -50,10 +49,9 @@
     expanded: boolean;
     canMoveUp: boolean;
     canMoveDown: boolean;
-    /** 组内拖拽：行动作、本行扁平下标与落点下标；未传时不启用拖拽。 */
-    dragItem?: Action<HTMLElement, DragItemOptions> | undefined;
+    /** 组内拖拽：列表实例（把手用其 handle，行动作传 CourseRow）；未传不启用。 */
+    dragList?: DragList | undefined;
     dragIndex?: number | undefined;
-    dragDropTargetIndex?: number | null | undefined;
     onToggle: () => void;
     onDelete: () => void;
     onMoveUp: () => void;
@@ -71,9 +69,8 @@
     expanded,
     canMoveUp,
     canMoveDown,
-    dragItem = undefined,
+    dragList = undefined,
     dragIndex = -1,
-    dragDropTargetIndex = null,
     onToggle,
     onDelete,
     onMoveUp,
@@ -88,9 +85,7 @@
   let pickerQuery = $state("");
 
   const rowDrag = $derived(
-    dragItem === undefined
-      ? undefined
-      : { item: dragItem, index: dragIndex, dropTargetIndex: dragDropTargetIndex, disabled }
+    dragList === undefined ? undefined : { dnd: dragList, index: dragIndex, disabled }
   );
 
   const chartDnd = createDragList({
@@ -101,6 +96,10 @@
       });
     },
   });
+
+  function chartFallbackName(index: number): string {
+    return m["editor.drag_chart_fallback"]({ position: String(index + 1) });
+  }
 
   const knownHashes = $derived(buildEntryHashSet(entries));
   const pickerResults = $derived(
@@ -241,9 +240,8 @@
 
 <CourseRow
   {expanded}
-  dragItem={rowDrag?.item}
+  dragItem={rowDrag?.dnd.item}
   dragIndex={rowDrag?.index}
-  dropTarget={rowDrag !== undefined && rowDrag.dropTargetIndex === rowDrag.index}
   dragDisabled={rowDrag?.disabled ?? true}
 >
   {#snippet summary()}
@@ -270,10 +268,8 @@
   {/snippet}
 
   {#snippet actions()}
-    {#if dragItem !== undefined}
-      <span class="cursor-grab text-white-35" aria-hidden="true">
-        <GripVertical class="size-4" />
-      </span>
+    {#if rowDrag !== undefined}
+      <DragHandle dnd={rowDrag.dnd} index={rowDrag.index} name={course.name} {disabled} />
     {/if}
     <ToggleButton
       size="xs"
@@ -455,20 +451,20 @@
 
         {#if course.charts.length > 0}
           <div class="flex flex-col gap-2">
-            {#each course.charts as chart, index (index)}
+            {#each course.charts as chart, index (chart)}
               {@const issue = courseHashIssue(chart)}
               {@const resolved = courseChartResolvedIn(knownHashes, chart)}
               <div
                 use:chartDnd.item={{ index, disabled }}
-                class="rounded-glass-sm border border-white-10 bg-black-10 p-2 {chartDnd.dropTargetIndex ===
-                index
-                  ? 'border-accent/60'
-                  : ''}"
+                class="rounded-glass-sm border border-white-10 bg-black-10 p-2"
               >
                 <div class="flex flex-wrap items-center gap-2">
-                  <span class="cursor-grab text-white-35" aria-hidden="true">
-                    <GripVertical class="size-4" />
-                  </span>
+                  <DragHandle
+                    dnd={chartDnd}
+                    {index}
+                    name={chart.md5 === "" ? chartFallbackName(index) : chart.md5}
+                    {disabled}
+                  />
                   <input
                     class="{inputEditorMono} min-w-52 flex-1 {issue === 'md5'
                       ? 'border-red-400/60'

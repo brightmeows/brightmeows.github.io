@@ -432,4 +432,54 @@
   .empty-state {
     @apply p-12 text-center;
   }
+
+  /* ===== 拖拽排序 ===== */
+  /* 把手键盘提示：聚焦行显示键位（抓起前后文案由组件切换），朝右弹出避开
+     表格滚动容器的左缘裁剪 */
+  .dnd-handle-wrap {
+    @apply relative inline-flex;
+  }
+
+  .dnd-handle-wrap:has(.dnd-handle:focus-visible) .dnd-keyhint {
+    @apply absolute top-1/2 left-full z-40 ml-2 block -translate-y-1/2 rounded-glass-sm bg-black-30 px-2 py-1 text-[0.75rem] whitespace-nowrap text-white-90 shadow-(--glass-lighting);
+    pointer-events: none;
+  }
+
+  /* 落点标记线：位置由引擎按落点行写 data-drop，颜色留定制钩子（指南口径） */
+  [data-drop] {
+    position: relative;
+  }
+
+  [data-drop]::before {
+    content: "";
+    @apply pointer-events-none absolute inset-x-0 z-30 h-0.5 rounded-full;
+    background: var(--drop-marker-color, var(--color-accent));
+    box-shadow: 0 0 8px var(--drop-marker-color, var(--color-accent));
+  }
+
+  [data-drop="start"]::before {
+    top: -1px;
+  }
+
+  [data-drop="end"]::before {
+    bottom: -1px;
+  }
+
+  @media (forced-colors: active) {
+    [data-drop]::before {
+      background: Highlight;
+      box-shadow: none;
+    }
+  }
+
+  /* 拖起行抬升：z 序压过邻行，轻放大加投影表达"离开列表平面" */
+  .dnd-lift {
+    @apply relative z-20 scale-[1.01] shadow-[0_8px_24px_rgba(0,0,0,0.35)];
+  }
+
+  /* 拖拽期间全局抓取光标（把手 :active 离开即失效，指南要求挂根元素） */
+  html.dnd-grabbing,
+  html.dnd-grabbing * {
+    cursor: grabbing !important;
+  }
 }
