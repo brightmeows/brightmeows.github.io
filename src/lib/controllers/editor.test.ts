@@ -59,11 +59,13 @@ describe("decideLocalSaveGate 保存闸门", () => {
   });
 
   it("全部通过：返回载荷与空警告清单", () => {
-    const gate = decideLocalSaveGate({ name: "n", symbol: "s" }, [{ sha256: "h", level: "1" }]);
+    const gate = decideLocalSaveGate({ name: "n", symbol: "s" }, [
+      { sha256: "h".repeat(64), level: "1" },
+    ]);
     expect(gate.gate).toBe("pass");
     if (gate.gate === "pass") {
       expect(gate.header).toEqual({ name: "n", symbol: "s" });
-      expect(gate.data).toEqual([{ sha256: "h", level: "1" }]);
+      expect(gate.data).toEqual([{ sha256: "h".repeat(64), level: "1" }]);
       expect(gate.warnings).toEqual([]);
     }
   });
@@ -192,6 +194,35 @@ describe("planEditorSave 与 commitEditorSave", () => {
     expect(denied.kind).toBe("rejected");
     const allowed = await planEditorSave({ ...needConfirm, confirm: () => Promise.resolve(true) });
     expect(allowed.kind).toBe("proceed");
+  });
+
+  it("等级未列入 level_order 时要求兼容确认：取消拒绝、确认放行", async () => {
+    const unlisted = {
+      ...base,
+      header: { name: "表名", symbol: "SY", level_order: ["1"] },
+      entries: [
+        { md5: "a".repeat(32), level: "1" },
+        { md5: "b".repeat(32), level: "FROG8" },
+      ],
+      conflictCheck: undefined,
+    };
+    let asked = 0;
+    let message = "";
+    const canceled = await planEditorSave({
+      ...unlisted,
+      confirm: (msg) => {
+        asked += 1;
+        message = msg;
+        return false;
+      },
+    });
+    if (canceled.kind !== "rejected") throw new Error("want rejected");
+    expect(asked).toBe(1);
+    expect(message).toContain("FROG8");
+    expect(canceled.notice.kind).toBe("warn");
+
+    const approved = await planEditorSave({ ...unlisted, confirm: () => true });
+    expect(approved.kind).toBe("proceed");
   });
 
   it("提交段：载荷、计数与新基线透传，草稿被清除", async () => {
