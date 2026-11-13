@@ -364,6 +364,21 @@
   /* ===== 弹出框 ===== */
   .popover-glass {
     @apply fixed z-2000 overflow-hidden rounded-glass-md bg-glass shadow-[var(--glass-lighting),0_10px_24px_rgba(0,0,0,0.45)] backdrop-blur-sm;
+    /* 入场：@starting-style 对 {#if} 插入的弹层生效（ClickPopover 与
+       JSON 预览共用）；离场是条件卸载，CSS 管不到，保持瞬间关闭 */
+    transition:
+      opacity 150ms ease-out,
+      translate 150ms ease-out;
+    @starting-style {
+      opacity: 0;
+      translate: 0 -4px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .popover-glass {
+      transition: none;
+    }
   }
 
   /* ===== 分段标题下边框 ===== */
