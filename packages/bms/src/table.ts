@@ -116,6 +116,9 @@ export function findUnlistedLevels(
   levels: readonly string[],
   levelOrder: readonly (string | number)[]
 ): string[] {
+  // level_order 缺省（空数组）时 beatoraja 用 data 检测序自动建组，不丢组：
+  // 全量标注反而制造假警报（CodeRabbit PR #327 评审）。
+  if (levelOrder.length === 0) return [];
   const listed = new Set(levelOrder.map(String));
   return levels.filter((level) => !listed.has(level));
 }

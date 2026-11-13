@@ -239,7 +239,7 @@ describe("strictWarningMessage 强验证警告消息映射", () => {
     ).toEqual({ field: "eval" });
     expect(
       strictWarningMessage({ kind: "level_not_listed", levels: ["3", "5"], count: 2 }).params
-    ).toEqual({ levels: "3, 5" });
+    ).toEqual({ levels: "3, 5", count: 2 });
     expect(
       strictWarningMessage({ kind: "course_hash_unmatched", hashes: ["a", "b"] }).params
     ).toEqual({ hashes: "a, b" });

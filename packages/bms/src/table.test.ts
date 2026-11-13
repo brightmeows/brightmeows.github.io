@@ -6,7 +6,10 @@ describe("findUnlistedLevels", () => {
   it("未列入 level_order 的等级按文本归一过滤（数字元素与数字等级归一比较）", () => {
     expect(findUnlistedLevels(["1", "FROG8", "2"], ["1", 2, "3"])).toEqual(["FROG8"]);
     expect(findUnlistedLevels([], ["1"])).toEqual([]);
-    expect(findUnlistedLevels(["a", "b"], [])).toEqual(["a", "b"]);
+  });
+
+  it("level_order 缺省（空数组）时不标注任何等级：beatoraja 会自动按 data 检测序建组", () => {
+    expect(findUnlistedLevels(["1", "FROG8"], [])).toEqual([]);
   });
 });
 

@@ -297,11 +297,6 @@ export function strictWarningMessage(warning: SharedStrictWarning): StrictIssueM
       return { key: keys.warnMissingDataUrl, params: {} };
     case "unknown_field":
       return { key: keys.warnUnknownField, params: { field: warning.field } };
-    case "level_not_listed":
-      return {
-        key: keys.warnLevelNotListed,
-        params: { levels: warning.levels.join(", ") },
-      };
     case "course_hash_unmatched":
       return {
         key: keys.warnCourseHash,
@@ -316,6 +311,11 @@ export function strictWarningMessage(warning: SharedStrictWarning): StrictIssueM
       return {
         key: keys.warnLevelOrderDuplicate,
         params: { levels: warning.levels.join(", ") },
+      };
+    case "level_not_listed":
+      return {
+        key: keys.warnLevelNotListed,
+        params: { levels: warning.levels.join(", "), count: warning.count },
       };
     case "short_hash":
       return { key: keys.warnShortHash, params: { count: warning.count } };
