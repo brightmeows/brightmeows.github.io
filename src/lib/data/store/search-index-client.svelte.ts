@@ -1,6 +1,7 @@
 import type { CandidateEntry, WorkerMessage, WorkerSearchRequest } from "../api/bms-search";
 
 import { m } from "#lib/paraglide/messages.js";
+import { errorDetailOf } from "#lib/utils/infra/error.js";
 
 /** 索引加载阶段。 */
 export type IndexPhase = "loading" | "ready" | "error";
@@ -52,7 +53,7 @@ export class SearchIndexClient {
       console.warn("Web Worker 创建失败:", err);
       this.phase = "error";
       this.errorMessage = m["search.worker_create_failed"]({
-        error: err instanceof Error ? err.message : String(err),
+        error: errorDetailOf(err),
       });
     }
   }

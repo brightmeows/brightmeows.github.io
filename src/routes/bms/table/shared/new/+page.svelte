@@ -27,6 +27,7 @@
   import { auth } from "#lib/data/store/auth-store.svelte.js";
   import { sharedNewSeed } from "#lib/data/store/shared-new.svelte.js";
   import { m } from "#lib/paraglide/messages.js";
+  import { errorDetailOf } from "#lib/utils/infra/error.js";
   import { goto } from "$app/navigation";
 
   /**
@@ -170,7 +171,7 @@
       raw = JSON.parse(text);
     } catch (parseError) {
       importErrors = m["editor.import.parse_failed"]({
-        detail: parseError instanceof Error ? parseError.message : String(parseError),
+        detail: errorDetailOf(parseError),
       });
       return;
     }

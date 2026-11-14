@@ -55,6 +55,7 @@
     "glass-base inline-block rounded-glass-sm font-medium text-white no-underline bg-white-10 shadow-(--glass-lighting) hover:bg-white-20 hover:shadow-[var(--glass-lighting),0_5px_15px_rgba(0,0,0,0.2)]";
 </script>
 
+<!-- href 与 disabled 同传时按禁用按钮渲染（a 无禁用语义）；href 缺省为普通按钮 -->
 {#if href && !disabled}
   <a
     {href}

@@ -20,6 +20,7 @@
   } from "#lib/constants/ui-classes.js";
   import { strictErrorsNotice } from "#lib/controllers/editor.js";
   import { m } from "#lib/paraglide/messages.js";
+  import { errorDetailOf } from "#lib/utils/infra/error.js";
 
   /**
    * 编辑器导入面板：粘贴或上传 JSON（合并包、header、data 自动识别）与镜像表
@@ -114,7 +115,7 @@
       raw = JSON.parse(jsonText);
     } catch (parseError) {
       error = m["editor.import.parse_failed"]({
-        detail: parseError instanceof Error ? parseError.message : String(parseError),
+        detail: errorDetailOf(parseError),
       });
       return;
     }
@@ -130,7 +131,7 @@
         raw = JSON.parse(await file.text());
       } catch (parseError) {
         error = m["editor.import.parse_failed"]({
-          detail: parseError instanceof Error ? parseError.message : String(parseError),
+          detail: errorDetailOf(parseError),
         });
         return;
       }

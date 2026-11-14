@@ -23,6 +23,7 @@ import type {
   SharedSaveResult,
 } from "#lib/data/api/shared-api.js";
 import { m } from "#lib/paraglide/messages.js";
+import { errorMessageOf } from "#lib/utils/infra/error.js";
 
 /** 页面阶段：域状态机（login/notfound 是域结果，不并入 AsyncState）。 */
 type SharedEditPhase = "loading" | "login" | "notfound" | "error" | "ready";
@@ -81,7 +82,7 @@ function errorState(state: SharedEditState, error: unknown): SharedEditState {
   return {
     ...state,
     phase: "error",
-    loadError: error instanceof Error ? error.message : m["common.unknown_error"](),
+    loadError: errorMessageOf(error, m["common.unknown_error"]()),
   };
 }
 
@@ -210,7 +211,7 @@ export async function renameSharedTable(deps: {
   } catch (error) {
     return {
       ok: false,
-      text: error instanceof Error ? error.message : m["shared.rename.failed"](),
+      text: errorMessageOf(error, m["shared.rename.failed"]()),
     };
   }
 }
@@ -230,7 +231,7 @@ export async function deleteSharedTable(deps: {
   } catch (error) {
     return {
       ok: false,
-      text: error instanceof Error ? error.message : m["shared.delete.failed"](),
+      text: errorMessageOf(error, m["shared.delete.failed"]()),
     };
   }
 }

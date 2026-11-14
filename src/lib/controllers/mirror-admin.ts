@@ -11,6 +11,7 @@
 import type { AdminOverview } from "#lib/data/api/mirror-admin-api.js";
 import { m } from "#lib/paraglide/messages.js";
 import type { MirrorOverviewState } from "#lib/types/bms-view.js";
+import { errorMessageOf } from "#lib/utils/infra/error.js";
 
 /** 管理区状态：页面以整体替换的方式更新（控制器返回新对象）。 */
 export interface MirrorAdminState {
@@ -41,12 +42,6 @@ export interface MirrorAdminDeps {
   fetchOverview(): Promise<AdminOverview>;
 }
 
-/** 错误文案：Error 取 message，其余用调用方指定的回落文案（与原页面一致：
- *  写操作回落 admin.action_failed，总览回落 common.unknown_error）。 */
-function errorText(error: unknown, fallback: string): string {
-  return error instanceof Error ? error.message : fallback;
-}
-
 /**
  * 后台总览的加载与缓存决策：
  * - 加载中直接返回（不叠加请求）；
@@ -65,7 +60,7 @@ export async function loadOverviewIfNeeded(
     const overview = await deps.fetchOverview();
     return { ...next, overview, overviewState: "ready", overviewError: null };
   } catch (error) {
-    const overviewError = errorText(error, m["common.unknown_error"]());
+    const overviewError = errorMessageOf(error, m["common.unknown_error"]());
     return {
       ...next,
       overviewError,
@@ -122,7 +117,7 @@ export async function runAdminAction(
       state: {
         ...busy,
         busy: false,
-        notice: { kind: "error", text: errorText(error, m["admin.misc.action_failed"]()) },
+        notice: { kind: "error", text: errorMessageOf(error, m["admin.misc.action_failed"]()) },
       },
       ok: false,
     };

@@ -1,6 +1,7 @@
 import { m } from "#lib/paraglide/messages.js";
 import type { AsyncState } from "#lib/types/common.js";
 import { messageInputs, translateMessage } from "#lib/utils/i18n/i18n.js";
+import { errorMessageOf } from "#lib/utils/infra/error.js";
 import { isRecord } from "#lib/utils/infra/object.js";
 
 /**
@@ -26,7 +27,7 @@ export function toFailure(error: unknown): AsyncFailure {
   }
   return {
     phase: "error",
-    message: error instanceof Error ? error.message : m["common.unknown_error"](),
+    message: errorMessageOf(error, m["common.unknown_error"]()),
   };
 }
 

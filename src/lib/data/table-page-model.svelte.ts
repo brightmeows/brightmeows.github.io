@@ -215,7 +215,9 @@ export function createTableModel(input: TableModelInput) {
   });
 
   // ---- 派生：加载就绪（header 与 data 双就绪；草稿防抖与门面共用） ----
-  const ready = $derived(loader.headerLoadState === "loaded" && loader.dataLoadState === "loaded");
+  const ready = $derived.by(
+    () => loader.headerLoadState === "loaded" && loader.dataLoadState === "loaded"
+  );
 
   /** 放弃未保存修改：删草稿并回载远端（新表回到种子态）。 */
   async function discardEdits(): Promise<void> {

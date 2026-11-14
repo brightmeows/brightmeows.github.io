@@ -51,6 +51,7 @@
   import type { MirrorAdminUi, MirrorMetaFields } from "#lib/types/bms-view.js";
   import type { AsyncState } from "#lib/types/common.js";
   import type { JsonPreviewHandle, TocItem } from "#lib/types/ui.js";
+  import { errorMessageOf } from "#lib/utils/infra/error.js";
   import {
     buildSearchNeedles,
     collectTagValues,
@@ -261,7 +262,7 @@
         ...admin,
         notice: {
           kind: "error",
-          text: e instanceof Error ? e.message : m["mirror.delete_failed"](),
+          text: errorMessageOf(e, m["mirror.delete_failed"]()),
         },
       };
     } finally {

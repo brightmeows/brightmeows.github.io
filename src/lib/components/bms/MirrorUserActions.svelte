@@ -20,6 +20,7 @@
   import { m } from "#lib/paraglide/messages.js";
   import { getLocale } from "#lib/paraglide/runtime.js";
   import { formatAbsolute, formatRelativeTime } from "#lib/utils/infra/date.js";
+  import { errorMessageOf } from "#lib/utils/infra/error.js";
 
   interface Props {
     /** 添加或恢复成功后回调（用于刷新清单）。 */
@@ -80,7 +81,7 @@
     try {
       preview = await fetchPreview(url.trim());
     } catch (error) {
-      previewError = error instanceof Error ? error.message : m["mirror.preview_failed"]();
+      previewError = errorMessageOf(error, m["mirror.preview_failed"]());
     } finally {
       previewing = false;
     }
@@ -130,7 +131,7 @@
     } catch (error) {
       notice = {
         kind: "error",
-        text: error instanceof Error ? error.message : m["mirror.submit_failed"](),
+        text: errorMessageOf(error, m["mirror.submit_failed"]()),
       };
     } finally {
       submitting = false;
@@ -149,7 +150,7 @@
     } catch (error) {
       notice = {
         kind: "error",
-        text: error instanceof Error ? error.message : m["mirror.restore_failed"](),
+        text: errorMessageOf(error, m["mirror.restore_failed"]()),
       };
     } finally {
       restoring = null;

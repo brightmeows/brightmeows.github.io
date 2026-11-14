@@ -32,6 +32,7 @@
   import { searchConverters } from "#lib/data/store/search-converters.svelte.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { TocItem } from "#lib/types/ui.js";
+  import { errorMessageOf } from "#lib/utils/infra/error.js";
   import { buildSearchNeedles } from "#lib/utils/mirror-tables.js";
   import { buildTocFromHeadings } from "#lib/utils/ui/toc.js";
   import { resolve } from "$app/paths";
@@ -75,7 +76,7 @@
       tables = await loadSharedTables(undefined, { cacheBust });
       error = null;
     } catch (e) {
-      error = e instanceof Error ? e.message : m["common.unknown_error"]();
+      error = errorMessageOf(e, m["common.unknown_error"]());
     } finally {
       loading = false;
     }
@@ -101,7 +102,7 @@
     } catch (e) {
       actionNotice = {
         kind: "error",
-        text: e instanceof Error ? e.message : m["shared.delete.failed"](),
+        text: errorMessageOf(e, m["shared.delete.failed"]()),
       };
     } finally {
       deletingId = null;
