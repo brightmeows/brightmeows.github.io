@@ -57,23 +57,35 @@ export function duplicateSlugs(posts: readonly Post[]): string[] {
 }
 
 /**
- * 文章排序：有 order 的在前并按 order 升序；其余按 date 降序；缺 date 排后。
+ * 文章与章节共用的排序键：有 order 的在前并按 order 升序；其余按 date 降序；缺 date 排后。
+ * 构建期列表（sortPosts）与 reading 正文页的章间导航（[...slug]/+page.ts）
+ * 共用此比较器，两侧顺序恒一致。
  * @param posts - 内容文章列表
+ * @param a - 比较左值
+ * @param b - 比较右值
  * @returns 排序后的新数组
  */
 export function sortPosts(posts: readonly Post[]): Post[] {
-  return [...posts].sort((a, b) => {
-    if (a.order !== undefined && b.order !== undefined) {
-      return a.order - b.order;
-    }
-    if (a.order !== undefined) {
-      return -1;
-    }
-    if (b.order !== undefined) {
-      return 1;
-    }
-    return compareDates(a.date, b.date);
-  });
+  return [...posts].sort(compareByOrderThenDate);
+}
+
+/**
+ * order 优先的排序比较器（见 sortPosts 语义）。
+ */
+export function compareByOrderThenDate(
+  a: Pick<Post, "order" | "date">,
+  b: Pick<Post, "order" | "date">
+): number {
+  if (a.order !== undefined && b.order !== undefined) {
+    return a.order - b.order;
+  }
+  if (a.order !== undefined) {
+    return -1;
+  }
+  if (b.order !== undefined) {
+    return 1;
+  }
+  return compareDates(a.date, b.date);
 }
 
 function compareDates(a: string | undefined, b: string | undefined): number {

@@ -69,8 +69,14 @@ export function groupByTags(
   tables: MirrorTableItem[],
   fallbacks: { untagged: string; other: string }
 ): Tag1Group[] {
-  const groupsMap: Record<string, { order: number; tag2Map: Record<string, MirrorTableItem[]> }> =
-    {};
+  // tag1/tag2 来自清单数据（admin 覆盖值可写），动态键容器走 null 原型：
+  // 裸对象字面量的 __proto__ 键赋值会触发原型 setter（serializeSharedJson 同案）。
+  // Object.create(null) 的标准类型签名返回 any，null 原型容器必须经断言收型。
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- 静态安全，容器为空
+  const groupsMap = Object.create(null) as Record<
+    string,
+    { order: number; tag2Map: Record<string, MirrorTableItem[]> }
+  >;
 
   tables.forEach((item) => {
     const tag1 = item.tag1 ?? fallbacks.untagged;
@@ -81,7 +87,8 @@ export function groupByTags(
     if (!groupsMap[tag1]) {
       groupsMap[tag1] = {
         order,
-        tag2Map: {},
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- 静态安全，容器为空
+        tag2Map: Object.create(null) as Record<string, MirrorTableItem[]>,
       };
     } else {
       const existing = groupsMap[tag1];
