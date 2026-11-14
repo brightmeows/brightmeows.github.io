@@ -37,6 +37,9 @@
   {/if}
   <title>{pageTitle}</title>
   <meta name="description" content={description} />
+  {#if page.data.robots}
+    <meta name="robots" content={page.data.robots} />
+  {/if}
   <link rel="canonical" href={canonicalUrl} />
   <meta property="og:type" content={page.data.post === undefined ? "website" : "article"} />
   <meta property="og:site_name" content={m["site.name"]()} />
