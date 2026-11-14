@@ -23,7 +23,7 @@ export function validateFrontmatter(data: unknown, source: string): PostFrontmat
   }
 
   const result: PostFrontmatter = {};
-  const { title, date, order, slug, description, tags } = data;
+  const { title, date, order, slug, description, robots, tags } = data;
 
   if (title !== undefined) {
     if (typeof title !== "string" || title.trim().length === 0) {
@@ -56,6 +56,12 @@ export function validateFrontmatter(data: unknown, source: string): PostFrontmat
       throw new Error(`${source}: description 必须是字符串，实际为 ${JSON.stringify(description)}`);
     }
     result.description = description;
+  }
+  if (robots !== undefined) {
+    if (typeof robots !== "string") {
+      throw new Error(`${source}: robots 必须是字符串，实际为 ${JSON.stringify(robots)}`);
+    }
+    result.robots = robots;
   }
   if (tags !== undefined) {
     if (!Array.isArray(tags) || !tags.every((tag): tag is string => typeof tag === "string")) {

@@ -11,6 +11,8 @@ export interface PostFrontmatter {
   order?: number;
   slug?: string;
   description?: string;
+  /** robots meta 内容（如 noindex, follow）；缺省不输出该标签。 */
+  robots?: string;
   tags?: string[];
 }
 
