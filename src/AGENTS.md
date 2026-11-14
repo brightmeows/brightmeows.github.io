@@ -172,6 +172,8 @@
   - 表内容格式模型在 `@brightmeows/bms/format`（2026-10 自混装的 `bms.ts` 按消费方拆分、再于同月迁出成包，见 `packages/bms/AGENTS.md`）。
   - 模块私有类型就地声明在所属模块文件里，不为它进 types 目录。
   - 页面级域状态机保持域联合类型（如共享表页面的 login/notfound），通用部分从 `AsyncState` 派生，不强行泛型化。
+- **动态键构造 plain object 走安全形态** — 与 mirror 内核同规（见 `packages/mirror/AGENTS.md`）：动态（尤其用户输入）键名构造或填充对象时，用 `Object.create(null)`、`Object.fromEntries` 或 `Map` 底。
+  - 裸赋值 `out[key] = value` 会让 `__proto__` 键触发原型 setter，对象值改原型、原始值静默丢失；2026-11 两次实发：mirror `serializeSharedJson`（CodeRabbit 捕获）与站点 `groupByTags`（审计捕获），均已改为 null 原型。
 - **数据加载策略** — 构建时加载（`+page.server.ts` / `+page.ts`）：数据在 git 仓库内，如内容 `.md` 文件与自托管 BMS 表的目录枚举。
   - 客户端加载（`onMount` → `data/` 层 fetch）：数据来自 R2（表数据 `header.json`/`data.json`、搜索索引），或同站 Worker 路由（`/bms/table/mirror/tables.json`），或远程原始源（`data_url` JSONP/跨域 fetch）。
   - 选择标准：数据源在构建时可访问且不依赖用户上下文 → 构建时加载；否则客户端加载。
