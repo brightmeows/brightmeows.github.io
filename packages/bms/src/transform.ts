@@ -21,7 +21,12 @@ function stringifyArray(value: unknown): string[] | undefined {
  * 按难度等级分组
  */
 export function groupChartsByLevel(charts: ChartData[]): DifficultyGroup[] {
-  const groupsMap: Record<string, DifficultyGroup> = {};
+  // level 来自表内容（第三方数据），动态键容器走 null 原型：
+  // 裸对象字面量的 __proto__ 键赋值会触发原型 setter（见 mirror 内核同款纪律）。
+  // Object.create(null) 的标准类型签名返回 any，null 原型容器必须经断言收型
+  // （普通对象字面量的整数样式键按数值序排列是下游锁定的行为，不能换 Map）。
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- 静态安全，容器为空
+  const groupsMap = Object.create(null) as Record<string, DifficultyGroup>;
   for (const chart of charts) {
     const level = chart.level ?? "unknown";
     const group = (groupsMap[level] ??= { level, charts: [] });

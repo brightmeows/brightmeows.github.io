@@ -101,6 +101,17 @@ describe("groupByTags", () => {
     expect(groups[0]!.tag1).toBe(FALLBACKS.untagged);
     expect(groups[0]!.subgroups[0]!.tag2).toBe(FALLBACKS.other);
   });
+
+  it("__proto__ 键按普通键分组，不触发原型污染", () => {
+    const groups = groupByTags(
+      [{ name: "p", tag1: "__proto__", tag2: "__proto__", url: "u" }],
+      FALLBACKS
+    );
+    expect(groups).toHaveLength(1);
+    expect(groups[0]!.tag1).toBe("__proto__");
+    expect(groups[0]!.subgroups).toHaveLength(1);
+    expect(groups[0]!.subgroups[0]!.tag2).toBe("__proto__");
+  });
 });
 
 describe("sourceUrlOf", () => {

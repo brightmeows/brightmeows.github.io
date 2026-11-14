@@ -24,6 +24,12 @@ describe("groupChartsByLevel", () => {
     expect(groupChartsByLevel([])).toEqual([]);
   });
 
+  it("__proto__ 键按普通键建组，不触发原型污染", () => {
+    const groups = groupChartsByLevel([{ level: "__proto__", title: "p" }]);
+    expect(groups).toHaveLength(1);
+    expect(groups[0]!.level).toBe("__proto__");
+  });
+
   it("数字样式键按 JS 对象键序排列，整数键升序在前", () => {
     const groups = groupChartsByLevel([{ level: "B" }, { level: "10" }, { level: "2" }]);
     expect(groups.map((g) => g.level)).toEqual(["2", "10", "B"]);
