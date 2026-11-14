@@ -32,19 +32,26 @@
     private lastPointerType = "mouse";
     private longPressFired = false;
     private suppressClick = false;
+    private active = false;
 
     constructor(node: HTMLElement, params: JsonPreviewActionParams) {
       this.node = node;
       this.current = params;
       this.applyTriggerStyles();
+      // 行内文本数量大：先挂最小手势集合，首次交互再补齐其余监听器。
       node.addEventListener("pointerenter", this.onPointerEnter);
-      node.addEventListener("pointerleave", this.onPointerLeave);
       node.addEventListener("pointerdown", this.onPointerDown);
-      node.addEventListener("pointermove", this.onPointerMove);
-      node.addEventListener("pointerup", this.onPointerUp);
-      node.addEventListener("pointercancel", this.onPointerUp);
       node.addEventListener("contextmenu", this.onContextMenu);
-      node.addEventListener("click", this.onClick);
+    }
+
+    private activate(): void {
+      if (this.active) return;
+      this.active = true;
+      this.node.addEventListener("pointerleave", this.onPointerLeave);
+      this.node.addEventListener("pointermove", this.onPointerMove);
+      this.node.addEventListener("pointerup", this.onPointerUp);
+      this.node.addEventListener("pointercancel", this.onPointerUp);
+      this.node.addEventListener("click", this.onClick);
     }
 
     update(next: JsonPreviewActionParams): void {
@@ -136,6 +143,7 @@
     }
 
     private readonly onPointerEnter = (event: PointerEvent): void => {
+      this.activate();
       const preview = this.activePreview();
       if (!preview) return;
 
@@ -160,6 +168,7 @@
     };
 
     private readonly onPointerDown = (event: PointerEvent): void => {
+      this.activate();
       if (this.triggerMode() !== "contextmenu") return;
       this.lastPointerType = event.pointerType || "mouse";
       this.longPressFired = false;
