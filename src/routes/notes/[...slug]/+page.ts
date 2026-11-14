@@ -25,6 +25,7 @@ export const load: PageLoad = async ({ params }) => {
       post: { slug, title, date, order: meta.order },
       component: post.default,
       title: formatTitle(title),
+      description: meta.description,
     };
   } catch {
     // SvelteKit error() 是官方 404 模式，返回 never（内部 throw HttpError）

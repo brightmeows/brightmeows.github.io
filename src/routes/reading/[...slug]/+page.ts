@@ -57,6 +57,7 @@ export const load: PageLoad = async ({ params }) => {
       post: { slug, title, date, order: meta.order },
       component: post.default,
       title: formatTitle(title),
+      description: meta.description,
       prev: prevEntry
         ? {
             href: `/reading/${prevEntry.slug}/`,
