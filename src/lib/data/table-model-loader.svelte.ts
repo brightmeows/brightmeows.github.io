@@ -4,6 +4,7 @@ import type { SharedNewTableSeed } from "@brightmeows/bms/shared";
 import { fetchBmsHeader, fetchBmsTableData } from "#lib/data/api/bms-data.js";
 import { m } from "#lib/paraglide/messages.js";
 import type { ProgressCallback } from "#lib/types/bms-view.js";
+import { errorMessageOf } from "#lib/utils/infra/error.js";
 import { resolveUrl } from "#lib/utils/infra/url.js";
 
 type LoadPhase = "loading" | "loaded" | "error";
@@ -44,7 +45,7 @@ export function createTableLoader(deps: TableLoaderDeps) {
   let loadMessage = $state<string>(m["editor.frame.loading"]());
   let loadDetail = $state("");
 
-  const ready = $derived(headerLoadState === "loaded" && dataLoadState === "loaded");
+  const ready = $derived.by(() => headerLoadState === "loaded" && dataLoadState === "loaded");
 
   const progressCallback: ProgressCallback = (event) => {
     loadPercent = event.percent;
@@ -79,7 +80,7 @@ export function createTableLoader(deps: TableLoaderDeps) {
       }
       void loadData(dataUrl, headerUrl);
     } catch (error) {
-      headerError = error instanceof Error ? error.message : m["common.unknown_error"]();
+      headerError = errorMessageOf(error, m["common.unknown_error"]());
       headerLoadState = "error";
       console.error("加载BMS难度表header失败:", error);
     }
@@ -100,7 +101,7 @@ export function createTableLoader(deps: TableLoaderDeps) {
       dataLoadState = "loaded";
       void deps.discoverDraft();
     } catch (error) {
-      dataError = error instanceof Error ? error.message : m["common.unknown_error"]();
+      dataError = errorMessageOf(error, m["common.unknown_error"]());
       dataLoadState = "error";
       console.error("加载BMS谱面数据失败:", error);
     }
