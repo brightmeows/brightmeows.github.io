@@ -323,6 +323,7 @@
           aria-label={m["common.table_scroll_region"]()}
         >
           <table class="w-full min-w-100 table-fixed border-collapse">
+            <caption class="sr-only">{m["table.caption.import"]()}</caption>
             <colgroup>
               <col class="w-10" />
               <col class="w-20" />
@@ -364,7 +365,7 @@
                   </td>
                   <th
                     scope="row"
-                    class="table-td-glass min-w-50 text-left font-normal wrap-break-word"
+                    class="table-th-row-sticky table-td-glass min-w-50 text-left font-normal wrap-break-word"
                   >
                     <div class="text-white-90">
                       {entryLabel(entry) || m["editor.entry.unnamed"]()}

@@ -21,6 +21,7 @@
     aria-labelledby="bms-table-list-heading"
   >
     <table class="table-glass">
+      <caption class="sr-only">{m["table.caption.selfhosted"]()}</caption>
       <colgroup>
         <col class="w-40" />
         <col class="w-[320px]" />
@@ -38,7 +39,7 @@
           <tr class="transition-colors hover:bg-white-5">
             <th
               scope="row"
-              class="table-td-glass text-left font-normal wrap-break-word text-white-80"
+              class="table-th-row-sticky table-td-glass text-left font-normal wrap-break-word text-white-80"
               >{table.symbol ?? ""}</th
             >
             <td class="table-td-glass wrap-break-word">

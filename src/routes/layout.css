@@ -137,6 +137,12 @@
     @apply m-0 min-h-screen min-w-[320px];
   }
 
+  /* 锚点与 scrollIntoView 的纵向对齐偏移：悬浮顶栏 48px 加 12px 悬停带，
+     让跳转终点与键盘焦点不被顶栏遮挡（WCAG 2.4.11）。横向无遮挡源，不设。 */
+  html {
+    scroll-padding-top: 3.75rem;
+  }
+
   /* 星光光标接线：default 帧经继承覆盖全局；pointer 帧直接指定给可点元素
      与语义控件（盖过 UA 对链接与按钮的 auto 求值）；文本编辑面保留系统
      I-beam。放 base 层让 utilities 层的 disabled:cursor-not-allowed 仍能
@@ -253,6 +259,13 @@
 }
 
 @layer components {
+  /* ===== 跳转主内容链接（skip link）=====
+     页面首个可聚焦元素：默认上移移出视口，键盘聚焦时滑入视口顶部居中。
+     z 取 2000 档与 popover-glass 同级，盖过顶栏胶囊（z-1000）。 */
+  .skip-link {
+    @apply fixed top-2 left-1/2 z-2000 -translate-x-1/2 -translate-y-16 rounded-glass-sm bg-glass px-4 py-2 text-sm text-white shadow-(--glass-lighting) transition-transform focus-visible:translate-y-0 focus-visible:outline-none;
+  }
+
   /* ===== 玻璃效果基础类 ===== */
   .glass-base {
     @apply relative text-white backdrop-blur;
@@ -358,6 +371,21 @@
   /* 粘性表头：合并为单表后滚动时保持列名可见；贴着视口顶部，顶栏下滑时隐藏 */
   .table-th-sticky {
     @apply sticky top-0 z-10;
+    background-color: color-mix(in srgb, var(--color-accent) 22%, var(--color-background));
+  }
+
+  /* 行头粘左：横向滚动时保持行身份可见。底色取列头浅版不透明色，盖过
+     滚过的列（响应式表格指南要求 sticky 单元格不透明）。非横滚表挂用
+     无行为差异（sticky 在无溢出容器内不生效），全站表格统一挂用。 */
+  .table-th-row-sticky {
+    @apply sticky left-0;
+    z-index: 5;
+    background-color: color-mix(in srgb, var(--color-accent) 12%, var(--color-background));
+  }
+
+  /* 行头列与列头 sticky 的交叉格：双向粘附，z 压过两个单向粘附。 */
+  .table-th-corner-sticky {
+    @apply sticky top-0 left-0 z-20;
     background-color: color-mix(in srgb, var(--color-accent) 22%, var(--color-background));
   }
 

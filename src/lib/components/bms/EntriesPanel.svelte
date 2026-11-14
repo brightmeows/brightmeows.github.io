@@ -773,6 +773,7 @@
       aria-label={m["common.table_scroll_region"]()}
     >
       <table class="w-full min-w-200 table-fixed border-collapse">
+        <caption class="sr-only">{m["table.caption.entries"]()}</caption>
         <colgroup>
           {#if editing}<col class="w-10" />{/if}
           <col class="w-52" />

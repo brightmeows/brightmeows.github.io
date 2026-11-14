@@ -162,6 +162,7 @@
           aria-label={m["common.table_scroll_region"]()}
         >
           <table class="w-full min-w-200 table-fixed border-collapse">
+            <caption class="sr-only">{m["table.caption.mirror"]()}</caption>
             <colgroup>
               <col class="w-15" />
               <col class="w-30" />
@@ -176,7 +177,7 @@
                 <th class="table-th-compact table-th-sticky" scope="col"
                   >{m["common.th_select"]()}</th
                 >
-                <th class="table-th-compact table-th-sticky" scope="col"
+                <th class="table-th-compact table-th-corner-sticky" scope="col"
                   >{m["common.th_symbol"]()}</th
                 >
                 <th class="table-th-compact table-th-sticky" scope="col">{m["common.th_name"]()}</th

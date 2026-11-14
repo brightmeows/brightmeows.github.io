@@ -70,6 +70,7 @@
           aria-label={m["common.table_scroll_region"]()}
         >
           <table class="w-full min-w-150 table-fixed border-collapse">
+            <caption class="sr-only">{m["table.caption.shared"]()}</caption>
             <colgroup>
               <col class="w-24" />
               <col class="w-[320px]" />
@@ -79,7 +80,9 @@
             </colgroup>
             <thead>
               <tr>
-                <th class="table-th-glass" scope="col">{m["common.th_symbol"]()}</th>
+                <th class="table-th-row-sticky table-th-glass" scope="col"
+                  >{m["common.th_symbol"]()}</th
+                >
                 <th class="table-th-glass" scope="col">{m["common.th_name"]()}</th>
                 <th class="table-th-glass" scope="col">{m["shared.th.entries"]()}</th>
                 <th class="table-th-glass" scope="col">{m["shared.th.updated"]()}</th>
