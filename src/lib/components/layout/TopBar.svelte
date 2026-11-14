@@ -441,7 +441,7 @@
       class="mx-auto mb-3 rounded-full border-4 border-white-30 shadow-[0_0_20px_rgba(255,255,255,0.2)] transition-transform duration-300 ease-in-out hover:scale-105 hover:rotate-[5deg] {compact
         ? 'h-16 w-16'
         : 'h-24 w-24'}"
-      src="/assets/avatar.png"
+      src="/assets/avatar.webp"
       alt="Miyako Meow"
     />
     <h2
