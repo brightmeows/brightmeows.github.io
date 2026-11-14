@@ -5,6 +5,7 @@ import type { PageLoad } from "./$types";
 import { READING_BOOKS } from "#lib/constants/content.js";
 import { m } from "#lib/paraglide/messages.js";
 import type { PostModule } from "#lib/types/post.js";
+import { compareByOrderThenDate } from "#lib/utils/content/categories.js";
 import { extractDateFromSlug, EPOCH_DATE } from "#lib/utils/infra/date.js";
 import { lookup } from "#lib/utils/infra/object.js";
 import { formatTitle } from "#lib/utils/title.js";
@@ -23,18 +24,23 @@ export const load: PageLoad = async ({ params }) => {
     if (!importer) {
       throw new Error(`module not found: ${slug}`);
     }
-    // 全集按 order 排序，算出章间导航（prev/next）
+    // 全集按共享排序键（order 升序、date 降序兜底，见 compareByOrderThenDate）
+    // 排序，算出章间导航（prev/next）；与书目录页（构建期 sortPosts）共用
+    // 同一比较器，目录顺序与章间导航恒一致。
     const sorted = await Promise.all(
       Object.entries(modules).map(async ([key, loadModule]) => {
         const mod = await loadModule();
+        const chapterSlug = key.split("reading/")[1]?.replace(/\.md$/, "") ?? "";
+        const meta = mod.metadata ?? {};
         return {
-          slug: key.split("reading/")[1]?.replace(/\.md$/, "") ?? "",
-          order: mod.metadata?.order ?? Number.MAX_SAFE_INTEGER,
-          title: mod.metadata?.title ?? "",
+          slug: chapterSlug,
+          order: meta.order,
+          date: meta.date ?? extractDateFromSlug(chapterSlug),
+          title: meta.title ?? "",
         };
       })
     );
-    sorted.sort((a, b) => a.order - b.order);
+    sorted.sort(compareByOrderThenDate);
     const index = sorted.findIndex((entry) => entry.slug === slug);
     const prevEntry = index > 0 ? sorted[index - 1] : undefined;
     const nextEntry = index >= 0 && index < sorted.length - 1 ? sorted[index + 1] : undefined;
