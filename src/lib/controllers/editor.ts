@@ -19,6 +19,7 @@ import {
 
 import { m } from "#lib/paraglide/messages.js";
 import { translateMessage } from "#lib/utils/i18n/i18n.js";
+import { errorMessageOf } from "#lib/utils/infra/error.js";
 
 /** 保存的本地闸门：强验证、未指派检查（通过后才值得联网查并发）。 */
 export type LocalSaveGate =
@@ -238,7 +239,7 @@ export async function commitEditorSave(deps: {
   } catch (error) {
     return {
       kind: "failed",
-      text: error instanceof Error ? error.message : m["editor.save.failed"](),
+      text: errorMessageOf(error, m["editor.save.failed"]()),
     };
   }
 }

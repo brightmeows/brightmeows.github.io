@@ -12,6 +12,7 @@ import type { ChartData } from "@brightmeows/bms/format";
 
 import { m } from "#lib/paraglide/messages.js";
 import type { TableLoadState } from "#lib/types/bms-view.js";
+import { errorMessageOf } from "#lib/utils/infra/error.js";
 
 // ---- 状态构造器 ----
 
@@ -72,7 +73,7 @@ export function classifyLoadError(error: unknown): LoadErrorKind {
   }
   return {
     kind: "failed",
-    message: error instanceof Error ? error.message : m["common.unknown_error"](),
+    message: errorMessageOf(error, m["common.unknown_error"]()),
   };
 }
 

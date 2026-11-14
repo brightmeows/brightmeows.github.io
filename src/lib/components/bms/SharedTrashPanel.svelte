@@ -14,6 +14,7 @@
   import { m } from "#lib/paraglide/messages.js";
   import { getLocale } from "#lib/paraglide/runtime.js";
   import { formatAbsolute, formatRelativeTime } from "#lib/utils/infra/date.js";
+  import { errorMessageOf } from "#lib/utils/infra/error.js";
 
   /**
    * 共享表回收站：登录后展示自己的删除记录（admin 看全部），30 天内可恢复；
@@ -65,7 +66,7 @@
     } catch (error) {
       notice = {
         kind: "error",
-        text: error instanceof Error ? error.message : m["shared.restore.failed"](),
+        text: errorMessageOf(error, m["shared.restore.failed"]()),
       };
     } finally {
       restoring = null;

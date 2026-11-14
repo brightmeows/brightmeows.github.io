@@ -52,6 +52,7 @@
   import { planImportApply, type EditorNotice } from "#lib/controllers/editor.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { JsonPreviewHandle } from "#lib/types/ui.js";
+  import { errorDetailOf } from "#lib/utils/infra/error.js";
   import { validateUrl } from "#lib/utils/infra/url.js";
   import { createDragList } from "#lib/utils/ui/dnd-list.svelte.js";
 
@@ -515,7 +516,7 @@
       parsed = JSON.parse(bulkText);
     } catch (error) {
       bulkError = m["editor.import.parse_failed"]({
-        detail: error instanceof Error ? error.message : String(error),
+        detail: errorDetailOf(error),
       });
       return;
     }

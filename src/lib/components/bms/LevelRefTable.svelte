@@ -4,6 +4,7 @@
   import InlineEmpty from "#lib/components/ui/InlineEmpty.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
   import { m } from "#lib/paraglide/messages.js";
+  import { errorMessageOf } from "#lib/utils/infra/error.js";
   import { resolveUrl } from "#lib/utils/infra/url.js";
 
   interface Props {
@@ -92,7 +93,7 @@
       console.error("加载难度对照表数据失败:", err);
       hasData = false;
       loadState = "error";
-      loadErrorMessage = err instanceof Error ? err.message : m["common.unknown_error"]();
+      loadErrorMessage = errorMessageOf(err, m["common.unknown_error"]());
     }
   }
 

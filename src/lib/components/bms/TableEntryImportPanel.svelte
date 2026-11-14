@@ -22,6 +22,7 @@
   import { btnGhost, inputEditorMono } from "#lib/constants/ui-classes.js";
   import { loadSharedTables } from "#lib/data/api/shared-api.js";
   import { m } from "#lib/paraglide/messages.js";
+  import { errorMessageOf } from "#lib/utils/infra/error.js";
 
   /**
    * 跨表选择导入：从镜像或共享表里按标题/哈希挑条目追加到当前表。
@@ -145,7 +146,7 @@
       sourceEntries = data as Record<string, unknown>[];
       sourceName = typeof header.name === "string" && header.name !== "" ? header.name : source.id;
     } catch (error) {
-      loadError = error instanceof Error ? error.message : m["common.unknown_error"]();
+      loadError = errorMessageOf(error, m["common.unknown_error"]());
     } finally {
       loading = false;
     }

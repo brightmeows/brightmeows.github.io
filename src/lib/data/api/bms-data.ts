@@ -2,6 +2,7 @@ import type { ChartData } from "@brightmeows/bms/format";
 
 import { m } from "#lib/paraglide/messages.js";
 import type { ProgressCallback } from "#lib/types/bms-view.js";
+import { errorDetailOf } from "#lib/utils/infra/error.js";
 import { fetchStream } from "#lib/utils/infra/fetch-stream.js";
 import { formatBytes } from "#lib/utils/infra/format.js";
 import { isRecord } from "#lib/utils/infra/object.js";
@@ -101,7 +102,7 @@ export async function fetchBmsHeader(
   } catch (err) {
     throw new Error(
       m["bmsdata.header.load_failed"]({
-        error: err instanceof Error ? err.message : String(err),
+        error: errorDetailOf(err),
       }),
       { cause: err }
     );
@@ -115,7 +116,7 @@ export async function fetchBmsHeader(
   } catch (err) {
     throw new Error(
       m["bmsdata.header.format_invalid"]({
-        error: err instanceof Error ? err.message : String(err),
+        error: errorDetailOf(err),
       }),
       { cause: err }
     );
@@ -159,10 +160,7 @@ export async function fetchBmsTableData(
     try {
       tableDataRaw = await fetchJsonp(finalDataUrl);
     } catch (err) {
-      throw new Error(
-        m["bmsdata.jsonp.failed"]({ error: err instanceof Error ? err.message : String(err) }),
-        { cause: err }
-      );
+      throw new Error(m["bmsdata.jsonp.failed"]({ error: errorDetailOf(err) }), { cause: err });
     }
     onProgress?.({ percent: 85, phase: "parsing", message: m["bmsdata.jsonp.received"]() });
   } else {
@@ -188,16 +186,15 @@ export async function fetchBmsTableData(
       } catch (err) {
         throw new Error(
           m["bmsdata.chart.format_invalid"]({
-            error: err instanceof Error ? err.message : String(err),
+            error: errorDetailOf(err),
           }),
           { cause: err }
         );
       }
     } catch (err) {
-      throw new Error(
-        m["bmsdata.chart.load_failed"]({ error: err instanceof Error ? err.message : String(err) }),
-        { cause: err }
-      );
+      throw new Error(m["bmsdata.chart.load_failed"]({ error: errorDetailOf(err) }), {
+        cause: err,
+      });
     }
   }
 
