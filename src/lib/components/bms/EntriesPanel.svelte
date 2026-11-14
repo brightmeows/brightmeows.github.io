@@ -34,8 +34,9 @@
   import Trash2 from "@lucide/svelte/icons/trash-2";
   import WandSparkles from "@lucide/svelte/icons/wand-sparkles";
   import X from "@lucide/svelte/icons/x";
-  import { tick } from "svelte";
+  import { onMount, tick } from "svelte";
 
+  import BlockRows from "#lib/components/bms/BlockRows.svelte";
   import ChartTableRow from "#lib/components/bms/ChartTableRow.svelte";
   import EntryDetailForm from "#lib/components/bms/EntryDetailForm.svelte";
   import JsonPreview from "#lib/components/ui/JsonPreview.svelte";
@@ -55,6 +56,7 @@
   import { errorDetailOf } from "#lib/utils/infra/error.js";
   import { validateUrl } from "#lib/utils/infra/url.js";
   import { createDragList } from "#lib/utils/ui/dnd-list.svelte.js";
+  import { goto } from "$app/navigation";
 
   /**
    * 条目面板：查看与编辑共用条目表、组头、难度导航与搜索/筛选。
@@ -108,6 +110,11 @@
   }: Props = $props();
 
   const BATCH_NONE = "__none__";
+  const UNASSIGNED_LEVEL = "__unassigned__";
+  const LARGE_TABLE_THRESHOLD = 1_000;
+  const BLOCK_SIZE = 500;
+  const WINDOW_BLOCKS = 3;
+  const BLOCK_WINDOW_THRESHOLD = 1_000;
 
   interface LevelNavItem {
     level: string;
@@ -116,7 +123,17 @@
     color: string;
   }
 
+  let queryInput = $state("");
   let query = $state("");
+  let selectedLevel = $state<string | null>(null);
+  let levelBeforeSearch = $state<string | null>(null);
+  let lastAppliedQuery = "";
+  let initialBlock = $state(0);
+  let blockNonce = $state(0);
+  let tableScrollEl = $state<HTMLDivElement | undefined>(undefined);
+  let blockRows = $state<{ scrollToIndex: (position: number) => void } | undefined>(undefined);
+  let loadedWindow = $state<{ start: number; end: number }>({ start: 0, end: 0 });
+  let pendingScrollIndex = $state<number | null>(null);
   let selected = $state<Set<number>>(new Set());
   let editingIndex = $state<number | null>(null);
   let adding = $state(false);
@@ -163,6 +180,27 @@
     return out;
   });
 
+  const levelCounts = $derived.by(() => {
+    const counts = new Map<string, number>();
+    for (const entry of entries) {
+      const level = typeof entry.level === "string" ? entry.level : "";
+      if (level === "") continue;
+      counts.set(level, (counts.get(level) ?? 0) + 1);
+    }
+    return counts;
+  });
+
+  const firstNonEmptyLevel = $derived(
+    allLevels.find((level) => (levelCounts.get(level) ?? 0) > 0) ?? ""
+  );
+  const hasUnassigned = $derived(entries.some((entry) => isUnassigned(entry)));
+  const defaultLevel = $derived(
+    firstNonEmptyLevel !== "" ? firstNonEmptyLevel : hasUnassigned ? UNASSIGNED_LEVEL : ""
+  );
+  const activeLevel = $derived(selectedLevel ?? defaultLevel);
+  const isUnassignedLevel = $derived(activeLevel === UNASSIGNED_LEVEL);
+  const largeTable = $derived(entries.length > LARGE_TABLE_THRESHOLD);
+
   const levelFilter = $derived(
     hiddenLevels.size === 0 && !hideUnassigned
       ? ({ kind: "all" } as const)
@@ -172,8 +210,18 @@
           unassigned: !hideUnassigned,
         } as const)
   );
-  const filteredIndices = $derived(filterEntryIndices(entries, { level: levelFilter, query }));
+  const searchMode = $derived(largeTable && query.trim() !== "");
+  const effectiveLevelFilter = $derived.by(() => {
+    if (!largeTable) return levelFilter;
+    if (searchMode) return { kind: "all" } as const;
+    if (isUnassignedLevel) return { kind: "unassigned" } as const;
+    return { kind: "level", level: activeLevel } as const;
+  });
+  const filteredIndices = $derived(
+    filterEntryIndices(entries, { level: effectiveLevelFilter, query })
+  );
   const groups = $derived(groupEntryIndices(entries, filteredIndices, levels));
+  const useBlockWindow = $derived(largeTable && filteredIndices.length > BLOCK_WINDOW_THRESHOLD);
 
   /** 未列入 header level_order 的等级组：站点 fallback 显示而 beatoraja 整组丢弃，组头挂警示 chip。 */
   const unlistedLevels = $derived(new Set(findUnlistedLevels(allLevels, levels)));
@@ -193,11 +241,19 @@
     const to = index + delta;
     if (group === undefined || dragGroups.get(to) !== group) return;
     entries = moveItem(entries, index, to);
+    if (largeTable) pendingScrollIndex = to;
+  }
+
+  function isLoadedIndex(index: number): boolean {
+    if (!useBlockWindow) return true;
+    const position = filteredIndices.indexOf(index);
+    return position >= loadedWindow.start && position < loadedWindow.end;
   }
 
   const dnd = createDragList({
     enabled: () => editing && !disabled,
     canDrop: (from, to) => {
+      if (!isLoadedIndex(to)) return false;
       const group = dragGroups.get(from);
       return group !== undefined && dragGroups.get(to) === group;
     },
@@ -221,7 +277,9 @@
   const unassignedCount = $derived(countUnassigned(entries));
   const selectedCount = $derived(selected.size);
   const columnCount = $derived(editing ? 6 : 4);
-  const filtering = $derived(query.trim() !== "" || hiddenLevels.size > 0 || hideUnassigned);
+  const filtering = $derived(
+    largeTable ? searchMode : query.trim() !== "" || hiddenLevels.size > 0 || hideUnassigned
+  );
   const hintApplicableCount = $derived(
     entries.reduce((total, entry) => {
       if (!isUnassigned(entry)) return total;
@@ -230,16 +288,6 @@
       return hint !== undefined && hint.trim() !== "" ? total + 1 : total;
     }, 0)
   );
-
-  const levelCounts = $derived.by(() => {
-    const counts = new Map<string, number>();
-    for (const entry of entries) {
-      const level = typeof entry.level === "string" ? entry.level : "";
-      if (level === "") continue;
-      counts.set(level, (counts.get(level) ?? 0) + 1);
-    }
-    return counts;
-  });
 
   // 分段配色按“实际有谱面的等级”依次取色：level_order 全集常含大量空等级，
   // 若按全集编 index，空等级占掉的颜色箱会被跳过，中间色相（橙红等）上不了屏。
@@ -265,6 +313,145 @@
       });
     }
     return items;
+  });
+
+  const activeLevelLabel = $derived(
+    isUnassignedLevel ? m["editor.entries.filter_unassigned"]() : `${symbol}${activeLevel}`
+  );
+  const activeLevelColor = $derived(colorFor(activeLevel, isUnassignedLevel));
+  const activeLevelUnlisted = $derived(!isUnassignedLevel && unlistedLevels.has(activeLevel));
+  const viewKey = $derived(`${searchMode ? "search" : activeLevel}|${query}|${blockNonce}`);
+
+  function readUrlState(): { level: string | null; block: number; q: string } {
+    if (typeof window === "undefined") return { level: null, block: 0, q: "" };
+    const params = new URLSearchParams(window.location.search);
+    const rawLevel = params.get("level");
+    const rawBlock = Number.parseInt(params.get("block") ?? "0", 10);
+    return {
+      level: rawLevel === null || rawLevel === "" ? null : rawLevel,
+      block: Number.isFinite(rawBlock) && rawBlock > 0 ? rawBlock : 0,
+      q: params.get("q") ?? "",
+    };
+  }
+
+  function writeUrl(
+    next: { level?: string | null; block?: number | null; q?: string | null },
+    mode: "push" | "replace"
+  ): void {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    const setOrDelete = (key: string, value: string | null | undefined): void => {
+      if (value === null || value === undefined || value === "") url.searchParams.delete(key);
+      else url.searchParams.set(key, value);
+    };
+    setOrDelete("level", next.level);
+    setOrDelete(
+      "block",
+      next.block === null || next.block === undefined || next.block <= 0 ? null : String(next.block)
+    );
+    setOrDelete("q", next.q);
+    const href = `${url.pathname}${url.search}${url.hash}`;
+    const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (href === current) return;
+    void goto(href, { shallow: true, replace: mode === "replace", reset: false }).catch(() => {
+      // 浅导航被更新的导航取代时忽略拒绝，URL 状态以最后一次为准。
+    });
+  }
+
+  function applyUrlState(): void {
+    const state = readUrlState();
+    selectedLevel = state.level;
+    queryInput = state.q;
+    query = state.q;
+    lastAppliedQuery = state.q;
+    levelBeforeSearch = state.q !== "" ? state.level : null;
+    initialBlock = state.block;
+    blockNonce += 1;
+  }
+
+  function selectLevel(item: LevelNavItem): void {
+    selectedLevel = item.unassigned ? UNASSIGNED_LEVEL : item.level;
+    queryInput = "";
+    query = "";
+    lastAppliedQuery = "";
+    levelBeforeSearch = null;
+    initialBlock = 0;
+    blockNonce += 1;
+    writeUrl({ level: selectedLevel, block: null, q: null }, "push");
+  }
+
+  function clearSearch(): void {
+    queryInput = "";
+    query = "";
+    lastAppliedQuery = "";
+    if (!largeTable) return;
+    const nextLevel = levelBeforeSearch ?? selectedLevel;
+    selectedLevel = nextLevel;
+    levelBeforeSearch = null;
+    initialBlock = 0;
+    blockNonce += 1;
+    writeUrl({ level: nextLevel, block: null, q: null }, "push");
+  }
+
+  function handleBlockChange(block: number): void {
+    if (!largeTable) return;
+    writeUrl({ level: activeLevel, block, q: searchMode ? query : null }, "replace");
+  }
+
+  function handleWindowChange(start: number, end: number): void {
+    loadedWindow = { start, end };
+  }
+
+  function rowKey(position: number): number {
+    const index = filteredIndices[position];
+    return index === undefined ? -1 : entryKey(entries[index]);
+  }
+
+  $effect(() => {
+    const raw = queryInput.trim();
+    if (!largeTable) {
+      query = raw;
+      return;
+    }
+    const timer = setTimeout(() => {
+      if (raw === query) return;
+      const entering = lastAppliedQuery === "" && raw !== "";
+      const leaving = lastAppliedQuery !== "" && raw === "";
+      if (entering) levelBeforeSearch = activeLevel;
+      query = raw;
+      lastAppliedQuery = raw;
+      if (leaving) selectedLevel = levelBeforeSearch ?? selectedLevel;
+      initialBlock = 0;
+      blockNonce += 1;
+      writeUrl(
+        { level: activeLevel, block: null, q: raw === "" ? null : raw },
+        entering || leaving ? "push" : "replace"
+      );
+    }, 200);
+    return () => clearTimeout(timer);
+  });
+
+  $effect(() => {
+    if (pendingScrollIndex === null) return;
+    const position = filteredIndices.indexOf(pendingScrollIndex);
+    if (position < 0) return;
+    if (useBlockWindow && blockRows === undefined) return;
+    const index = pendingScrollIndex;
+    pendingScrollIndex = null;
+    void tick().then(() => {
+      if (useBlockWindow && blockRows !== undefined) {
+        blockRows.scrollToIndex(position);
+        return;
+      }
+      document.getElementById(`entry-${index}`)?.scrollIntoView({ block: "center" });
+    });
+  });
+
+  onMount(() => {
+    applyUrlState();
+    const onPopState = (): void => applyUrlState();
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
   });
 
   function hintFor(entry: Record<string, unknown>): string | null {
@@ -430,6 +617,7 @@
     if (target === undefined) return;
     entries = moveItem(entries, editingIndex, target);
     editingIndex = target;
+    if (largeTable) pendingScrollIndex = target;
     onChange?.();
   }
 
@@ -452,8 +640,33 @@
         });
         return;
       }
+      const newIndex = entries.length;
+      const entryLevel = typeof entry.level === "string" ? entry.level : "";
+      const nextLevel = entryLevel === "" ? UNASSIGNED_LEVEL : entryLevel;
+      const nextLevelCount =
+        entries.reduce((count, item) => {
+          const matches =
+            nextLevel === UNASSIGNED_LEVEL
+              ? isUnassigned(item)
+              : (typeof item.level === "string" ? item.level : "") === nextLevel;
+          return matches ? count + 1 : count;
+        }, 0) + 1;
       entries = [...entries, entry];
       notice = null;
+      if (largeTable) {
+        selectedLevel = nextLevel;
+        queryInput = "";
+        query = "";
+        lastAppliedQuery = "";
+        levelBeforeSearch = null;
+        initialBlock =
+          nextLevelCount > BLOCK_WINDOW_THRESHOLD
+            ? Math.floor((nextLevelCount - 1) / BLOCK_SIZE)
+            : 0;
+        blockNonce += 1;
+        if (nextLevelCount <= BLOCK_WINDOW_THRESHOLD) pendingScrollIndex = newIndex;
+        writeUrl({ level: nextLevel, block: null, q: null }, "push");
+      }
     } else {
       const duplicate = duplicateEntryLabel(entries, entry, target);
       notice =
@@ -569,6 +782,107 @@
   }
 </script>
 
+{#snippet tableHead()}
+  <caption class="sr-only">{m["table.caption.entries"]()}</caption>
+  <colgroup>
+    {#if editing}<col class="w-10" />{/if}
+    <col class="w-52" />
+    <col />
+    <col />
+    <col />
+    {#if editing}<col class="w-10" />{/if}
+  </colgroup>
+  <thead>
+    <tr>
+      {#if editing}<th
+          class="table-th-compact px-2"
+          scope="col"
+          aria-label={m["common.th_actions"]()}
+        ></th>{/if}
+      <th class="table-th-compact text-center whitespace-nowrap" scope="col">
+        {m["table.th.links"]()}
+      </th>
+      <th class="table-th-compact text-center whitespace-nowrap" scope="col">
+        {m["table.th.title"]()}
+      </th>
+      <th class="table-th-compact text-center whitespace-nowrap" scope="col">
+        {m["table.th.artist"]()}
+      </th>
+      <th class="table-th-compact text-center whitespace-nowrap" scope="col">
+        {m["table.th.comment"]()}
+      </th>
+      {#if editing}<th
+          class="table-th-compact px-2"
+          scope="col"
+          aria-label={m["common.th_actions"]()}
+        ></th>{/if}
+    </tr>
+  </thead>
+{/snippet}
+
+{#snippet entryRow(index: number, groupLevel: string, ariaRowIndex?: number)}
+  {@const entry = entries[index] ?? {}}
+  {@const group = dragGroups.get(index)}
+  {@const groupPos = group?.indices.indexOf(index) ?? -1}
+  {@const levelHint =
+    editing && isUnassigned(entry) && hintFor(entry) !== null
+      ? m["editor.entry.level_hint"]({ level: hintFor(entry) ?? "" })
+      : null}
+  <ChartTableRow
+    chart={toChart(entry)}
+    {groupLevel}
+    bundleUrl={resolvedBundleUrl(entry)}
+    diffUrl={resolvedDiffUrl(entry)}
+    {chartPreview}
+    {levelHint}
+    selectable={editing}
+    selected={selected.has(index)}
+    {disabled}
+    drag={editing && !searchMode ? { dnd, index, disabled } : undefined}
+    canMoveUp={!searchMode && groupPos > 0}
+    canMoveDown={!searchMode && groupPos >= 0 && groupPos < (group?.indices.length ?? 0) - 1}
+    onMoveUp={searchMode ? undefined : () => moveEntryWithinGroup(index, -1)}
+    onMoveDown={searchMode ? undefined : () => moveEntryWithinGroup(index, 1)}
+    onSelect={(checked: boolean) => setSelected(index, checked)}
+    onEdit={editing ? () => startEdit(index) : undefined}
+    {ariaRowIndex}
+    rowId={`entry-${index}`}
+    showLevel={searchMode}
+  />
+  {#if editing && editingIndex === index}
+    <tr>
+      <td colspan={columnCount} class="table-td-compact">
+        {#key editKey}
+          <EntryDetailForm
+            entry={entries[index] ?? null}
+            {levels}
+            {disabled}
+            oncommit={commitDetail}
+            oncancel={cancelDetail}
+            ondelete={deleteEditing}
+            onmoveup={searchMode ? undefined : () => moveEditing(-1)}
+            onmovedown={searchMode ? undefined : () => moveEditing(1)}
+            canmoveup={!searchMode && (editingMove?.canUp ?? false)}
+            canmovedown={!searchMode && (editingMove?.canDown ?? false)}
+          />
+        {/key}
+      </td>
+    </tr>
+  {/if}
+{/snippet}
+
+{#snippet blockRow(index: number, ariaRowIndex?: number)}
+  {@const entry = entries[index] ?? {}}
+  {@const groupLevel = searchMode
+    ? isUnassigned(entry)
+      ? m["editor.entries.filter_unassigned"]()
+      : String(entry.level ?? "")
+    : isUnassignedLevel
+      ? m["editor.entries.filter_unassigned"]()
+      : activeLevel}
+  {@render entryRow(index, groupLevel, ariaRowIndex)}
+{/snippet}
+
 <div class="flex flex-col gap-3">
   {#if loadState === "idle" || loadState === "loading"}
     <LoadingProgress
@@ -595,11 +909,23 @@
       <input
         class="{inputEditorMono} max-w-64 flex-1"
         type="text"
-        bind:value={query}
+        bind:value={queryInput}
         placeholder={m["editor.entries.search_placeholder"]()}
         {disabled}
       />
-      {#if filtering}
+      {#if largeTable}
+        <span class="text-[0.85rem] text-white-60">
+          {searchMode
+            ? m["common.matched"]({ shown: filteredIndices.length, total: entries.length })
+            : m["table.stats.chart_count"]({ count: filteredIndices.length })}
+        </span>
+        {#if searchMode}
+          <button class={btnGhost} type="button" onclick={clearSearch}>
+            <X class="size-4 shrink-0" aria-hidden="true" />
+            {m["common.clear_search"]()}
+          </button>
+        {/if}
+      {:else if filtering}
         <span class="text-[0.85rem] text-white-60">
           {m["common.matched"]({ shown: filteredIndices.length, total: entries.length })}
         </span>
@@ -632,7 +958,25 @@
       {/if}
     </div>
 
-    {#if navItems.length > 0}
+    {#if largeTable && !searchMode}
+      {#if navItems.length > 0}
+        <div class="flex flex-wrap items-center gap-2">
+          {#each navItems as item (item.unassigned ? "__unassigned__" : item.level)}
+            <ToggleJumpChip
+              checked={activeLevel === (item.unassigned ? UNASSIGNED_LEVEL : item.level)}
+              label={item.unassigned
+                ? m["editor.entries.filter_unassigned"]()
+                : `${symbol}${item.level}`}
+              count={item.count}
+              tone="level"
+              color={item.color}
+              onToggle={() => selectLevel(item)}
+              onJump={() => selectLevel(item)}
+            />
+          {/each}
+        </div>
+      {/if}
+    {:else if navItems.length > 0}
       <div class="flex flex-wrap items-center gap-2">
         {#each navItems as item (item.unassigned ? "__unassigned__" : item.level)}
           <ToggleJumpChip
@@ -765,138 +1109,138 @@
       {/key}
     {/if}
 
-    <!-- 键盘滚动入口是响应式表格指南的强制项，region 非交互属 a11y 规则误报 -->
-    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-    <div
-      class="table-wrapper"
-      role="region"
-      tabindex="0"
-      aria-label={m["common.table_scroll_region"]()}
-    >
-      <table class="w-full min-w-200 table-fixed border-collapse">
-        <caption class="sr-only">{m["table.caption.entries"]()}</caption>
-        <colgroup>
-          {#if editing}<col class="w-10" />{/if}
-          <col class="w-52" />
-          <col />
-          <col />
-          <col />
-          {#if editing}<col class="w-10" />{/if}
-        </colgroup>
-        <thead>
-          <tr>
-            {#if editing}<th
-                class="table-th-compact px-2"
-                scope="col"
-                aria-label={m["common.th_actions"]()}
-              ></th>{/if}
-            <th class="table-th-compact text-center whitespace-nowrap" scope="col">
-              {m["table.th.links"]()}
-            </th>
-            <th class="table-th-compact text-center whitespace-nowrap" scope="col">
-              {m["table.th.title"]()}
-            </th>
-            <th class="table-th-compact text-center whitespace-nowrap" scope="col">
-              {m["table.th.artist"]()}
-            </th>
-            <th class="table-th-compact text-center whitespace-nowrap" scope="col">
-              {m["table.th.comment"]()}
-            </th>
-            {#if editing}<th
-                class="table-th-compact px-2"
-                scope="col"
-                aria-label={m["common.th_actions"]()}
-              ></th>{/if}
-          </tr>
-        </thead>
-        {#each groups as group (group.unassigned ? "__unassigned__" : group.level)}
-          {@const groupColor = colorFor(group.level, group.unassigned)}
-          {@const groupLabel = group.unassigned
-            ? m["editor.entries.filter_unassigned"]()
-            : `${symbol}${group.level}`}
-          <tbody id={entryGroupAnchorId(group.level, group.unassigned)} class="scroll-mt-5">
-            <tr>
-              <td colspan={columnCount} class="border-b-2 border-white-10 px-4 py-2">
-                <div class="flex items-center gap-4">
-                  <span
-                    class="rounded-glass-xl px-6 py-2 text-[1.2rem] font-bold text-white shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
-                    style={`background-color:${groupColor};`}
-                  >
-                    {groupLabel}
-                  </span>
-                  <span class="text-[1.1rem] text-white-80">
-                    {m["table.stats.chart_count"]({ count: group.indices.length })}
-                  </span>
-                  {#if !group.unassigned && unlistedLevels.has(group.level)}
-                    <span class={btnChipOnWarning} title={m["editor.compat.unlisted_title"]()}>
-                      {m["editor.compat.unlisted_chip"]()}
-                    </span>
-                  {/if}
-                </div>
-              </td>
-            </tr>
-            {#each group.indices as index, groupPos (entryKey(entries[index]))}
-              {@const entry = entries[index] ?? {}}
-              {@const levelHint =
-                editing && isUnassigned(entry) && hintFor(entry) !== null
-                  ? m["editor.entry.level_hint"]({ level: hintFor(entry) ?? "" })
-                  : null}
-              <ChartTableRow
-                chart={toChart(entry)}
-                groupLevel={group.unassigned
-                  ? m["editor.entries.filter_unassigned"]()
-                  : group.level}
-                bundleUrl={resolvedBundleUrl(entry)}
-                diffUrl={resolvedDiffUrl(entry)}
-                {chartPreview}
-                {levelHint}
-                selectable={editing}
-                selected={selected.has(index)}
-                {disabled}
-                drag={editing ? { dnd, index, disabled } : undefined}
-                canMoveUp={groupPos > 0}
-                canMoveDown={groupPos < group.indices.length - 1}
-                onMoveUp={() => moveEntryWithinGroup(index, -1)}
-                onMoveDown={() => moveEntryWithinGroup(index, 1)}
-                onSelect={(checked: boolean) => setSelected(index, checked)}
-                onEdit={editing ? () => startEdit(index) : undefined}
-              />
-              {#if editing && editingIndex === index}
-                <tr>
-                  <td colspan={columnCount} class="table-td-compact">
-                    {#key editKey}
-                      <EntryDetailForm
-                        entry={entries[index] ?? null}
-                        {levels}
-                        {disabled}
-                        oncommit={commitDetail}
-                        oncancel={cancelDetail}
-                        ondelete={deleteEditing}
-                        onmoveup={() => moveEditing(-1)}
-                        onmovedown={() => moveEditing(1)}
-                        canmoveup={editingMove?.canUp ?? false}
-                        canmovedown={editingMove?.canDown ?? false}
-                      />
-                    {/key}
-                  </td>
-                </tr>
-              {/if}
-            {/each}
-          </tbody>
-        {/each}
-        {#if groups.length === 0}
-          <tbody>
-            <tr>
-              <td class="table-td-compact text-center text-white-50" colspan={columnCount}>
-                {entries.length === 0
-                  ? m["editor.entries.empty"]()
-                  : m["editor.entries.empty_filtered"]()}
-              </td>
-            </tr>
-          </tbody>
+    {#if largeTable}
+      <div class="flex flex-wrap items-center gap-3">
+        {#if searchMode}
+          <span class="text-[1.1rem] text-white-80">
+            {m["common.matched"]({ shown: filteredIndices.length, total: entries.length })}
+          </span>
+        {:else}
+          <span
+            class="rounded-glass-xl px-6 py-2 text-[1.2rem] font-bold text-white shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
+            style:background-color={activeLevelColor}
+          >
+            {activeLevelLabel}
+          </span>
+          <span class="text-[1.1rem] text-white-80">
+            {m["table.stats.chart_count"]({ count: filteredIndices.length })}
+          </span>
+          {#if activeLevelUnlisted}
+            <span class={btnChipOnWarning} title={m["editor.compat.unlisted_title"]()}>
+              {m["editor.compat.unlisted_chip"]()}
+            </span>
+          {/if}
         {/if}
-      </table>
-    </div>
+      </div>
+
+      <!-- 键盘滚动入口是响应式表格指南的强制项，region 非交互属 a11y 规则误报 -->
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+      <div
+        class="table-wrapper entries-scroll"
+        role="region"
+        tabindex="0"
+        aria-label={m["common.table_scroll_region"]()}
+        bind:this={tableScrollEl}
+      >
+        <table
+          class="w-full min-w-200 table-fixed border-collapse"
+          aria-rowcount={filteredIndices.length + 1}
+        >
+          {@render tableHead()}
+          {#if filteredIndices.length === 0}
+            <tbody>
+              <tr>
+                <td class="table-td-compact text-center text-white-50" colspan={columnCount}>
+                  {entries.length === 0
+                    ? m["editor.entries.empty"]()
+                    : m["editor.entries.empty_filtered"]()}
+                </td>
+              </tr>
+            </tbody>
+          {:else if useBlockWindow}
+            {#key viewKey}
+              <BlockRows
+                bind:this={blockRows}
+                indices={filteredIndices}
+                row={blockRow}
+                keyOf={rowKey}
+                {columnCount}
+                scrollEl={tableScrollEl}
+                blockSize={BLOCK_SIZE}
+                windowBlocks={WINDOW_BLOCKS}
+                {initialBlock}
+                onwindowchange={handleWindowChange}
+                onblockchange={handleBlockChange}
+              />
+            {/key}
+          {:else}
+            <tbody>
+              {#each filteredIndices as index, position (entryKey(entries[index]))}
+                {@render blockRow(index, position + 2)}
+              {/each}
+            </tbody>
+          {/if}
+        </table>
+      </div>
+    {:else}
+      <!-- 键盘滚动入口是响应式表格指南的强制项，region 非交互属 a11y 规则误报 -->
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+      <div
+        class="table-wrapper"
+        role="region"
+        tabindex="0"
+        aria-label={m["common.table_scroll_region"]()}
+      >
+        <table class="w-full min-w-200 table-fixed border-collapse">
+          {@render tableHead()}
+          {#each groups as group (group.unassigned ? "__unassigned__" : group.level)}
+            {@const groupColor = colorFor(group.level, group.unassigned)}
+            {@const groupLabel = group.unassigned
+              ? m["editor.entries.filter_unassigned"]()
+              : `${symbol}${group.level}`}
+            <tbody id={entryGroupAnchorId(group.level, group.unassigned)} class="scroll-mt-5">
+              <tr>
+                <td colspan={columnCount} class="border-b-2 border-white-10 px-4 py-2">
+                  <div class="flex items-center gap-4">
+                    <span
+                      class="rounded-glass-xl px-6 py-2 text-[1.2rem] font-bold text-white shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
+                      style={`background-color:${groupColor};`}
+                    >
+                      {groupLabel}
+                    </span>
+                    <span class="text-[1.1rem] text-white-80">
+                      {m["table.stats.chart_count"]({ count: group.indices.length })}
+                    </span>
+                    {#if !group.unassigned && unlistedLevels.has(group.level)}
+                      <span class={btnChipOnWarning} title={m["editor.compat.unlisted_title"]()}>
+                        {m["editor.compat.unlisted_chip"]()}
+                      </span>
+                    {/if}
+                  </div>
+                </td>
+              </tr>
+              {#each group.indices as index (entryKey(entries[index]))}
+                {@render entryRow(
+                  index,
+                  group.unassigned ? m["editor.entries.filter_unassigned"]() : group.level
+                )}
+              {/each}
+            </tbody>
+          {/each}
+          {#if groups.length === 0}
+            <tbody>
+              <tr>
+                <td class="table-td-compact text-center text-white-50" colspan={columnCount}>
+                  {entries.length === 0
+                    ? m["editor.entries.empty"]()
+                    : m["editor.entries.empty_filtered"]()}
+                </td>
+              </tr>
+            </tbody>
+          {/if}
+        </table>
+      </div>
+    {/if}
     <JsonPreview bind:this={chartPreview} />
   {/if}
 </div>

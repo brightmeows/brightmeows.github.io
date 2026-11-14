@@ -40,6 +40,12 @@
     canMoveDown?: boolean;
     onMoveUp?: (() => void) | undefined;
     onMoveDown?: (() => void) | undefined;
+    /** 供块窗口表格标注 1-based 行号，普通表格不传。 */
+    ariaRowIndex?: number | undefined;
+    /** 供新增条目后定位的行 id，普通表格不传。 */
+    rowId?: string | undefined;
+    /** 搜索的扁平结果里在标题前显示等级标签。 */
+    showLevel?: boolean;
   }
 
   let {
@@ -59,6 +65,9 @@
     canMoveDown = false,
     onMoveUp = undefined,
     onMoveDown = undefined,
+    ariaRowIndex = undefined,
+    rowId = undefined,
+    showLevel = false,
   }: Props = $props();
 
   const rowAction = $derived(drag === undefined ? inertDragItem : drag.dnd.item);
@@ -69,7 +78,7 @@
   );
 </script>
 
-<tr use:rowAction={rowParams} class="hover:bg-white-5">
+<tr use:rowAction={rowParams} id={rowId} aria-rowindex={ariaRowIndex} class="hover:bg-white-5">
   {#if selectable}
     <td class="table-td-compact px-2">
       <div class="flex items-center justify-center gap-1">
@@ -100,6 +109,11 @@
     scope="row"
     class="table-th-row-sticky table-td-compact text-left font-normal wrap-break-word"
   >
+    {#if showLevel}
+      <span class="mr-1.5 rounded-glass-sm bg-white-10 px-1.5 py-0.5 text-[0.75rem] text-white-70">
+        {groupLevel}
+      </span>
+    {/if}
     <strong
       use:jsonPreview={{
         preview: chartPreview,

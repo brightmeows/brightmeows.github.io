@@ -419,6 +419,21 @@
     @apply overflow-x-auto rounded-glass-sm border border-white-10 bg-black-20;
   }
 
+  /* 大表内部滚动：玻璃卡高度钉在视口内，表头在滚动区内吸附。
+     块窗口只决定渲染多少行，容器高度不随等级总行数增长。 */
+  .entries-scroll {
+    height: calc(100vh - 12rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .entries-scroll thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: color-mix(in srgb, var(--color-accent) 20%, var(--color-background));
+  }
+
   /* ===== 蓝色强调链接 ===== */
   .link-accent {
     @apply m-0 cursor-pointer border-0 bg-transparent p-0 font-medium text-accent underline hover:text-accent-hover;
