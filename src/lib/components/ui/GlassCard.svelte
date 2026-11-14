@@ -6,8 +6,8 @@
   interface Props {
     /** 子元素内容 */
     children?: Snippet;
-    /** 点击链接（可选，提供后变为可点击卡片） */
-    href?: string;
+    /** 点击链接（卡片整面可点；非交互容器用 GlassPanel） */
+    href: string;
     /** 自定义类名 */
     class?: string;
     /** 内边距变体 */
@@ -56,35 +56,18 @@
     "glass-base bg-glass shadow-(--glass-lighting) hover:bg-glass-hover hover:shadow-[var(--glass-lighting),0_4px_12px_rgba(0,0,0,0.2)]";
 </script>
 
-{#if href}
-  <a
-    {href}
-    {target}
-    {rel}
-    class="relative block text-white no-underline {sharedClasses} {paddingConfig[
-      padding
-    ]} {roundedConfig[rounded]} {hoverLift ? 'hover:-translate-y-0.5' : ''} {clickShrink
-      ? 'active:translate-y-0 active:scale-95'
-      : ''} {className}"
-    style={styleToString(style)}
-  >
-    {#if children}
-      {@render children()}
-    {/if}
-  </a>
-{:else}
-  <div
-    role="button"
-    tabindex="0"
-    class="relative text-white {sharedClasses} {paddingConfig[padding]} {roundedConfig[
-      rounded
-    ]} {hoverLift ? 'hover:-translate-y-0.5' : ''} {clickShrink
-      ? 'active:translate-y-0 active:scale-95'
-      : ''} {className}"
-    style={styleToString(style)}
-  >
-    {#if children}
-      {@render children()}
-    {/if}
-  </div>
-{/if}
+<a
+  {href}
+  {target}
+  {rel}
+  class="relative block text-white no-underline {sharedClasses} {paddingConfig[
+    padding
+  ]} {roundedConfig[rounded]} {hoverLift ? 'hover:-translate-y-0.5' : ''} {clickShrink
+    ? 'active:translate-y-0 active:scale-95'
+    : ''} {className}"
+  style={styleToString(style)}
+>
+  {#if children}
+    {@render children()}
+  {/if}
+</a>
