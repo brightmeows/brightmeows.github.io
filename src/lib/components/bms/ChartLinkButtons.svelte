@@ -6,7 +6,6 @@
   import Download from "@lucide/svelte/icons/download";
   import Ellipsis from "@lucide/svelte/icons/ellipsis";
   import Package from "@lucide/svelte/icons/package";
-  import { onMount } from "svelte";
 
   import ClickPopover from "#lib/components/ui/ClickPopover.svelte";
   import { chartLinkIcon, topbarMenuItem } from "#lib/constants/ui-classes.js";
@@ -28,9 +27,8 @@
 
   const BUTTON_SIZE = 32;
   const GAP = 4;
-
-  let wrapper = $state<HTMLDivElement | undefined>(undefined);
-  let availableWidth = $state(0);
+  /** 条目表链接列固定 208px（w-52），不再为每行挂 ResizeObserver。 */
+  const LINK_COLUMN_WIDTH = 208;
 
   const bmsLinks = $derived(getBmsLinks(chart));
   const hasMd5 = $derived(typeof chart.md5 === "string" && chart.md5.trim().length > 0);
@@ -55,27 +53,13 @@
     return result;
   });
 
-  const maxSlots = $derived(
-    availableWidth <= 0 ? links.length : Math.floor((availableWidth + GAP) / (BUTTON_SIZE + GAP))
-  );
+  const maxSlots = Math.max(1, Math.floor((LINK_COLUMN_WIDTH + GAP) / (BUTTON_SIZE + GAP)));
   const visibleLinks = $derived.by(() => {
     if (links.length <= maxSlots) return links;
     const slots = Math.max(1, maxSlots);
     return links.slice(0, Math.max(0, slots - 1));
   });
   const hiddenLinks = $derived(links.slice(visibleLinks.length));
-
-  onMount(() => {
-    if (wrapper !== undefined) {
-      const observer = new ResizeObserver((entries) => {
-        availableWidth = entries[0]?.contentRect.width ?? 0;
-      });
-      observer.observe(wrapper);
-
-      return () => observer.disconnect();
-    }
-    return undefined;
-  });
 </script>
 
 {#snippet downloadBadge()}
@@ -128,7 +112,7 @@
   {/if}
 {/snippet}
 
-<div class="flex min-w-0 flex-nowrap items-center gap-1" bind:this={wrapper}>
+<div class="flex min-w-0 flex-nowrap items-center gap-1">
   {#each visibleLinks as link (link.id)}
     <a
       class={chartLinkIcon}
