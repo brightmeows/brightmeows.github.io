@@ -124,6 +124,7 @@
           aria-label={m["common.table_scroll_region"]()}
         >
           <table class="w-full table-fixed border-collapse">
+            <caption class="sr-only">{m["table.caption.levelref"]()}</caption>
             <colgroup>
               {#each ["40%", "60%"] as w (w)}
                 <col style={`width: ${w}`} />
@@ -141,7 +142,10 @@
             <tbody>
               {#each half.items as item (item.level)}
                 <tr class="hover:bg-white-5 last:[&>td]:border-b-0">
-                  <th scope="row" class="table-td-roomy text-center font-normal">
+                  <th
+                    scope="row"
+                    class="table-th-row-sticky table-td-roomy text-center font-normal"
+                  >
                     {item.level}
                   </th>
                   <td class="table-td-roomy text-center">

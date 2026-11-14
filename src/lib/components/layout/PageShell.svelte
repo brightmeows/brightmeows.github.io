@@ -36,16 +36,20 @@
   }: Props = $props();
 </script>
 
+<a href="#main" class="skip-link">{m["common.skip_to_content"]()}</a>
 <StarryBackground />
 <DustTrailCanvas />
 <TopBar {tocItems} />
-<main class={mainClass ?? "m-0 mx-auto box-border w-full max-w-350 px-8 pt-24 pb-8"}>
+<main id="main" class={mainClass ?? "m-0 mx-auto box-border w-full max-w-350 px-8 pt-24 pb-8"}>
   {#if sidebar}
     <div class="flex w-full items-start justify-center gap-10">
       {#if !sidebarCollapsed}
+        <!-- 目录侧栏是滚动容器，tabindex 让键盘用户可滚（滚动容器指南口径），规则误报 -->
+        <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
         <aside
           class="sticky top-16 hidden max-h-[calc(100vh-6rem)] w-[260px] shrink-0 overflow-y-auto pr-1 pb-4 min-[1400px]:block"
           aria-label={m["toc.title"]()}
+          tabindex="0"
         >
           {@render sidebar()}
         </aside>

@@ -33,7 +33,9 @@
 </script>
 
 <tr class="hover:bg-white-5 last:[&>td]:border-b-0">
-  <th scope="row" class="table-td-glass text-left font-normal wrap-break-word text-white-80"
+  <th
+    scope="row"
+    class="table-th-row-sticky table-td-glass text-left font-normal wrap-break-word text-white-80"
     >{item.symbol ?? ""}</th
   >
   <td class="table-td-glass min-w-50 wrap-break-word">

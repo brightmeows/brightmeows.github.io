@@ -67,7 +67,10 @@
       onchange={(v: boolean) => onchange(v)}
     />
   </td>
-  <th scope="row" class="table-td-compact text-left font-normal wrap-break-word">
+  <th
+    scope="row"
+    class="table-th-row-sticky table-td-compact text-left font-normal wrap-break-word"
+  >
     {item.symbol ?? ""}
   </th>
   <td class="table-td-compact min-w-50 wrap-break-word">

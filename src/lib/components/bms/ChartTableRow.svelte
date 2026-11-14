@@ -96,7 +96,10 @@
       <ChartLinkButtons {chart} {bundleUrl} {diffUrl} />
     </div>
   </td>
-  <th scope="row" class="table-td-compact text-left font-normal wrap-break-word">
+  <th
+    scope="row"
+    class="table-th-row-sticky table-td-compact text-left font-normal wrap-break-word"
+  >
     <strong
       use:jsonPreview={{
         preview: chartPreview,
