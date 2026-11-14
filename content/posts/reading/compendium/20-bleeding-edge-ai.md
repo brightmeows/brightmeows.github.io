@@ -3,7 +3,7 @@ title: "前沿 AI"
 date: "2026-11-05"
 order: 20
 slug: "compendium/20-bleeding-edge-ai"
-description: ""
+description: "《数学、计算机科学与 AI 纲要》第 20 章中文翻译：量子机器学习与类脑计算两条前沿路线，涵盖变分量子算法、脉冲神经网络与类脑硬件。"
 tags: []
 ---
 

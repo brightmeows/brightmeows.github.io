@@ -3,7 +3,7 @@ title: "AI 应用"
 date: "2026-11-05"
 order: 19
 slug: "compendium/19-applied-ai"
-description: ""
+description: "《数学、计算机科学与 AI 纲要》第 19 章中文翻译：AI 在金融、生物学、医疗与工业等领域的应用图景，从时间序列预测到蛋白质结构预测。"
 tags: []
 ---
 

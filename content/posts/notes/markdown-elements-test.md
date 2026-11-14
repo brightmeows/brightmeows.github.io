@@ -1,6 +1,8 @@
 ---
 title: "Markdown 元素测试页"
 date: "2025-12-26"
+description: "用于测试站点 Markdown 渲染能力的样例页，覆盖标题、排版、引用、列表、表格、代码块与数学公式。"
+robots: "noindex, follow"
 order: 1
 ---
 
