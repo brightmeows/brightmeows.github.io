@@ -9,7 +9,7 @@
 
 @theme {
   /* 字体 */
-  --font-family-sans: "Inter", system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --font-family-sans: system-ui, Avenir, Helvetica, Arial, sans-serif;
 
   /* 基础色 */
   --color-background: #24243e;
