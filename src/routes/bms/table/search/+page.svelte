@@ -9,10 +9,11 @@
   import { SvelteMap } from "svelte/reactivity";
 
   import BmsSearchResult from "#lib/components/bms/BmsSearchResult.svelte";
+  import PageHero from "#lib/components/layout/PageHero.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import EmptyState from "#lib/components/ui/EmptyState.svelte";
   import {
-    btnGhostXs,
+    btnGhostMd,
     btnSearchSubmit,
     inputSearchLg,
     spinnerLg,
@@ -215,17 +216,21 @@
   });
 </script>
 
-<PageShell panes={[titlePane, contentPane]} />
+<PageShell hero={heroPane} panes={[contentPane]} />
 
-{#snippet titlePane()}
-  <h1 class="page-title text-center">{m["search.page_title"]()}</h1>
-  <p class="mt-2 text-center text-[1.1rem] text-white-70">{m["search.subtitle"]()}</p>
-  <p class="mt-3 text-center text-[0.95rem] text-white-40">
-    <a class={btnGhostXs} href="/bms/table/search/batch">
-      {m["search.batch_link"]()}
-      <ArrowRight class="size-4 shrink-0" aria-hidden="true" />
-    </a>
-  </p>
+{#snippet heroPane()}
+  <PageHero titleText={m["search.page_title"]()}>
+    {#snippet title()}{m["search.page_title"]()}{/snippet}
+    {#snippet promo()}
+      <div class="flex flex-col items-center gap-4">
+        <p class="m-0 text-center text-[1.1rem] text-white-70">{m["search.subtitle"]()}</p>
+        <a class={btnGhostMd} href="/bms/table/search/batch">
+          {m["search.batch_link"]()}
+          <ArrowRight class="size-4 shrink-0" aria-hidden="true" />
+        </a>
+      </div>
+    {/snippet}
+  </PageHero>
 {/snippet}
 
 {#snippet contentPane()}

@@ -15,6 +15,7 @@
   import BmsTableList from "#lib/components/bms/BmsTableList.svelte";
   import SharedTablesSection from "#lib/components/bms/SharedTablesSection.svelte";
   import SharedTrashPanel from "#lib/components/bms/SharedTrashPanel.svelte";
+  import PageHero from "#lib/components/layout/PageHero.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import Checkbox from "#lib/components/ui/Checkbox.svelte";
   import { createConfirmDialog } from "#lib/components/ui/confirm-dialog.svelte.js";
@@ -23,7 +24,7 @@
   import {
     btnChip,
     btnChipOnWarning,
-    btnGhostXs,
+    btnGhostMd,
     btnInputClear,
     btnPrimaryLink,
   } from "#lib/constants/ui-classes.js";
@@ -121,27 +122,31 @@
   });
 </script>
 
-<PageShell {tocItems} panes={[titlePane, contentPane]} />
+<PageShell {tocItems} hero={heroPane} panes={[contentPane]} />
 
-{#snippet titlePane()}
-  <h1 class="page-title text-center">{pageTitle}</h1>
-  <p class="mt-2 text-center text-[1.1rem] text-white-70">{m["table.page.subtitle"]()}</p>
-  <div class="mt-4 text-center">
-    <a class={btnPrimaryLink} href={resolve("/bms/table/shared/new")}>
-      {m["shared.create.button"]()}
-    </a>
-  </div>
-  <p class="mt-2 text-center text-[0.85rem] text-white-50">
-    <a
-      class={btnGhostXs}
-      href="https://github.com/brightmeows/bms-skills/blob/main/skills/bms-table/SKILL.md"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      <BookOpen class="size-4 shrink-0" aria-hidden="true" />
-      {m["table.page.reference"]()}
-    </a>
-  </p>
+{#snippet heroPane()}
+  <PageHero titleText={pageTitle}>
+    {#snippet title()}{pageTitle}{/snippet}
+    {#snippet promo()}
+      <div class="flex flex-col items-center gap-4">
+        <p class="m-0 text-center text-[1.1rem] text-white-70">{m["table.page.subtitle"]()}</p>
+        <div class="flex flex-wrap items-center justify-center gap-3">
+          <a class={btnPrimaryLink} href={resolve("/bms/table/shared/new")}>
+            {m["shared.create.button"]()}
+          </a>
+          <a
+            class={btnGhostMd}
+            href="https://github.com/brightmeows/bms-skills/blob/main/skills/bms-table/SKILL.md"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <BookOpen class="size-4 shrink-0" aria-hidden="true" />
+            {m["table.page.reference"]()}
+          </a>
+        </div>
+      </div>
+    {/snippet}
+  </PageHero>
 {/snippet}
 
 {#snippet contentPane()}

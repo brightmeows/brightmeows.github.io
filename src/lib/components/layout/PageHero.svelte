@@ -1,6 +1,5 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import { onMount } from "svelte";
 
   import { topbarVisibility } from "#lib/data/store/topbar-visibility.svelte.js";
 
@@ -13,12 +12,16 @@
     align?: "center" | "start";
     /** 完整标题文本，供两行截断后的 title 属性使用 */
     titleText?: string | undefined;
+    /** 是否把标题限制为两行；编辑态标题输入框传 false */
+    clamp?: boolean;
+    /** 标题锚点 id（保留旧书签落点） */
+    id?: string | undefined;
   }
 
-  let { title, promo, align = "center", titleText }: Props = $props();
+  let { title, promo, align = "center", titleText, clamp = true, id }: Props = $props();
 
-  let innerEl: HTMLDivElement | undefined;
-  let titleEl: HTMLHeadingElement | undefined;
+  let innerEl = $state<HTMLDivElement | undefined>(undefined);
+  let titleEl = $state<HTMLHeadingElement | undefined>(undefined);
   let promoContentEl = $state<HTMLDivElement | undefined>(undefined);
   let ready = $state(false);
 
@@ -36,10 +39,11 @@
     ready = true;
   }
 
-  onMount(() => {
+  $effect(() => {
     measure();
+    if (!titleEl) return;
     const observer = new ResizeObserver(() => measure());
-    if (titleEl) observer.observe(titleEl);
+    observer.observe(titleEl);
     if (promoContentEl) observer.observe(promoContentEl);
     return () => {
       observer.disconnect();
@@ -55,6 +59,10 @@
     /* 条本身只占 1000px，两侧透明区放行点击，避免长页挡住内容 */
     pointer-events: none;
     transition: top 150ms ease-out;
+  }
+
+  .page-hero.no-promo {
+    margin-bottom: 2.5rem;
   }
 
   .page-hero-inner {
@@ -156,11 +164,12 @@
   }
 </style>
 
-<header class="page-hero" class:hero-ready={ready} style="top: {stickyTop}">
+<header class="page-hero" class:hero-ready={ready} class:no-promo={!promo} style="top: {stickyTop}">
   <div bind:this={innerEl} class="page-hero-inner mx-auto w-full max-w-[1000px] pt-6">
     <h1
+      {id}
       bind:this={titleEl}
-      class="page-title m-0 line-clamp-2 {align === 'center' ? 'text-center' : ''}"
+      class="page-title m-0 {clamp ? 'line-clamp-2' : ''} {align === 'center' ? 'text-center' : ''}"
       title={titleText}
     >
       {@render title()}

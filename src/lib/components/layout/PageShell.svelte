@@ -17,6 +17,8 @@
     panes?: Snippet[];
     /** 页首主视觉；不包玻璃，渲染在内容列顶部 */
     hero?: Snippet | undefined;
+    /** 分区切换行；渲染在 hero 与内容卡之间，不包玻璃 */
+    sectionSwitcher?: Snippet | undefined;
     /** 宽屏（≥1400px）左侧目录侧栏；提供后主内容变两栏，窄屏整列自动隐藏 */
     sidebar?: Snippet | undefined;
     /** 侧栏收缩态：整列隐藏，左缘显示贴边把手 */
@@ -32,6 +34,7 @@
     mainClass,
     panes = [],
     hero,
+    sectionSwitcher,
     sidebar,
     sidebarCollapsed = false,
     onExpandSidebar,
@@ -61,6 +64,11 @@
         {#if hero}
           {@render hero()}
         {/if}
+        {#if sectionSwitcher}
+          <div class="mb-4 w-full">
+            {@render sectionSwitcher()}
+          </div>
+        {/if}
         {#each panes as pane, i (i)}
           {@const isLast = i === panes.length - 1}
           <GlassContainer animate={true} class="w-full {!isLast ? 'mb-8' : ''}">
@@ -84,6 +92,11 @@
     <div class="mx-auto w-full max-w-350">
       {#if hero}
         {@render hero()}
+      {/if}
+      {#if sectionSwitcher}
+        <div class="mx-auto mb-4 w-full max-w-[1000px]">
+          {@render sectionSwitcher()}
+        </div>
       {/if}
       {#each panes as pane, i (i)}
         {@const isLast = i === panes.length - 1}

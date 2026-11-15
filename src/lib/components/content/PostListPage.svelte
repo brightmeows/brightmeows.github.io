@@ -1,5 +1,6 @@
 <script lang="ts">
   import PostCard from "#lib/components/content/PostCard.svelte";
+  import PageHero from "#lib/components/layout/PageHero.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import { m } from "#lib/paraglide/messages.js";
   import type { Post } from "#lib/types/post.js";
@@ -12,10 +13,12 @@
   let { heading, posts }: Props = $props();
 </script>
 
-<PageShell panes={[titlePane, contentPane]} />
+<PageShell hero={heroPane} panes={[contentPane]} />
 
-{#snippet titlePane()}
-  <h1 class="page-title text-center">{heading}</h1>
+{#snippet heroPane()}
+  <PageHero titleText={heading}>
+    {#snippet title()}{heading}{/snippet}
+  </PageHero>
 {/snippet}
 
 {#snippet contentPane()}

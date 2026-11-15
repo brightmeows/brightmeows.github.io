@@ -25,12 +25,13 @@
   import TableDock from "#lib/components/bms/TableDock.svelte";
   import type { TableImportSectionProps } from "#lib/components/bms/TableImportSection.svelte";
   import TableOverviewPanel from "#lib/components/bms/TableOverviewPanel.svelte";
+  import PageHero from "#lib/components/layout/PageHero.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import CardSwitcher, { type CardSwitchItem } from "#lib/components/ui/CardSwitcher.svelte";
   import { createConfirmDialog } from "#lib/components/ui/confirm-dialog.svelte.js";
   import ConfirmDialog from "#lib/components/ui/ConfirmDialog.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
-  import { btnGhost, btnPrimaryLarge } from "#lib/constants/ui-classes.js";
+  import { btnGhost, btnGhostMd, btnPrimaryLarge } from "#lib/constants/ui-classes.js";
   import type { EditorNotice } from "#lib/controllers/editor.js";
   import type { DockMode } from "#lib/controllers/table-dock.js";
   import {
@@ -300,8 +301,9 @@
 <PageShell
   mainClass="m-0 mx-auto box-border w-full max-w-350 px-8 pt-24 pb-40"
   {tocItems}
+  hero={heroPane}
+  sectionSwitcher={switcherPane}
   panes={[
-    titlePane,
     ...(model.headerLoadState === "loading"
       ? [headerLoadingPane]
       : model.headerLoadState === "error"
@@ -408,9 +410,19 @@
   {/if}
 {/snippet}
 
-{#snippet titlePane()}
-  <div class="flex flex-col items-center gap-3 text-center">
-    <h1 class="page-title m-0 flex w-full justify-center">
+{#snippet symbolPane()}
+  <div class="text-center text-[1.1rem] text-white-70 italic">
+    {m["table.page.symbol"]({ symbol: model.symbol })}
+  </div>
+{/snippet}
+
+{#snippet heroPane()}
+  <PageHero
+    clamp={!isEdit}
+    titleText={model.pageTitle}
+    promo={model.symbol.trim() !== "" ? symbolPane : undefined}
+  >
+    {#snippet title()}
       {#if isEdit}
         <input
           class="w-full rounded-glass-sm bg-transparent text-center outline-none [font:inherit] placeholder:text-white-30 focus-visible:ring-2 focus-visible:ring-accent/40"
@@ -424,61 +436,12 @@
       {:else}
         {model.pageTitle}
       {/if}
-    </h1>
-    {#if model.symbol.trim() !== ""}
-      <div class="text-[1.1rem] text-white-70 italic">
-        {m["table.page.symbol"]({ symbol: model.symbol })}
-      </div>
-    {/if}
+    {/snippet}
+  </PageHero>
+{/snippet}
 
-    <div
-      class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[0.9rem] text-white-60"
-    >
-      {#if model.ready && model.tableStats}
-        <span>
-          {m["table.stats.summary"]({
-            total: model.tableStats.totalCharts,
-            difficulties: model.tableStats.difficulties.length,
-          })}
-        </span>
-      {/if}
-      {#if !createMode}
-        {#if model.ready && model.tableStats}
-          <span class="text-white-40">·</span>
-        {/if}
-        <span>{m["table.list.import_url"]()}</span>
-        {#if importUrl}
-          <span class="max-w-full font-mono text-[0.85rem] break-all text-white-75">
-            {importUrl}
-          </span>
-          <button class="link-accent text-[0.85rem]" type="button" onclick={copyImportUrl}>
-            {m["common.click_copy"]()}
-          </button>
-        {:else}
-          <span class="text-white-50">{m["table.loading.reading"]()}</span>
-        {/if}
-        {#if cb.copied}
-          <span class="text-success">{m["common.copied"]()}</span>
-        {:else if cb.failed}
-          <span class="text-error">{m["common.copy_failed"]()}</span>
-        {/if}
-      {/if}
-    </div>
-
-    {#if model.ready && actions}
-      <div class="flex flex-wrap items-center justify-center gap-2">
-        {@render actions()}
-      </div>
-    {/if}
-
-    {#if isEdit && sharedMode && capabilities.canWrite !== true}
-      <p
-        class="rounded-glass-sm border border-white-15 bg-black-20 px-3 py-2 text-[0.85rem] text-white-65"
-      >
-        {m["editor.frame.shared_local_hint"]()}
-      </p>
-    {/if}
-
+{#snippet switcherPane()}
+  <div class="flex flex-wrap items-center justify-center gap-3">
     <CardSwitcher
       items={cardItems}
       ariaLabel={m["table.page.sections"]()}
@@ -486,6 +449,23 @@
       onToggle={toggleCard}
       onJump={(id) => void jumpToCard(id)}
     />
+    {#if !createMode}
+      <button
+        type="button"
+        class={btnGhostMd}
+        onclick={copyImportUrl}
+        disabled={!importUrl}
+        title={m["table.list.import_url"]()}
+      >
+        <Copy class="size-4 shrink-0" aria-hidden="true" />
+        {m["common.click_copy"]()}
+      </button>
+      {#if cb.copied}
+        <span class="text-success">{m["common.copied"]()}</span>
+      {:else if cb.failed}
+        <span class="text-error">{m["common.copy_failed"]()}</span>
+      {/if}
+    {/if}
   </div>
 {/snippet}
 
@@ -532,6 +512,53 @@
 
 {#snippet overviewPane()}
   <div id="overview" class="scroll-mt-20">
+    <div class="mb-5 flex flex-col items-center gap-3 text-center">
+      <div
+        class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[0.9rem] text-white-60"
+      >
+        {#if model.ready && model.tableStats}
+          <span>
+            {m["table.stats.summary"]({
+              total: model.tableStats.totalCharts,
+              difficulties: model.tableStats.difficulties.length,
+            })}
+          </span>
+        {/if}
+        {#if !createMode}
+          {#if model.ready && model.tableStats}
+            <span class="text-white-40">·</span>
+          {/if}
+          <span>{m["table.list.import_url"]()}</span>
+          {#if importUrl}
+            <span class="max-w-full font-mono text-[0.85rem] break-all text-white-75">
+              {importUrl}
+            </span>
+            <button class="link-accent text-[0.85rem]" type="button" onclick={copyImportUrl}>
+              {m["common.click_copy"]()}
+            </button>
+          {:else}
+            <span class="text-white-50">{m["table.loading.reading"]()}</span>
+          {/if}
+          {#if cb.copied}
+            <span class="text-success">{m["common.copied"]()}</span>
+          {:else if cb.failed}
+            <span class="text-error">{m["common.copy_failed"]()}</span>
+          {/if}
+        {/if}
+      </div>
+      {#if model.ready && actions}
+        <div class="flex flex-wrap items-center justify-center gap-2">
+          {@render actions()}
+        </div>
+      {/if}
+      {#if isEdit && sharedMode && capabilities.canWrite !== true}
+        <p
+          class="rounded-glass-sm border border-white-15 bg-black-20 px-3 py-2 text-[0.85rem] text-white-65"
+        >
+          {m["editor.frame.shared_local_hint"]()}
+        </p>
+      {/if}
+    </div>
     <TableOverviewPanel
       editing={isEdit}
       bind:name={model.name}
