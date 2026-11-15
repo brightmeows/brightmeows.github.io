@@ -51,6 +51,13 @@
       document.documentElement.style.removeProperty("--page-promo-height");
     };
   });
+
+  $effect(() => {
+    document.documentElement.style.setProperty("--page-title-bar-top", stickyTop);
+    return () => {
+      document.documentElement.style.removeProperty("--page-title-bar-top");
+    };
+  });
 </script>
 
 <style>
