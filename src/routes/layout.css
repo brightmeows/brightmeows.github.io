@@ -522,6 +522,10 @@
     @apply relative inline-flex;
   }
 
+  .dnd-keyhint {
+    display: none;
+  }
+
   .dnd-handle-wrap:has(.dnd-handle:focus-visible) .dnd-keyhint {
     @apply absolute top-1/2 left-full z-40 ml-2 block -translate-y-1/2 rounded-glass-sm bg-black-30 px-2 py-1 text-[0.75rem] whitespace-nowrap text-white-90 shadow-(--glass-lighting);
     pointer-events: none;
