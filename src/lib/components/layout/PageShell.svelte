@@ -15,6 +15,8 @@
     mainClass?: string;
     /** 玻璃面板列表（每个元素为一个独立玻璃面板） */
     panes?: Snippet[];
+    /** 页首主视觉；不包玻璃，渲染在内容列顶部 */
+    hero?: Snippet | undefined;
     /** 宽屏（≥1400px）左侧目录侧栏；提供后主内容变两栏，窄屏整列自动隐藏 */
     sidebar?: Snippet | undefined;
     /** 侧栏收缩态：整列隐藏，左缘显示贴边把手 */
@@ -29,6 +31,7 @@
     tocItems = [],
     mainClass,
     panes = [],
+    hero,
     sidebar,
     sidebarCollapsed = false,
     onExpandSidebar,
@@ -55,6 +58,9 @@
         </aside>
       {/if}
       <div class="mx-auto w-full max-w-[1000px] min-w-0 flex-1">
+        {#if hero}
+          {@render hero()}
+        {/if}
         {#each panes as pane, i (i)}
           {@const isLast = i === panes.length - 1}
           <GlassContainer animate={true} class="w-full {!isLast ? 'mb-8' : ''}">
@@ -75,6 +81,11 @@
       </button>
     {/if}
   {:else}
+    {#if hero}
+      <div class="mx-auto w-full max-w-[1000px]">
+        {@render hero()}
+      </div>
+    {/if}
     {#each panes as pane, i (i)}
       {@const isLast = i === panes.length - 1}
       <GlassContainer
