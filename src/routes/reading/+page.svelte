@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { PageData } from "./$types";
 
+  import PageHero from "#lib/components/layout/PageHero.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import GlassCard from "#lib/components/ui/GlassCard.svelte";
   import { m } from "#lib/paraglide/messages.js";
@@ -8,10 +9,12 @@
   let { data }: { data: PageData } = $props();
 </script>
 
-<PageShell panes={[titlePane, contentPane]} />
+<PageShell hero={heroPane} panes={[contentPane]} />
 
-{#snippet titlePane()}
-  <h1 class="page-title text-center">{m["content.category.reading"]()}</h1>
+{#snippet heroPane()}
+  <PageHero titleText={m["content.category.reading"]()}>
+    {#snippet title()}{m["content.category.reading"]()}{/snippet}
+  </PageHero>
 {/snippet}
 
 {#snippet contentPane()}

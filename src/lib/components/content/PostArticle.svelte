@@ -3,6 +3,7 @@
   import type { Component } from "svelte";
 
   import MarkdownContent from "#lib/components/content/MarkdownContent.svelte";
+  import PageHero from "#lib/components/layout/PageHero.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import TocSidebar from "#lib/components/layout/TocSidebar.svelte";
   import type { TocItem, TocSidebarChapters } from "#lib/types/ui.js";
@@ -59,7 +60,8 @@
 <PageShell
   tocItems={sidebarTocItems}
   mainClass={POST_ARTICLE_MAIN_CLASS}
-  panes={[titlePane, contentPane]}
+  hero={heroPane}
+  panes={[contentPane]}
   sidebar={chapters || tocItems.length > 0 ? sidebarPane : undefined}
   {sidebarCollapsed}
   onExpandSidebar={expandSidebar}
@@ -69,11 +71,19 @@
   <TocSidebar {chapters} {tocItems} onCollapse={collapseSidebar} />
 {/snippet}
 
-{#snippet titlePane()}
-  <h1 class="page-title mb-4">{title}</h1>
-  {#if date}
-    <div class="text-white-60">{date}</div>
-  {/if}
+{#snippet titleContent()}{title}{/snippet}
+
+{#snippet datePane()}
+  <div class="text-white-60">{date}</div>
+{/snippet}
+
+{#snippet heroPane()}
+  <PageHero
+    align="start"
+    title={titleContent}
+    titleText={title}
+    promo={date ? datePane : undefined}
+  />
 {/snippet}
 
 {#snippet contentPane()}

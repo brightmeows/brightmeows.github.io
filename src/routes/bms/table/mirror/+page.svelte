@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { MirrorTableItem } from "@brightmeows/mirror/types";
   import type { DisabledEntry } from "@brightmeows/mirror/user-layer";
+  import Copy from "@lucide/svelte/icons/copy";
   import ExternalLink from "@lucide/svelte/icons/external-link";
   import { onMount, tick } from "svelte";
 
@@ -8,6 +9,7 @@
   import MirrorAdminPanel from "#lib/components/bms/MirrorAdminPanel.svelte";
   import MirrorUserActions from "#lib/components/bms/MirrorUserActions.svelte";
   import SelectedTablesPanel from "#lib/components/bms/SelectedTablesPanel.svelte";
+  import PageHero from "#lib/components/layout/PageHero.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import CardSwitcher, { type CardSwitchItem } from "#lib/components/ui/CardSwitcher.svelte";
   import Checkbox from "#lib/components/ui/Checkbox.svelte";
@@ -19,7 +21,7 @@
     btnChip,
     btnChipOnAccent,
     btnChipOnWarning,
-    btnGhostXs,
+    btnGhostMd,
     btnInputClear,
     inputPanel,
   } from "#lib/constants/ui-classes.js";
@@ -427,46 +429,55 @@
 
 <PageShell
   {tocItems}
+  hero={heroPane}
+  sectionSwitcher={switcherPane}
   panes={[
-    titlePane,
     ...(auth.status === "ready" && visibleCards["mirror-add"] ? [addTablePane] : []),
     ...(visibleCards["mirror-list"] ? [listPane] : []),
   ]}
 />
 
-{#snippet titlePane()}
-  <h1 id="bms-table-mirror" class="page-title mb-2 scroll-mt-5 text-center">{pageTitle}</h1>
+{#snippet heroPane()}
+  <PageHero id="bms-table-mirror" titleText={pageTitle}>
+    {#snippet title()}{pageTitle}{/snippet}
+    {#snippet promo()}
+      <div class="flex flex-col items-center gap-4">
+        <p class="m-0 max-w-[46rem] text-center text-[1.05rem] text-white-70">
+          {m["mirror.bms_hint_before"]()}{m["mirror.bms_hint_after"]()}
+        </p>
+        <div class="flex flex-wrap items-center justify-center gap-3">
+          <button type="button" class={btnGhostMd} onclick={copyTables}>
+            <Copy class="size-4 shrink-0" aria-hidden="true" />
+            {m["common.click_copy"]()}
+          </button>
+          <a
+            class={btnGhostMd}
+            href="https://darksabun.club/table/tablelist.html"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <ExternalLink class="size-4 shrink-0" aria-hidden="true" />
+            {m["mirror.tutorial"]()}
+          </a>
+          {#if cb.copied}
+            <span class="text-success">{m["common.copied"]()}</span>
+          {:else if cb.failed}
+            <span class="text-error">{m["common.copy_failed"]()}</span>
+          {/if}
+        </div>
+      </div>
+    {/snippet}
+  </PageHero>
+{/snippet}
 
-  <div class="mt-1 text-center text-[1.1rem] text-white-70 italic">
-    {m["mirror.bms_hint_before"]()}
-    <button class="link-accent" type="button" onclick={copyTables}>
-      {m["common.click_copy"]()}
-    </button>
-    {m["mirror.bms_hint_after"]()}
-    <a
-      class={btnGhostXs}
-      href="https://darksabun.club/table/tablelist.html"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      <ExternalLink class="size-4 shrink-0" aria-hidden="true" />
-      {m["mirror.tutorial"]()}
-    </a>
-    {#if cb.copied}
-      <span class="ml-2 text-success">{m["common.copied"]()}</span>
-    {:else if cb.failed}
-      <span class="ml-2 text-error">{m["common.copy_failed"]()}</span>
-    {/if}
-  </div>
-  <div class="mt-4">
-    <CardSwitcher
-      items={cardItems}
-      ariaLabel={m["table.page.sections"]()}
-      align="center"
-      onToggle={toggleCard}
-      onJump={(id) => void jumpToCard(id)}
-    />
-  </div>
+{#snippet switcherPane()}
+  <CardSwitcher
+    items={cardItems}
+    ariaLabel={m["table.page.sections"]()}
+    align="center"
+    onToggle={toggleCard}
+    onJump={(id) => void jumpToCard(id)}
+  />
 {/snippet}
 
 {#snippet addTablePane()}

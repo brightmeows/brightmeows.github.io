@@ -10,6 +10,7 @@
   } from "@brightmeows/mirror/shared-strict";
   import { onMount } from "svelte";
 
+  import PageHero from "#lib/components/layout/PageHero.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import { createConfirmDialog } from "#lib/components/ui/confirm-dialog.svelte.js";
   import ConfirmDialog from "#lib/components/ui/ConfirmDialog.svelte";
@@ -248,11 +249,15 @@
   }
 </script>
 
-<PageShell panes={[titlePane, contentPane]} />
+<PageShell hero={heroPane} panes={[contentPane]} />
 
-{#snippet titlePane()}
-  <h1 class="page-title text-center">{m["shared.create.title"]()}</h1>
-  <p class="mt-2 text-center text-[1.1rem] text-white-70">{m["shared.create.subtitle"]()}</p>
+{#snippet heroPane()}
+  <PageHero titleText={m["shared.create.title"]()}>
+    {#snippet title()}{m["shared.create.title"]()}{/snippet}
+    {#snippet promo()}
+      <p class="m-0 text-center text-[1.1rem] text-white-70">{m["shared.create.subtitle"]()}</p>
+    {/snippet}
+  </PageHero>
 {/snippet}
 
 {#snippet contentPane()}
