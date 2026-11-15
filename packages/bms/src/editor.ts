@@ -481,6 +481,121 @@ export function groupEntryIndices(
   return groups;
 }
 
+/** 条目分段：一个等级组在扁平稳序列里的位置。 */
+export interface EntrySegment {
+  /** 分组等级值；未指派组为空串。 */
+  level: string;
+  /** 是否为未指派组。 */
+  unassigned: boolean;
+  /** 组头在扁平稳序列中的位置。 */
+  start: number;
+  /** 组内条目数。 */
+  count: number;
+  /** 组内条目下标。 */
+  indices: readonly number[];
+}
+
+/** 扁平稳序列里的一项：等级组头或条目行。 */
+export type EntrySegmentItem =
+  | {
+      kind: "level";
+      position: number;
+      level: string;
+      unassigned: boolean;
+      count: number;
+    }
+  | {
+      kind: "row";
+      position: number;
+      index: number;
+      level: string;
+      unassigned: boolean;
+    };
+
+/**
+ * 把等级组展开为分段：每组一项组头加组内条目。
+ * 分段位置连续，供块窗口按扁平稳序列位置切块。
+ */
+export function buildEntrySegments(groups: readonly EntryLevelGroup[]): EntrySegment[] {
+  const segments: EntrySegment[] = [];
+  let position = 0;
+  for (const group of groups) {
+    segments.push({
+      level: group.level,
+      unassigned: group.unassigned,
+      start: position,
+      count: group.indices.length,
+      indices: group.indices,
+    });
+    position += 1 + group.indices.length;
+  }
+  return segments;
+}
+
+/** 扁平稳序列的总项数：组头加条目。 */
+export function entryItemCount(segments: readonly EntrySegment[]): number {
+  let total = 0;
+  for (const segment of segments) total += 1 + segment.count;
+  return total;
+}
+
+/**
+ * 取扁平稳序列区间 [start, end) 内的项，越界自动钳制。
+ * 区间可跨等级，结果保持分段顺序。
+ */
+export function entryItemsInRange(
+  segments: readonly EntrySegment[],
+  start: number,
+  end: number
+): EntrySegmentItem[] {
+  if (!Number.isFinite(start) || !Number.isFinite(end)) return [];
+  const total = entryItemCount(segments);
+  const from = Math.max(0, Math.min(Math.floor(start), total));
+  const to = Math.max(from, Math.min(Math.floor(end), total));
+  const items: EntrySegmentItem[] = [];
+  for (const segment of segments) {
+    const segmentEnd = segment.start + 1 + segment.count;
+    if (segmentEnd <= from) continue;
+    if (segment.start >= to) break;
+    if (segment.start >= from && segment.start < to) {
+      items.push({
+        kind: "level",
+        position: segment.start,
+        level: segment.level,
+        unassigned: segment.unassigned,
+        count: segment.count,
+      });
+    }
+    const rowStart = Math.max(segment.start + 1, from);
+    const rowEnd = Math.min(segmentEnd, to);
+    for (let position = rowStart; position < rowEnd; position += 1) {
+      const index = segment.indices[position - (segment.start + 1)];
+      if (index === undefined) continue;
+      items.push({
+        kind: "row",
+        position,
+        index,
+        level: segment.level,
+        unassigned: segment.unassigned,
+      });
+    }
+  }
+  return items;
+}
+
+/** 按扁平稳序列位置找所属分段；越界或空序列返回 undefined。 */
+export function segmentAtItem(
+  segments: readonly EntrySegment[],
+  position: number
+): EntrySegment | undefined {
+  const target = Math.floor(position);
+  if (!Number.isFinite(target) || target < 0) return undefined;
+  for (const segment of segments) {
+    if (target >= segment.start && target < segment.start + 1 + segment.count) return segment;
+  }
+  return undefined;
+}
+
 /** 批量指派等级（空串表示清除等级）；返回新数组，不改动入参。 */
 export function assignLevel(
   entries: readonly Record<string, unknown>[],
