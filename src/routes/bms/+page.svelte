@@ -26,7 +26,7 @@
 <PageShell constrainPanes {tocItems} hero={heroPane} panes={[contentPane]} />
 
 {#snippet heroPane()}
-  <PageHero>
+  <PageHero titleText={m["bms.page_title"]()}>
     {#snippet title()}{m["bms.page_title"]()}{/snippet}
     {#snippet promo()}
       <div class="flex flex-wrap justify-center gap-3">
