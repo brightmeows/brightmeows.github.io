@@ -3,12 +3,16 @@
   import {
     assignHintLevels,
     assignLevel,
+    buildEntrySegments,
     captureEntryRemoval,
     countUnassigned,
     duplicateEntryLabel,
     encodeLevelFilterOption,
     entryGroupAnchorId,
+    entryItemCount,
+    entryItemsInRange,
     type EntryLevelGroup,
+    type EntrySegmentItem,
     entryHashes,
     entryLabel,
     filterEntryIndices,
@@ -36,6 +40,7 @@
   import X from "@lucide/svelte/icons/x";
   import { tick } from "svelte";
 
+  import BlockRows from "#lib/components/bms/BlockRows.svelte";
   import ChartTableRow from "#lib/components/bms/ChartTableRow.svelte";
   import EntryDetailForm from "#lib/components/bms/EntryDetailForm.svelte";
   import JsonPreview from "#lib/components/ui/JsonPreview.svelte";
@@ -129,6 +134,11 @@
   let bulkText = $state("");
   let bulkMode = $state<"append" | "replace">("append");
 
+  let tableEl = $state<HTMLTableElement | undefined>(undefined);
+  let browseRows = $state<{ scrollToPosition: (position: number) => void } | undefined>(undefined);
+  let searchRows = $state<{ scrollToPosition: (position: number) => void } | undefined>(undefined);
+  let browseBlock = $state(0);
+
   // 行键按条目对象身份发放（WeakMap）：拖拽或排序按钮移动条目时，Svelte
   // 搬移既有行块而不是重建，行内展开的详情表单因此不丢未保存的编辑。
   const entryKeys = new WeakMap<object, number>();
@@ -175,6 +185,23 @@
   const filteredIndices = $derived(filterEntryIndices(entries, { level: levelFilter, query }));
   const groups = $derived(groupEntryIndices(entries, filteredIndices, levels));
 
+  /** 大表走整表分块窗口；小表保持全量渲染。 */
+  const largeTable = $derived(entries.length > 1000);
+  /** 有搜索词时走跨等级扁平结果，不与浏览态共享块状态。 */
+  const searchMode = $derived(query.trim() !== "");
+  /** 浏览态的扁平稳序列：等级组头加条目行。 */
+  const segments = $derived(buildEntrySegments(groups));
+  const browseItemCount = $derived(entryItemCount(segments));
+  /** 等级筛选变化时重建浏览态窗口。 */
+  const browseKey = $derived(
+    [...hiddenLevels].sort().join("\u0000") + (hideUnassigned ? "|1" : "|0")
+  );
+  /** 搜索词或筛选变化时重建搜索态窗口。 */
+  const searchKey = $derived(`${query.trim()}\u0000${browseKey}`);
+  const rowCount = $derived(
+    largeTable ? (searchMode ? filteredIndices.length : browseItemCount) + 1 : undefined
+  );
+
   /** 未列入 header level_order 的等级组：站点 fallback 显示而 beatoraja 整组丢弃，组头挂警示 chip。 */
   const unlistedLevels = $derived(new Set(findUnlistedLevels(allLevels, levels)));
 
@@ -186,6 +213,49 @@
     }
     return map;
   });
+
+  /** 条目下标到组内位置与组大小的映射：行内排序按钮与拖拽共用。 */
+  const groupPositions = $derived.by(() => {
+    const map = new Map<number, { position: number; count: number }>();
+    for (const group of groups) {
+      for (const [position, index] of group.indices.entries()) {
+        map.set(index, { position, count: group.indices.length });
+      }
+    }
+    return map;
+  });
+
+  function browseItemsInRange(start: number, end: number): EntrySegmentItem[] {
+    return entryItemsInRange(segments, start, end);
+  }
+
+  function entryLevelText(entry: Record<string, unknown>): string {
+    if (typeof entry.level === "string") return entry.level;
+    if (entry.level === undefined || entry.level === null) return "";
+    return String(entry.level);
+  }
+
+  function searchItemsInRange(start: number, end: number): EntrySegmentItem[] {
+    const items: EntrySegmentItem[] = [];
+    const from = Math.max(0, Math.floor(start));
+    const to = Math.min(filteredIndices.length, Math.floor(end));
+    for (let position = from; position < to; position += 1) {
+      const index = filteredIndices[position];
+      if (index === undefined) continue;
+      const entry = entries[index] ?? {};
+      const unassigned = isUnassigned(entry);
+      const level = unassigned ? "" : entryLevelText(entry);
+      items.push({ kind: "row", position, index, level, unassigned });
+    }
+    return items;
+  }
+
+  function keyOfItem(item: EntrySegmentItem): string | number {
+    if (item.kind === "level") {
+      return item.unassigned ? "__unassigned__" : `level:${item.level}`;
+    }
+    return entryKey(entries[item.index]);
+  }
 
   /** 菜单组内移动：与拖拽共用 canDrop 口径，跨组移动静默不动。 */
   function moveEntryWithinGroup(index: number, delta: number): void {
@@ -321,6 +391,39 @@
       hiddenLevels = next;
     }
     await tick();
+
+    if (largeTable) {
+      if (searchMode) {
+        const position = filteredIndices.findIndex((index) => {
+          const entry = entries[index];
+          if (entry === undefined) return false;
+          return item.unassigned
+            ? isUnassigned(entry)
+            : typeof entry.level === "string" && entry.level === item.level;
+        });
+        if (position >= 0) searchRows?.scrollToPosition(position);
+        return;
+      }
+      const segment = segments.find(
+        (entry) => entry.unassigned === item.unassigned && entry.level === item.level
+      );
+      if (segment !== undefined) {
+        browseRows?.scrollToPosition(segment.start);
+        await tick();
+        await new Promise<void>((resolve) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+        );
+        const id = entryGroupAnchorId(item.level, item.unassigned);
+        const row = document.getElementById(id);
+        if (row !== null) {
+          const headerHeight = tableEl?.tHead?.getBoundingClientRect().height ?? 0;
+          const top = row.getBoundingClientRect().top + window.scrollY - headerHeight - 8;
+          window.scrollTo({ top: Math.max(0, top), behavior: "auto" });
+        }
+        history.replaceState(null, "", `#${encodeURIComponent(id)}`);
+        return;
+      }
+    }
 
     const id = entryGroupAnchorId(item.level, item.unassigned);
     const element = document.getElementById(id) ?? document.getElementById("charts-list");
@@ -765,15 +868,107 @@
       {/key}
     {/if}
 
+    {#snippet levelRow(
+      item: Extract<EntrySegmentItem, { kind: "level" }>,
+      ariaRowIndex?: number,
+      anchorId?: string
+    )}
+      {@const groupColor = colorFor(item.level, item.unassigned)}
+      {@const groupLabel = item.unassigned
+        ? m["editor.entries.filter_unassigned"]()
+        : `${symbol}${item.level}`}
+      <tr id={anchorId} class="scroll-mt-5" aria-rowindex={ariaRowIndex}>
+        <td colspan={columnCount} class="border-b-2 border-white-10 px-4 py-2">
+          <div class="flex items-center gap-4">
+            <span
+              class="rounded-glass-xl px-6 py-2 text-[1.2rem] font-bold text-white shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
+              style={`background-color:${groupColor};`}
+            >
+              {groupLabel}
+            </span>
+            <span class="text-[1.1rem] text-white-80">
+              {m["table.stats.chart_count"]({ count: item.count })}
+            </span>
+            {#if !item.unassigned && unlistedLevels.has(item.level)}
+              <span class={btnChipOnWarning} title={m["editor.compat.unlisted_title"]()}>
+                {m["editor.compat.unlisted_chip"]()}
+              </span>
+            {/if}
+          </div>
+        </td>
+      </tr>
+    {/snippet}
+
+    {#snippet chartRow(item: Extract<EntrySegmentItem, { kind: "row" }>, ariaRowIndex?: number)}
+      {@const entry = entries[item.index] ?? {}}
+      {@const groupPos = groupPositions.get(item.index)}
+      {@const levelHint =
+        editing && isUnassigned(entry) && hintFor(entry) !== null
+          ? m["editor.entry.level_hint"]({ level: hintFor(entry) ?? "" })
+          : null}
+      <ChartTableRow
+        chart={toChart(entry)}
+        groupLevel={item.unassigned ? m["editor.entries.filter_unassigned"]() : item.level}
+        bundleUrl={resolvedBundleUrl(entry)}
+        diffUrl={resolvedDiffUrl(entry)}
+        {chartPreview}
+        {levelHint}
+        {ariaRowIndex}
+        showLevel={searchMode}
+        selectable={editing}
+        selected={selected.has(item.index)}
+        {disabled}
+        drag={editing ? { dnd, index: item.index, disabled } : undefined}
+        canMoveUp={(groupPos?.position ?? 0) > 0}
+        canMoveDown={groupPos !== undefined && groupPos.position < groupPos.count - 1}
+        onMoveUp={() => moveEntryWithinGroup(item.index, -1)}
+        onMoveDown={() => moveEntryWithinGroup(item.index, 1)}
+        onSelect={(checked: boolean) => setSelected(item.index, checked)}
+        onEdit={editing ? () => startEdit(item.index) : undefined}
+      />
+      {#if editing && editingIndex === item.index}
+        <tr>
+          <td colspan={columnCount} class="table-td-compact">
+            {#key editKey}
+              <EntryDetailForm
+                entry={entries[item.index] ?? null}
+                {levels}
+                {disabled}
+                oncommit={commitDetail}
+                oncancel={cancelDetail}
+                ondelete={deleteEditing}
+                onmoveup={() => moveEditing(-1)}
+                onmovedown={() => moveEditing(1)}
+                canmoveup={editingMove?.canUp ?? false}
+                canmovedown={editingMove?.canDown ?? false}
+              />
+            {/key}
+          </td>
+        </tr>
+      {/if}
+    {/snippet}
+
+    {#snippet blockRow(item: EntrySegmentItem, ariaRowIndex: number)}
+      {#if item.kind === "level"}
+        {@render levelRow(item, ariaRowIndex, entryGroupAnchorId(item.level, item.unassigned))}
+      {:else}
+        {@render chartRow(item, ariaRowIndex)}
+      {/if}
+    {/snippet}
+
     <!-- 键盘滚动入口是响应式表格指南的强制项，region 非交互属 a11y 规则误报 -->
     <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
     <div
-      class="table-wrapper"
+      class="table-wrapper {largeTable ? 'entries-large-table' : ''}"
       role="region"
       tabindex="0"
       aria-label={m["common.table_scroll_region"]()}
     >
-      <table class="w-full min-w-200 table-fixed border-collapse">
+      <table
+        bind:this={tableEl}
+        class="w-full min-w-200 table-fixed border-collapse"
+        aria-rowcount={rowCount}
+      >
         <caption class="sr-only">{m["table.caption.entries"]()}</caption>
         <colgroup>
           {#if editing}<col class="w-10" />{/if}
@@ -809,81 +1004,55 @@
               ></th>{/if}
           </tr>
         </thead>
-        {#each groups as group (group.unassigned ? "__unassigned__" : group.level)}
-          {@const groupColor = colorFor(group.level, group.unassigned)}
-          {@const groupLabel = group.unassigned
-            ? m["editor.entries.filter_unassigned"]()
-            : `${symbol}${group.level}`}
-          <tbody id={entryGroupAnchorId(group.level, group.unassigned)} class="scroll-mt-5">
-            <tr>
-              <td colspan={columnCount} class="border-b-2 border-white-10 px-4 py-2">
-                <div class="flex items-center gap-4">
-                  <span
-                    class="rounded-glass-xl px-6 py-2 text-[1.2rem] font-bold text-white shadow-[0_2px_8px_rgba(0,0,0,0.2)]"
-                    style={`background-color:${groupColor};`}
-                  >
-                    {groupLabel}
-                  </span>
-                  <span class="text-[1.1rem] text-white-80">
-                    {m["table.stats.chart_count"]({ count: group.indices.length })}
-                  </span>
-                  {#if !group.unassigned && unlistedLevels.has(group.level)}
-                    <span class={btnChipOnWarning} title={m["editor.compat.unlisted_title"]()}>
-                      {m["editor.compat.unlisted_chip"]()}
-                    </span>
-                  {/if}
-                </div>
-              </td>
-            </tr>
-            {#each group.indices as index, groupPos (entryKey(entries[index]))}
-              {@const entry = entries[index] ?? {}}
-              {@const levelHint =
-                editing && isUnassigned(entry) && hintFor(entry) !== null
-                  ? m["editor.entry.level_hint"]({ level: hintFor(entry) ?? "" })
-                  : null}
-              <ChartTableRow
-                chart={toChart(entry)}
-                groupLevel={group.unassigned
-                  ? m["editor.entries.filter_unassigned"]()
-                  : group.level}
-                bundleUrl={resolvedBundleUrl(entry)}
-                diffUrl={resolvedDiffUrl(entry)}
-                {chartPreview}
-                {levelHint}
-                selectable={editing}
-                selected={selected.has(index)}
-                {disabled}
-                drag={editing ? { dnd, index, disabled } : undefined}
-                canMoveUp={groupPos > 0}
-                canMoveDown={groupPos < group.indices.length - 1}
-                onMoveUp={() => moveEntryWithinGroup(index, -1)}
-                onMoveDown={() => moveEntryWithinGroup(index, 1)}
-                onSelect={(checked: boolean) => setSelected(index, checked)}
-                onEdit={editing ? () => startEdit(index) : undefined}
-              />
-              {#if editing && editingIndex === index}
-                <tr>
-                  <td colspan={columnCount} class="table-td-compact">
-                    {#key editKey}
-                      <EntryDetailForm
-                        entry={entries[index] ?? null}
-                        {levels}
-                        {disabled}
-                        oncommit={commitDetail}
-                        oncancel={cancelDetail}
-                        ondelete={deleteEditing}
-                        onmoveup={() => moveEditing(-1)}
-                        onmovedown={() => moveEditing(1)}
-                        canmoveup={editingMove?.canUp ?? false}
-                        canmovedown={editingMove?.canDown ?? false}
-                      />
-                    {/key}
-                  </td>
-                </tr>
-              {/if}
-            {/each}
-          </tbody>
-        {/each}
+        {#if largeTable && searchMode}
+          {#key searchKey}
+            <BlockRows
+              bind:this={searchRows}
+              totalItems={filteredIndices.length}
+              itemsInRange={searchItemsInRange}
+              row={blockRow}
+              keyOf={keyOfItem}
+              {columnCount}
+              {tableEl}
+              initialBlock={0}
+            />
+          {/key}
+        {:else if largeTable}
+          {#key browseKey}
+            <BlockRows
+              bind:this={browseRows}
+              totalItems={browseItemCount}
+              itemsInRange={browseItemsInRange}
+              row={blockRow}
+              keyOf={keyOfItem}
+              {columnCount}
+              {tableEl}
+              initialBlock={browseBlock}
+              onblockchange={(block) => (browseBlock = block)}
+            />
+          {/key}
+        {:else}
+          {#each groups as group (group.unassigned ? "__unassigned__" : group.level)}
+            <tbody id={entryGroupAnchorId(group.level, group.unassigned)} class="scroll-mt-5">
+              {@render levelRow({
+                kind: "level",
+                position: 0,
+                level: group.level,
+                unassigned: group.unassigned,
+                count: group.indices.length,
+              })}
+              {#each group.indices as index (entryKey(entries[index]))}
+                {@render chartRow({
+                  kind: "row",
+                  position: 0,
+                  index,
+                  level: group.level,
+                  unassigned: group.unassigned,
+                })}
+              {/each}
+            </tbody>
+          {/each}
+        {/if}
         {#if groups.length === 0}
           <tbody>
             <tr>
