@@ -81,21 +81,21 @@
       </button>
     {/if}
   {:else}
-    {#if hero}
-      <div class="mx-auto w-full max-w-[1000px]">
+    <div class="mx-auto w-full max-w-350">
+      {#if hero}
         {@render hero()}
-      </div>
-    {/if}
-    {#each panes as pane, i (i)}
-      {@const isLast = i === panes.length - 1}
-      <GlassContainer
-        animate={true}
-        class="{constrainPanes ? 'mx-auto w-full max-w-[1000px]' : 'w-full'} {!isLast
-          ? 'mb-8'
-          : ''}"
-      >
-        {@render pane()}
-      </GlassContainer>
-    {/each}
+      {/if}
+      {#each panes as pane, i (i)}
+        {@const isLast = i === panes.length - 1}
+        <GlassContainer
+          animate={true}
+          class="{constrainPanes ? 'mx-auto w-full max-w-[1000px]' : 'w-full'} {!isLast
+            ? 'mb-8'
+            : ''}"
+        >
+          {@render pane()}
+        </GlassContainer>
+      {/each}
+    </div>
   {/if}
 </main>

@@ -143,6 +143,18 @@
     scroll-padding-top: 3.75rem;
   }
 
+  @supports ((animation-timeline: scroll()) and (animation-range: 0% 100%)) {
+    html:has(.page-hero.hero-ready) {
+      scroll-padding-top: calc(72px + var(--page-title-bar-height, 0px));
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html:has(.page-hero.hero-ready) {
+      scroll-padding-top: 3.75rem;
+    }
+  }
+
   /* 星光光标接线：default 帧经继承覆盖全局；pointer 帧直接指定给可点元素
      与语义控件（盖过 UA 对链接与按钮的 auto 求值）；文本编辑面保留系统
      I-beam。放 base 层让 utilities 层的 disabled:cursor-not-allowed 仍能
