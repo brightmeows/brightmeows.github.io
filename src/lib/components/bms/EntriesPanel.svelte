@@ -12,6 +12,7 @@
     entryItemCount,
     entryItemsInRange,
     type EntryLevelGroup,
+    type EntrySegment,
     type EntrySegmentItem,
     entryHashes,
     entryLabel,
@@ -38,7 +39,7 @@
   import Trash2 from "@lucide/svelte/icons/trash-2";
   import WandSparkles from "@lucide/svelte/icons/wand-sparkles";
   import X from "@lucide/svelte/icons/x";
-  import { tick } from "svelte";
+  import { onMount, tick } from "svelte";
 
   import BlockRows from "#lib/components/bms/BlockRows.svelte";
   import ChartTableRow from "#lib/components/bms/ChartTableRow.svelte";
@@ -60,6 +61,12 @@
   import { errorDetailOf } from "#lib/utils/infra/error.js";
   import { validateUrl } from "#lib/utils/infra/url.js";
   import { createDragList } from "#lib/utils/ui/dnd-list.svelte.js";
+  import {
+    formatHashId,
+    readHashId,
+    readTableUrlState,
+    writeTableUrlState,
+  } from "#lib/utils/ui/table-url.js";
 
   /**
    * 条目面板：查看与编辑共用条目表、组头、难度导航与搜索/筛选。
@@ -135,9 +142,24 @@
   let bulkMode = $state<"append" | "replace">("append");
 
   let tableEl = $state<HTMLTableElement | undefined>(undefined);
-  let browseRows = $state<{ scrollToPosition: (position: number) => void } | undefined>(undefined);
-  let searchRows = $state<{ scrollToPosition: (position: number) => void } | undefined>(undefined);
+  let browseRows = $state<
+    | {
+        scrollToPosition: (position: number) => void;
+        scrollToBlock: (block: number) => void;
+      }
+    | undefined
+  >(undefined);
+  let searchRows = $state<
+    | {
+        scrollToPosition: (position: number) => void;
+        scrollToBlock: (block: number) => void;
+      }
+    | undefined
+  >(undefined);
   let browseBlock = $state(0);
+  let searchBlock = $state(0);
+  let urlInitialized = $state(false);
+  let hashApplied = false;
 
   // 行键按条目对象身份发放（WeakMap）：拖拽或排序按钮移动条目时，Svelte
   // 搬移既有行块而不是重建，行内展开的详情表单因此不丢未保存的编辑。
@@ -279,6 +301,82 @@
     };
     for (const delay of [0, 120, 320, 650]) window.setTimeout(align, delay);
   }
+
+  /** 跳到分段并把等级头对齐到 sticky 表头下方；可选写回 hash。 */
+  function jumpToSegment(segment: EntrySegment, updateHash: boolean): void {
+    const id = entryGroupAnchorId(segment.level, segment.unassigned);
+    browseRows?.scrollToPosition(segment.start);
+    scheduleRowAlign(id);
+    if (updateHash) history.replaceState(null, "", formatHashId(id));
+  }
+
+  /** 块变化用 replaceState 写回 URL，保留 q、edit 与 hash。 */
+  function writeBlockUrl(block: number): void {
+    const search = writeTableUrlState(location.search, { block });
+    const suffix = search === "" ? "" : `?${search}`;
+    history.replaceState(null, "", `${location.pathname}${suffix}${location.hash}`);
+  }
+
+  /** 搜索输入：实时替换 q 与块参数，避免每敲一个字符压一条历史。 */
+  function handleQueryInput(event: Event): void {
+    const value = (event.currentTarget as HTMLInputElement).value;
+    query = value;
+    searchBlock = 0;
+    const next = writeTableUrlState(location.search, {
+      q: value,
+      block: value.trim() === "" ? browseBlock : null,
+    });
+    const suffix = next === "" ? "" : `?${next}`;
+    history.replaceState(null, "", `${location.pathname}${suffix}${location.hash}`);
+  }
+
+  /** 搜索确认（回车或失焦）再压一条历史，保留可后退的搜索态。 */
+  function handleQueryChange(): void {
+    history.pushState(null, "", `${location.pathname}${location.search}${location.hash}`);
+  }
+
+  onMount(() => {
+    const initial = readTableUrlState(location.search);
+    query = initial.q;
+    browseBlock = initial.block;
+    searchBlock = initial.block;
+    urlInitialized = true;
+
+    const handleHash = (): void => {
+      const id = readHashId(location.hash);
+      if (id === "") return;
+      const segment = segments.find(
+        (item) => entryGroupAnchorId(item.level, item.unassigned) === id
+      );
+      if (segment !== undefined) jumpToSegment(segment, false);
+    };
+    const handlePop = (): void => {
+      const next = readTableUrlState(location.search);
+      query = next.q;
+      browseBlock = next.block;
+      searchBlock = next.block;
+      const id = readHashId(location.hash);
+      if (next.q.trim() === "" && id !== "") {
+        const segment = segments.find(
+          (item) => entryGroupAnchorId(item.level, item.unassigned) === id
+        );
+        if (segment !== undefined) {
+          jumpToSegment(segment, false);
+          return;
+        }
+      }
+      void tick().then(() => {
+        const rows = next.q.trim() !== "" ? searchRows : browseRows;
+        rows?.scrollToBlock(next.block);
+      });
+    };
+    window.addEventListener("hashchange", handleHash);
+    window.addEventListener("popstate", handlePop);
+    return () => {
+      window.removeEventListener("hashchange", handleHash);
+      window.removeEventListener("popstate", handlePop);
+    };
+  });
 
   /** 菜单组内移动：与拖拽共用 canDrop 口径，跨组移动静默不动。 */
   function moveEntryWithinGroup(index: number, delta: number): void {
@@ -431,10 +529,7 @@
         (entry) => entry.unassigned === item.unassigned && entry.level === item.level
       );
       if (segment !== undefined) {
-        const id = entryGroupAnchorId(item.level, item.unassigned);
-        browseRows?.scrollToPosition(segment.start);
-        scheduleRowAlign(id);
-        history.replaceState(null, "", `#${encodeURIComponent(id)}`);
+        jumpToSegment(segment, true);
         return;
       }
     }
@@ -442,7 +537,7 @@
     const id = entryGroupAnchorId(item.level, item.unassigned);
     const element = document.getElementById(id) ?? document.getElementById("charts-list");
     element?.scrollIntoView({ behavior: "smooth", block: "start" });
-    history.replaceState(null, "", `#${encodeURIComponent(id)}`);
+    history.replaceState(null, "", formatHashId(id));
   }
 
   $effect(() => {
@@ -464,6 +559,16 @@
     bulkText = "";
     bulkError = null;
     notice = null;
+  });
+
+  $effect(() => {
+    if (!urlInitialized || hashApplied || !largeTable || browseRows === undefined) return;
+    const id = readHashId(location.hash);
+    if (id === "") return;
+    const segment = segments.find((item) => entryGroupAnchorId(item.level, item.unassigned) === id);
+    if (segment === undefined) return;
+    hashApplied = true;
+    jumpToSegment(segment, false);
   });
 
   function setSelected(index: number, checked: boolean): void {
@@ -740,6 +845,8 @@
         class="{inputEditorMono} max-w-64 flex-1"
         type="text"
         bind:value={query}
+        oninput={handleQueryInput}
+        onchange={handleQueryChange}
         placeholder={m["editor.entries.search_placeholder"]()}
         {disabled}
       />
@@ -1056,7 +1163,11 @@
               keyOf={keyOfItem}
               {columnCount}
               {tableEl}
-              initialBlock={0}
+              initialBlock={searchBlock}
+              onblockchange={(block) => {
+                searchBlock = block;
+                writeBlockUrl(block);
+              }}
             />
           {/key}
         {:else if largeTable}
@@ -1070,7 +1181,10 @@
               {columnCount}
               {tableEl}
               initialBlock={browseBlock}
-              onblockchange={(block) => (browseBlock = block)}
+              onblockchange={(block) => {
+                browseBlock = block;
+                writeBlockUrl(block);
+              }}
             />
           {/key}
         {:else}

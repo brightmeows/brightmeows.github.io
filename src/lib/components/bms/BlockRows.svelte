@@ -134,11 +134,6 @@
     return tableEl.getBoundingClientRect().top + window.scrollY;
   }
 
-  /** 表头高度；用作滚动定位时让出吸附表头。 */
-  function headerHeight(): number {
-    return tableEl?.tHead?.getBoundingClientRect().height ?? 0;
-  }
-
   /** 表头 sticky top；页面 hero 吸顶时抬高表头。 */
   function stickyTopOffset(): number {
     const th = tableEl?.tHead?.querySelector("th");
@@ -223,10 +218,7 @@
     void tick().then(() => {
       if (blocks === 0) return;
       const sticky = stickyTopOffset();
-      const target =
-        tableTop() +
-        sumBlockHeights(heights, 0, block) -
-        (block > 0 ? sticky + headerHeight() : sticky);
+      const target = tableTop() + sumBlockHeights(heights, 0, block) - sticky;
       window.scrollTo({ top: Math.max(0, target), behavior: "auto" });
     });
   }
