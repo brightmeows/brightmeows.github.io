@@ -139,9 +139,17 @@
     return tableEl?.tHead?.getBoundingClientRect().height ?? 0;
   }
 
+  /** 表头 sticky top；页面 hero 吸顶时抬高表头。 */
+  function stickyTopOffset(): number {
+    const th = tableEl?.tHead?.querySelector("th");
+    if (th === null || th === undefined) return 0;
+    const parsed = Number.parseFloat(getComputedStyle(th).top);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
   /** 视口顶部相对表格内容顶部的偏移，切成块高度用的坐标系。 */
   function localScrollOffset(): number {
-    return Math.max(0, window.scrollY - tableTop());
+    return Math.max(0, window.scrollY - tableTop() + stickyTopOffset());
   }
 
   function syncCurrentBlock(): void {
@@ -214,8 +222,11 @@
     currentBlock = block;
     void tick().then(() => {
       if (blocks === 0) return;
+      const sticky = stickyTopOffset();
       const target =
-        tableTop() + sumBlockHeights(heights, 0, block) - (block > 0 ? headerHeight() : 0);
+        tableTop() +
+        sumBlockHeights(heights, 0, block) -
+        (block > 0 ? sticky + headerHeight() : sticky);
       window.scrollTo({ top: Math.max(0, target), behavior: "auto" });
     });
   }

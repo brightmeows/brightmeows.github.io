@@ -257,6 +257,29 @@
     return entryKey(entries[item.index]);
   }
 
+  /** 表头吸顶底部：sticky top 加表头高度，行对齐时让出 hero 与表头。 */
+  function stickyTableOffset(): number {
+    if (tableEl === undefined) return 0;
+    const th = tableEl.tHead?.querySelector("th");
+    const sticky =
+      th === null || th === undefined ? 0 : Number.parseFloat(getComputedStyle(th).top) || 0;
+    return sticky + (tableEl.tHead?.getBoundingClientRect().height ?? 0);
+  }
+
+  function alignRowToStickyHeader(row: HTMLElement): void {
+    const top = row.getBoundingClientRect().top + window.scrollY - stickyTableOffset() - 8;
+    window.scrollTo({ top: Math.max(0, top), behavior: "auto" });
+  }
+
+  /** 块挂载与 hero 过渡可能滞后，分几次对齐目标行。 */
+  function scheduleRowAlign(rowId: string): void {
+    const align = (): void => {
+      const row = document.getElementById(rowId);
+      if (row !== null) alignRowToStickyHeader(row);
+    };
+    for (const delay of [0, 120, 320, 650]) window.setTimeout(align, delay);
+  }
+
   /** 菜单组内移动：与拖拽共用 canDrop 口径，跨组移动静默不动。 */
   function moveEntryWithinGroup(index: number, delta: number): void {
     const group = dragGroups.get(index);
@@ -408,18 +431,9 @@
         (entry) => entry.unassigned === item.unassigned && entry.level === item.level
       );
       if (segment !== undefined) {
-        browseRows?.scrollToPosition(segment.start);
-        await tick();
-        await new Promise<void>((resolve) =>
-          requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
-        );
         const id = entryGroupAnchorId(item.level, item.unassigned);
-        const row = document.getElementById(id);
-        if (row !== null) {
-          const headerHeight = tableEl?.tHead?.getBoundingClientRect().height ?? 0;
-          const top = row.getBoundingClientRect().top + window.scrollY - headerHeight - 8;
-          window.scrollTo({ top: Math.max(0, top), behavior: "auto" });
-        }
+        browseRows?.scrollToPosition(segment.start);
+        scheduleRowAlign(id);
         history.replaceState(null, "", `#${encodeURIComponent(id)}`);
         return;
       }
@@ -561,16 +575,9 @@
     const segment = segments.find((item) => item.indices.includes(index));
     if (segment === undefined) return;
     const position = segment.start + 1 + segment.indices.indexOf(index);
+    const rowId = `entry-${index}`;
     browseRows?.scrollToPosition(position);
-    await tick();
-    await new Promise<void>((resolve) =>
-      requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
-    );
-    const row = document.getElementById(`entry-${index}`);
-    if (row === null) return;
-    const headerHeight = tableEl?.tHead?.getBoundingClientRect().height ?? 0;
-    const top = row.getBoundingClientRect().top + window.scrollY - headerHeight - 8;
-    window.scrollTo({ top: Math.max(0, top), behavior: "auto" });
+    scheduleRowAlign(rowId);
   }
 
   function commitDetail(entry: Record<string, unknown>): void {
