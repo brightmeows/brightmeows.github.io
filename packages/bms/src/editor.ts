@@ -254,6 +254,24 @@ export function buildEntryHashSet(entries: readonly Record<string, unknown>[]): 
   return set;
 }
 
+/** 按 md5 或 sha256 命中查找条目；空哈希不命中，大小写与首尾空白归一。 */
+export function findChartByHashes(
+  entries: readonly Record<string, unknown>[],
+  hashes: { md5?: string | undefined; sha256?: string | undefined }
+): Record<string, unknown> | null {
+  const md5 = hashes.md5?.trim().toLowerCase() ?? "";
+  const sha256 = hashes.sha256?.trim().toLowerCase() ?? "";
+  if (md5 === "" && sha256 === "") return null;
+  for (const entry of entries) {
+    const entryMd5 = typeof entry.md5 === "string" ? entry.md5.trim().toLowerCase() : "";
+    const entrySha256 = typeof entry.sha256 === "string" ? entry.sha256.trim().toLowerCase() : "";
+    if ((md5 !== "" && entryMd5 === md5) || (sha256 !== "" && entrySha256 === sha256)) {
+      return entry;
+    }
+  }
+  return null;
+}
+
 /**
  * 从候选条目中挑出当前表没有的：任一哈希（md5/sha256，小写）命中即视为
  * 重复并跳过，批内互重同样去重，无哈希条目跳过。粘贴/上传 append、跨表

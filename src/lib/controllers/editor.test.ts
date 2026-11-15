@@ -5,6 +5,7 @@ import {
   commitEditorSave,
   decideLocalSaveGate,
   decideNewTableDraft,
+  isDataReadyForSave,
   planEditorSave,
   planImportApply,
   planSaveAsShared,
@@ -20,6 +21,15 @@ import { translateMessage } from "#lib/utils/i18n/i18n.js";
 function draft(savedAt: string) {
   return { header: { name: "n", symbol: "s" }, data: [], savedAt, baselineUpdatedAt: undefined };
 }
+
+describe("isDataReadyForSave 数据保存闸门", () => {
+  it("只有 loaded 放行", () => {
+    expect(isDataReadyForSave("loaded")).toBe(true);
+    expect(isDataReadyForSave("idle")).toBe(false);
+    expect(isDataReadyForSave("loading")).toBe(false);
+    expect(isDataReadyForSave("error")).toBe(false);
+  });
+});
 
 describe("decideLocalSaveGate 保存闸门", () => {
   it("载荷非法：以强验证错误清单为闸门结果", () => {

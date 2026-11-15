@@ -13,10 +13,12 @@
     course: Course;
     symbol: string;
     expanded: boolean;
+    /** data.json 未就绪时谱面是否在表内无法判定。 */
+    dataReady?: boolean;
     onToggle: () => void;
   }
 
-  let { course, symbol, expanded, onToggle }: Props = $props();
+  let { course, symbol, expanded, dataReady = true, onToggle }: Props = $props();
 
   function hashPrefix(hash: string | undefined): string {
     if (!hash) return "";
@@ -105,7 +107,14 @@
                   {chi + 1}.
                 </span>
                 <span class="flex-1">
-                  {#if chart.resolved && chart.title}
+                  {#if !dataReady}
+                    <span class="font-mono text-white-40">
+                      {hashPrefix(chart.md5 ?? chart.sha256)}
+                    </span>
+                    <span class="ml-1.5 text-[0.75rem] text-white-40">
+                      {m["editor.course.chart.unknown"]()}
+                    </span>
+                  {:else if chart.resolved && chart.title}
                     <span class="font-medium text-white">{chart.title}</span>
                     {#if chart.artist}
                       <span class="text-white-50"> / {chart.artist}</span>

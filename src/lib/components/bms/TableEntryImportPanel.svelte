@@ -13,14 +13,12 @@
   import { onMount } from "svelte";
 
   import Checkbox from "#lib/components/ui/Checkbox.svelte";
-  import {
-    r2SharedDataUrl,
-    r2SharedHeaderUrl,
-    r2TableDataUrl,
-    r2TableHeaderUrl,
-  } from "#lib/constants/r2.js";
   import { btnGhost, inputEditorMono } from "#lib/constants/ui-classes.js";
-  import { loadSharedTables } from "#lib/data/api/shared-api.js";
+  import {
+    loadChartSourceData,
+    loadChartSources,
+    type ChartSource,
+  } from "#lib/data/api/bms-sources.js";
   import { m } from "#lib/paraglide/messages.js";
   import { errorMessageOf } from "#lib/utils/infra/error.js";
 
@@ -32,24 +30,20 @@
     /** 当前表已有条目（判重）。 */
     entries: readonly Record<string, unknown>[];
     disabled?: boolean;
+    /** 打开时展开面板；默认收起。 */
+    defaultOpen?: boolean;
     onapply: (result: EntryImportResult) => void;
   }
 
-  let { entries, disabled = false, onapply }: Props = $props();
-
-  interface SourceOption {
-    kind: "mirror" | "shared";
-    id: string;
-    label: string;
-  }
+  let { entries, disabled = false, defaultOpen = false, onapply }: Props = $props();
 
   const SOURCE_LIMIT = 30;
   const PAGE_SIZE = 50;
 
-  let sources = $state<SourceOption[]>([]);
+  let sources = $state<ChartSource[]>([]);
   let sourcesLoaded = $state(false);
   let sourceQuery = $state("");
-  let selectedSource = $state<SourceOption | null>(null);
+  let selectedSource = $state<ChartSource | null>(null);
   let sourceEntries = $state<Record<string, unknown>[]>([]);
   let sourceName = $state("");
   let loading = $state(false);
@@ -85,39 +79,11 @@
   });
 
   async function loadSources(): Promise<void> {
-    const list: SourceOption[] = [];
-    try {
-      const res = await fetch("/bms/table/mirror/tables.json");
-      if (res.ok) {
-        const data: unknown = await res.json();
-        if (Array.isArray(data)) {
-          for (const item of data) {
-            if (typeof item !== "object" || item === null) continue;
-            const record = item as Record<string, unknown>;
-            const dir = typeof record.dir_name === "string" ? record.dir_name : "";
-            if (dir === "") continue;
-            const name = typeof record.name === "string" && record.name !== "" ? record.name : dir;
-            list.push({ kind: "mirror", id: dir, label: `${name}（${dir}）` });
-          }
-        }
-      }
-    } catch {
-      // 镜像清单不可用：只展示能拿到的共享来源
-    }
-    try {
-      const shared = await loadSharedTables();
-      for (const item of shared) {
-        const label = item.name === "" ? item.id : `${item.name}（${item.id}）`;
-        list.push({ kind: "shared", id: item.id, label });
-      }
-    } catch {
-      // 共享清单不可用
-    }
-    sources = list;
+    sources = await loadChartSources();
     sourcesLoaded = true;
   }
 
-  async function loadSource(source: SourceOption): Promise<void> {
+  async function loadSource(source: ChartSource): Promise<void> {
     loading = true;
     loadError = null;
     selectedSource = source;
@@ -127,24 +93,9 @@
     chartQuery = "";
     currentPage = 1;
     try {
-      const headerUrl =
-        source.kind === "mirror" ? r2TableHeaderUrl(source.id) : r2SharedHeaderUrl(source.id);
-      const fallbackData =
-        source.kind === "mirror" ? r2TableDataUrl(source.id) : r2SharedDataUrl(source.id);
-      const headerRes = await fetch(headerUrl);
-      if (!headerRes.ok) throw new Error(String(headerRes.status));
-      const header = (await headerRes.json()) as Record<string, unknown>;
-      const dataUrl =
-        typeof header.data_url === "string" && header.data_url !== ""
-          ? header.data_url
-          : fallbackData;
-      // data_url 可能是相对路径（如 ./data.json）：按 header 地址解析
-      const dataRes = await fetch(new URL(dataUrl, headerUrl).toString());
-      if (!dataRes.ok) throw new Error(String(dataRes.status));
-      const data: unknown = await dataRes.json();
-      if (!Array.isArray(data)) throw new Error(m["editor.import.invalid"]());
-      sourceEntries = data as Record<string, unknown>[];
-      sourceName = typeof header.name === "string" && header.name !== "" ? header.name : source.id;
+      const data = await loadChartSourceData(source);
+      sourceEntries = data.entries;
+      sourceName = data.name;
     } catch (error) {
       loadError = errorMessageOf(error, m["common.unknown_error"]());
     } finally {
@@ -219,7 +170,7 @@
   }
 </script>
 
-<details class="rounded-glass-sm border border-white-15 bg-black-20 p-3">
+<details class="rounded-glass-sm border border-white-15 bg-black-20 p-3" open={defaultOpen}>
   <summary class="cursor-pointer text-[0.9rem] text-white-70">
     {m["editor.entry.import.section"]()}
   </summary>

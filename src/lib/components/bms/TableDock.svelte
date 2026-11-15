@@ -23,26 +23,27 @@
   } from "#lib/controllers/table-dock.js";
   import type { TableModel } from "#lib/data/table-page-model.svelte.js";
   import { m } from "#lib/paraglide/messages.js";
-  import { isNearDocumentBottom } from "#lib/utils/ui/topbar-scroll.js";
   import { panelFly } from "#lib/utils/ui/transitions.js";
 
   /**
    * 难度表页底部操作 dock：
-   * - 常驻右下角：查看态收起态是两枚——“编辑此表”主按钮（btnPrimary，
-   *   未保存时显“继续编辑”，点击直达编辑）加面板钮（SlidersHorizontal
-   *   图标，未保存等信号色点挂其上、title 保留完整文本，点击展开面板）；
-   *   编辑态收起态是模式胶囊（图标加状态词；状态以“色点+短词”成对提示：
-   *   黄=未保存、橙=警告、红=错误、绿=完成、浅蓝=待恢复草稿，悬停 title
-   *   保留完整 notice 文本）；展开态是 340px 玻璃面板（窄屏回退全宽），
-   *   面板头为模式状态标识，下方纵排承载模式切换、保存、另存、放弃、
-   *   notice、草稿横幅与自动保存时刻；查看态编辑按钮下内联进入编辑说明；
-   *   表整体操作（导出、查看原文、fork）与导入区以折叠段收进面板
+   * - 常驻右下角：查看态收起是主按钮（按权限显示编辑、本地编辑或创建
+   *   副本）加“菜单”按钮（SlidersHorizontal 图标加文字；信号色点挂在
+   *   按钮上）；编辑态收起是只读“编辑中”胶囊（色点加短词：黄=未保存、
+   *   橙=警告、红=错误、绿=完成、浅蓝=待恢复草稿，悬停 title 保留完整
+   *   notice 文本）、dirty 时的保存按钮与“菜单”按钮。展开态是 340px
+   *   玻璃面板（窄屏回退全宽），面板头为模式状态标识，下方纵排承载
+   *   预览、保存、另存、放弃、notice、草稿横幅与自动保存时刻；查看态
+   *   主按钮下内联进入编辑说明；表整体操作与导入区以折叠段收进面板
    *   （表操作查看态默认展开、编辑态默认收起；导入段默认收起，空表
    *   自动展开一次，手动收起后本会话不再自动），导入段展开时面板加宽
-   *   到 480px；
+   *   到 480px；管理员对他人共享表的删除槽在菜单底部；
+   * - 保存常驻收起态与面板内，不埋进菜单；状态胶囊只读，菜单按钮负责
+   *   展开；
    * - 收展由 controllers/table-dock 的状态机驱动：模式初值（编辑展开、
    *   查看收起）、滚动方向（下滑收起、上滑展开，累积阈值同顶栏）、
-   *   距页底强制展开、键盘焦点冻结；busy 与待恢复草稿豁免滚动收起；
+   *   键盘焦点冻结；busy 与待恢复草稿豁免滚动收起；保存常驻后不再在
+   *   页底强制展开，避免面板遮住行内操作；
    * - 状态与操作自标题区迁入（2026-11），标题区只留身份信息与分区导航。
    *   2026-11 收起态拆分：查看态主操作一步直达编辑，不再经由“查看中”
    *   胶囊两跳，“查看中”只在展开面板头保留。
@@ -62,8 +63,17 @@
     tableActions?: Snippet | undefined;
     /** 导入折叠段内容（编辑态动态加载后传入）；缺省隐藏该段。 */
     importSection?: Snippet | undefined;
+    /** 菜单里的管理员操作槽（他人共享表的删除）；缺省隐藏。 */
+    adminActions?: Snippet | undefined;
     /** 模式切换回调：页面实现切换后的滚回页首。 */
     onSetMode: (next: DockMode) => void;
+    /** 查看态主按钮文案、禁用态与回调（编辑、本地编辑或创建副本）。 */
+    primaryLabel: string;
+    primaryDisabled: boolean;
+    primaryTitle?: string | undefined;
+    onPrimary: () => void;
+    /** 副本意图：主按钮使用 Copy 图标，面板头仍显示编辑态。 */
+    copyMode: boolean;
   }
 
   let {
@@ -74,7 +84,13 @@
     editHint,
     tableActions = undefined,
     importSection = undefined,
+    adminActions = undefined,
     onSetMode,
+    primaryLabel,
+    primaryDisabled,
+    primaryTitle = undefined,
+    onPrimary,
+    copyMode,
   }: Props = $props();
 
   /** 成功类 notice 的自动清除时延；warn 与 error 常驻到被下一次替换。 */
@@ -144,11 +160,9 @@
       busy: model.busy,
       draftPending: model.pendingDraft !== null,
       undoPending: model.notice?.action !== undefined,
-      nearBottom: isNearDocumentBottom(
-        window.scrollY,
-        window.innerHeight,
-        document.documentElement.scrollHeight
-      ),
+      // 保存常驻收起态与“菜单”文字后，不再需要在页底强制展开面板；
+      // 强制展开会遮住正文右侧的行内操作，改为用户主动打开。
+      nearBottom: false,
       keyboardFocus,
     };
   }
@@ -311,7 +325,7 @@
             <button
               class="{btnGhostMd} w-full"
               type="button"
-              disabled={model.busy}
+              disabled={model.busy || !model.dataReady}
               onclick={() => void model.saveAsSharedNow()}
             >
               <Copy class="size-4 shrink-0" aria-hidden="true" />
@@ -319,9 +333,19 @@
             </button>
           {/if}
         {:else}
-          <button class="{btnPrimary} w-full" type="button" onclick={() => onSetMode("edit")}>
-            <Pencil class="size-4 shrink-0" aria-hidden="true" />
-            {model.dirty ? m["editor.dock.continue_edit"]() : m["editor.enter.table"]()}
+          <button
+            class="{btnPrimary} w-full"
+            type="button"
+            disabled={primaryDisabled}
+            title={primaryTitle}
+            onclick={onPrimary}
+          >
+            {#if copyMode}
+              <Copy class="size-4 shrink-0" aria-hidden="true" />
+            {:else}
+              <Pencil class="size-4 shrink-0" aria-hidden="true" />
+            {/if}
+            {primaryLabel}
           </button>
           <p class="text-center text-[0.8rem] text-white-50">{editHint}</p>
         {/if}
@@ -377,6 +401,17 @@
               {@render importSection()}
             </div>
           {/if}
+        </div>
+      {/if}
+
+      {#if adminActions}
+        <div class="mt-3 border-t border-white-15 pt-2">
+          <div class="px-1 pb-2 text-[0.85rem] text-white-50">
+            {m["editor.permission.admin_manage"]()}
+          </div>
+          <div class="flex flex-col items-stretch gap-2">
+            {@render adminActions()}
+          </div>
         </div>
       {/if}
 
@@ -437,12 +472,9 @@
     out:fly={panelFly().out}
   >
     {#if editing}
-      <button
+      <div
         class="glass-shadow-float flex items-center gap-2 rounded-full bg-glass px-3.5 py-2 backdrop-blur"
-        type="button"
-        aria-label={m["editor.dock.expand"]()}
-        title={m["editor.dock.expand"]()}
-        onclick={toggleExpansion}
+        role="status"
       >
         <Pencil class="size-4 text-white-80" aria-hidden="true" />
         <span class="text-[0.85rem] whitespace-nowrap text-white-85">{stateWord}</span>
@@ -455,24 +487,59 @@
             {signal.word}
           </span>
         {/each}
-      </button>
+      </div>
+      {#if model.dirty && model.canSave}
+        <button
+          class={btnPrimary}
+          type="button"
+          disabled={model.busy}
+          onclick={() => void model.save()}
+        >
+          <Save class="size-4 shrink-0" aria-hidden="true" />
+          {model.saveLabel}
+        </button>
+      {/if}
     {:else}
-      <button class={btnPrimary} type="button" onclick={() => onSetMode("edit")}>
-        <Pencil class="size-4 shrink-0" aria-hidden="true" />
-        {model.dirty ? m["editor.dock.continue_edit"]() : m["editor.enter.table"]()}
-      </button>
       <button
-        class="glass-shadow-float flex items-center gap-2 rounded-full bg-glass px-3 py-2.5 backdrop-blur"
+        class={btnPrimary}
         type="button"
-        aria-label={m["editor.dock.expand"]()}
-        title={m["editor.dock.expand"]()}
-        onclick={toggleExpansion}
+        disabled={primaryDisabled}
+        title={primaryTitle}
+        onclick={onPrimary}
       >
-        <SlidersHorizontal class="size-4 text-white-80" aria-hidden="true" />
-        {#each dockSignals as signal (signal.title)}
-          <span class="size-2 shrink-0 rounded-full {signal.dot}" title={signal.title}></span>
-        {/each}
+        {#if copyMode}
+          <Copy class="size-4 shrink-0" aria-hidden="true" />
+        {:else}
+          <Pencil class="size-4 shrink-0" aria-hidden="true" />
+        {/if}
+        {primaryLabel}
       </button>
+      {#if model.dirty && model.canSave}
+        <button
+          class={btnGhostMd}
+          type="button"
+          disabled={model.busy}
+          onclick={() => void model.save()}
+        >
+          <Save class="size-4 shrink-0" aria-hidden="true" />
+          {model.saveLabel}
+        </button>
+      {/if}
     {/if}
+    <button
+      class="glass-shadow-float flex items-center gap-2 rounded-full bg-glass px-3 py-2.5 backdrop-blur"
+      type="button"
+      aria-label={m["editor.dock.menu"]()}
+      title={m["editor.dock.menu"]()}
+      onclick={toggleExpansion}
+    >
+      <SlidersHorizontal class="size-4 text-white-80" aria-hidden="true" />
+      <span class="text-[0.85rem] whitespace-nowrap text-white-85">
+        {m["editor.dock.menu"]()}
+      </span>
+      {#each dockSignals as signal (signal.title)}
+        <span class="size-2 shrink-0 rounded-full {signal.dot}" title={signal.title}></span>
+      {/each}
+    </button>
   </div>
 {/if}

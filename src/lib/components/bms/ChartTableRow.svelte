@@ -40,6 +40,8 @@
     canMoveDown?: boolean;
     onMoveUp?: (() => void) | undefined;
     onMoveDown?: (() => void) | undefined;
+    /** 编辑态：把本条加入某个段位。 */
+    onAddToCourse?: (() => void) | undefined;
     /** 供分块表格标注 1-based 行号，普通表格不传。 */
     ariaRowIndex?: number | undefined;
     /** 供新增条目后定位的行 id，普通表格不传。 */
@@ -65,6 +67,7 @@
     canMoveDown = false,
     onMoveUp = undefined,
     onMoveDown = undefined,
+    onAddToCourse = undefined,
     ariaRowIndex = undefined,
     rowId = undefined,
     showLevel = false,
@@ -76,9 +79,26 @@
       ? { index: -1, disabled: true }
       : { index: drag.index, disabled: drag.disabled }
   );
+
+  function handleDragStart(event: DragEvent): void {
+    if (!selectable) return;
+    const md5 = chart.md5 ?? "";
+    const sha256 = chart.sha256 ?? "";
+    if (md5 === "" && sha256 === "") return;
+    const payload = { md5, sha256, levelText: chart.level ?? "" };
+    event.dataTransfer?.setData("application/x-bms-entry", JSON.stringify(payload));
+    if (event.dataTransfer) event.dataTransfer.effectAllowed = "copy";
+  }
 </script>
 
-<tr use:rowAction={rowParams} id={rowId} aria-rowindex={ariaRowIndex} class="hover:bg-white-5">
+<tr
+  use:rowAction={rowParams}
+  id={rowId}
+  aria-rowindex={ariaRowIndex}
+  class="hover:bg-white-5"
+  draggable={selectable}
+  ondragstart={handleDragStart}
+>
   {#if selectable}
     <td class="table-td-compact px-2">
       <div class="flex items-center justify-center gap-1">
@@ -163,6 +183,15 @@
             disabled: disabled || !canMoveDown,
             onselect: onMoveDown,
           },
+          ...(onAddToCourse === undefined
+            ? []
+            : [
+                {
+                  label: m["editor.entry.course_add"](),
+                  disabled,
+                  onselect: onAddToCourse,
+                },
+              ]),
         ]}
       />
     </td>

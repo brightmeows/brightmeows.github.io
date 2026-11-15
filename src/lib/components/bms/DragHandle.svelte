@@ -25,6 +25,7 @@
   <button
     class="btnIcon dnd-handle opacity-60 hover:opacity-100 focus-visible:opacity-100 aria-pressed:opacity-100"
     type="button"
+    draggable="false"
     {disabled}
     aria-label={m["editor.drag.row_label"]({ name })}
     aria-pressed={grabbed}

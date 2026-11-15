@@ -20,6 +20,7 @@ import {
   encodeLevelFilterOption,
   entryGroupAnchorId,
   entryHashes,
+  findChartByHashes,
   filterEntryIndices,
   groupEntryIndices,
   hashFormatOk,
@@ -527,6 +528,22 @@ describe("buildEntryHashSet", () => {
     expect(set.has("abc")).toBe(true);
     expect(set.has("def")).toBe(true);
     expect(set.size).toBe(2);
+  });
+});
+
+describe("findChartByHashes", () => {
+  it("hits either hash with normalized case and whitespace", () => {
+    const entries = [
+      { md5: " ABC ", title: "by-md5" },
+      { sha256: "DEF", title: "by-sha256" },
+    ];
+    expect(findChartByHashes(entries, { md5: "abc" })?.title).toBe("by-md5");
+    expect(findChartByHashes(entries, { sha256: "def" })?.title).toBe("by-sha256");
+  });
+
+  it("returns null for empty or missing hashes", () => {
+    expect(findChartByHashes([{ md5: "abc" }], {})).toBeNull();
+    expect(findChartByHashes([{ md5: "abc" }], { md5: "zzz" })).toBeNull();
   });
 });
 

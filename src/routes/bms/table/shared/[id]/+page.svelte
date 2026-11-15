@@ -195,6 +195,7 @@
     }}
     capabilities={{
       mode: "shared",
+      kind: "shared",
       canWrite,
       createMode: isNew,
       initialBaselineUpdatedAt: s?.baseline,
@@ -215,7 +216,7 @@
     {/snippet}
 
     {#snippet management()}
-      {#if canRename || canDelete}
+      {#if canWrite}
         <div class="flex flex-col gap-4">
           {#if canRename}
             <div class="rounded-glass-sm border border-white-15 bg-black-20 p-3">
@@ -253,6 +254,19 @@
             </div>
           {/if}
         </div>
+      {/if}
+    {/snippet}
+
+    {#snippet adminActions()}
+      {#if !isEdit && isAdmin && !canWrite && s !== null && !s.isNew}
+        <button
+          class="{btnDangerMd} w-full"
+          type="button"
+          disabled={busy}
+          onclick={() => void doDelete()}
+        >
+          {m["shared.delete.action"]()}
+        </button>
       {/if}
     {/snippet}
   </BmsTablePage>

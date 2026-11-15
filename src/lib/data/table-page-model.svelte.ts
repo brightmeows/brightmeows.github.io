@@ -54,10 +54,14 @@ export interface TablePagePublish {
 /** 能力与初始态：写权限、创建态、并发基线与新表种子。 */
 export interface TablePageCapabilities {
   mode?: "local" | "shared" | undefined;
+  /** 表来源类型：自托管、镜像或共享。 */
+  kind?: "self" | "mirror" | "shared" | undefined;
   /** shared 模式下是否可写（作者或新表）；local 忽略。 */
   canWrite?: boolean | undefined;
   /** 新表（首次保存才创建）时为 true。 */
   createMode?: boolean | undefined;
+  /** 副本意图：编辑原表内容，保存时跳到新建页创建副本。 */
+  copyMode?: boolean | undefined;
   /** 进入时的线上 updated_at（共享表并发提示基线）。 */
   initialBaselineUpdatedAt?: string | undefined;
   /** 新表初始种子（无草稿认领时使用；可携带导入的整包内容）。 */
@@ -94,6 +98,10 @@ export function createTableModel(input: TableModelInput) {
   const saveAsShared = $derived(publish().saveAsShared ?? "none");
   const canWrite = $derived(Boolean(capabilities().canWrite ?? false));
   const createMode = $derived(capabilities().createMode ?? false);
+  const kind = $derived(
+    capabilities().kind ?? (capabilities().mode === "shared" ? "shared" : "self")
+  );
+  const copyMode = $derived(capabilities().copyMode ?? false);
   const seed = $derived(capabilities().seed);
 
   // ---- 模型（查看态与编辑态共享） ----
@@ -106,6 +114,8 @@ export function createTableModel(input: TableModelInput) {
   let courseModel = $state<CourseModel>(emptyCourseModel());
   let entries = $state<ChartData[]>([]);
   let levelHints = $state<Record<string, string>>({});
+  let draftDataActive = $state(false);
+  const headerUnfilled = $derived(name.trim() === "" || symbol.trim() === "");
 
   // ---- 编辑与保存状态（草稿域状态在 createDraftLifecycle） ----
   let busy = $state(false);
@@ -117,11 +127,15 @@ export function createTableModel(input: TableModelInput) {
   const groups = $derived(groupChartsByLevel(entries));
   const tableStats = $derived(computeTableStats(groups));
   const courseGroups = $derived(resolveCourses(headerRecord.course, entries));
-  const canSave = $derived.by(() => onSave !== undefined && canWrite);
+  const canSave = $derived.by(
+    () =>
+      (loader.dataLoadState === "loaded" || draftDataActive) &&
+      (copyMode ? saveAsShared !== "none" : onSave !== undefined && canWrite)
+  );
   const saveLabel = $derived.by(() =>
     busy
       ? m["editor.save.progress"]()
-      : createMode
+      : createMode || copyMode
         ? m["editor.save.create_label"]()
         : m["editor.save.save"]()
   );
@@ -165,6 +179,7 @@ export function createTableModel(input: TableModelInput) {
     applyHeaderState(draft.header);
     entries = draft.data.map((item) => ({ ...item }));
     baselineUpdatedAt = draft.baselineUpdatedAt;
+    draftDataActive = true;
     notice = null;
   }
 
@@ -215,13 +230,14 @@ export function createTableModel(input: TableModelInput) {
   });
 
   // ---- 派生：加载就绪（header 与 data 双就绪；草稿防抖与门面共用） ----
-  const ready = $derived.by(
-    () => loader.headerLoadState === "loaded" && loader.dataLoadState === "loaded"
-  );
+  const headerReady = $derived(loader.headerLoadState === "loaded");
+  const dataReady = $derived(loader.dataLoadState === "loaded" || draftDataActive);
+  const ready = $derived.by(() => headerReady && dataReady);
 
   /** 放弃未保存修改：删草稿并回载远端（新表回到种子态）。 */
   async function discardEdits(): Promise<void> {
     if (!(await askConfirm(m["editor.discard.unsaved_confirm"]()))) return;
+    draftDataActive = false;
     await drafts.resetAfterDiscard();
     notice = null;
     levelHints = {};
@@ -230,6 +246,14 @@ export function createTableModel(input: TableModelInput) {
 
   // ---- 保存与导出 ----
   async function save(): Promise<void> {
+    if (!dataReady) {
+      notice = { kind: "warn", text: m["editor.save.data_not_ready"]() };
+      return;
+    }
+    if (copyMode) {
+      await saveAsSharedNow();
+      return;
+    }
     if (busy || onSave === undefined || !canWrite) return;
     const plan = await planEditorSave({
       header: buildHeader(),
@@ -258,6 +282,10 @@ export function createTableModel(input: TableModelInput) {
   }
 
   async function saveAsSharedNow(): Promise<void> {
+    if (!dataReady) {
+      notice = { kind: "warn", text: m["editor.save.data_not_ready"]() };
+      return;
+    }
     if (saveAsShared === "none") return;
     const plan = planSaveAsShared(buildHeader(), entries);
     if (plan.kind === "invalid") {
@@ -294,12 +322,16 @@ export function createTableModel(input: TableModelInput) {
     }
   }
 
-  function exportTable(kind: "header" | "data" | "package"): void {
+  function exportTable(payloadKind: "header" | "data" | "package"): void {
+    if (payloadKind !== "header" && !dataReady) {
+      notice = { kind: "warn", text: m["editor.save.data_not_ready"]() };
+      return;
+    }
     if (!ensureValid()) return;
     noteUnassigned();
-    if (kind === "header") {
+    if (payloadKind === "header") {
       downloadTextFile("header.json", serializeSharedJson(withLocalDataUrl(buildHeader())));
-    } else if (kind === "data") {
+    } else if (payloadKind === "data") {
       downloadTextFile("data.json", serializeSharedJson(entries));
     } else {
       downloadTextFile(
@@ -307,6 +339,16 @@ export function createTableModel(input: TableModelInput) {
         serializeSharedJson(buildCombinedPackage(withLocalDataUrl(buildHeader()), entries))
       );
     }
+  }
+
+  function retryData(): void {
+    draftDataActive = false;
+    loader.retryData();
+  }
+
+  function retryAll(): void {
+    draftDataActive = false;
+    loader.retryAll();
   }
 
   return {
@@ -373,13 +415,13 @@ export function createTableModel(input: TableModelInput) {
       return loader.headerError;
     },
     get dataLoadState() {
-      return loader.dataLoadState;
+      return draftDataActive ? "loaded" : loader.dataLoadState;
     },
     get dataError() {
-      return loader.dataError;
+      return draftDataActive ? null : loader.dataError;
     },
     get dataFetchUrl() {
-      return loader.dataFetchUrl;
+      return draftDataActive ? null : loader.dataFetchUrl;
     },
     get loadPercent() {
       return loader.loadPercent;
@@ -393,9 +435,24 @@ export function createTableModel(input: TableModelInput) {
     get ready() {
       return ready;
     },
+    get headerReady() {
+      return headerReady;
+    },
+    get dataReady() {
+      return dataReady;
+    },
+    get headerUnfilled() {
+      return headerUnfilled;
+    },
+    get kind() {
+      return kind;
+    },
+    get copyMode() {
+      return copyMode;
+    },
     loadHeader: loader.loadHeader,
-    retryData: loader.retryData,
-    retryAll: loader.retryAll,
+    retryData,
+    retryAll,
     // 派生展示
     get headerRecord() {
       return headerRecord;
@@ -435,6 +492,9 @@ export function createTableModel(input: TableModelInput) {
     // 保存与导出
     get canSave() {
       return canSave;
+    },
+    get canSaveAsShared() {
+      return dataReady && saveAsShared !== "none";
     },
     get saveLabel() {
       return saveLabel;

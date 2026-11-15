@@ -1,5 +1,6 @@
 <script lang="ts">
   import {
+    addChartToCourse,
     addCourseToGroup,
     addGroupToModel,
     moveCourseInModel,
@@ -32,6 +33,8 @@
     model?: CourseModel;
     entries?: Record<string, unknown>[];
     symbol?: string;
+    /** data.json 未就绪时谱面解析状态显示“无法判定”。 */
+    dataReady?: boolean;
     /** 查看态缺少模型形状时由页面传入；编辑态自动取 model.shape。 */
     nested?: boolean | undefined;
     disabled?: boolean;
@@ -46,6 +49,7 @@
     model = $bindable(undefined),
     entries = [],
     symbol = "",
+    dataReady = true,
     nested = undefined,
     disabled = false,
     onChange,
@@ -337,6 +341,7 @@
                 <CourseRowView
                   course={item.course}
                   {symbol}
+                  {dataReady}
                   expanded={expandedKey === item.key}
                   onToggle={() => toggle(item.key)}
                 />
@@ -346,6 +351,7 @@
                   course={item.course}
                   {entries}
                   {disabled}
+                  {dataReady}
                   expanded={expandedKey === item.key}
                   canMoveUp={item.courseIndex > 0}
                   canMoveDown={item.courseIndex < group.items.length - 1}
@@ -355,6 +361,12 @@
                   onDelete={() => removeCourse(group.groupIndex, item.courseIndex)}
                   onMoveUp={() => moveCourse(group.groupIndex, item.courseIndex, -1)}
                   onMoveDown={() => moveCourse(group.groupIndex, item.courseIndex, 1)}
+                  onDropChart={(chart) => {
+                    if (model === undefined) return;
+                    if (addChartToCourse(model, group.groupIndex, item.courseIndex, chart)) {
+                      onChange?.();
+                    }
+                  }}
                   {onNotice}
                   onedit={(mutate) => {
                     mutate(item.course);
