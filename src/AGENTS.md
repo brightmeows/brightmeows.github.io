@@ -51,6 +51,17 @@
 - **顶栏显隐与弹层动画共用一套滚动信号** — 下滑超过 50px 隐藏、上滑超过 20px 显示；另有 12px 顶部悬停带、顶栏键盘焦点、距文档底部 200px 内自动显示，唤出后保持到下一次滚动。滚动即收弹层并隐藏顶栏，“弹层打开不隐藏”只约束非滚动操作。
   - 所有弹层（Home 资料卡、BMS 下拉、窄屏 Menu、目录、账户、主题、语言）都在鼠标悬停时展开：150ms 打开、250ms 关闭，移入面板保持；悬停已展开时第一次点击把面板钉住，指针离开不收起，第二次点击或外点/Escape 才收起；面板内链接点击即关闭。
   - 展开淡入并轻微下滑，150ms 开、100ms 收，`prefers-reduced-motion` 时关闭；顶栏自身的 150ms transform 过渡同样遵守减少动效偏好。
+  - 显隐状态在 `topbarVisibility` store；标题条的 72/24px 与表格 sticky 表头的 `top` 都从同一状态派生，不要各写一套阈值。
+- **页面标题是 hero 与标题条，同一个 `h1` 不复制** — 每页经 `PageShell` 的 `hero` 槽位渲染 `PageHero`；标题在 hero 与吸顶条里是同一个元素，宣传区随滚动收起，标题条只做标题。
+  - 结构：`PageHero` 的 `<header>` 必须是内容列的直接子元素，`PageShell` 的无侧栏外层容器是 sticky 包含块；不要把它塞进只包 hero 的小 wrapper，否则条不会跟着内容停留。
+  - 滚动：宣传区用 grid 行 `1fr` 到 `0fr`，范围由 ResizeObserver 写入的 `--page-promo-height` 决定；范围不等于视口高度。粘性表头的 `top` 用 `--page-title-bar-top + --page-title-bar-height`，不要回到 `top-0`。
+  - 位置：顶栏可见时条在 72px，顶栏隐藏时在 24px（给 12px 悬停带让位），由 `topbarVisibility` 驱动；接近页底顶栏强制显示时回到 72px。表头 `top` 同步跟随。
+  - 宽度：`--page-hero-bar-width` 由 `PageShell` 写入，`constrainPanes` 页为 1000px，其余为 100%；背景、模糊与发丝线铺满内容列，标题内层固定 1000px。文章页内容列 1000px，侧栏不受影响。
+  - 视觉：hero 纯星空无底色；吸顶态 `backdrop-filter` 加底部发丝线，不做玻璃卡；`prefers-reduced-transparency` 退回实色。
+  - 降级：不支持滚动驱动动画（`@supports ((animation-timeline: scroll()) and (animation-range: 0% 100%))`）或 `prefers-reduced-motion` 时静态 hero，不吸顶不收缩；不要加 polyfill 或 JS 回退。
+  - 无障碍：宣传区在收起末尾用离散 `visibility: hidden` 隐藏；`html:has(.page-hero.hero-ready)` 的 `scroll-padding-top` 用 `72px + 条高`；锚点呼吸留白继续由 `scroll-mt-*` 承担。
+  - 接入：首页入口为站内七项加外部三项，/bms 概览为三项服务；列表页入口动作上移，`CardSwitcher` 用 `PageShell` 的 `sectionSwitcher` 槽位固定在 hero 与内容卡之间；表详情 hero 只留标题与符号，概览卡保持默认关闭，导入复制按钮在切换器行，编辑态标题输入框传 `clamp={false}`。
+  - `PageHero` 的 promo 异步出现时（如表详情符号）`$effect` 会重测；不要改回只在 `onMount` 测一次。
 - **内容正文页宽屏有左侧目录侧栏** — `PostArticle` 在视口 ≥1400px 时经 `PageShell` 的 `sidebar` snippet 渲染 `TocSidebar`（260px 列，正文卡全场景收窄到 1000px 居中）；窄屏整列隐藏，由顶栏目录弹层接管，正文行宽（`MarkdownContent` 的 max-w-4xl）不随布局变化。
   - 侧栏本体包 `GlassPanel`（与顶栏弹层同构）：浮动内容面板（弹层、侧栏、抽屉等）一律用玻璃家族容器承载，不允许裸列表浮在星空背景上。
   - 侧栏两段：章节段（reading 专属，段头书名链接回书目录页，当前章按路由静态高亮，与滚动推导的锚点高亮并存于 `TocPanel` 的 `activeHref`）与本页目录段；两段各自折叠，折叠与整栏收缩状态都存 localStorage 的 `tocSidebar.*` 键（旗标逻辑在 `utils/ui/toc-sidebar`，配相邻测试）。
@@ -153,7 +164,10 @@
 - **`src/lib/loaders/`** — 构建时数据加载层（Node.js 环境）。内容扫描、BMS 表枚举与列表条目 header 读取（`getBmsTableEntries`）入口在此，不走路由内联。`post-scanner.ts`、`post-metadata.ts` 也在此目录。
 - **`src/lib/data/`** — 客户端数据获取层（浏览器环境），2026-10 起按职责分两个子目录。
   - `api/` 收传输与取数（端点函数、清单加载编排、`bms-search` 搜索三件与 `search-aggregator` 聚合器、`table-drafts.ts` 的 IndexedDB 草稿单快照）。
-  - `store/` 收响应式模块（`.svelte.ts`）：`auth-store` 登录态、`theme-store` 主题、`search-converters` 的 opencc 懒加载 store 与 `search-index-client` 索引 Worker 客户端（镜像列表/单搜/批量搜三页共用，勿再各自复制）、`shared-new` 新建共享表状态。
+  - `store/` 收响应式模块（`.svelte.ts`）：`auth-store` 登录态、`theme-store` 主题、
+    `search-converters` 的 opencc 懒加载 store 与 `search-index-client` 索引 Worker 客户端
+    （镜像列表/单搜/批量搜三页共用，勿再各自复制）、`shared-new` 新建共享表状态、
+    `topbar-visibility` 顶栏显隐（标题条与表头跟随）。
   - store 反向引用 api 走 `../api/` 相对路径；`bms-search.worker.ts` 的 `new URL` 挂在 store 侧客户端，模块移位时两边要同步。
   - 响应式的页面模型也在此层（`table-page-model.svelte.ts`：难度表页的主模型——内存模型态、派生展示、保存发布与对外门面）。
   - 两段式加载与草稿生命周期拆在同目录的 `table-model-loader.svelte.ts` 与 `table-model-drafts.svelte.ts` 子模型（2026-10 行为冻结拆分，依赖单向：loader 引用 drafts）。
