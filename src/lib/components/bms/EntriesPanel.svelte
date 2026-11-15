@@ -541,13 +541,46 @@
     adding = false;
   }
 
+  /** 新增条目后把浏览态窗口滚到目标行；大表才需要，搜索态先清空查询。 */
+  async function revealEntryAt(index: number): Promise<void> {
+    if (!largeTable) return;
+    const entry = entries[index];
+    if (entry === undefined) return;
+    if (isUnassigned(entry)) {
+      hideUnassigned = false;
+    } else {
+      const level = entryLevelText(entry);
+      if (hiddenLevels.has(level)) {
+        const next = new Set(hiddenLevels);
+        next.delete(level);
+        hiddenLevels = next;
+      }
+    }
+    if (searchMode) query = "";
+    await tick();
+    const segment = segments.find((item) => item.indices.includes(index));
+    if (segment === undefined) return;
+    const position = segment.start + 1 + segment.indices.indexOf(index);
+    browseRows?.scrollToPosition(position);
+    await tick();
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+    );
+    const row = document.getElementById(`entry-${index}`);
+    if (row === null) return;
+    const headerHeight = tableEl?.tHead?.getBoundingClientRect().height ?? 0;
+    const top = row.getBoundingClientRect().top + window.scrollY - headerHeight - 8;
+    window.scrollTo({ top: Math.max(0, top), behavior: "auto" });
+  }
+
   function commitDetail(entry: Record<string, unknown>): void {
     const wasAdding = adding;
     const target = editingIndex;
+    const added = wasAdding || target === null;
     // 新增（含 target 为空的兜底路径）对追加前数组查重：对追加后数组查重会
     // 自匹配必命中。新增命中即拦截（与 addFromUrl 语义一致），表单保留以便
     // 修改后重提交；编辑排除自身所在行，命中仅提示放行。
-    if (wasAdding || target === null) {
+    if (added) {
       const duplicate = duplicateEntryLabel(entries, entry, null);
       if (duplicate !== null) {
         notice = m["editor.entry.duplicate_notice"]({
@@ -570,6 +603,7 @@
     adding = false;
     editingIndex = null;
     onChange?.();
+    if (added) void revealEntryAt(entries.length - 1);
   }
 
   function removeEntry(index: number): void {
@@ -914,6 +948,7 @@
         {chartPreview}
         {levelHint}
         {ariaRowIndex}
+        rowId={`entry-${item.index}`}
         showLevel={searchMode}
         selectable={editing}
         selected={selected.has(item.index)}
