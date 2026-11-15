@@ -24,6 +24,7 @@
     topbarMenuItemSm,
   } from "#lib/constants/ui-classes.js";
   import { auth } from "#lib/data/store/auth-store.svelte.js";
+  import { topbarVisibility } from "#lib/data/store/topbar-visibility.svelte.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { TocItem, TopbarPanel } from "#lib/types/ui.js";
   import {
@@ -52,7 +53,6 @@
   const PANEL_IN_DURATION = 150;
   const PANEL_OUT_DURATION = 100;
 
-  let isVisible = $state(true);
   let lastScrollY = $state(0);
   let accumulatedDelta = $state(0);
   let scrolledPastViewport = $state(false);
@@ -256,7 +256,7 @@
           document.documentElement.scrollHeight
         )
       ) {
-        isVisible = true;
+        topbarVisibility.show();
       }
     };
     window.addEventListener("resize", onResize);
@@ -288,16 +288,16 @@
         document.documentElement.scrollHeight
       )
     ) {
-      isVisible = true;
+      topbarVisibility.show();
       accumulatedDelta = 0;
       return;
     }
 
-    if (isVisible) {
+    if (topbarVisibility.visible) {
       if (delta > 0) {
         accumulatedDelta += delta;
         if (accumulatedDelta >= SCROLL_DOWN_THRESHOLD) {
-          isVisible = false;
+          topbarVisibility.hide();
           accumulatedDelta = 0;
         }
       } else {
@@ -307,7 +307,7 @@
       if (delta < 0) {
         accumulatedDelta += -delta;
         if (accumulatedDelta >= SCROLL_UP_THRESHOLD) {
-          isVisible = true;
+          topbarVisibility.show();
           accumulatedDelta = 0;
         }
       } else {
@@ -491,16 +491,16 @@
   aria-hidden="true"
   class="fixed inset-x-0 top-0 z-1000 h-3 w-full cursor-default border-0 bg-transparent p-0"
   onpointerenter={(event) => {
-    if (event.pointerType === "mouse") isVisible = true;
+    if (event.pointerType === "mouse") topbarVisibility.show();
   }}
-  onclick={() => (isVisible = true)}
+  onclick={() => topbarVisibility.show()}
 ></button>
 
 <div
   bind:this={root}
   class="pointer-events-none fixed inset-x-0 top-3 z-1000 px-3 transition-transform duration-150 ease-out motion-reduce:transition-none"
-  style="transform: {isVisible ? 'none' : 'translateY(-150%)'}"
-  onfocusin={() => (isVisible = true)}
+  style="transform: {topbarVisibility.visible ? 'none' : 'translateY(-150%)'}"
+  onfocusin={() => topbarVisibility.show()}
 >
   <div class="flex items-center justify-between gap-3">
     <!-- 左胶囊：桌面导航；窄屏只剩菜单入口 -->
