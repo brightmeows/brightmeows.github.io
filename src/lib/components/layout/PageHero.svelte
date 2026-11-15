@@ -55,10 +55,13 @@
 
 <style>
   .page-hero {
-    position: static;
-    /* 条本身只占 1000px，两侧透明区放行点击，避免长页挡住内容 */
+    position: relative;
+    /* 背景铺满内容列，标题仍收在 1000px 内；两侧透明区放行点击 */
+    width: var(--page-hero-bar-width, 100%);
+    margin-inline: auto;
     pointer-events: none;
     transition: top 150ms ease-out;
+    isolation: isolate;
   }
 
   .page-hero.no-promo {
@@ -67,7 +70,6 @@
 
   .page-hero-inner {
     position: relative;
-    isolation: isolate;
     pointer-events: auto;
   }
 
@@ -82,7 +84,7 @@
       z-index: 900;
     }
 
-    .page-hero.hero-ready .page-hero-inner::before {
+    .page-hero.hero-ready::before {
       content: "";
       position: absolute;
       inset: 0;
@@ -151,13 +153,13 @@
       animation: none;
     }
 
-    .page-hero.hero-ready .page-hero-inner::before {
+    .page-hero.hero-ready::before {
       display: none;
     }
   }
 
   @media (prefers-reduced-transparency: reduce) {
-    .page-hero.hero-ready .page-hero-inner::before {
+    .page-hero.hero-ready::before {
       background: var(--color-background);
       backdrop-filter: none;
     }
