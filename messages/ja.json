@@ -216,6 +216,7 @@
   "editor.add.json_invalid": "貼り付けた JSON は md5 または sha256 を含むエントリ配列である必要があります。",
   "editor.add.json_empty": "追加できる新しいエントリがありません。",
   "editor.add.json_apply": "追加",
+  "editor.add.load_failed": "追加パネルの読み込みに失敗しました。再読み込みしてください。",
   "editor.dock.continue_edit": "編集を続ける",
   "editor.course.add": "段位を追加",
   "editor.course.chart.add": "ハッシュを追加",

@@ -253,7 +253,7 @@
 
 <CourseRow
   {expanded}
-  {onDropChart}
+  onDropChart={disabled ? undefined : onDropChart}
   dragItem={rowDrag?.dnd.item}
   dragIndex={rowDrag?.index}
   dragDisabled={rowDrag?.disabled ?? true}

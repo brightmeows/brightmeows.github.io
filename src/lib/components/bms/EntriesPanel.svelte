@@ -695,6 +695,7 @@
     incoming: Record<string, unknown>[],
     hints?: Record<string, string>
   ): { added: number; skipped: number } {
+    if (!editing || disabled || !dataReady) return { added: 0, skipped: 0 };
     const { added, skipped } = splitNewEntries(entries, incoming);
     if (added.length > 0) {
       entries = [...entries, ...added];
@@ -716,8 +717,13 @@
 
   async function ensureAddDrawer(): Promise<void> {
     if (AddChartsDrawer !== null) return;
-    const mod = await import("./AddChartsDrawer.svelte");
-    AddChartsDrawer = mod.default;
+    try {
+      const mod = await import("./AddChartsDrawer.svelte");
+      AddChartsDrawer = mod.default;
+    } catch {
+      closeAddDrawer();
+      notice = m["editor.add.load_failed"]();
+    }
   }
 
   function closeAddDrawer(): void {
@@ -726,6 +732,7 @@
   }
 
   function openCoursePicker(index: number): void {
+    if (disabled) return;
     if (courseModel === undefined || courseTargets.length === 0) {
       notice = m["editor.entry.course_add_empty"]();
       return;
@@ -735,6 +742,7 @@
   }
 
   function addEntryToCourse(index: number): void {
+    if (disabled) return;
     if (courseModel === undefined) return;
     const target = courseTargets.find((item) => item.key === courseTargetValue);
     const entry = entries[index];
@@ -1011,7 +1019,11 @@
                 </p>
               {:else}
                 <div class="flex flex-wrap items-center gap-2">
-                  <select class="{inputEditorBase} min-w-56 flex-1" bind:value={courseTargetValue}>
+                  <select
+                    class="{inputEditorBase} min-w-56 flex-1"
+                    bind:value={courseTargetValue}
+                    {disabled}
+                  >
                     {#each courseTargets as target (target.key)}
                       <option value={target.key}>{target.label}</option>
                     {/each}
@@ -1019,6 +1031,7 @@
                   <button
                     class={btnGhost}
                     type="button"
+                    {disabled}
                     onclick={() => addEntryToCourse(item.index)}
                   >
                     <Plus class="size-4 shrink-0" aria-hidden="true" />

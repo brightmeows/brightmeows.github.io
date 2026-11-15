@@ -45,6 +45,7 @@
   let loadError = $state<string | null>(null);
   let query = $state("");
   let selected = $state<Set<number>>(new Set());
+  let sourceRequest = 0;
 
   const sourceMatches = $derived.by(() => {
     const needle = sourceQuery.trim().toLowerCase();
@@ -73,9 +74,11 @@
   }
 
   async function handleSourceChange(): Promise<void> {
+    const request = ++sourceRequest;
     selected = new Set();
     loadError = null;
     externalEntries = [];
+    loading = false;
     if (sourceValue === "current") return;
     const [kind, ...rest] = sourceValue.split(":");
     const id = rest.join(":");
@@ -84,11 +87,13 @@
     loading = true;
     try {
       const data = await loadChartSourceData(source);
+      if (request !== sourceRequest) return;
       externalEntries = data.entries;
     } catch (error) {
+      if (request !== sourceRequest) return;
       loadError = errorMessageOf(error, m["common.unknown_error"]());
     } finally {
-      loading = false;
+      if (request === sourceRequest) loading = false;
     }
   }
 

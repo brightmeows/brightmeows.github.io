@@ -45,10 +45,13 @@
   let sharedSearched = $state(false);
   let sharedError = $state<string | null>(null);
   let sharedResults = $state<LookupHit[]>([]);
+  let mirrorRequest = 0;
+  let sharedRequest = 0;
 
   const hasHash = $derived(chart.md5 !== "" || chart.sha256 !== "");
   const currentEntry = $derived(findChartByHashes(entries, chart));
   const sharedSources = $derived(sources.filter((source) => source.kind === "shared"));
+  const hashKey = $derived(`${chart.md5}\u0000${chart.sha256}`);
 
   onMount(() => {
     indexClient.start();
@@ -57,6 +60,30 @@
 
   onDestroy(() => {
     indexClient.dispose();
+  });
+
+  $effect(() => {
+    void hashKey;
+    mirrorRequest += 1;
+    sharedRequest += 1;
+    mirrorPending = false;
+    mirrorLoading = false;
+    mirrorSearched = false;
+    mirrorError = null;
+    mirrorResults = [];
+    sharedLoading = false;
+    sharedSearched = false;
+    sharedError = null;
+    sharedResults = [];
+  });
+
+  $effect(() => {
+    void sharedValue;
+    sharedRequest += 1;
+    sharedLoading = false;
+    sharedSearched = false;
+    sharedError = null;
+    sharedResults = [];
   });
 
   $effect(() => {
@@ -97,22 +124,26 @@
       mirrorPending = true;
       return;
     }
+    const request = ++mirrorRequest;
+    const hashes = { md5: chart.md5, sha256: chart.sha256 };
     mirrorLoading = true;
     mirrorSearched = true;
     mirrorError = null;
     mirrorResults = [];
     try {
-      const query = chart.md5 !== "" ? chart.md5 : chart.sha256;
+      const query = hashes.md5 !== "" ? hashes.md5 : hashes.sha256;
       const candidates = await indexClient.search(query);
+      if (request !== mirrorRequest) return;
       const hits: LookupHit[] = [];
       for (const candidate of candidates.slice(0, 5)) {
+        if (request !== mirrorRequest) return;
         try {
           const data = await loadChartSourceData({
             kind: "mirror",
             id: candidate.tableId,
             label: candidate.tableId,
           });
-          const entry = findChartByHashes(data.entries, chart);
+          const entry = findChartByHashes(data.entries, hashes);
           if (entry !== null) hits.push({ tableId: candidate.tableId, entry });
         } catch {
           // 单张表读取失败不打断其他候选
@@ -120,9 +151,10 @@
       }
       mirrorResults = hits;
     } catch (error) {
+      if (request !== mirrorRequest) return;
       mirrorError = errorMessageOf(error, m["common.unknown_error"]());
     } finally {
-      mirrorLoading = false;
+      if (request === mirrorRequest) mirrorLoading = false;
     }
   }
 
@@ -130,18 +162,22 @@
     if (!hasHash || sharedValue === "") return;
     const source = sharedSources.find((item) => item.id === sharedValue);
     if (source === undefined) return;
+    const request = ++sharedRequest;
+    const hashes = { md5: chart.md5, sha256: chart.sha256 };
     sharedLoading = true;
     sharedSearched = true;
     sharedError = null;
     sharedResults = [];
     try {
       const data = await loadChartSourceData(source);
-      const entry = findChartByHashes(data.entries, chart);
+      if (request !== sharedRequest) return;
+      const entry = findChartByHashes(data.entries, hashes);
       sharedResults = entry === null ? [] : [{ tableId: source.id, entry }];
     } catch (error) {
+      if (request !== sharedRequest) return;
       sharedError = errorMessageOf(error, m["common.unknown_error"]());
     } finally {
-      sharedLoading = false;
+      if (request === sharedRequest) sharedLoading = false;
     }
   }
 </script>

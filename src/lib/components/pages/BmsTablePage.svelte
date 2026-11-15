@@ -106,6 +106,14 @@
     confirm: () => (message: string) => confirmDialog.ask(message, { destructive: true }),
   });
   const headerUrl = $derived(source.headerUrl);
+
+  // 来源切换（共享表新建后拿到 R2 地址等）时重置等级参考状态，
+  // 让 TableOverviewPanel 重新挂载 LevelRefTable 请求新来源。
+  $effect(() => {
+    void headerUrl;
+    levelRefLoadState = "idle";
+  });
+
   const saveAsShared = $derived(publish.saveAsShared ?? "none");
   const sharedMode = $derived(capabilities.mode === "shared");
   const createMode = $derived(capabilities.createMode ?? false);
@@ -253,7 +261,7 @@
     syncCardsFromLocation();
     const syncLocation = (): void => {
       syncModeFromLocation();
-      syncCardsFromLocation();
+      syncCardsFromLocation({ writeUrl: false });
     };
     window.addEventListener("popstate", syncLocation);
     window.addEventListener("keydown", handleKeydown);
@@ -316,7 +324,7 @@
   function writeCardsUrl(next: readonly TableCardId[]): void {
     const url = new URL(window.location.href);
     url.searchParams.set("show", serializeCardShow(next));
-    history.replaceState(null, "", url);
+    void goto(url, { shallow: true, replace: true });
   }
 
   function applyCards(next: readonly TableCardId[]): void {
@@ -329,7 +337,7 @@
     writeCardsUrl(cards);
   }
 
-  function syncCardsFromLocation(): void {
+  function syncCardsFromLocation(options?: { writeUrl?: boolean }): void {
     const fromUrl = parseCardShow(new URLSearchParams(window.location.search).get("show"));
     const stored = fromUrl === null ? readStoredCards() : null;
     const initial =
@@ -346,7 +354,7 @@
     } catch {
       // 同上
     }
-    if (fromUrl === null) writeCardsUrl(initial);
+    if (fromUrl === null && options?.writeUrl !== false) writeCardsUrl(initial);
   }
 
   function toggleCard(id: string, checked: boolean): void {
@@ -369,7 +377,7 @@
     element?.scrollIntoView({ behavior: "smooth", block: "start" });
     const url = new URL(window.location.href);
     url.hash = anchor;
-    history.replaceState(null, "", url);
+    void goto(url, { shallow: true, replace: true });
   }
 
   const tocItems = $derived<TocItem[]>(

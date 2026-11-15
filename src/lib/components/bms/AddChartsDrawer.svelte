@@ -77,12 +77,12 @@
     skipped: number;
   }): void {
     const outcome = onAdd(result.added, result.hints);
-    showSummary(outcome.added, outcome.skipped);
+    showSummary(outcome.added, result.skipped + outcome.skipped);
   }
 
   function handleEntryImport(result: { added: Record<string, unknown>[]; skipped: number }): void {
     const outcome = onAdd(result.added);
-    showSummary(outcome.added, outcome.skipped);
+    showSummary(outcome.added, result.skipped + outcome.skipped);
   }
 
   function handleManualCommit(entry: Record<string, unknown>): void {

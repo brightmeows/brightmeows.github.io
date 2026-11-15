@@ -216,6 +216,7 @@
   "editor.add.json_invalid": "粘贴的 JSON 必须是含 md5 或 sha256 的条目数组。",
   "editor.add.json_empty": "没有可添加的新条目。",
   "editor.add.json_apply": "追加",
+  "editor.add.load_failed": "添加面板加载失败，请刷新后重试。",
   "editor.dock.continue_edit": "继续编辑",
   "editor.course.add": "添加段位",
   "editor.course.chart.add": "添加哈希",

@@ -216,6 +216,7 @@
   "editor.add.json_invalid": "The pasted JSON must be an array of entries with md5 or sha256.",
   "editor.add.json_empty": "No new entries to add.",
   "editor.add.json_apply": "Add",
+  "editor.add.load_failed": "Failed to load the add panel; refresh and try again.",
   "editor.dock.continue_edit": "Continue editing",
   "editor.course.add": "Add course",
   "editor.course.chart.add": "Add hash",

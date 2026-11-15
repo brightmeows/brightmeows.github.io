@@ -101,7 +101,7 @@ export function createTableModel(input: TableModelInput) {
   const kind = $derived(
     capabilities().kind ?? (capabilities().mode === "shared" ? "shared" : "self")
   );
-  const copyMode = $derived(capabilities().copyMode ?? false);
+  const copyMode = $derived.by(() => capabilities().copyMode ?? false);
   const seed = $derived(capabilities().seed);
 
   // ---- 模型（查看态与编辑态共享） ----
@@ -115,7 +115,7 @@ export function createTableModel(input: TableModelInput) {
   let entries = $state<ChartData[]>([]);
   let levelHints = $state<Record<string, string>>({});
   let draftDataActive = $state(false);
-  const headerUnfilled = $derived(name.trim() === "" || symbol.trim() === "");
+  const headerUnfilled = $derived.by(() => name.trim() === "" || symbol.trim() === "");
 
   // ---- 编辑与保存状态（草稿域状态在 createDraftLifecycle） ----
   let busy = $state(false);
@@ -230,8 +230,8 @@ export function createTableModel(input: TableModelInput) {
   });
 
   // ---- 派生：加载就绪（header 与 data 双就绪；草稿防抖与门面共用） ----
-  const headerReady = $derived(loader.headerLoadState === "loaded");
-  const dataReady = $derived(loader.dataLoadState === "loaded" || draftDataActive);
+  const headerReady = $derived.by(() => loader.headerLoadState === "loaded");
+  const dataReady = $derived.by(() => loader.dataLoadState === "loaded" || draftDataActive);
   const ready = $derived.by(() => headerReady && dataReady);
 
   /** 放弃未保存修改：删草稿并回载远端（新表回到种子态）。 */
