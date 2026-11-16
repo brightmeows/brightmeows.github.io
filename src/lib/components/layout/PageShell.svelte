@@ -89,10 +89,7 @@
       </button>
     {/if}
   {:else}
-    <div
-      class="mx-auto w-full max-w-350"
-      style="--page-hero-bar-width: {constrainPanes ? '1000px' : '100%'}"
-    >
+    <div class="mx-auto w-full max-w-350">
       {#if hero}
         {@render hero()}
       {/if}
