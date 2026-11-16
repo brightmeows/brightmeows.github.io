@@ -93,6 +93,7 @@
 - 根容器 `pointer-events-none`，胶囊自身 `pointer-events-auto`，点两胶囊之间的空白按外部点击关闭弹层。
 - 分组导航文字是链接（BMS 公共服务到 `/bms`，BMS 个人表到 `/bms/table`），右侧箭头单独展开或钉住，悬停整组仍展开。
 - 窄屏菜单按钮为汉堡图标，菜单里的分组标题也是链接。Home 仍是回首页链接，悬停或键盘焦点展开原资料卡；移动端 Menu 顶部承载同一资料区。
+  - 资料卡与首页外部入口共用 `constants/social.ts` 的 `SOCIAL_LINKS`（含图标，GitHub 排第一）；新增社交账号只改这一处。
 - 面包屑与 `deriveBreadcrumbs`/`currentLabel` 已删除，页面层级由正文标题承担。
 - 顶栏高 48px，导航断点为 768px（640–767 曾溢出）。
 
@@ -108,7 +109,8 @@
   - 视觉：hero 纯星空无底色；宣传区不裁切；无宣传区时标题留 2.5rem 底部间距。
   - 层叠：`PageShell` 的 `main` 用 `position: relative; isolation: isolate` 自建层叠上下文，一次覆盖所有页面裸内容。星空画布是 fixed `z-0` 的定位元素，静态 hero 与未隔离的切换器行会被画布盖住（实测两次：标题消失、选中卡片 chip 与导入复制按钮只剩控件碎片）。
   - 无障碍：标题只渲染一次；表格 sticky 表头默认 `top-0`，编辑态卡片行 sticky 时经 `--entries-sticky-top` 让到卡片行下方；锚点呼吸留白继续由 `scroll-mt-*` 承担。
-  - 接入：首页入口为站内七项加外部三项，/bms 概览为三项服务；列表页入口动作上移；表详情 hero 只留标题与符号，统计与导入复制按钮在 hero 下方常驻 meta 行，编辑态标题输入框传 `clamp={false}`。
+  - 接入：首页由 `pages/HomeHero.svelte` 承担，hero 按顶栏分组排成四行横向按钮：BMS 公共服务（概览、共享表、镜像、搜索）、BMS 个人表（SP、DP）、博客/内容（博客、杂记、阅读）、外部（与资料卡共用 `SOCIAL_LINKS`）；全部按钮带 lucide 图标。组标签复用导航 key 并用 `p` 而不是标题，避免进入顶栏目录；不使用玻璃卡、纵向列表或组说明。
+  - 其余页面：/bms 概览为三项服务；列表页入口动作上移；表详情 hero 只留标题与符号，统计与导入复制按钮在 hero 下方常驻 meta 行，编辑态标题输入框传 `clamp={false}`。
 
 #### 侧栏
 

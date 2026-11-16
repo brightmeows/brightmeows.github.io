@@ -17,6 +17,7 @@
   import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
   import { popoverLayer } from "#lib/components/ui/popover-layer.js";
   import { topLevelNav, type NavDropdown, type NavItem } from "#lib/constants/nav.js";
+  import { SOCIAL_LINKS } from "#lib/constants/social.js";
   import {
     topbarIcon,
     topbarIconSolid,
@@ -453,33 +454,20 @@
     <p class="mt-1 mb-4 text-indigo-300">{m["topbar.account.motto"]()}</p>
     <p class="mb-5 text-sm leading-relaxed text-white-90">{m["topbar.account.bio"]()}</p>
     <div class="flex flex-wrap justify-center gap-3">
-      <GlassButton
-        href="https://codeberg.org/brightmeows"
-        target="_blank"
-        rel="noopener noreferrer"
-        size={compact ? "sm" : "md"}
-        onclick={() => closePanels()}
-      >
-        Codeberg
-      </GlassButton>
-      <GlassButton
-        href="https://space.bilibili.com/215242890"
-        target="_blank"
-        rel="noopener noreferrer"
-        size={compact ? "sm" : "md"}
-        onclick={() => closePanels()}
-      >
-        Bilibili
-      </GlassButton>
-      <GlassButton
-        href="https://x.com/MiyakoWoW"
-        target="_blank"
-        rel="noopener noreferrer"
-        size={compact ? "sm" : "md"}
-        onclick={() => closePanels()}
-      >
-        X (Twitter)
-      </GlassButton>
+      {#each SOCIAL_LINKS as link (link.href)}
+        <GlassButton
+          href={link.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          size={compact ? "sm" : "md"}
+          onclick={() => closePanels()}
+        >
+          <span class="inline-flex items-center gap-1.5">
+            <link.icon class="size-4 shrink-0" aria-hidden="true" />
+            {link.label}
+          </span>
+        </GlassButton>
+      {/each}
     </div>
   </section>
 {/snippet}
