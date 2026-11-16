@@ -217,14 +217,15 @@ Hooks：
 
 ## 分支与工作树
 
-- **新分支在 `.worktrees/` 隔离开发** — `.worktrees/` 已 gitignore，用 `git worktree add .worktrees/<分支名> -b <分支>` 创建隔离工作树，不在主工作树上直接切分支。
-- **变更一律走 PR，以 merge commit 合并** — main 不接受直接 push，一切变更经 PR 合并，代理会话不在 main 上直接提交。
-  - 合并方式固定为 merge commit（`gh pr merge --merge`），不用 squash/rebase，保留分支拓扑与独立 revert 粒度。
-  - 该要求由仓库 ruleset `main-branch-protection` 机械强制：禁直推、禁删除、禁 force push，PR 合并仅限 merge method，CI 的 lint/check/test/format/commit-msg 五个 job 必过。
-- **分支合并即清理** — 分支经 PR 合并后立即清理现场，不留挂起引用。
-  - `git worktree remove .worktrees/<分支名>` 拆工作树，`git branch -d <分支>` 删本地分支，最后 `git fetch --prune` 收掉失效的 remote-tracking ref。
-  - 远端分支由仓库设置 delete_branch_on_merge（已开启）随合并自动删除，但它不覆盖 PR 关闭未合并（方案否决）的情况，此时需手动 `git push origin --delete <分支>` 收尾。
-  - 已合并与已关闭分支的 commit 由远端 PR 引用保留，本地不留存档分支，也不以“未合并”为由拖延清理。
+- **新分支在 `.worktrees/` 隔离开发**：`.worktrees/` 已 gitignore，用 `git worktree add .worktrees/<分支名> -b <分支>` 创建，不在主工作树上直接切分支。
+- **合并闸门：PR + CI + 用户授权**。main 不接受直接 push，一切变更经 PR 合并，代理会话不在 main 上直接提交。
+  - ruleset `main-branch-protection` 机械强制：禁直推、禁删除、禁 force push，PR 合并方式仅限 merge commit，CI 的 lint/check/test/format/commit-msg 五个 job 必过。
+  - 用户授权是流程约定，GitHub 侧没有机械闸：单人仓库里作者不能批准自己的 PR，`required_approving_review_count` 保持 0。代理开 PR 后、执行 `gh pr merge` 前，把 PR 链接、变更摘要与检查结果交给用户，等明确授权再合并。
+  - dependabot 的 patch/minor 与安全更新由 `dependabot-auto-merge.yml` 自动合并，major 更新留用户手动审阅合并。
+- **分支合并即清理**：分支经 PR 合并后立即清理现场，不留挂起引用。
+  - `git worktree remove .worktrees/<分支名>` 拆工作树，`git branch -d <分支>` 删本地分支，`git fetch --prune` 收掉失效的 remote-tracking ref。
+  - 远端分支由 delete_branch_on_merge 随合并自动删除；PR 关闭未合并时手动 `git push origin --delete <分支>`。
+  - 本地不留存档分支：已合并与已关闭分支的 commit 由远端 PR 引用保留，不以“未合并”为由拖延清理。
 
 ## 提交格式
 
