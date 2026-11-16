@@ -131,8 +131,12 @@
     mirrorError = null;
     mirrorResults = [];
     try {
-      const query = hashes.md5 !== "" ? hashes.md5 : hashes.sha256;
-      const candidates = await indexClient.search(query);
+      const queries = [hashes.md5, hashes.sha256].filter((hash) => hash !== "");
+      const lists = await Promise.all(queries.map((query) => indexClient.search(query)));
+      const byTable = new Map(
+        lists.flat().map((candidate) => [candidate.tableId, candidate] as const)
+      );
+      const candidates = [...byTable.values()];
       if (request !== mirrorRequest) return;
       const hits: LookupHit[] = [];
       for (const candidate of candidates.slice(0, 5)) {

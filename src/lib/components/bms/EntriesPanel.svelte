@@ -36,7 +36,7 @@
   import Trash2 from "@lucide/svelte/icons/trash-2";
   import WandSparkles from "@lucide/svelte/icons/wand-sparkles";
   import X from "@lucide/svelte/icons/x";
-  import { onMount, tick, type Component } from "svelte";
+  import { onDestroy, onMount, tick, type Component } from "svelte";
 
   import type { AddChartsDrawerProps } from "./AddChartsDrawer.svelte";
 
@@ -141,7 +141,10 @@
   let batchOpen = $state(false);
   let addOpen = $state(false);
   let AddChartsDrawer = $state<Component<AddChartsDrawerProps> | null>(null);
-  let coursePickerIndex = $state<number | null>(null);
+  let coursePickerTarget = $state<Record<string, unknown> | null>(null);
+  const coursePickerIndex = $derived(
+    coursePickerTarget === null ? null : entries.indexOf(coursePickerTarget)
+  );
   let courseTargetValue = $state("");
 
   interface CourseTarget {
@@ -579,7 +582,7 @@
     selected = new Set();
     batchChoice = BATCH_NONE;
     notice = null;
-    coursePickerIndex = null;
+    coursePickerTarget = null;
     if (addOpen) closeAddDrawer();
   });
 
@@ -731,19 +734,27 @@
     onAddDrawerOpenChange?.(false);
   }
 
+  onDestroy(() => {
+    if (addOpen) onAddDrawerOpenChange?.(false);
+  });
+
   function openCoursePicker(index: number): void {
     if (disabled) return;
     if (courseModel === undefined || courseTargets.length === 0) {
       notice = m["editor.entry.course_add_empty"]();
       return;
     }
-    coursePickerIndex = index;
+    coursePickerTarget = entries[index] ?? null;
     courseTargetValue = courseTargets[0]?.key ?? "";
   }
 
-  function addEntryToCourse(index: number): void {
-    if (disabled) return;
-    if (courseModel === undefined) return;
+  function addEntryToCourse(): void {
+    if (disabled || courseModel === undefined || coursePickerTarget === null) return;
+    const index = entries.indexOf(coursePickerTarget);
+    if (index < 0) {
+      coursePickerTarget = null;
+      return;
+    }
     const target = courseTargets.find((item) => item.key === courseTargetValue);
     const entry = entries[index];
     if (target === undefined || entry === undefined) return;
@@ -760,7 +771,7 @@
     ) {
       return;
     }
-    coursePickerIndex = null;
+    coursePickerTarget = null;
     onNotice?.({ kind: "ok", text: m["editor.entry.course_add_done"]({ name: target.label }) });
     onChange?.();
   }
@@ -1032,12 +1043,16 @@
                     class={btnGhost}
                     type="button"
                     {disabled}
-                    onclick={() => addEntryToCourse(item.index)}
+                    onclick={() => addEntryToCourse()}
                   >
                     <Plus class="size-4 shrink-0" aria-hidden="true" />
                     {m["editor.entry.course_add"]()}
                   </button>
-                  <button class={btnGhost} type="button" onclick={() => (coursePickerIndex = null)}>
+                  <button
+                    class={btnGhost}
+                    type="button"
+                    onclick={() => (coursePickerTarget = null)}
+                  >
                     {m["common.cancel"]()}
                   </button>
                 </div>

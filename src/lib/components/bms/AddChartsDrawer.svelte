@@ -21,7 +21,7 @@
   import PencilLine from "@lucide/svelte/icons/pencil-line";
   import Table2 from "@lucide/svelte/icons/table-2";
   import X from "@lucide/svelte/icons/x";
-  import type { Component } from "svelte";
+  import { onMount, type Component } from "svelte";
 
   import BmsDropZone from "./BmsDropZone.svelte";
   import EntryDetailForm from "./EntryDetailForm.svelte";
@@ -66,6 +66,15 @@
   let addUrl = $state("");
   let jsonText = $state("");
   let jsonError = $state<string | null>(null);
+  let dialogEl = $state<HTMLDivElement | undefined>(undefined);
+
+  onMount(() => {
+    const previous = document.activeElement;
+    dialogEl?.focus();
+    return () => {
+      if (previous instanceof HTMLElement) previous.focus();
+    };
+  });
 
   function showSummary(added: number, skipped: number): void {
     summary = m["editor.add.summary"]({ added, skipped });
@@ -173,7 +182,14 @@
     padding="md"
     rounded="lg"
   >
-    <div role="dialog" aria-modal="true" aria-labelledby="add-charts-title">
+    <div
+      bind:this={dialogEl}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="add-charts-title"
+      tabindex="-1"
+      class="outline-none"
+    >
       <div class="flex items-start justify-between gap-3 border-b border-white-15 pb-3">
         <div class="min-w-0">
           <h2 id="add-charts-title" class="m-0 text-[1.1rem] font-semibold text-white">

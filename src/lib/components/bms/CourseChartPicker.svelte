@@ -68,6 +68,11 @@
     void loadSources();
   });
 
+  $effect(() => {
+    void entries;
+    if (sourceValue === "current") selected = new Set();
+  });
+
   async function loadSources(): Promise<void> {
     sources = await loadChartSources();
     sourcesLoaded = true;
@@ -119,7 +124,12 @@
     return {
       md5,
       sha256,
-      levelText: typeof entry.level === "string" ? entry.level : "",
+      levelText:
+        typeof entry.level === "number"
+          ? String(entry.level)
+          : typeof entry.level === "string"
+            ? entry.level
+            : "",
     };
   }
 
