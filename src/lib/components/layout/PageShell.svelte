@@ -40,13 +40,21 @@
     onExpandSidebar,
     constrainPanes = false,
   }: Props = $props();
+
+  // 星空画布是 fixed z-0 的定位元素，普通流内容会被它盖住。主内容自建层叠
+  // 上下文并成为定位元素，一次覆盖所有页面裸内容；子元素都有局部定位父级，
+  // 不会被 main 抢走绝对定位包含块。
+  const mainStack = "relative isolate";
 </script>
 
 <a href="#main" class="skip-link">{m["common.skip_to_content"]()}</a>
 <StarryBackground />
 <DustTrailCanvas />
 <TopBar {tocItems} />
-<main id="main" class={mainClass ?? "m-0 mx-auto box-border w-full max-w-350 px-8 pt-24 pb-8"}>
+<main
+  id="main"
+  class="{mainStack} {mainClass ?? 'm-0 mx-auto box-border w-full max-w-350 px-8 pt-24 pb-8'}"
+>
   {#if sidebar}
     <div class="flex w-full items-start justify-center gap-10">
       {#if !sidebarCollapsed}
