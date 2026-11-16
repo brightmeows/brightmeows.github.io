@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   addCourseToGroup,
   addCourseToModel,
+  addChartToCourse,
   addGroupToModel,
   courseChartResolvedIn,
   courseHashIssue,
@@ -139,6 +140,18 @@ describe("structural helpers", () => {
     expect(next.groups[0]?.courses.map((item) => item.name)).toEqual(["A", ""]);
     expect(next.groups[1]?.courses.map((item) => item.name)).toEqual(["B"]);
     expect(addCourseToGroup(model, 9)).toBe(model);
+  });
+
+  it("adds a chart reference to the requested course only", () => {
+    const model = parseCourse([[{ name: "A" }, { name: "B" }]]);
+    expect(
+      addChartToCourse(model, 0, 0, { md5: "a".repeat(32), sha256: "", levelText: "12" })
+    ).toBe(true);
+    expect(model.groups[0]?.courses[0]?.charts).toHaveLength(1);
+    expect(model.groups[0]?.courses[1]?.charts).toHaveLength(0);
+    expect(addChartToCourse(model, 9, 0, { md5: "a".repeat(32), sha256: "", levelText: "" })).toBe(
+      false
+    );
   });
 
   it("adds and removes groups, removes courses and moves rows", () => {

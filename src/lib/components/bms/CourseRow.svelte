@@ -1,7 +1,9 @@
 <script lang="ts">
+  import type { CourseChartRef } from "@brightmeows/bms/course";
   import type { Snippet } from "svelte";
   import type { Action } from "svelte/action";
 
+  import { isRecord } from "#lib/utils/infra/object.js";
   import { inertDragItem, type DragItemOptions } from "#lib/utils/ui/dnd-list.svelte.js";
 
   /**
@@ -17,6 +19,8 @@
     dragItem?: Action<HTMLElement, DragItemOptions> | undefined;
     dragIndex?: number | undefined;
     dragDisabled?: boolean | undefined;
+    /** 条目拖入段位：收到跨卡拖拽的谱面引用。 */
+    onDropChart?: ((chart: CourseChartRef) => void) | undefined;
   }
 
   let {
@@ -27,12 +31,59 @@
     dragItem = inertDragItem,
     dragIndex = -1,
     dragDisabled = true,
+    onDropChart = undefined,
   }: Props = $props();
+
+  let dropActive = $state(false);
+
+  function isChartDrag(event: DragEvent): boolean {
+    return event.dataTransfer?.types.includes("application/x-bms-entry") ?? false;
+  }
+
+  function handleDragOver(event: DragEvent): void {
+    if (onDropChart === undefined || !isChartDrag(event)) return;
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
+    dropActive = true;
+  }
+
+  function handleDragLeave(event: DragEvent): void {
+    const related = event.relatedTarget;
+    const root = event.currentTarget;
+    if (root instanceof HTMLElement && related instanceof Node && root.contains(related)) return;
+    dropActive = false;
+  }
+
+  function handleDrop(event: DragEvent): void {
+    if (onDropChart === undefined) return;
+    dropActive = false;
+    const raw = event.dataTransfer?.getData("application/x-bms-entry") ?? "";
+    if (raw === "") return;
+    event.preventDefault();
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      if (!isRecord(parsed)) return;
+      const md5 = typeof parsed.md5 === "string" ? parsed.md5 : "";
+      const sha256 = typeof parsed.sha256 === "string" ? parsed.sha256 : "";
+      const levelText = typeof parsed.levelText === "string" ? parsed.levelText : "";
+      if (md5 === "" && sha256 === "") return;
+      onDropChart({ md5, sha256, levelText });
+    } catch {
+      // 非本协议的拖拽载荷忽略
+    }
+  }
 </script>
 
+<!-- 条目拖入段位是编辑态增强，行本身不是交互控件 -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
   use:dragItem={{ index: dragIndex, disabled: dragDisabled }}
-  class="border-b border-white-10 transition-colors last:border-b-0 hover:bg-white-5"
+  class="border-b border-white-10 transition-colors last:border-b-0 hover:bg-white-5 {dropActive
+    ? 'bg-accent/10 ring-1 ring-accent/50'
+    : ''}"
+  ondragover={handleDragOver}
+  ondragleave={handleDragLeave}
+  ondrop={handleDrop}
 >
   <div class="flex flex-wrap items-start gap-3 px-1 py-3">
     <div class="min-w-0 flex-1">{@render summary()}</div>

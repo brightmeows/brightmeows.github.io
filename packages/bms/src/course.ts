@@ -258,6 +258,29 @@ export function addCourseToModel(model: CourseModel): CourseModel {
   return addCourseToGroup(model, Math.max(0, model.groups.length - 1));
 }
 
+/** 段位谱面引用：只带哈希与等级，picker、拖拽与反查共用。 */
+export interface CourseChartRef {
+  md5: string;
+  sha256: string;
+  levelText: string;
+}
+
+/**
+ * 把一条谱面引用追加到指定段位；组或课程越界时返回 false，不改变模型。
+ * 段位与谱面列表保持独立，这里只写段位行。
+ */
+export function addChartToCourse(
+  model: CourseModel,
+  groupIndex: number,
+  courseIndex: number,
+  chart: CourseChartRef
+): boolean {
+  const course = model.groups[groupIndex]?.courses[courseIndex];
+  if (course === undefined) return false;
+  course.charts = [...course.charts, { ...chart, extra: {} }];
+  return true;
+}
+
 /** 删除指定课程；删空后保留组结构（序列化时为空组）。 */
 export function removeCourseFromModel(
   model: CourseModel,

@@ -32,6 +32,17 @@ export type LocalSaveGate =
       warnings: SharedStrictWarning[];
     };
 
+/** 数据段加载态；与 table-model-loader 的 dataLoadState 同词汇。 */
+export type DataLoadState = "idle" | "loading" | "loaded" | "error";
+
+/**
+ * 保存的数据闸门：只有 data.json 完整加载后才允许保存。
+ * 加载中 entries 为空，保存会把空 data 写回共享表。
+ */
+export function isDataReadyForSave(state: DataLoadState): boolean {
+  return state === "loaded";
+}
+
 /**
  * 保存闸门：先强验证（不过即拒），再未指派检查（发布前必须全部指派）。
  * 强验证里“缺失、null 或空 level”重分类进未指派计数——那是编辑器的指派

@@ -7,17 +7,14 @@
     courseHashIssue,
     type EditableCourse,
   } from "@brightmeows/bms/course";
-  import {
-    buildEntryHashSet,
-    entryLabel,
-    filterEntryIndices,
-    moveItem,
-  } from "@brightmeows/bms/editor";
+  import { buildEntryHashSet, moveItem } from "@brightmeows/bms/editor";
+  import FileUp from "@lucide/svelte/icons/file-up";
   import Plus from "@lucide/svelte/icons/plus";
   import Search from "@lucide/svelte/icons/search";
   import Trash2 from "@lucide/svelte/icons/trash-2";
-  import X from "@lucide/svelte/icons/x";
 
+  import CourseChartLookup from "./CourseChartLookup.svelte";
+  import CourseChartPicker, { type CourseChartRef } from "./CourseChartPicker.svelte";
   import CourseRow from "./CourseRow.svelte";
   import DragHandle from "./DragHandle.svelte";
   import RowActionMenu from "./RowActionMenu.svelte";
@@ -33,6 +30,7 @@
   import type { EditorNotice } from "#lib/controllers/editor.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { DeepReadonly } from "#lib/types/bms-view.js";
+  import { decodeBmsFile } from "#lib/utils/infra/bms-drop.js";
   import { createDragList, type DragList } from "#lib/utils/ui/dnd-list.svelte.js";
 
   /**
@@ -46,6 +44,8 @@
     course: DeepReadonly<EditableCourse>;
     entries: Record<string, unknown>[];
     disabled: boolean;
+    /** data.json 未就绪时谱面解析状态显示“无法判定”。 */
+    dataReady?: boolean;
     expanded: boolean;
     canMoveUp: boolean;
     canMoveDown: boolean;
@@ -56,6 +56,8 @@
     onDelete: () => void;
     onMoveUp: () => void;
     onMoveDown: () => void;
+    /** 条目拖入段位：追加到本课程。 */
+    onDropChart?: ((chart: CourseChartRef) => void) | undefined;
     /** 写入收口：mutator 拿到可写 course 原地修改，执行后由父级统一 onChange。 */
     onedit: (mutate: (target: EditableCourse) => void) => void;
     /** 删除类撤销通知的出口（dock notice 区渲染撤销按钮）；缺省不通知。 */
@@ -66,6 +68,7 @@
     course,
     entries,
     disabled,
+    dataReady = true,
     expanded,
     canMoveUp,
     canMoveDown,
@@ -75,14 +78,16 @@
     onDelete,
     onMoveUp,
     onMoveDown,
+    onDropChart = undefined,
     onedit,
     onNotice = undefined,
   }: Props = $props();
 
-  const PICKER_LIMIT = 20;
-
   let pickerOpen = $state(false);
-  let pickerQuery = $state("");
+  let fileInput = $state<HTMLInputElement | null>(null);
+  let fileBusy = $state(false);
+  let fileError = $state("");
+  let lookupIndex = $state<number | null>(null);
 
   const rowDrag = $derived(
     dragList === undefined ? undefined : { dnd: dragList, index: dragIndex, disabled }
@@ -102,22 +107,6 @@
   }
 
   const knownHashes = $derived(buildEntryHashSet(entries));
-  const pickerResults = $derived(
-    pickerOpen
-      ? filterEntryIndices(entries, { level: { kind: "all" }, query: pickerQuery }).slice(
-          0,
-          PICKER_LIMIT
-        )
-      : []
-  );
-
-  function describe(entry: Record<string, unknown>): { label: string; hash: string } {
-    const md5 = typeof entry.md5 === "string" ? entry.md5 : "";
-    const sha256 = typeof entry.sha256 === "string" ? entry.sha256 : "";
-    const hash = md5 !== "" ? md5 : sha256;
-    return { label: entryLabel(entry) || hash || m["editor.entry.unnamed"](), hash };
-  }
-
   // mutator 形参统一命名 target（可写写入目标），避开与只读 prop course 的遮蔽
   // （no-shadow）；写入后由 onedit 的执行方无条件触发 onChange。
 
@@ -188,6 +177,38 @@
     });
   }
 
+  function addChartRows(charts: CourseChartRef[]): void {
+    onedit((target) => {
+      target.charts = [...target.charts, ...charts.map((chart) => ({ ...chart, extra: {} }))];
+    });
+  }
+
+  async function readCourseFiles(files: File[]): Promise<void> {
+    if (disabled || fileBusy || files.length === 0) return;
+    fileBusy = true;
+    fileError = "";
+    let added = 0;
+    for (const file of files) {
+      const decoded = await decodeBmsFile(file);
+      if (decoded === null) {
+        fileError = m["editor.entry.file_failed"]();
+        continue;
+      }
+      const md5 = typeof decoded.entry.md5 === "string" ? decoded.entry.md5 : "";
+      const sha256 = typeof decoded.entry.sha256 === "string" ? decoded.entry.sha256 : "";
+      if (md5 === "" && sha256 === "") {
+        fileError = m["editor.entry.file_failed"]();
+        continue;
+      }
+      addChartRow(md5, sha256, decoded.levelHint);
+      added += 1;
+    }
+    fileBusy = false;
+    if (added > 0) {
+      onNotice?.({ kind: "ok", text: m["editor.course.file.done"]({ added }) });
+    }
+  }
+
   function addEmptyChart(): void {
     addChartRow("", "", "");
   }
@@ -227,19 +248,12 @@
 
   function openPicker(): void {
     pickerOpen = !pickerOpen;
-    pickerQuery = "";
-  }
-
-  function addFromPicker(entry: Record<string, unknown>): void {
-    const md5 = typeof entry.md5 === "string" ? entry.md5 : "";
-    const sha256 = typeof entry.sha256 === "string" ? entry.sha256 : "";
-    const levelText = typeof entry.level === "string" ? entry.level : "";
-    addChartRow(md5, sha256, levelText);
   }
 </script>
 
 <CourseRow
   {expanded}
+  onDropChart={disabled ? undefined : onDropChart}
   dragItem={rowDrag?.dnd.item}
   dragIndex={rowDrag?.index}
   dragDisabled={rowDrag?.disabled ?? true}
@@ -392,7 +406,7 @@
         sub={true}
       >
         {#snippet actions()}
-          <div class="flex gap-2">
+          <div class="flex flex-wrap gap-2">
             <button class={btnGhost} type="button" {disabled} onclick={openPicker}>
               <Search class="size-4 shrink-0" aria-hidden="true" />
               {m["editor.course.chart.pick"]()}
@@ -401,51 +415,43 @@
               <Plus class="size-4 shrink-0" aria-hidden="true" />
               {m["editor.course.chart.add"]()}
             </button>
+            <button
+              class={btnGhost}
+              type="button"
+              disabled={disabled || fileBusy}
+              onclick={() => fileInput?.click()}
+            >
+              <FileUp class="size-4 shrink-0" aria-hidden="true" />
+              {m["editor.entry.file_pick"]()}
+            </button>
+            <input
+              class="hidden"
+              type="file"
+              multiple
+              accept=".bms,.bme,.bml,.pms,.bmson"
+              bind:this={fileInput}
+              {disabled}
+              onchange={(event) => {
+                const files =
+                  event.currentTarget.files === null ? [] : [...event.currentTarget.files];
+                event.currentTarget.value = "";
+                void readCourseFiles(files);
+              }}
+            />
           </div>
+          {#if fileError !== ""}
+            <p class="mt-1 text-[0.85rem] text-error">{fileError}</p>
+          {/if}
         {/snippet}
 
         {#if pickerOpen}
-          <div class="mb-2 rounded-glass-sm border border-accent/40 bg-accent/10 p-2">
-            <div class="mb-2 flex items-center gap-2">
-              <input
-                class="{inputEditorMono} flex-1"
-                type="text"
-                bind:value={pickerQuery}
-                placeholder={m["editor.course.picker_search"]()}
-                {disabled}
-              />
-              <button class={btnGhost} type="button" onclick={openPicker}>
-                <X class="size-4 shrink-0" aria-hidden="true" />
-                {m["common.cancel"]()}
-              </button>
-            </div>
-            {#if pickerResults.length === 0}
-              <p class="text-[0.85rem] text-white-50">{m["editor.course.picker_empty"]()}</p>
-            {:else}
-              <ul class="max-h-64 overflow-auto">
-                {#each pickerResults as index (index)}
-                  {@const entry = entries[index] ?? {}}
-                  {@const info = describe(entry)}
-                  <li class="flex items-center gap-2 border-b border-white-5 py-1 last:border-b-0">
-                    <span class="min-w-0 flex-1 truncate text-[0.85rem] text-white-80">
-                      {info.label}
-                    </span>
-                    <span class="hidden font-mono text-[0.75rem] text-white-40 sm:inline">
-                      {info.hash.slice(0, 12)}…
-                    </span>
-                    <button
-                      class={btnGhost}
-                      type="button"
-                      {disabled}
-                      onclick={() => addFromPicker(entry)}
-                    >
-                      <Plus class="size-4 shrink-0" aria-hidden="true" />
-                      {m["editor.course.picker_add"]()}
-                    </button>
-                  </li>
-                {/each}
-              </ul>
-            {/if}
+          <div class="mb-2">
+            <CourseChartPicker
+              {entries}
+              {disabled}
+              onadd={addChartRows}
+              onclose={() => (pickerOpen = false)}
+            />
           </div>
         {/if}
 
@@ -453,7 +459,11 @@
           <div class="flex flex-col gap-2">
             {#each course.charts as chart, index (chart)}
               {@const issue = courseHashIssue(chart)}
-              {@const resolved = courseChartResolvedIn(knownHashes, chart)}
+              {@const resolution = !dataReady
+                ? "unknown"
+                : courseChartResolvedIn(knownHashes, chart)
+                  ? "resolved"
+                  : "unresolved"}
               <div
                 use:chartDnd.item={{ index, disabled }}
                 class="rounded-glass-sm border border-white-10 bg-black-10 p-2"
@@ -495,10 +505,18 @@
                   />
                 </div>
                 <div class="mt-1.5 flex flex-wrap items-center gap-2">
-                  <span class="text-[0.78rem] {resolved ? 'text-success' : 'text-amber-300'}">
-                    {resolved
+                  <span
+                    class="text-[0.78rem] {resolution === 'resolved'
+                      ? 'text-success'
+                      : resolution === 'unknown'
+                        ? 'text-white-40'
+                        : 'text-amber-300'}"
+                  >
+                    {resolution === "resolved"
                       ? m["editor.course.chart.resolved"]()
-                      : m["editor.course.chart.unresolved"]()}
+                      : resolution === "unknown"
+                        ? m["editor.course.chart.unknown"]()
+                        : m["editor.course.chart.unresolved"]()}
                   </span>
                   {#if issue === "missing"}
                     <span class="text-[0.78rem] text-error">
@@ -524,6 +542,13 @@
                           onselect: () => moveChart(index, 1),
                         },
                         {
+                          label: m["editor.course.lookup.action"](),
+                          disabled,
+                          onselect: () => {
+                            lookupIndex = lookupIndex === index ? null : index;
+                          },
+                        },
+                        {
                           label: m["editor.course.chart.remove"](),
                           danger: true,
                           disabled,
@@ -534,6 +559,13 @@
                   </div>
                 </div>
               </div>
+              {#if lookupIndex === index}
+                <CourseChartLookup
+                  chart={{ md5: chart.md5, sha256: chart.sha256 }}
+                  {entries}
+                  onclose={() => (lookupIndex = null)}
+                />
+              {/if}
             {/each}
           </div>
         {:else}

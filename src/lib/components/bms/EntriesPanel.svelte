@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { extractBmsIrSongMd5 } from "@brightmeows/bms/bms-ir";
+  import { addChartToCourse, type CourseModel } from "@brightmeows/bms/course";
   import {
     assignHintLevels,
     assignLevel,
@@ -24,22 +24,21 @@
     removeIndices,
     restoreEntryRemoval,
     setIndices,
-    shortenHash,
     splitNewEntries,
     type EntryRemovalSnapshot,
   } from "@brightmeows/bms/editor";
   import type { ChartData } from "@brightmeows/bms/format";
   import { findUnlistedLevels, levelSegmentColor } from "@brightmeows/bms/table";
-  import Check from "@lucide/svelte/icons/check";
   import CheckCheck from "@lucide/svelte/icons/check-check";
-  import Link2 from "@lucide/svelte/icons/link-2";
   import ListChecks from "@lucide/svelte/icons/list-checks";
   import Plus from "@lucide/svelte/icons/plus";
   import RotateCcw from "@lucide/svelte/icons/rotate-ccw";
   import Trash2 from "@lucide/svelte/icons/trash-2";
   import WandSparkles from "@lucide/svelte/icons/wand-sparkles";
   import X from "@lucide/svelte/icons/x";
-  import { onMount, tick } from "svelte";
+  import { onDestroy, onMount, tick, type Component } from "svelte";
+
+  import type { AddChartsDrawerProps } from "./AddChartsDrawer.svelte";
 
   import BlockRows from "#lib/components/bms/BlockRows.svelte";
   import ChartTableRow from "#lib/components/bms/ChartTableRow.svelte";
@@ -53,12 +52,12 @@
     btnDanger,
     btnGhost,
     btnPrimary,
+    inputEditorBase,
     inputEditorMono,
   } from "#lib/constants/ui-classes.js";
-  import { planImportApply, type EditorNotice } from "#lib/controllers/editor.js";
+  import type { EditorNotice } from "#lib/controllers/editor.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { JsonPreviewHandle } from "#lib/types/ui.js";
-  import { errorDetailOf } from "#lib/utils/infra/error.js";
   import { validateUrl } from "#lib/utils/infra/url.js";
   import { createDragList } from "#lib/utils/ui/dnd-list.svelte.js";
   import {
@@ -81,6 +80,10 @@
     symbol?: string;
     /** 哈希（小写）→ 文件内等级建议（拖拽导入时提供）。 */
     levelHints?: Record<string, string> | undefined;
+    /** data.json 是否就绪；添加抽屉与编辑操作依赖完整条目。 */
+    dataReady?: boolean;
+    /** 段位模型：行内“加入段位”与拖拽目标。 */
+    courseModel?: CourseModel | undefined;
     /** 查看态只读；编辑态增加操作。 */
     editing: boolean;
     disabled?: boolean;
@@ -93,8 +96,8 @@
     onChange?: (() => void) | undefined;
     /** 删除类撤销通知的出口（dock notice 区渲染撤销按钮）；缺省不通知。 */
     onNotice?: ((notice: EditorNotice) => void) | undefined;
-    /** 应用前的确认原语（玻璃弹层）：批量粘贴的 replace 覆盖先问过再写。 */
-    confirm?: ((message: string) => Promise<boolean>) | undefined;
+    /** 添加抽屉开合上报：页面据此暂停整页拖拽遮罩。 */
+    onAddDrawerOpenChange?: ((open: boolean) => void) | undefined;
     hiddenLevels?: Set<string>;
     hideUnassigned?: boolean;
   }
@@ -103,7 +106,9 @@
     entries = $bindable([]),
     levels,
     symbol = "",
-    levelHints = {},
+    levelHints = $bindable({}),
+    dataReady = true,
+    courseModel = $bindable(undefined),
     editing,
     disabled = false,
     loadState = "loaded",
@@ -114,7 +119,7 @@
     onRetry,
     onChange,
     onNotice = undefined,
-    confirm = undefined,
+    onAddDrawerOpenChange = undefined,
     hiddenLevels = $bindable(new Set()),
     hideUnassigned = $bindable(false),
   }: Props = $props();
@@ -131,15 +136,40 @@
   let query = $state("");
   let selected = $state<Set<number>>(new Set());
   let editingIndex = $state<number | null>(null);
-  let adding = $state(false);
-  let addUrl = $state("");
-  let addPrefill = $state<Record<string, unknown> | undefined>(undefined);
   let editKey = $state(0);
   let batchChoice = $state<string>(BATCH_NONE);
   let batchOpen = $state(false);
-  let bulkOpen = $state(false);
-  let bulkText = $state("");
-  let bulkMode = $state<"append" | "replace">("append");
+  let addOpen = $state(false);
+  let AddChartsDrawer = $state<Component<AddChartsDrawerProps> | null>(null);
+  let coursePickerTarget = $state<Record<string, unknown> | null>(null);
+  const coursePickerIndex = $derived(
+    coursePickerTarget === null ? null : entries.indexOf(coursePickerTarget)
+  );
+  let courseTargetValue = $state("");
+
+  interface CourseTarget {
+    key: string;
+    label: string;
+    groupIndex: number;
+    courseIndex: number;
+  }
+
+  const courseTargets = $derived.by<CourseTarget[]>(() => {
+    if (courseModel === undefined) return [];
+    const targets: CourseTarget[] = [];
+    courseModel.groups.forEach((group, groupIndex) => {
+      group.courses.forEach((course, courseIndex) => {
+        const name = course.name.trim() === "" ? m["course.unnamed"]() : course.name;
+        targets.push({
+          key: `${groupIndex}:${courseIndex}`,
+          label: `${m["editor.course.group"]({ index: groupIndex + 1 })} / ${name}`,
+          groupIndex,
+          courseIndex,
+        });
+      });
+    });
+    return targets;
+  });
 
   let tableEl = $state<HTMLTableElement | undefined>(undefined);
   let browseRows = $state<
@@ -175,7 +205,6 @@
     }
     return key;
   }
-  let bulkError = $state<string | null>(null);
   let notice = $state<string | null>(null);
   let chartPreview = $state<JsonPreviewHandle | undefined>();
   const allLevels = $derived.by(() => {
@@ -549,16 +578,12 @@
   $effect(() => {
     if (editing) return;
     editingIndex = null;
-    adding = false;
-    addUrl = "";
-    addPrefill = undefined;
     batchOpen = false;
-    bulkOpen = false;
     selected = new Set();
     batchChoice = BATCH_NONE;
-    bulkText = "";
-    bulkError = null;
     notice = null;
+    coursePickerTarget = null;
+    if (addOpen) closeAddDrawer();
   });
 
   $effect(() => {
@@ -598,7 +623,6 @@
     entries = removeIndices(entries, snapshot.indices);
     selected = new Set();
     editingIndex = null;
-    adding = false;
     notice = null;
     onChange?.();
     onNotice?.({
@@ -609,37 +633,8 @@
   }
 
   function startEdit(index: number): void {
-    adding = false;
     editingIndex = index;
     editKey += 1;
-  }
-
-  function startAdd(prefill?: Record<string, unknown>): void {
-    editingIndex = null;
-    addPrefill = prefill;
-    adding = true;
-    editKey += 1;
-  }
-
-  /** 从 bms-ir.org 谱面页 URL 提取 md5 预填新条目；哈希撞车时提示已存在。 */
-  function addFromUrl(): void {
-    const raw = addUrl.trim();
-    addUrl = "";
-    if (raw === "") return;
-    const parsed = extractBmsIrSongMd5(raw);
-    if (!parsed.ok) {
-      notice = m["editor.entry.bmsir_invalid"]();
-      return;
-    }
-    const duplicate = duplicateEntryLabel(entries, { md5: parsed.md5 }, null);
-    if (duplicate !== null) {
-      notice = m["editor.entry.duplicate_notice"]({
-        title: duplicate || m["editor.entry.unnamed"](),
-      });
-      return;
-    }
-    startAdd({ md5: parsed.md5 });
-    notice = m["editor.entry.bmsir_prefilled"]({ hash: shortenHash(parsed.md5) });
   }
 
   /** 编辑中条目在所属等级组内上移或下移；保持详情表单跟随移动后的行。 */
@@ -657,7 +652,6 @@
 
   function cancelDetail(): void {
     editingIndex = null;
-    adding = false;
   }
 
   /** 新增条目后把浏览态窗口滚到目标行；大表才需要，搜索态先清空查询。 */
@@ -686,36 +680,100 @@
   }
 
   function commitDetail(entry: Record<string, unknown>): void {
-    const wasAdding = adding;
     const target = editingIndex;
-    const added = wasAdding || target === null;
-    // 新增（含 target 为空的兜底路径）对追加前数组查重：对追加后数组查重会
-    // 自匹配必命中。新增命中即拦截（与 addFromUrl 语义一致），表单保留以便
-    // 修改后重提交；编辑排除自身所在行，命中仅提示放行。
-    if (added) {
-      const duplicate = duplicateEntryLabel(entries, entry, null);
-      if (duplicate !== null) {
-        notice = m["editor.entry.duplicate_notice"]({
-          title: duplicate || m["editor.entry.unnamed"](),
-        });
-        return;
-      }
-      entries = [...entries, entry];
-      notice = null;
-    } else {
-      const duplicate = duplicateEntryLabel(entries, entry, target);
-      notice =
-        duplicate === null
-          ? null
-          : m["editor.entry.duplicate_notice"]({
-              title: duplicate || m["editor.entry.unnamed"](),
-            });
-      entries = entries.map((item, index) => (index === target ? entry : item));
-    }
-    adding = false;
+    if (target === null) return;
+    const duplicate = duplicateEntryLabel(entries, entry, target);
+    notice =
+      duplicate === null
+        ? null
+        : m["editor.entry.duplicate_notice"]({
+            title: duplicate || m["editor.entry.unnamed"](),
+          });
+    entries = entries.map((item, index) => (index === target ? entry : item));
     editingIndex = null;
     onChange?.();
-    if (added) void revealEntryAt(entries.length - 1);
+  }
+
+  function appendEntries(
+    incoming: Record<string, unknown>[],
+    hints?: Record<string, string>
+  ): { added: number; skipped: number } {
+    if (!editing || disabled || !dataReady) return { added: 0, skipped: 0 };
+    const { added, skipped } = splitNewEntries(entries, incoming);
+    if (added.length > 0) {
+      entries = [...entries, ...added];
+      if (hints !== undefined) levelHints = { ...levelHints, ...hints };
+      notice = null;
+      onChange?.();
+      void revealEntryAt(entries.length - 1);
+    }
+    return { added: added.length, skipped };
+  }
+
+  function openAddDrawer(): void {
+    if (disabled || !dataReady) return;
+    editingIndex = null;
+    addOpen = true;
+    void ensureAddDrawer();
+    onAddDrawerOpenChange?.(true);
+  }
+
+  async function ensureAddDrawer(): Promise<void> {
+    if (AddChartsDrawer !== null) return;
+    try {
+      const mod = await import("./AddChartsDrawer.svelte");
+      AddChartsDrawer = mod.default;
+    } catch {
+      closeAddDrawer();
+      notice = m["editor.add.load_failed"]();
+    }
+  }
+
+  function closeAddDrawer(): void {
+    addOpen = false;
+    onAddDrawerOpenChange?.(false);
+  }
+
+  onDestroy(() => {
+    if (addOpen) onAddDrawerOpenChange?.(false);
+  });
+
+  function openCoursePicker(index: number): void {
+    if (disabled) return;
+    if (courseModel === undefined || courseTargets.length === 0) {
+      notice = m["editor.entry.course_add_empty"]();
+      return;
+    }
+    coursePickerTarget = entries[index] ?? null;
+    courseTargetValue = courseTargets[0]?.key ?? "";
+  }
+
+  function addEntryToCourse(): void {
+    if (disabled || courseModel === undefined || coursePickerTarget === null) return;
+    const index = entries.indexOf(coursePickerTarget);
+    if (index < 0) {
+      coursePickerTarget = null;
+      return;
+    }
+    const target = courseTargets.find((item) => item.key === courseTargetValue);
+    const entry = entries[index];
+    if (target === undefined || entry === undefined) return;
+    const md5 = typeof entry.md5 === "string" ? entry.md5 : "";
+    const sha256 = typeof entry.sha256 === "string" ? entry.sha256 : "";
+    if (md5 === "" && sha256 === "") return;
+    const levelText = typeof entry.level === "string" ? entry.level : "";
+    if (
+      !addChartToCourse(courseModel, target.groupIndex, target.courseIndex, {
+        md5,
+        sha256,
+        levelText,
+      })
+    ) {
+      return;
+    }
+    coursePickerTarget = null;
+    onNotice?.({ kind: "ok", text: m["editor.entry.course_add_done"]({ name: target.label }) });
+    onChange?.();
   }
 
   function removeEntry(index: number): void {
@@ -756,65 +814,6 @@
 
   function deleteEditing(): void {
     if (editingIndex !== null) removeEntry(editingIndex);
-  }
-
-  async function applyBulk(): Promise<void> {
-    bulkError = null;
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(bulkText);
-    } catch (error) {
-      bulkError = m["editor.import.parse_failed"]({
-        detail: errorDetailOf(error),
-      });
-      return;
-    }
-    if (!Array.isArray(parsed)) {
-      bulkError = m["editor.bulk.not_array"]();
-      return;
-    }
-    for (let i = 0; i < parsed.length; i += 1) {
-      const item: unknown = parsed[i];
-      const isObject = typeof item === "object" && item !== null && !Array.isArray(item);
-      if (!isObject) {
-        bulkError = m["editor.bulk.entry_invalid"]({ index: i + 1 });
-        return;
-      }
-      const record = item as Record<string, unknown>;
-      const md5 = typeof record.md5 === "string" ? record.md5 : "";
-      const sha256 = typeof record.sha256 === "string" ? record.sha256 : "";
-      if (md5 === "" && sha256 === "") {
-        bulkError = m["editor.bulk.entry_invalid"]({ index: i + 1 });
-        return;
-      }
-    }
-    if (bulkMode === "append") {
-      const { added, skipped } = splitNewEntries(entries, parsed as Record<string, unknown>[]);
-      entries = [...entries, ...added];
-      bulkText = "";
-      bulkOpen = false;
-      selected = new Set();
-      notice = m["editor.bulk.done"]({ added: added.length, skipped });
-      onChange?.();
-      return;
-    }
-    const gate = planImportApply({
-      headerApplied: false,
-      hasData: true,
-      dataMode: bulkMode,
-      currentCount: entries.length,
-    });
-    if (gate.kind === "confirm") {
-      const approved =
-        confirm !== undefined ? await confirm(gate.message) : window.confirm(gate.message);
-      if (!approved) return;
-    }
-    entries = parsed as Record<string, unknown>[];
-    bulkText = "";
-    bulkOpen = false;
-    selected = new Set();
-    notice = null;
-    onChange?.();
   }
 </script>
 
@@ -857,21 +856,14 @@
       {/if}
       {#if editing}
         <div class="ml-auto flex flex-wrap gap-2">
-          <button class={btnGhost} type="button" {disabled} onclick={() => startAdd()}>
+          <button
+            class={btnGhost}
+            type="button"
+            disabled={disabled || !dataReady}
+            onclick={openAddDrawer}
+          >
             <Plus class="size-4 shrink-0" aria-hidden="true" />
-            {m["editor.entries.add"]()}
-          </button>
-          <input
-            class="{inputEditorMono} max-w-72"
-            type="text"
-            bind:value={addUrl}
-            placeholder={m["editor.entry.bmsir_url_placeholder"]()}
-            {disabled}
-            onchange={addFromUrl}
-          />
-          <button class={btnGhost} type="button" {disabled} onclick={addFromUrl}>
-            <Link2 class="size-4 shrink-0" aria-hidden="true" />
-            {m["editor.entry.bmsir_add"]()}
+            {m["editor.add.title"]()}
           </button>
           <ToggleButton
             expanded={batchOpen}
@@ -954,42 +946,6 @@
             {/if}
           </div>
         </div>
-        <div class="mt-3 border-t border-white-10 pt-2">
-          <ToggleButton
-            expanded={bulkOpen}
-            label={m["editor.bulk.paste"]()}
-            {disabled}
-            onToggle={() => (bulkOpen = !bulkOpen)}
-          />
-          {#if bulkOpen}
-            <div class="mt-2">
-              <p class="mb-2 text-[0.85rem] text-white-60">{m["editor.bulk.paste_hint"]()}</p>
-              <textarea class="{inputEditorMono} min-h-32" bind:value={bulkText} placeholder="[…]"
-              ></textarea>
-              <div class="mt-2 flex flex-wrap items-center gap-3">
-                <label class="flex items-center gap-1.5 text-[0.85rem] text-white-70">
-                  <input type="radio" bind:group={bulkMode} value="append" />
-                  {m["editor.bulk.mode_append"]()}
-                </label>
-                <label class="flex items-center gap-1.5 text-[0.85rem] text-white-70">
-                  <input type="radio" bind:group={bulkMode} value="replace" />
-                  {m["editor.bulk.mode_replace"]()}
-                </label>
-                <button class={btnGhost} type="button" onclick={applyBulk}>
-                  <Check class="size-4 shrink-0" aria-hidden="true" />
-                  {m["editor.bulk.apply"]()}
-                </button>
-                <button class={btnGhost} type="button" onclick={() => (bulkOpen = false)}>
-                  <X class="size-4 shrink-0" aria-hidden="true" />
-                  {m["common.cancel"]()}
-                </button>
-              </div>
-              {#if bulkError}
-                <p class="mt-2 text-[0.85rem] text-error">{bulkError}</p>
-              {/if}
-            </div>
-          {/if}
-        </div>
       </div>
     {/if}
 
@@ -999,21 +955,6 @@
       >
         {notice}
       </div>
-    {/if}
-
-    {#if editing && adding}
-      {#key editKey}
-        <div>
-          <EntryDetailForm
-            entry={null}
-            prefill={addPrefill}
-            {levels}
-            {disabled}
-            oncommit={commitDetail}
-            oncancel={cancelDetail}
-          />
-        </div>
-      {/key}
     {/if}
 
     {#snippet levelRow(
@@ -1074,7 +1015,52 @@
         onMoveDown={() => moveEntryWithinGroup(item.index, 1)}
         onSelect={(checked: boolean) => setSelected(item.index, checked)}
         onEdit={editing ? () => startEdit(item.index) : undefined}
+        onAddToCourse={editing ? () => openCoursePicker(item.index) : undefined}
       />
+      {#if editing && coursePickerIndex === item.index}
+        <tr>
+          <td colspan={columnCount} class="table-td-compact">
+            <div class="rounded-glass-sm border border-accent/40 bg-accent/10 p-2">
+              <div class="mb-2 text-[0.85rem] text-white-70">
+                {m["editor.entry.course_add_title"]()}
+              </div>
+              {#if courseTargets.length === 0}
+                <p class="text-[0.85rem] text-white-50">
+                  {m["editor.entry.course_add_empty"]()}
+                </p>
+              {:else}
+                <div class="flex flex-wrap items-center gap-2">
+                  <select
+                    class="{inputEditorBase} min-w-56 flex-1"
+                    bind:value={courseTargetValue}
+                    {disabled}
+                  >
+                    {#each courseTargets as target (target.key)}
+                      <option value={target.key}>{target.label}</option>
+                    {/each}
+                  </select>
+                  <button
+                    class={btnGhost}
+                    type="button"
+                    {disabled}
+                    onclick={() => addEntryToCourse()}
+                  >
+                    <Plus class="size-4 shrink-0" aria-hidden="true" />
+                    {m["editor.entry.course_add"]()}
+                  </button>
+                  <button
+                    class={btnGhost}
+                    type="button"
+                    onclick={() => (coursePickerTarget = null)}
+                  >
+                    {m["common.cancel"]()}
+                  </button>
+                </div>
+              {/if}
+            </div>
+          </td>
+        </tr>
+      {/if}
       {#if editing && editingIndex === item.index}
         <tr>
           <td colspan={columnCount} class="table-td-compact">
@@ -1225,3 +1211,14 @@
     <JsonPreview bind:this={chartPreview} />
   {/if}
 </div>
+
+{#if addOpen && AddChartsDrawer}
+  {@const Drawer = AddChartsDrawer}
+  <Drawer
+    {entries}
+    {levels}
+    disabled={disabled || !dataReady}
+    onClose={closeAddDrawer}
+    onAdd={appendEntries}
+  />
+{/if}

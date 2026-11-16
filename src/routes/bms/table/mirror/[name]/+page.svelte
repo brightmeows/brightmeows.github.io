@@ -27,5 +27,6 @@
       draftKey: draftStorageKey("mirror", tableId),
     }}
     publish={{ saveAsShared: "same-origin" }}
+    capabilities={{ kind: "mirror" }}
   />
 {/if}

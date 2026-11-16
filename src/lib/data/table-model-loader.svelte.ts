@@ -76,6 +76,7 @@ export function createTableLoader(deps: TableLoaderDeps) {
       if (dataUrl === null) {
         dataError = m["table.data.url_missing"]();
         dataLoadState = "error";
+        void deps.discoverDraft();
         return;
       }
       void loadData(dataUrl, headerUrl);
@@ -103,6 +104,7 @@ export function createTableLoader(deps: TableLoaderDeps) {
     } catch (error) {
       dataError = errorMessageOf(error, m["common.unknown_error"]());
       dataLoadState = "error";
+      void deps.discoverDraft();
       console.error("加载BMS谱面数据失败:", error);
     }
   }

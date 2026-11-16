@@ -16,5 +16,6 @@
       draftKey: draftStorageKey("self", table),
     }}
     publish={{ saveAsShared: "same-origin" }}
+    capabilities={{ kind: "self" }}
   />
 {/if}

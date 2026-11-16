@@ -21,7 +21,6 @@
   import BmsDropOverlay from "#lib/components/bms/BmsDropOverlay.svelte";
   import CoursePanel from "#lib/components/bms/CoursePanel.svelte";
   import EntriesPanel from "#lib/components/bms/EntriesPanel.svelte";
-  import LevelRefTable from "#lib/components/bms/LevelRefTable.svelte";
   import TableDock from "#lib/components/bms/TableDock.svelte";
   import type { TableImportSectionProps } from "#lib/components/bms/TableImportSection.svelte";
   import TableOverviewPanel from "#lib/components/bms/TableOverviewPanel.svelte";
@@ -33,7 +32,16 @@
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
   import { btnGhost, btnGhostMd, btnPrimaryLarge } from "#lib/constants/ui-classes.js";
   import type { EditorNotice } from "#lib/controllers/editor.js";
+  import {
+    defaultCardShow,
+    isTableCardId,
+    parseCardShow,
+    serializeCardShow,
+    setCardShow,
+    type TableCardId,
+  } from "#lib/controllers/table-cards.js";
   import type { DockMode } from "#lib/controllers/table-dock.js";
+  import { auth } from "#lib/data/store/auth-store.svelte.js";
   import {
     createTableModel,
     type TablePageCapabilities,
@@ -66,9 +74,18 @@
     actions?: Snippet | undefined;
     /** 编辑态概览区的表管理槽（共享表改 id、删除）。 */
     management?: Snippet | undefined;
+    /** 菜单里的管理员操作槽（他人共享表的删除）。 */
+    adminActions?: Snippet | undefined;
   }
 
-  let { source, publish = {}, capabilities = {}, actions, management }: Props = $props();
+  let {
+    source,
+    publish = {},
+    capabilities = {},
+    actions,
+    management,
+    adminActions,
+  }: Props = $props();
 
   // 等级参考的状态属主是本组件：LevelRefTable 自取数并经 bind 回写；
   // 目录与分区显隐直接读取这里的状态。
@@ -78,19 +95,50 @@
   /** 玻璃确认弹层：本页唯一实例，模型与编辑面板共用同一确认原语。 */
   const confirmDialog = createConfirmDialog();
 
+  /** 副本意图：查看与编辑共享，保存时跳到新建页创建副本。 */
+  let copyIntent = $state(false);
+
   // getter 传递：props 对象经闭包读取，模型内的 $derived 跟踪其响应式变化
   const model = createTableModel({
     source: () => source,
     publish: () => publish,
-    capabilities: () => capabilities,
+    capabilities: () => ({ ...capabilities, copyMode: copyIntent }),
     confirm: () => (message: string) => confirmDialog.ask(message, { destructive: true }),
   });
   const headerUrl = $derived(source.headerUrl);
-  const showLevelRefPane = $derived(headerUrl !== null && levelRefLoadState !== "not-found");
+
+  // 来源切换（共享表新建后拿到 R2 地址等）时重置等级参考状态，
+  // 让 TableOverviewPanel 重新挂载 LevelRefTable 请求新来源。
+  $effect(() => {
+    void headerUrl;
+    levelRefLoadState = "idle";
+  });
+
   const saveAsShared = $derived(publish.saveAsShared ?? "none");
   const sharedMode = $derived(capabilities.mode === "shared");
   const createMode = $derived(capabilities.createMode ?? false);
+  const dataReady = $derived(model.dataReady);
+  const headerReady = $derived(model.headerReady);
+  const copyMode = $derived(copyIntent);
+  const isAdmin = $derived(auth.status === "ready" && auth.user?.role === "admin");
+  const primaryKind = $derived.by(() => {
+    if (createMode) return "edit";
+    if (sharedMode && capabilities.canWrite === true) return "edit";
+    if (model.kind === "self" && isAdmin) return "local";
+    return "copy";
+  });
+  const primaryLabel = $derived.by(() => {
+    if (model.dirty) {
+      return primaryKind === "copy"
+        ? m["editor.permission.continue_copy"]()
+        : m["editor.dock.continue_edit"]();
+    }
+    if (primaryKind === "copy") return m["editor.permission.create_copy"]();
+    if (primaryKind === "local") return m["editor.permission.local_edit"]();
+    return m["editor.enter.table"]();
+  });
   const editHint = $derived.by(() => {
+    if (copyMode || primaryKind === "copy") return m["editor.enter.table_hint_copy"]();
     if (createMode) return m["editor.enter.table_hint_create"]();
     if (sharedMode && capabilities.canWrite === true) return m["editor.enter.table_hint_save"]();
     return m["editor.enter.table_hint_local"]();
@@ -103,29 +151,40 @@
   let isEdit = $state(false);
 
   function syncModeFromLocation(): void {
-    isEdit = new URLSearchParams(window.location.search).has("edit");
+    const params = new URLSearchParams(window.location.search);
+    isEdit = params.has("edit");
+    copyIntent = params.has("copy");
   }
 
-  function setMode(next: "view" | "edit"): void {
-    if (next === "edit" && isEdit) return;
+  function setMode(next: "view" | "edit", options?: { copy?: boolean }): void {
     if (next === "view" && !isEdit) return;
+    const nextCopy = options?.copy ?? copyIntent;
     const url = new URL(window.location.href);
 
     if (next === "edit") url.searchParams.set("edit", "1");
     else url.searchParams.delete("edit");
+    if (nextCopy) url.searchParams.set("copy", "1");
+    else url.searchParams.delete("copy");
 
     goto(url, { shallow: true });
     isEdit = next === "edit";
+    copyIntent = nextCopy;
   }
 
   /**
    * dock 的模式切换：切换后滚回页首，让标题区与分区变化（导入区动态加载、
    * CardSwitcher 分区增减）进入视口；reduced-motion 时瞬时跳转。
    */
-  function handleDockSetMode(next: DockMode): void {
-    setMode(next);
+  function handleDockSetMode(next: DockMode, options?: { copy?: boolean }): void {
+    setMode(next, options);
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
+  }
+
+  /** 查看态主按钮：编辑、本地编辑或创建副本。 */
+  function handlePrimary(): void {
+    if (!dataReady) return;
+    handleDockSetMode("edit", { copy: primaryKind === "copy" });
   }
 
   // ---- 键盘快捷键：Ctrl/Cmd+S 保存，Ctrl/Cmd+E 切换查看/编辑 ----
@@ -199,24 +258,35 @@
   // 会经历 prop 变化，但创建后的内存内容就是刚保存的内容，重载只会打断编辑。
   onMount(() => {
     syncModeFromLocation();
-    window.addEventListener("popstate", syncModeFromLocation);
+    syncCardsFromLocation();
+    const syncLocation = (): void => {
+      syncModeFromLocation();
+      syncCardsFromLocation({ writeUrl: false });
+    };
+    window.addEventListener("popstate", syncLocation);
     window.addEventListener("keydown", handleKeydown);
     importUrl = `${window.location.origin}${window.location.pathname}`;
+    void auth.ensureLoaded();
     void model.loadHeader();
     return () => {
-      window.removeEventListener("popstate", syncModeFromLocation);
+      window.removeEventListener("popstate", syncLocation);
       window.removeEventListener("keydown", handleKeydown);
     };
   });
 
-  type CardId = "overview" | "course-list" | "level-ref" | "charts-list";
+  type CardAnchor = "overview" | "charts-list" | "course-list";
 
-  let visibleCards = $state<Record<CardId, boolean>>({
-    overview: false,
-    "course-list": false,
-    "level-ref": false,
-    "charts-list": true,
-  });
+  const CARD_ANCHORS: Record<TableCardId, CardAnchor> = {
+    header: "overview",
+    charts: "charts-list",
+    course: "course-list",
+  };
+
+  const CARD_STORAGE_PREFIX = "bms.table.cards.";
+  const cardStorageKey = $derived(`${CARD_STORAGE_PREFIX}${source.draftKey}`);
+
+  let cards = $state<TableCardId[]>([]);
+  let addDrawerOpen = $state(false);
   let hiddenLevels = $state<Set<string>>(new Set());
   let hideUnassigned = $state(false);
 
@@ -225,61 +295,103 @@
   );
   const cardItems = $derived<CardSwitchItem[]>([
     {
-      id: "overview",
+      id: "header",
       label: m["editor.frame.header"](),
-      checked: visibleCards.overview,
+      checked: cards.includes("header"),
     },
     {
-      id: "course-list",
-      label: m["editor.course.section"](),
-      checked: visibleCards["course-list"],
-      count: courseCount,
-    },
-    ...(showLevelRefPane
-      ? [
-          {
-            id: "level-ref",
-            label: m["levelref.heading"](),
-            checked: visibleCards["level-ref"],
-          },
-        ]
-      : []),
-    {
-      id: "charts-list",
+      id: "charts",
       label: m["editor.entries.section"](),
-      checked: visibleCards["charts-list"],
-      count: model.entries.length,
+      checked: cards.includes("charts"),
+      count: dataReady ? model.entries.length : undefined,
+    },
+    {
+      id: "course",
+      label: m["editor.course.section"](),
+      checked: cards.includes("course"),
+      count: dataReady ? courseCount : undefined,
     },
   ]);
 
+  function readStoredCards(): TableCardId[] | null {
+    try {
+      return parseCardShow(sessionStorage.getItem(cardStorageKey));
+    } catch {
+      return null;
+    }
+  }
+
+  function writeCardsUrl(next: readonly TableCardId[]): void {
+    const url = new URL(window.location.href);
+    url.searchParams.set("show", serializeCardShow(next));
+    void goto(url, { shallow: true, replace: true });
+  }
+
+  function applyCards(next: readonly TableCardId[]): void {
+    cards = [...next];
+    try {
+      sessionStorage.setItem(cardStorageKey, serializeCardShow(cards));
+    } catch {
+      // 隐私模式下 sessionStorage 可能不可用；URL 仍保留组合
+    }
+    writeCardsUrl(cards);
+  }
+
+  function syncCardsFromLocation(options?: { writeUrl?: boolean }): void {
+    const fromUrl = parseCardShow(new URLSearchParams(window.location.search).get("show"));
+    const stored = fromUrl === null ? readStoredCards() : null;
+    const initial =
+      fromUrl ??
+      stored ??
+      defaultCardShow({
+        dataReady: model.dataReady,
+        isNew: createMode,
+        headerUnfilled: model.headerUnfilled,
+      });
+    cards = initial;
+    try {
+      sessionStorage.setItem(cardStorageKey, serializeCardShow(initial));
+    } catch {
+      // 同上
+    }
+    if (fromUrl === null && options?.writeUrl !== false) writeCardsUrl(initial);
+  }
+
   function toggleCard(id: string, checked: boolean): void {
-    visibleCards = { ...visibleCards, [id as CardId]: checked };
+    if (!isTableCardId(id)) return;
+    if (!checked && cards.length === 1 && cards[0] === id) {
+      model.notice = { kind: "warn", text: m["editor.cards.keep_one"]() };
+      return;
+    }
+    applyCards(setCardShow(cards, id, checked));
   }
 
   async function jumpToCard(id: string): Promise<void> {
-    const cardId = id as CardId;
-    if (!visibleCards[cardId]) {
-      visibleCards = { ...visibleCards, [cardId]: true };
+    if (!isTableCardId(id)) return;
+    if (!cards.includes(id)) {
+      applyCards(setCardShow(cards, id, true));
       await tick();
     }
-    const element = document.getElementById(id);
+    const anchor = CARD_ANCHORS[id];
+    const element = document.getElementById(anchor);
     element?.scrollIntoView({ behavior: "smooth", block: "start" });
-    history.replaceState(null, "", `#${id}`);
+    const url = new URL(window.location.href);
+    url.hash = anchor;
+    void goto(url, { shallow: true, replace: true });
   }
 
   const tocItems = $derived<TocItem[]>(
     model.headerLoadState === "loaded"
       ? [
-          ...(visibleCards.overview
-            ? [{ id: "overview", title: m["editor.frame.header"](), href: "#overview" }]
+          ...(cards.includes("header")
+            ? [
+                { id: "overview", title: m["editor.frame.header"](), href: "#overview" },
+                ...(levelRefHasData
+                  ? [{ id: "level-ref", title: m["levelref.heading"](), href: "#level-ref" }]
+                  : []),
+              ]
             : []),
-          ...(visibleCards["course-list"]
-            ? [{ id: "course-list", title: m["editor.course.section"](), href: "#course-list" }]
-            : []),
-          ...(visibleCards["level-ref"] && levelRefHasData
-            ? [{ id: "level-ref", title: m["levelref.heading"](), href: "#level-ref" }]
-            : []),
-          ...(visibleCards["charts-list"]
+          ...(cards.includes("charts")
             ? [
                 {
                   id: "charts-list",
@@ -287,6 +399,9 @@
                   href: "#charts-list",
                 },
               ]
+            : []),
+          ...(cards.includes("course")
+            ? [{ id: "course-list", title: m["editor.course.section"](), href: "#course-list" }]
             : []),
         ]
       : []
@@ -309,35 +424,40 @@
       : model.headerLoadState === "error"
         ? [headerErrorPane]
         : [
-            ...(visibleCards.overview ? [overviewPane] : []),
-            ...(visibleCards["course-list"] ? [coursePane] : []),
-            ...(visibleCards["level-ref"] && showLevelRefPane ? [levelRefPane] : []),
-            ...(visibleCards["charts-list"] ? [chartsPane] : []),
+            ...(cards.includes("header") ? [overviewPane] : []),
+            ...(cards.includes("charts") ? [chartsPane] : []),
+            ...(cards.includes("course") ? [coursePane] : []),
           ]),
   ]}
 />
 
-<!-- 底部操作 dock：模式切换、保存与动态状态自标题区迁入；ready 前不渲染 -->
-{#if model.ready}
+<!-- 底部操作 dock：header 就绪即可打开；data 未就绪时编辑与保存禁用 -->
+{#if model.headerReady}
   <TableDock
     {model}
     mode={isEdit ? "edit" : "view"}
     {createMode}
-    showSaveAsShared={saveAsShared !== "none"}
+    showSaveAsShared={saveAsShared !== "none" && !copyMode}
     {editHint}
     {tableActions}
+    {adminActions}
     importSection={isEdit ? importSection : undefined}
     onSetMode={handleDockSetMode}
+    {primaryLabel}
+    primaryDisabled={!dataReady}
+    primaryTitle={!dataReady ? m["editor.partial.edit_disabled"]() : undefined}
+    onPrimary={handlePrimary}
+    {copyMode}
   />
 {/if}
 
 <ConfirmDialog dialog={confirmDialog} />
 
 <!-- 编辑态全页拖拽接收：与导入折叠段的拖拽区共用同一管线 -->
-{#if isEdit && model.ready}
+{#if isEdit && dataReady}
   <BmsDropOverlay
     entries={model.entries}
-    disabled={model.busy || model.dataLoadState !== "loaded"}
+    disabled={model.busy || addDrawerOpen}
     onadd={handlePageDrop}
   />
 {/if}
@@ -347,7 +467,7 @@
   <button
     class="{btnGhost} w-full"
     type="button"
-    disabled={model.dataLoadState !== "loaded"}
+    disabled={!headerReady}
     onclick={() => model.exportTable("header")}
   >
     <Download class="size-4 shrink-0" aria-hidden="true" />
@@ -356,7 +476,7 @@
   <button
     class="{btnGhost} w-full"
     type="button"
-    disabled={model.dataLoadState !== "loaded"}
+    disabled={!dataReady}
     onclick={() => model.exportTable("data")}
   >
     <Download class="size-4 shrink-0" aria-hidden="true" />
@@ -365,7 +485,7 @@
   <button
     class="{btnGhost} w-full"
     type="button"
-    disabled={model.dataLoadState !== "loaded"}
+    disabled={!dataReady}
     onclick={() => model.exportTable("package")}
   >
     <Download class="size-4 shrink-0" aria-hidden="true" />
@@ -377,7 +497,7 @@
       {m["table.view.header"]()}
     </a>
   {/if}
-  {#if model.dataFetchUrl !== null}
+  {#if dataReady && model.dataFetchUrl !== null}
     <a
       class="{btnGhost} w-full"
       href={model.dataFetchUrl}
@@ -397,7 +517,7 @@
     <BookOpen class="size-4 shrink-0" aria-hidden="true" />
     {m["table.page.reference"]()}
   </a>
-  {#if !isEdit && saveAsShared === "same-origin"}
+  {#if !isEdit && !copyMode && dataReady && saveAsShared === "same-origin" && primaryKind !== "copy"}
     <button
       class="{btnGhost} w-full"
       type="button"
@@ -429,7 +549,7 @@
           type="text"
           bind:value={model.name}
           placeholder={model.pageTitle}
-          disabled={model.busy || model.dataLoadState !== "loaded"}
+          disabled={model.busy || !dataReady}
           aria-label={m["editor.fields.name"]()}
           oninput={() => model.markDirty()}
         />
@@ -441,30 +561,50 @@
 {/snippet}
 
 {#snippet switcherPane()}
-  <div class="flex flex-wrap items-center justify-center gap-3">
-    <CardSwitcher
-      items={cardItems}
-      ariaLabel={m["table.page.sections"]()}
-      align="center"
-      onToggle={toggleCard}
-      onJump={(id) => void jumpToCard(id)}
-    />
-    {#if !createMode}
-      <button
-        type="button"
-        class={btnGhostMd}
-        onclick={copyImportUrl}
-        disabled={!importUrl}
-        title={m["table.list.import_url"]()}
-      >
-        <Copy class="size-4 shrink-0" aria-hidden="true" />
-        {m["common.click_copy"]()}
-      </button>
-      {#if cb.copied}
-        <span class="text-success">{m["common.copied"]()}</span>
-      {:else if cb.failed}
-        <span class="text-error">{m["common.copy_failed"]()}</span>
+  <div class="flex flex-col items-center gap-2">
+    <div class="flex flex-wrap items-center justify-center gap-3">
+      <CardSwitcher
+        items={cardItems}
+        ariaLabel={m["table.page.sections"]()}
+        align="center"
+        onToggle={toggleCard}
+        onJump={(id) => void jumpToCard(id)}
+      />
+      {#if !createMode}
+        <button
+          type="button"
+          class={btnGhostMd}
+          onclick={copyImportUrl}
+          disabled={!importUrl}
+          title={m["table.list.import_url"]()}
+        >
+          <Copy class="size-4 shrink-0" aria-hidden="true" />
+          {m["common.click_copy"]()}
+        </button>
+        {#if cb.copied}
+          <span class="text-success">{m["common.copied"]()}</span>
+        {:else if cb.failed}
+          <span class="text-error">{m["common.copy_failed"]()}</span>
+        {/if}
       {/if}
+    </div>
+    {#if copyMode || (isEdit && !dataReady)}
+      <div class="flex w-full flex-col items-center gap-2">
+        {#if copyMode}
+          <p
+            class="rounded-glass-sm border border-accent/40 bg-accent/10 px-3 py-2 text-[0.85rem] text-accent-light"
+          >
+            {m["editor.permission.copy_banner"]()}
+          </p>
+        {/if}
+        {#if isEdit && !dataReady}
+          <p
+            class="rounded-glass-sm border border-white-15 bg-black-20 px-3 py-2 text-[0.85rem] text-white-65"
+          >
+            {m["editor.partial.edit_disabled"]()}
+          </p>
+        {/if}
+      </div>
     {/if}
   </div>
 {/snippet}
@@ -523,9 +663,11 @@
               difficulties: model.tableStats.difficulties.length,
             })}
           </span>
+        {:else if headerReady}
+          <span>{m["table.stats.data_pending"]()}</span>
         {/if}
         {#if !createMode}
-          {#if model.ready && model.tableStats}
+          {#if headerReady}
             <span class="text-white-40">·</span>
           {/if}
           <span>{m["table.list.import_url"]()}</span>
@@ -546,7 +688,7 @@
           {/if}
         {/if}
       </div>
-      {#if model.ready && actions}
+      {#if headerReady && actions}
         <div class="flex flex-wrap items-center justify-center gap-2">
           {@render actions()}
         </div>
@@ -567,8 +709,11 @@
       bind:headerMode={model.headerMode}
       bind:levels={model.levels}
       extraHeader={model.extraHeader}
-      disabled={isEdit ? model.busy || model.dataLoadState !== "loaded" : false}
-      {management}
+      disabled={isEdit ? model.busy || !dataReady : false}
+      headerUrl={headerUrl ?? undefined}
+      bind:levelRefHasData
+      bind:levelRefLoadState
+      management={copyMode ? undefined : management}
       onChange={model.markDirty}
       onNotice={(value: EditorNotice) => (model.notice = value)}
     />
@@ -583,20 +728,11 @@
       bind:model={model.courseModel}
       entries={model.entries}
       symbol={model.symbol}
+      dataReady={model.dataReady}
       nested={model.courseModel.shape === "nested"}
-      disabled={isEdit ? model.busy || model.dataLoadState !== "loaded" : false}
+      disabled={isEdit ? model.busy || !dataReady : false}
       onChange={model.markDirty}
       onNotice={(value: EditorNotice) => (model.notice = value)}
-    />
-  </div>
-{/snippet}
-
-{#snippet levelRefPane()}
-  <div id="level-ref" class="scroll-mt-20">
-    <LevelRefTable
-      headerUrl={headerUrl ?? ""}
-      bind:hasData={levelRefHasData}
-      bind:loadState={levelRefLoadState}
     />
   </div>
 {/snippet}
@@ -608,8 +744,10 @@
       bind:entries={model.entries}
       levels={model.levels}
       symbol={model.symbol}
-      levelHints={model.levelHints}
-      disabled={isEdit ? model.busy || model.dataLoadState !== "loaded" : false}
+      bind:levelHints={model.levelHints}
+      bind:courseModel={model.courseModel}
+      dataReady={model.dataReady}
+      disabled={isEdit ? model.busy || !dataReady : false}
       loadState={model.dataLoadState}
       loadMessage={model.loadMessage}
       loadPercent={model.loadPercent}
@@ -618,7 +756,7 @@
       onRetry={model.retryData}
       onChange={model.markDirty}
       onNotice={(value: EditorNotice) => (model.notice = value)}
-      confirm={(message) => confirmDialog.ask(message, { destructive: true })}
+      onAddDrawerOpenChange={(open: boolean) => (addDrawerOpen = open)}
       bind:hiddenLevels
       bind:hideUnassigned
     />
@@ -638,7 +776,7 @@
       bind:courseModel={model.courseModel}
       bind:entries={model.entries}
       bind:levelHints={model.levelHints}
-      disabled={model.busy || model.dataLoadState !== "loaded"}
+      disabled={model.busy || !dataReady}
       onChange={model.markDirty}
       onNotice={(value: EditorNotice | null) => (model.notice = value)}
       confirm={(message) => confirmDialog.ask(message, { destructive: true })}
