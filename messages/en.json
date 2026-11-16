@@ -518,6 +518,7 @@
   "mirror.add_url_placeholder": "Table page or header.json URL",
   "mirror.add_table": "Add a table",
   "mirror.add_table_hint": "Add or remove tables; preview before submitting.",
+  "mirror.add_login_required": "Log in from the top bar to add a table.",
   "mirror.admin_panel": "Admin panel",
   "mirror.all_tables": "All tables",
   "mirror.auth_confirm_add": "Add “{name}” to the authorized list? The author will no longer be able to delete it.",
