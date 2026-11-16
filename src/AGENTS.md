@@ -54,7 +54,8 @@
   - 显隐状态在 `topbarVisibility` store，顶栏自身使用；hero 不做吸顶，标题条与表头不再依赖它。
 - **页面标题是 hero，同一个 `h1` 不复制** — 每页经 `PageShell` 的 `hero` 槽位渲染 `PageHero`；标题与宣传区是静态布局，不做滚动收缩或吸顶。
   - 结构：`PageHero` 渲染在内容列顶部，标题内层 1000px；`PageShell` 的无侧栏外层容器同时包住 hero 与 pane，保持列宽一致。
-  - 视觉：hero 纯星空无底色；宣传区 `max-height: min(52vh, 420px)` 裁切；无宣传区时标题留 2.5rem 底部间距。
+  - 视觉：hero 纯星空无底色；宣传区不裁切；无宣传区时标题留 2.5rem 底部间距。
+  - 层叠：hero 内层用 `position: relative; isolation: isolate` 自建层叠上下文。星空画布是 fixed `z-0` 的定位元素，静态 hero 没有层叠上下文会被画布盖住（2026-11 回退实测，所有页面标题消失）。
   - 无障碍：标题只渲染一次；表格 sticky 表头仍用 `top-0`；锚点呼吸留白继续由 `scroll-mt-*` 承担。
   - 接入：首页入口为站内七项加外部三项，/bms 概览为三项服务；列表页入口动作上移，`CardSwitcher` 用 `PageShell` 的 `sectionSwitcher` 槽位固定在 hero 与内容卡之间；表详情 hero 只留标题与符号，概览卡保持默认关闭，导入复制按钮在切换器行，编辑态标题输入框传 `clamp={false}`。
 - **内容正文页宽屏有左侧目录侧栏** — `PostArticle` 在视口 ≥1400px 时经 `PageShell` 的 `sidebar` snippet 渲染 `TocSidebar`（260px 列，正文卡全场景收窄到 1000px 居中）；窄屏整列隐藏，由顶栏目录弹层接管，正文行宽（`MarkdownContent` 的 max-w-4xl）不随布局变化。
