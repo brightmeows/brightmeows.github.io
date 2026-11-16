@@ -166,6 +166,35 @@
   function handleKeydown(event: KeyboardEvent): void {
     if (event.key === "Escape") onClose();
   }
+
+  const FOCUSABLE =
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+  function handleDialogKeydown(event: KeyboardEvent): void {
+    if (event.key !== "Tab" || dialogEl === undefined) return;
+    const root = dialogEl;
+    const nodes = [...root.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
+      (node) => node.offsetParent !== null || node === document.activeElement
+    );
+    if (nodes.length === 0) {
+      event.preventDefault();
+      root.focus();
+      return;
+    }
+    const first = nodes[0];
+    const last = nodes[nodes.length - 1];
+    if (first === undefined || last === undefined) return;
+    const active = document.activeElement;
+    if (event.shiftKey) {
+      if (active === first || active === root || !root.contains(active)) {
+        event.preventDefault();
+        last.focus();
+      }
+    } else if (active === last || active === root || !root.contains(active)) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -189,6 +218,7 @@
       aria-labelledby="add-charts-title"
       tabindex="-1"
       class="outline-none"
+      onkeydown={handleDialogKeydown}
     >
       <div class="flex items-start justify-between gap-3 border-b border-white-15 pb-3">
         <div class="min-w-0">
