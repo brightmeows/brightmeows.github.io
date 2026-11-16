@@ -435,16 +435,9 @@
 
   .entries-large-table thead th {
     position: sticky;
-    top: calc(var(--page-title-bar-top, 0px) + var(--page-title-bar-height, 0px));
+    top: 0;
     z-index: 10;
-    transition: top 150ms ease-out;
     background-color: color-mix(in srgb, var(--color-accent) 20%, var(--color-background));
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .entries-large-table thead th {
-      transition: none;
-    }
   }
 
   @media (max-width: 799px) {

@@ -308,7 +308,7 @@
     return entryKey(entries[item.index]);
   }
 
-  /** 表头吸顶底部：sticky top 加表头高度，行对齐时让出 hero 与表头。 */
+  /** 表头吸顶底部：sticky top 加表头高度，行对齐时让出表头。 */
   function stickyTableOffset(): number {
     if (tableEl === undefined) return 0;
     const th = tableEl.tHead?.querySelector("th");

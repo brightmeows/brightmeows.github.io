@@ -24,14 +24,15 @@
     margin-bottom: 2.5rem;
   }
 
-  .page-hero-promo {
-    max-height: min(52vh, 420px);
-    overflow: clip;
+  /* 星空画布是 fixed z-0 的定位元素，静态 hero 必须自建层叠上下文才画在它上方。 */
+  .page-hero-inner {
+    position: relative;
+    isolation: isolate;
   }
 </style>
 
 <header class="page-hero" class:no-promo={!promo}>
-  <div class="mx-auto w-full max-w-[1000px] pt-6">
+  <div class="page-hero-inner mx-auto w-full max-w-[1000px] pt-6">
     <h1
       {id}
       class="page-title m-0 {clamp ? 'line-clamp-2' : ''} {align === 'center' ? 'text-center' : ''}"
