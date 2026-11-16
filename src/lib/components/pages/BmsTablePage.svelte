@@ -11,6 +11,7 @@
 <script lang="ts">
   import type { BmsDropResult } from "@brightmeows/bms/editor";
   import BookOpen from "@lucide/svelte/icons/book-open";
+  import ChevronDown from "@lucide/svelte/icons/chevron-down";
   import Copy from "@lucide/svelte/icons/copy";
   import Download from "@lucide/svelte/icons/download";
   import ExternalLink from "@lucide/svelte/icons/external-link";
@@ -21,23 +22,26 @@
   import BmsDropOverlay from "#lib/components/bms/BmsDropOverlay.svelte";
   import CoursePanel from "#lib/components/bms/CoursePanel.svelte";
   import EntriesPanel from "#lib/components/bms/EntriesPanel.svelte";
+  import TableCardBar, { type TableCardBarItem } from "#lib/components/bms/TableCardBar.svelte";
   import TableDock from "#lib/components/bms/TableDock.svelte";
   import type { TableImportSectionProps } from "#lib/components/bms/TableImportSection.svelte";
   import TableOverviewPanel from "#lib/components/bms/TableOverviewPanel.svelte";
   import PageHero from "#lib/components/layout/PageHero.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
-  import CardSwitcher, { type CardSwitchItem } from "#lib/components/ui/CardSwitcher.svelte";
   import { createConfirmDialog } from "#lib/components/ui/confirm-dialog.svelte.js";
   import ConfirmDialog from "#lib/components/ui/ConfirmDialog.svelte";
+  import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
-  import { btnGhost, btnGhostMd, btnPrimaryLarge } from "#lib/constants/ui-classes.js";
+  import { badgeCountSm, btnGhost, btnPrimaryLarge } from "#lib/constants/ui-classes.js";
   import type { EditorNotice } from "#lib/controllers/editor.js";
   import {
     defaultCardShow,
+    defaultViewSections,
     isTableCardId,
     parseCardShow,
     serializeCardShow,
     setCardShow,
+    setSectionOpen,
     type TableCardId,
   } from "#lib/controllers/table-cards.js";
   import type { DockMode } from "#lib/controllers/table-dock.js";
@@ -173,7 +177,7 @@
 
   /**
    * dock 的模式切换：切换后滚回页首，让标题区与分区变化（导入区动态加载、
-   * CardSwitcher 分区增减）进入视口；reduced-motion 时瞬时跳转。
+   * 卡片显隐或查看态展开变化）进入视口；reduced-motion 时瞬时跳转。
    */
   function handleDockSetMode(next: DockMode, options?: { copy?: boolean }): void {
     setMode(next, options);
@@ -254,6 +258,8 @@
     if (importUrl) cb.copy(importUrl);
   }
 
+  let hashTarget = $state("");
+
   // 加载只发起一次：共享表在创建前（headerUrl 为 null）与创建后（拿到 R2 地址）
   // 会经历 prop 变化，但创建后的内存内容就是刚保存的内容，重载只会打断编辑。
   onMount(() => {
@@ -263,13 +269,19 @@
       syncModeFromLocation();
       syncCardsFromLocation({ writeUrl: false });
     };
+    const syncHash = (): void => {
+      hashTarget = window.location.hash;
+    };
+    syncHash();
     window.addEventListener("popstate", syncLocation);
+    window.addEventListener("hashchange", syncHash);
     window.addEventListener("keydown", handleKeydown);
     importUrl = `${window.location.origin}${window.location.pathname}`;
     void auth.ensureLoaded();
     void model.loadHeader();
     return () => {
       window.removeEventListener("popstate", syncLocation);
+      window.removeEventListener("hashchange", syncHash);
       window.removeEventListener("keydown", handleKeydown);
     };
   });
@@ -293,23 +305,35 @@
   const courseCount = $derived(
     model.courseGroups.reduce((total, group) => total + group.length, 0)
   );
-  const cardItems = $derived<CardSwitchItem[]>([
+
+  /** 卡的计数；data 未就绪时不显示。 */
+  function sectionCount(id: TableCardId): number | undefined {
+    if (!dataReady) return undefined;
+    if (id === "charts") return model.entries.length;
+    if (id === "course") return courseCount;
+    return undefined;
+  }
+
+  const cardBarItems = $derived<TableCardBarItem[]>([
     {
       id: "header",
       label: m["editor.frame.header"](),
-      checked: cards.includes("header"),
+      visible: cards.includes("header"),
+      anchor: "overview",
     },
     {
       id: "charts",
       label: m["editor.entries.section"](),
-      checked: cards.includes("charts"),
-      count: dataReady ? model.entries.length : undefined,
+      visible: cards.includes("charts"),
+      anchor: "charts-list",
+      count: sectionCount("charts"),
     },
     {
       id: "course",
       label: m["editor.course.section"](),
-      checked: cards.includes("course"),
-      count: dataReady ? courseCount : undefined,
+      visible: cards.includes("course"),
+      anchor: "course-list",
+      count: sectionCount("course"),
     },
   ]);
 
@@ -327,8 +351,10 @@
     void goto(url, { shallow: true, replace: true });
   }
 
-  function applyCards(next: readonly TableCardId[]): void {
+  /** 查看态只更新展开集合，不写 URL 与 sessionStorage；编辑态持久化显隐。 */
+  function applyCards(next: readonly TableCardId[], options?: { persist?: boolean }): void {
     cards = [...next];
+    if (options?.persist === false) return;
     try {
       sessionStorage.setItem(cardStorageKey, serializeCardShow(cards));
     } catch {
@@ -338,72 +364,124 @@
   }
 
   function syncCardsFromLocation(options?: { writeUrl?: boolean }): void {
-    const fromUrl = parseCardShow(new URLSearchParams(window.location.search).get("show"));
-    const stored = fromUrl === null ? readStoredCards() : null;
-    const initial =
-      fromUrl ??
-      stored ??
-      defaultCardShow({
-        dataReady: model.dataReady,
-        isNew: createMode,
-        headerUnfilled: model.headerUnfilled,
-      });
-    cards = initial;
-    try {
-      sessionStorage.setItem(cardStorageKey, serializeCardShow(initial));
-    } catch {
-      // 同上
-    }
-    if (fromUrl === null && options?.writeUrl !== false) writeCardsUrl(initial);
-  }
+    const params = new URLSearchParams(window.location.search);
+    const fromUrl = parseCardShow(params.get("show"));
 
-  function toggleCard(id: string, checked: boolean): void {
-    if (!isTableCardId(id)) return;
-    if (!checked && cards.length === 1 && cards[0] === id) {
-      model.notice = { kind: "warn", text: m["editor.cards.keep_one"]() };
+    if (isEdit) {
+      const stored = fromUrl === null ? readStoredCards() : null;
+      const initial =
+        fromUrl ??
+        stored ??
+        defaultCardShow({
+          dataReady: model.dataReady,
+          isNew: createMode,
+          headerUnfilled: model.headerUnfilled,
+        });
+      cards = initial;
+      try {
+        sessionStorage.setItem(cardStorageKey, serializeCardShow(initial));
+      } catch {
+        // 同上
+      }
+      if (fromUrl === null && options?.writeUrl !== false) writeCardsUrl(initial);
       return;
     }
-    applyCards(setCardShow(cards, id, checked));
+
+    // 查看态把旧 ?show= 当作初始展开集合，随后从地址栏清掉：折叠状态不持久化。
+    cards = fromUrl ?? defaultViewSections();
+    if (fromUrl !== null) {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("show");
+      history.replaceState(history.state, "", url);
+    }
   }
 
-  async function jumpToCard(id: string): Promise<void> {
+  function toggleCard(id: string, visible: boolean): void {
     if (!isTableCardId(id)) return;
-    if (!cards.includes(id)) {
-      applyCards(setCardShow(cards, id, true));
-      await tick();
+    if (isEdit) {
+      if (!visible && cards.length === 1 && cards[0] === id) {
+        model.notice = { kind: "warn", text: m["editor.cards.keep_one"]() };
+        return;
+      }
+      applyCards(setCardShow(cards, id, visible));
+      return;
     }
-    const anchor = CARD_ANCHORS[id];
-    const element = document.getElementById(anchor);
-    element?.scrollIntoView({ behavior: "smooth", block: "start" });
-    const url = new URL(window.location.href);
-    url.hash = anchor;
-    void goto(url, { shallow: true, replace: true });
+    applyCards(setSectionOpen(cards, id, visible), { persist: false });
   }
+
+  /** details 的 toggle 事件在浏览器切换 open 后触发，这里把状态收回页面。 */
+  function handleSectionToggle(id: TableCardId, event: Event): void {
+    if (!(event.currentTarget instanceof HTMLDetailsElement)) return;
+    toggleCard(id, event.currentTarget.open);
+  }
+
+  /** 深链锚点对应的卡；查看态展开，编辑态显示。 */
+  function sectionFromHash(hash: string): TableCardId | null {
+    if (hash === "#overview") return "header";
+    if (hash === "#charts-list") return "charts";
+    if (hash === "#course-list") return "course";
+    return null;
+  }
+
+  let handledHash = "";
+
+  $effect(() => {
+    if (model.headerLoadState !== "loaded" || hashTarget === "") return;
+    if (hashTarget === handledHash) return;
+    const id = sectionFromHash(hashTarget);
+    if (id === null) return;
+    handledHash = hashTarget;
+    if (!cards.includes(id)) {
+      toggleCard(id, true);
+      void tick().then(() => {
+        document
+          .getElementById(CARD_ANCHORS[id])
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      return;
+    }
+    document
+      .getElementById(CARD_ANCHORS[id])
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
 
   const tocItems = $derived<TocItem[]>(
     model.headerLoadState === "loaded"
-      ? [
-          ...(cards.includes("header")
-            ? [
-                { id: "overview", title: m["editor.frame.header"](), href: "#overview" },
-                ...(levelRefHasData
-                  ? [{ id: "level-ref", title: m["levelref.heading"](), href: "#level-ref" }]
-                  : []),
-              ]
-            : []),
-          ...(cards.includes("charts")
-            ? [
-                {
-                  id: "charts-list",
-                  title: m["editor.entries.section"](),
-                  href: "#charts-list",
-                },
-              ]
-            : []),
-          ...(cards.includes("course")
-            ? [{ id: "course-list", title: m["editor.course.section"](), href: "#course-list" }]
-            : []),
-        ]
+      ? isEdit
+        ? [
+            ...(cards.includes("header")
+              ? [
+                  { id: "overview", title: m["editor.frame.header"](), href: "#overview" },
+                  ...(levelRefHasData
+                    ? [{ id: "level-ref", title: m["levelref.heading"](), href: "#level-ref" }]
+                    : []),
+                ]
+              : []),
+            ...(cards.includes("charts")
+              ? [
+                  {
+                    id: "charts-list",
+                    title: m["editor.entries.section"](),
+                    href: "#charts-list",
+                  },
+                ]
+              : []),
+            ...(cards.includes("course")
+              ? [{ id: "course-list", title: m["editor.course.section"](), href: "#course-list" }]
+              : []),
+          ]
+        : [
+            { id: "overview", title: m["editor.frame.header"](), href: "#overview" },
+            ...(cards.includes("header") && levelRefHasData
+              ? [{ id: "level-ref", title: m["levelref.heading"](), href: "#level-ref" }]
+              : []),
+            {
+              id: "charts-list",
+              title: m["editor.entries.section"](),
+              href: "#charts-list",
+            },
+            { id: "course-list", title: m["editor.course.section"](), href: "#course-list" },
+          ]
       : []
   );
 </script>
@@ -414,21 +492,23 @@
 
 <!-- mainClass 覆盖默认 pb-8：底部为操作 dock 的右下角面板留出空间 -->
 <PageShell
-  mainClass="m-0 mx-auto box-border w-full max-w-350 px-8 pt-24 pb-40"
+  mainClass="m-0 mx-auto box-border w-full max-w-350 px-8 pt-24 pb-40 {isEdit
+    ? 'editor-cardbar-sticky'
+    : ''}"
   {tocItems}
   hero={heroPane}
   sectionSwitcher={switcherPane}
-  panes={[
-    ...(model.headerLoadState === "loading"
-      ? [headerLoadingPane]
-      : model.headerLoadState === "error"
-        ? [headerErrorPane]
-        : [
+  panes={model.headerLoadState === "loading"
+    ? [headerLoadingPane]
+    : model.headerLoadState === "error"
+      ? [headerErrorPane]
+      : isEdit
+        ? [
             ...(cards.includes("header") ? [overviewPane] : []),
             ...(cards.includes("charts") ? [chartsPane] : []),
             ...(cards.includes("course") ? [coursePane] : []),
-          ]),
-  ]}
+          ]
+        : [viewHeaderPane, viewChartsPane, viewCoursePane]}
 />
 
 <!-- 底部操作 dock：header 就绪即可打开；data 未就绪时编辑与保存禁用 -->
@@ -561,52 +641,88 @@
 {/snippet}
 
 {#snippet switcherPane()}
-  <div class="flex flex-col items-center gap-2">
-    <div class="flex flex-wrap items-center justify-center gap-3">
-      <CardSwitcher
-        items={cardItems}
-        ariaLabel={m["table.page.sections"]()}
-        align="center"
-        onToggle={toggleCard}
-        onJump={(id) => void jumpToCard(id)}
-      />
-      {#if !createMode}
-        <button
-          type="button"
-          class={btnGhostMd}
-          onclick={copyImportUrl}
-          disabled={!importUrl}
-          title={m["table.list.import_url"]()}
-        >
-          <Copy class="size-4 shrink-0" aria-hidden="true" />
+  <div
+    class="mx-auto mb-4 flex w-full max-w-[1000px] flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[0.9rem] text-white-60"
+  >
+    {#if model.ready && model.tableStats}
+      <span>
+        {m["table.stats.summary"]({
+          total: model.tableStats.totalCharts,
+          difficulties: model.tableStats.difficulties.length,
+        })}
+      </span>
+    {:else if headerReady}
+      <span>{m["table.stats.data_pending"]()}</span>
+    {/if}
+    {#if !createMode}
+      {#if headerReady}
+        <span class="text-white-40">·</span>
+      {/if}
+      <span>{m["table.list.import_url"]()}</span>
+      {#if importUrl}
+        <span class="hidden max-w-full font-mono text-[0.85rem] break-all text-white-75 sm:inline">
+          {importUrl}
+        </span>
+        <button class="link-accent text-[0.85rem]" type="button" onclick={copyImportUrl}>
           {m["common.click_copy"]()}
         </button>
-        {#if cb.copied}
-          <span class="text-success">{m["common.copied"]()}</span>
-        {:else if cb.failed}
-          <span class="text-error">{m["common.copy_failed"]()}</span>
-        {/if}
+      {:else}
+        <span class="text-white-50">{m["table.loading.reading"]()}</span>
       {/if}
-    </div>
-    {#if copyMode || (isEdit && !dataReady)}
-      <div class="flex w-full flex-col items-center gap-2">
-        {#if copyMode}
-          <p
-            class="rounded-glass-sm border border-accent/40 bg-accent/10 px-3 py-2 text-[0.85rem] text-accent-light"
-          >
-            {m["editor.permission.copy_banner"]()}
-          </p>
-        {/if}
-        {#if isEdit && !dataReady}
-          <p
-            class="rounded-glass-sm border border-white-15 bg-black-20 px-3 py-2 text-[0.85rem] text-white-65"
-          >
-            {m["editor.partial.edit_disabled"]()}
-          </p>
-        {/if}
-      </div>
+      {#if cb.copied}
+        <span class="text-success">{m["common.copied"]()}</span>
+      {:else if cb.failed}
+        <span class="text-error">{m["common.copy_failed"]()}</span>
+      {/if}
     {/if}
   </div>
+  {#if headerReady && actions}
+    <div
+      class="mx-auto mb-4 flex w-full max-w-[1000px] flex-wrap items-center justify-center gap-2"
+    >
+      {@render actions()}
+    </div>
+  {/if}
+  {#if isEdit && sharedMode && capabilities.canWrite !== true}
+    <p
+      class="mx-auto mb-4 w-full max-w-[1000px] rounded-glass-sm border border-white-15 bg-black-20 px-3 py-2 text-[0.85rem] text-white-65"
+    >
+      {m["editor.frame.shared_local_hint"]()}
+    </p>
+  {/if}
+  {#if isEdit}
+    <div class="sticky top-[3.75rem] z-30 mx-auto mb-4 w-full max-w-350">
+      <GlassPanel
+        padding="sm"
+        class="w-full"
+        style={{ "background-color": "var(--color-background)" }}
+      >
+        <TableCardBar
+          items={cardBarItems}
+          ariaLabel={m["table.page.sections"]()}
+          onToggle={toggleCard}
+        />
+      </GlassPanel>
+    </div>
+  {/if}
+  {#if copyMode || (isEdit && !dataReady)}
+    <div class="mx-auto mb-4 flex w-full max-w-[1000px] flex-col items-center gap-2">
+      {#if copyMode}
+        <p
+          class="rounded-glass-sm border border-accent/40 bg-accent/10 px-3 py-2 text-[0.85rem] text-accent-light"
+        >
+          {m["editor.permission.copy_banner"]()}
+        </p>
+      {/if}
+      {#if isEdit && !dataReady}
+        <p
+          class="rounded-glass-sm border border-white-15 bg-black-20 px-3 py-2 text-[0.85rem] text-white-65"
+        >
+          {m["editor.partial.edit_disabled"]()}
+        </p>
+      {/if}
+    </div>
+  {/if}
 {/snippet}
 
 {#snippet headerLoadingPane()}
@@ -650,117 +766,158 @@
   </div>
 {/snippet}
 
+{#snippet overviewContent()}
+  <TableOverviewPanel
+    editing={isEdit}
+    bind:name={model.name}
+    bind:symbol={model.symbol}
+    bind:tag={model.tag}
+    bind:headerMode={model.headerMode}
+    bind:levels={model.levels}
+    extraHeader={model.extraHeader}
+    disabled={isEdit ? model.busy || !dataReady : false}
+    headerUrl={headerUrl ?? undefined}
+    bind:levelRefHasData
+    bind:levelRefLoadState
+    management={copyMode ? undefined : management}
+    onChange={model.markDirty}
+    onNotice={(value: EditorNotice) => (model.notice = value)}
+  />
+{/snippet}
+
 {#snippet overviewPane()}
   <div id="overview" class="scroll-mt-20">
-    <div class="mb-5 flex flex-col items-center gap-3 text-center">
-      <div
-        class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[0.9rem] text-white-60"
-      >
-        {#if model.ready && model.tableStats}
-          <span>
-            {m["table.stats.summary"]({
-              total: model.tableStats.totalCharts,
-              difficulties: model.tableStats.difficulties.length,
-            })}
-          </span>
-        {:else if headerReady}
-          <span>{m["table.stats.data_pending"]()}</span>
-        {/if}
-        {#if !createMode}
-          {#if headerReady}
-            <span class="text-white-40">·</span>
-          {/if}
-          <span>{m["table.list.import_url"]()}</span>
-          {#if importUrl}
-            <span class="max-w-full font-mono text-[0.85rem] break-all text-white-75">
-              {importUrl}
-            </span>
-            <button class="link-accent text-[0.85rem]" type="button" onclick={copyImportUrl}>
-              {m["common.click_copy"]()}
-            </button>
-          {:else}
-            <span class="text-white-50">{m["table.loading.reading"]()}</span>
-          {/if}
-          {#if cb.copied}
-            <span class="text-success">{m["common.copied"]()}</span>
-          {:else if cb.failed}
-            <span class="text-error">{m["common.copy_failed"]()}</span>
-          {/if}
-        {/if}
-      </div>
-      {#if headerReady && actions}
-        <div class="flex flex-wrap items-center justify-center gap-2">
-          {@render actions()}
-        </div>
-      {/if}
-      {#if isEdit && sharedMode && capabilities.canWrite !== true}
-        <p
-          class="rounded-glass-sm border border-white-15 bg-black-20 px-3 py-2 text-[0.85rem] text-white-65"
-        >
-          {m["editor.frame.shared_local_hint"]()}
-        </p>
-      {/if}
-    </div>
-    <TableOverviewPanel
-      editing={isEdit}
-      bind:name={model.name}
-      bind:symbol={model.symbol}
-      bind:tag={model.tag}
-      bind:headerMode={model.headerMode}
-      bind:levels={model.levels}
-      extraHeader={model.extraHeader}
-      disabled={isEdit ? model.busy || !dataReady : false}
-      headerUrl={headerUrl ?? undefined}
-      bind:levelRefHasData
-      bind:levelRefLoadState
-      management={copyMode ? undefined : management}
-      onChange={model.markDirty}
-      onNotice={(value: EditorNotice) => (model.notice = value)}
-    />
+    {@render overviewContent()}
   </div>
+{/snippet}
+
+{#snippet courseContent()}
+  <CoursePanel
+    editing={isEdit}
+    groups={model.courseGroups}
+    bind:model={model.courseModel}
+    entries={model.entries}
+    symbol={model.symbol}
+    dataReady={model.dataReady}
+    nested={model.courseModel.shape === "nested"}
+    disabled={isEdit ? model.busy || !dataReady : false}
+    onChange={model.markDirty}
+    onNotice={(value: EditorNotice) => (model.notice = value)}
+  />
 {/snippet}
 
 {#snippet coursePane()}
   <div id="course-list" class="scroll-mt-20">
-    <CoursePanel
-      editing={isEdit}
-      groups={model.courseGroups}
-      bind:model={model.courseModel}
-      entries={model.entries}
-      symbol={model.symbol}
-      dataReady={model.dataReady}
-      nested={model.courseModel.shape === "nested"}
-      disabled={isEdit ? model.busy || !dataReady : false}
-      onChange={model.markDirty}
-      onNotice={(value: EditorNotice) => (model.notice = value)}
-    />
+    {@render courseContent()}
   </div>
+{/snippet}
+
+{#snippet chartsContent()}
+  <EntriesPanel
+    editing={isEdit}
+    bind:entries={model.entries}
+    levels={model.levels}
+    symbol={model.symbol}
+    bind:levelHints={model.levelHints}
+    bind:courseModel={model.courseModel}
+    dataReady={model.dataReady}
+    disabled={isEdit ? model.busy || !dataReady : false}
+    loadState={model.dataLoadState}
+    loadMessage={model.loadMessage}
+    loadPercent={model.loadPercent}
+    loadDetail={model.loadDetail}
+    dataError={model.dataError}
+    onRetry={model.retryData}
+    onChange={model.markDirty}
+    onNotice={(value: EditorNotice) => (model.notice = value)}
+    onAddDrawerOpenChange={(open: boolean) => (addDrawerOpen = open)}
+    bind:hiddenLevels
+    bind:hideUnassigned
+  />
 {/snippet}
 
 {#snippet chartsPane()}
   <div id="charts-list" class="scroll-mt-20">
-    <EntriesPanel
-      editing={isEdit}
-      bind:entries={model.entries}
-      levels={model.levels}
-      symbol={model.symbol}
-      bind:levelHints={model.levelHints}
-      bind:courseModel={model.courseModel}
-      dataReady={model.dataReady}
-      disabled={isEdit ? model.busy || !dataReady : false}
-      loadState={model.dataLoadState}
-      loadMessage={model.loadMessage}
-      loadPercent={model.loadPercent}
-      loadDetail={model.loadDetail}
-      dataError={model.dataError}
-      onRetry={model.retryData}
-      onChange={model.markDirty}
-      onNotice={(value: EditorNotice) => (model.notice = value)}
-      onAddDrawerOpenChange={(open: boolean) => (addDrawerOpen = open)}
-      bind:hiddenLevels
-      bind:hideUnassigned
-    />
+    {@render chartsContent()}
   </div>
+{/snippet}
+
+{#snippet viewHeaderPane()}
+  <details
+    id="overview"
+    class="scroll-mt-20"
+    open={cards.includes("header")}
+    ontoggle={(event) => handleSectionToggle("header", event)}
+  >
+    <summary
+      class="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-glass-sm py-2 text-[1.05rem] font-semibold text-white [&::-webkit-details-marker]:hidden"
+    >
+      <ChevronDown
+        class="size-4 shrink-0 text-white-50 transition-transform {cards.includes('header')
+          ? 'rotate-180'
+          : ''}"
+        aria-hidden="true"
+      />
+      {m["editor.frame.header"]()}
+    </summary>
+    <div class="pt-4">
+      {@render overviewContent()}
+    </div>
+  </details>
+{/snippet}
+
+{#snippet viewChartsPane()}
+  <details
+    id="charts-list"
+    class="scroll-mt-20"
+    open={cards.includes("charts")}
+    ontoggle={(event) => handleSectionToggle("charts", event)}
+  >
+    <summary
+      class="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-glass-sm py-2 text-[1.05rem] font-semibold text-white [&::-webkit-details-marker]:hidden"
+    >
+      <ChevronDown
+        class="size-4 shrink-0 text-white-50 transition-transform {cards.includes('charts')
+          ? 'rotate-180'
+          : ''}"
+        aria-hidden="true"
+      />
+      {m["editor.entries.section"]()}
+      {#if sectionCount("charts") !== undefined}
+        <span class={badgeCountSm}>{sectionCount("charts")}</span>
+      {/if}
+    </summary>
+    <div class="pt-4">
+      {@render chartsContent()}
+    </div>
+  </details>
+{/snippet}
+
+{#snippet viewCoursePane()}
+  <details
+    id="course-list"
+    class="scroll-mt-20"
+    open={cards.includes("course")}
+    ontoggle={(event) => handleSectionToggle("course", event)}
+  >
+    <summary
+      class="flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-glass-sm py-2 text-[1.05rem] font-semibold text-white [&::-webkit-details-marker]:hidden"
+    >
+      <ChevronDown
+        class="size-4 shrink-0 text-white-50 transition-transform {cards.includes('course')
+          ? 'rotate-180'
+          : ''}"
+        aria-hidden="true"
+      />
+      {m["editor.course.section"]()}
+      {#if sectionCount("course") !== undefined}
+        <span class={badgeCountSm}>{sectionCount("course")}</span>
+      {/if}
+    </summary>
+    <div class="pt-4">
+      {@render courseContent()}
+    </div>
+  </details>
 {/snippet}
 
 {#snippet importSection()}

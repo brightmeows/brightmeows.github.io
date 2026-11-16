@@ -73,9 +73,7 @@
           {@render hero()}
         {/if}
         {#if sectionSwitcher}
-          <div class="mb-4 w-full">
-            {@render sectionSwitcher()}
-          </div>
+          {@render sectionSwitcher()}
         {/if}
         {#each panes as pane, i (i)}
           {@const isLast = i === panes.length - 1}
@@ -102,9 +100,7 @@
         {@render hero()}
       {/if}
       {#if sectionSwitcher}
-        <div class="mx-auto mb-4 w-full max-w-[1000px]">
-          {@render sectionSwitcher()}
-        </div>
+        {@render sectionSwitcher()}
       {/if}
       {#each panes as pane, i (i)}
         {@const isLast = i === panes.length - 1}
