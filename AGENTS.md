@@ -239,9 +239,12 @@ CI 的 lint/test/format 不依赖 build 产物（把 `build/` 移走后全部通
 
 以下升级经评估后刻意挂起，勿随批升级，各等触发条件；有 dependabot 击穿风险的条目在 `.github/dependabot.yml` 用 ignore 机械挡住。
 
-- **typescript 6 到 7**：Kit 3 已迁移（3.0.1），TS7 双装在 实测未达可用：双装本身可装（`typescript@~6` 主 + `@typescript/native@npm:typescript@7` 别名，svelte-check 给出的官方方案）。
-  - 但 svelte-check 4.7.6 的 `--tsgo` 模式对本仓的 `.svelte` module script 具名导出（`JsonPreview` 的 `jsonPreview`、`TableImportSectionProps` 等）与组件句柄类型解析不工作（13 个 tsgo 特有类型错误，TS6 下为零）。
-  - 触发条件：svelte-check 的 tsgo 集成覆盖 Svelte 模块类型后重做双装。
+- **typescript 6 到 7**：TS 7 是 Go 端口，根导出只剩 `lib/version.cjs`，编译器 API 挪到 `./unstable/*`，7.1 之前没有稳定 API；Kit 的 tsconfig 读取（`ts.sys.readFile`）与 svelte-check 都还在用旧 API。
+  - 直接升 TS7 会让 `pnpm prepare` 的 `svelte-kit sync` 崩溃，全部必过检查一并失败（PR #365 实测）；`.github/dependabot.yml` 用 ignore 挡住 `>=7`。
+  - 双装（`typescript@~6` 主 + `@typescript/native@npm:typescript@7` 别名，svelte-check 给出的官方方案）本身可装，但 svelte-check 4.7.6 的 `--tsgo` 模式
+    对本仓的 `.svelte` module script 具名导出（`JsonPreview` 的 `jsonPreview`、`TableImportSectionProps` 等）与组件句柄类型解析不工作
+    （13 个 tsgo 特有类型错误，TS6 下为零）。
+  - 触发条件：Kit 与 svelte-check 都原生支持 TS 7 后解除 ignore 并重做双装。
   - oxlint-tsgolint 7 自带 TS 7 语义的类型检查引擎，与项目 typescript 版本解耦，互不阻塞：lint 侧已在 TS7 语义下运行。
 - **katex 0.18.2 到 0.19**：0.19 已发布，SvelTeX 0.5.1 的 peer range 仍为 `^0.16 || ^0.17`。
   - 0.18.2 已由 dependabot 升入，事后实测风险未发生：katex.min.css 与渲染输出同版本，0.18 的内部 class 前缀化（`.strut` 改 `.katex-strut`）两侧一致，站点也无硬编码旧内部 class，数学页正常。

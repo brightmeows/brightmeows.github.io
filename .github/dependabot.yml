@@ -24,6 +24,12 @@ updates:
       # 击穿了当时无 ignore 兜底的挂起项），0.19+ 由本条机械挡住。
       - dependency-name: "katex"
         versions: [">=0.19"]
+      # typescript 7 是 Go 端口，根导出只剩版本号，编译器 API 在 7.1 之前
+      # 没有稳定形态；Kit 读 tsconfig 仍走 ts.sys，装上 TS7 后 pnpm prepare
+      # 的 svelte-kit sync 直接崩溃，全部必过检查一并失败（PR #365 实测）。
+      # 挂起项与解除条件见 AGENTS.md。
+      - dependency-name: "typescript"
+        versions: [">=7"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
