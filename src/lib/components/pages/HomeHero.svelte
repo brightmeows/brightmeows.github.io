@@ -71,10 +71,12 @@
         {m["home.intro"]()}
       </p>
       <div
-        class="grid w-full max-w-[820px] grid-cols-1 items-center gap-x-4 gap-y-3 sm:grid-cols-[8rem_1fr]"
+        class="grid w-full max-w-[820px] grid-cols-1 items-center gap-x-4 gap-y-3 sm:grid-cols-[auto_1fr]"
       >
         {#each groups as group (group.label())}
-          <span class="text-center text-[0.9rem] font-medium text-white-50 sm:text-right">
+          <span
+            class="text-center text-[0.9rem] font-medium text-white-50 sm:text-right sm:whitespace-nowrap"
+          >
             {group.label()}
           </span>
           <div class="flex flex-wrap justify-center gap-3 sm:justify-start">
