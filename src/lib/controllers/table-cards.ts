@@ -40,6 +40,11 @@ export function defaultCardShow(defaults: TableCardDefaults): TableCardId[] {
   return ["charts"];
 }
 
+/** 查看态默认只展开谱面；Header 与段位折叠。 */
+export function defaultViewSections(): TableCardId[] {
+  return ["charts"];
+}
+
 /** 切换一张卡；关闭最后一张时原样返回，页面据此提示至少保留一张。 */
 export function toggleCardShow(current: readonly TableCardId[], id: TableCardId): TableCardId[] {
   const next = new Set(current);
@@ -58,6 +63,26 @@ export function setCardShow(
   if (visible) next.add(id);
   else next.delete(id);
   return next.size === 0 ? [...current] : orderCards(next);
+}
+
+/** 查看态设置一张 section 的展开状态；允许全部折叠。 */
+export function setSectionOpen(
+  current: readonly TableCardId[],
+  id: TableCardId,
+  open: boolean
+): TableCardId[] {
+  const next = new Set(current);
+  if (open) next.add(id);
+  else next.delete(id);
+  return orderCards(next);
+}
+
+/** 卡片组合为空时回退到给定默认；用于查看态全部折叠后切入编辑态。 */
+export function ensureVisibleCards(
+  current: readonly TableCardId[],
+  fallback: readonly TableCardId[]
+): TableCardId[] {
+  return current.length > 0 ? orderCards(new Set(current)) : orderCards(new Set(fallback));
 }
 
 /** 字符串是否为已知卡片 id。 */

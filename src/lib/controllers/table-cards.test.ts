@@ -2,9 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import {
   defaultCardShow,
+  defaultViewSections,
+  ensureVisibleCards,
   parseCardShow,
   serializeCardShow,
   setCardShow,
+  setSectionOpen,
   toggleCardShow,
 } from "./table-cards";
 
@@ -52,6 +55,12 @@ describe("defaultCardShow", () => {
   });
 });
 
+describe("defaultViewSections", () => {
+  it("查看态默认只展开谱面", () => {
+    expect(defaultViewSections()).toEqual(["charts"]);
+  });
+});
+
 describe("toggleCardShow", () => {
   it("加卡与去卡都按固定顺序", () => {
     expect(toggleCardShow(["charts"], "header")).toEqual(["header", "charts"]);
@@ -60,6 +69,26 @@ describe("toggleCardShow", () => {
 
   it("关闭最后一张时原样返回", () => {
     expect(toggleCardShow(["charts"], "charts")).toEqual(["charts"]);
+  });
+});
+
+describe("setSectionOpen", () => {
+  it("允许全部折叠", () => {
+    expect(setSectionOpen(["charts"], "charts", false)).toEqual([]);
+  });
+
+  it("展开按固定顺序", () => {
+    expect(setSectionOpen(["charts"], "header", true)).toEqual(["header", "charts"]);
+  });
+});
+
+describe("ensureVisibleCards", () => {
+  it("非空组合保持并排序", () => {
+    expect(ensureVisibleCards(["charts", "header"], ["charts"])).toEqual(["header", "charts"]);
+  });
+
+  it("全部折叠时回退默认", () => {
+    expect(ensureVisibleCards([], ["header", "charts"])).toEqual(["header", "charts"]);
   });
 });
 

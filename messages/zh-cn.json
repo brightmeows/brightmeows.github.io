@@ -518,6 +518,7 @@
   "mirror.add_url_placeholder": "难度表页面或 header.json 的 URL",
   "mirror.add_table": "添加表",
   "mirror.add_table_hint": "添加或移除难度表；先预览再提交。",
+  "mirror.add_login_required": "请先在顶栏登录，再添加表。",
   "mirror.admin_panel": "管理区",
   "mirror.all_tables": "全部难度表",
   "mirror.auth_confirm_add": "将“{name}”加入授权名单？加入后作者不能删除该表。",

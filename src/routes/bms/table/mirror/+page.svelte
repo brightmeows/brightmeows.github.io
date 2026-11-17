@@ -3,6 +3,7 @@
   import type { DisabledEntry } from "@brightmeows/mirror/user-layer";
   import Copy from "@lucide/svelte/icons/copy";
   import ExternalLink from "@lucide/svelte/icons/external-link";
+  import Plus from "@lucide/svelte/icons/plus";
   import { onMount, tick } from "svelte";
 
   import GroupedTablesSection from "#lib/components/bms/GroupedTablesSection.svelte";
@@ -11,7 +12,6 @@
   import SelectedTablesPanel from "#lib/components/bms/SelectedTablesPanel.svelte";
   import PageHero from "#lib/components/layout/PageHero.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
-  import CardSwitcher, { type CardSwitchItem } from "#lib/components/ui/CardSwitcher.svelte";
   import Checkbox from "#lib/components/ui/Checkbox.svelte";
   import { createConfirmDialog } from "#lib/components/ui/confirm-dialog.svelte.js";
   import ConfirmDialog from "#lib/components/ui/ConfirmDialog.svelte";
@@ -96,43 +96,19 @@
 
   let mirrorPreview = $state<JsonPreviewHandle | undefined>(undefined);
 
-  type MirrorCardId = "mirror-add" | "mirror-list";
-  let visibleCards = $state<Record<MirrorCardId, boolean>>({
-    "mirror-add": false,
-    "mirror-list": true,
-  });
+  // 添加表是列表卡头的动作，不是一张可显隐的内容卡。未登录点击给提示，
+  // 登录后展开内联表单；列表始终显示。
+  let addTableOpen = $state(false);
+  let addTableNotice = $state<string | null>(null);
 
-  const cardItems = $derived<CardSwitchItem[]>([
-    ...(auth.status === "ready"
-      ? [
-          {
-            id: "mirror-add",
-            label: m["mirror.add_table"](),
-            checked: visibleCards["mirror-add"],
-            title: m["mirror.add_table_hint"](),
-          },
-        ]
-      : []),
-    {
-      id: "mirror-list",
-      label: m["mirror.all_tables"](),
-      checked: visibleCards["mirror-list"],
-      count: tables.length,
-    },
-  ]);
-
-  function toggleCard(id: string, checked: boolean): void {
-    visibleCards = { ...visibleCards, [id as MirrorCardId]: checked };
-  }
-
-  async function jumpToCard(id: string): Promise<void> {
-    const cardId = id as MirrorCardId;
-    if (!visibleCards[cardId]) {
-      visibleCards = { ...visibleCards, [cardId]: true };
-      await tick();
+  async function toggleAddTable(): Promise<void> {
+    await auth.ensureLoaded();
+    if (auth.user === null) {
+      addTableNotice = m["mirror.add_login_required"]();
+      return;
     }
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
-    history.replaceState(null, "", `#${id}`);
+    addTableNotice = null;
+    addTableOpen = !addTableOpen;
   }
 
   // ---- 管理交互（仅 ADMIN_LOGIN 角色可见，服务端权限不变） ----
@@ -180,25 +156,18 @@
         title: pageTitle,
         href: "#bms-table-mirror",
       },
-      ...(visibleCards["mirror-list"]
-        ? [
-            {
-              id: "mirror-list",
-              title: m["mirror.all_tables"](),
-              href: "#mirror-list",
-              children: tagItems,
-            },
-          ]
-        : []),
+      {
+        id: "mirror-list",
+        title: m["mirror.all_tables"](),
+        href: "#mirror-list",
+        children: tagItems,
+      },
     ];
   });
 
   // #mirror-admin 锚点落页（书签与历史链接）：登录态就绪后展开管理区并滚动到位
   $effect(() => {
     if (!isAdmin || currentHash !== "#mirror-admin") return;
-    if (!visibleCards["mirror-list"]) {
-      visibleCards = { ...visibleCards, "mirror-list": true };
-    }
     if (!adminPanelOpen) {
       adminPanelOpen = true;
       void loadOverview(false);
@@ -418,6 +387,7 @@
 
   onMount(() => {
     void loadTables();
+    void auth.ensureLoaded();
     const syncHash = (): void => {
       currentHash = window.location.hash;
     };
@@ -427,15 +397,7 @@
   });
 </script>
 
-<PageShell
-  {tocItems}
-  hero={heroPane}
-  sectionSwitcher={switcherPane}
-  panes={[
-    ...(auth.status === "ready" && visibleCards["mirror-add"] ? [addTablePane] : []),
-    ...(visibleCards["mirror-list"] ? [listPane] : []),
-  ]}
-/>
+<PageShell {tocItems} hero={heroPane} panes={[listPane]} />
 
 {#snippet heroPane()}
   <PageHero id="bms-table-mirror" titleText={pageTitle}>
@@ -470,22 +432,6 @@
   </PageHero>
 {/snippet}
 
-{#snippet switcherPane()}
-  <CardSwitcher
-    items={cardItems}
-    ariaLabel={m["table.page.sections"]()}
-    align="center"
-    onToggle={toggleCard}
-    onJump={(id) => void jumpToCard(id)}
-  />
-{/snippet}
-
-{#snippet addTablePane()}
-  <div id="mirror-add" class="scroll-mt-20">
-    <MirrorUserActions bind:this={userActions} onchanged={handleUserChanged} />
-  </div>
-{/snippet}
-
 {#snippet listPane()}
   <div id="mirror-list" class="scroll-mt-20">
     <div class="flex flex-col gap-3">
@@ -499,38 +445,59 @@
         </div>
       {/if}
 
-      <div class="flex flex-wrap items-center gap-2">
-        <label class={showProtectedOnly ? btnChipOnWarning : btnChip}>
-          <Checkbox
-            size="sm"
-            ariaLabel={m["mirror.protected_filter"]()}
-            checked={showProtectedOnly}
-            onchange={(v: boolean) => (showProtectedOnly = v)}
-          />
-          {m["mirror.protected_filter"]()}
-        </label>
-        {#if auth.user !== null}
-          <label class={operationsMode ? btnChipOnAccent : btnChip}>
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex flex-wrap items-center gap-2">
+          <label class={showProtectedOnly ? btnChipOnWarning : btnChip}>
             <Checkbox
               size="sm"
-              ariaLabel={m["mirror.operations_mode"]()}
-              checked={operationsMode}
-              onchange={(v: boolean) => (operationsMode = v)}
+              ariaLabel={m["mirror.protected_filter"]()}
+              checked={showProtectedOnly}
+              onchange={(v: boolean) => (showProtectedOnly = v)}
             />
-            {m["mirror.operations_mode"]()}
+            {m["mirror.protected_filter"]()}
           </label>
-        {/if}
-        {#if isAdmin}
-          <button
-            class={adminPanelOpen ? btnChipOnAccent : btnChip}
-            type="button"
-            aria-expanded={adminPanelOpen}
-            onclick={toggleAdminPanel}
-          >
-            {m["mirror.admin_panel"]()}
-          </button>
-        {/if}
+          {#if auth.user !== null}
+            <label class={operationsMode ? btnChipOnAccent : btnChip}>
+              <Checkbox
+                size="sm"
+                ariaLabel={m["mirror.operations_mode"]()}
+                checked={operationsMode}
+                onchange={(v: boolean) => (operationsMode = v)}
+              />
+              {m["mirror.operations_mode"]()}
+            </label>
+          {/if}
+          {#if isAdmin}
+            <button
+              class={adminPanelOpen ? btnChipOnAccent : btnChip}
+              type="button"
+              aria-expanded={adminPanelOpen}
+              onclick={toggleAdminPanel}
+            >
+              {m["mirror.admin_panel"]()}
+            </button>
+          {/if}
+        </div>
+        <button
+          type="button"
+          class={btnGhostMd}
+          aria-expanded={addTableOpen}
+          aria-controls={addTableOpen ? "mirror-add" : undefined}
+          title={m["mirror.add_table_hint"]()}
+          onclick={() => void toggleAddTable()}
+        >
+          <Plus class="size-4 shrink-0" aria-hidden="true" />
+          {m["mirror.add_table"]()}
+        </button>
       </div>
+      {#if addTableNotice}
+        <p class="text-[0.85rem] text-warning">{addTableNotice}</p>
+      {/if}
+      {#if addTableOpen && auth.user !== null}
+        <div id="mirror-add" class="scroll-mt-20">
+          <MirrorUserActions bind:this={userActions} onchanged={handleUserChanged} />
+        </div>
+      {/if}
       {#if operationsMode}
         <p class="text-[0.85rem] text-white-50">
           {m["mirror.operations_mode_hint"]()}

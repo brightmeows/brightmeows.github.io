@@ -518,6 +518,7 @@
   "mirror.add_url_placeholder": "表ページまたは header.json の URL",
   "mirror.add_table": "表を追加",
   "mirror.add_table_hint": "表の追加・削除。プレビューしてから申請してください。",
+  "mirror.add_login_required": "先に上部バーのログインからサインインしてください。",
   "mirror.admin_panel": "管理エリア",
   "mirror.all_tables": "すべての表",
   "mirror.auth_confirm_add": "「{name}」を認可リストに追加しますか？追加すると作者はこの表を削除できなくなります。",

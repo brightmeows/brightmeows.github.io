@@ -884,7 +884,6 @@
               ? m["editor.entries.filter_unassigned"]()
               : `${symbol}${item.level}`}
             count={item.count}
-            tone="level"
             color={item.color}
             onToggle={(checked: boolean) =>
               item.unassigned ? toggleUnassigned(checked) : toggleLevel(item.level, checked)}

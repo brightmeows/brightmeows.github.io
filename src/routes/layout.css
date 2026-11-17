@@ -435,9 +435,14 @@
 
   .entries-large-table thead th {
     position: sticky;
-    top: 0;
+    top: var(--entries-sticky-top, 0);
     z-index: 10;
     background-color: color-mix(in srgb, var(--color-accent) 20%, var(--color-background));
+  }
+
+  /* 编辑态卡片行 sticky 在顶栏下方，总高 8rem；大表表头让到卡片行下面。 */
+  .editor-cardbar-sticky {
+    --entries-sticky-top: 8rem;
   }
 
   @media (max-width: 799px) {

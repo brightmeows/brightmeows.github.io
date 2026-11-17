@@ -2,12 +2,11 @@
   import Checkbox from "#lib/components/ui/Checkbox.svelte";
   import { badgeCountSm } from "#lib/constants/ui-classes.js";
 
-  /** 复合开关：复选框管显隐，标签按钮管跳转；卡片与等级共用。 */
+  /** 等级组复合开关：复选框管显隐，标签按钮管跳转。 */
   interface Props {
     checked: boolean;
     label: string;
     count?: number | undefined;
-    tone?: "neutral" | "level";
     color?: string | undefined;
     title?: string | undefined;
     disabled?: boolean;
@@ -19,7 +18,6 @@
     checked,
     label,
     count = undefined,
-    tone = "neutral",
     color = undefined,
     title = undefined,
     disabled = false,
@@ -29,11 +27,10 @@
 </script>
 
 <div
-  class="flex items-center gap-1.5 rounded-full border-2 px-2.5 py-1 text-[0.85rem] font-semibold transition-all duration-200 {tone ===
-  'level'
-    ? 'border-transparent text-white'
-    : 'border-white-20 bg-white-10 text-white-85'} {checked ? '' : 'opacity-60'}"
-  style={tone === "level" && color !== undefined ? `background-color:${color};` : undefined}
+  class="flex items-center gap-1.5 rounded-full border-2 border-transparent px-2.5 py-1 text-[0.85rem] font-semibold text-white transition-all duration-200 {checked
+    ? ''
+    : 'opacity-60'}"
+  style={color !== undefined ? `background-color:${color};` : undefined}
 >
   <Checkbox
     size="sm"
