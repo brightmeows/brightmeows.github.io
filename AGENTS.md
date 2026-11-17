@@ -1,16 +1,47 @@
-# 白喵斯的小屋 — AGENTS.md
+# 白喵斯的小屋：AGENTS.md
 
 本文件收录全局规则与文档地图；域内细节见子文档。
 
+## 目录
+
+- 文档地图
+- 文档约定
+- Commands
+- 约定与决策
+  - 测试边界
+  - auto-merge
+  - 分支 ruleset
+  - pnpm 行为
+  - 站点配置
+  - 应用版本
+  - 外部状态
+  - CI 与 Deploy
+  - pnpm 缓存
+- Lint 与校验
+- 架构边界
+- 技术栈
+- 浏览器支持口径
+- 依赖升级挂起项
+- 其他挂起项
+- 分支与工作树
+- 提交格式
+
 ## 文档地图
 
-- `src/AGENTS.md` — 站点域：SvelteKit 应用、Markdown 管线（SvelTeX）、内容系统（博客与杂记）、组件与数据层。
-- `packages/mirror/AGENTS.md` — 镜像表内核：URL 构造、清单变换、用户层类型与镜像数据纪律。
-- `packages/bms/AGENTS.md` — BMS 表内容域：格式模型、文件解码、图表视图变换、编辑器纯逻辑与段位。
-- `packages/worker/AGENTS.md` — Cloudflare Worker：镜像路由、写接口、D1、部署与 Cloudflare 外部状态。
-- `scripts/AGENTS.md` — 仓库校验脚本、数据管线、抓取工作流与对拍。
+- `src/AGENTS.md`：站点域：SvelteKit 应用、Markdown 管线（SvelTeX）、内容系统（博客与杂记）、组件与数据层。
+- `packages/mirror/AGENTS.md`：镜像表内核：URL 构造、清单变换、用户层类型与镜像数据纪律。
+- `packages/bms/AGENTS.md`：BMS 表内容域：格式模型、文件解码、图表视图变换、编辑器纯逻辑与段位。
+- `packages/worker/AGENTS.md`：Cloudflare Worker：镜像路由、写接口、D1、部署与 Cloudflare 外部状态。
+- `scripts/AGENTS.md`：仓库校验脚本、数据管线、抓取工作流与对拍。
 
 同一事实只在所属子文档维护，本文件只留指针；跨域基础设施约定留在本文件（归属存疑时按此判断）。
+
+## 文档约定
+
+- 六份 AGENTS.md 保持原位；当前用目录与小节化控制体量。单文件超过 40KB，或出现新的明确独立分支且跨任务共读明显变少时，再拆。
+- 超过 10KB 的 AGENTS.md 顶部放纯文本目录；长条目升为 `###` 或 `####` 小节。
+- Markdown 特性按表达需要；保持 MD033，不用原始 HTML 与折叠块；mermaid 可用，但图不作为唯一来源。
+- 命令、常量、配置值写指针或符号名；架构、理由、触发条件内联；历史交给 git。
 
 ## Commands
 
@@ -22,93 +53,107 @@
 pre-commit run --all-files    # 手动触发全部 hooks
 ```
 
-Hooks：
-
-- `pnpm format:check`、`pnpm check:md`、`pnpm lint`、`pnpm check`、`pnpm check:mirror`、`pnpm check:bms`、`pnpm check:worker`、`pnpm check:config`；
-- `pnpm check:i18n`、`pnpm check:jsdoc`、`pnpm check:quotes`、`pnpm check:icons`、`pnpm check:ui`、`pnpm check:colors`、`pnpm test`；
-- no-confusable-unicode、site-config、i18n-coverage、jsdoc-coverage、conventional-commit（commit-msg stage 校验提交信息）。
+hooks 清单见 `.pre-commit-config.yaml`。
 
 ### 手动命令
 
 - `pnpm dev`
-- `pnpm build` — 三遍 flavor 构建并组装多语产物
+- `pnpm build`：三遍 flavor 构建并组装多语产物
 - `pnpm test`
-- `pnpm check:config` — 配置一致性校验（离线，毫秒级）
-- `pnpm check:i18n` — i18n 覆盖校验（三语 key 对称与占位符、引用/死 key、源码 CJK 残留、英文漏翻；离线，毫秒级）
-- `pnpm check:jsdoc` — 导出函数 JSDoc 覆盖校验（离线，毫秒级，见 `scripts/AGENTS.md`）
-- `pnpm check:quotes` — 全量中文引号检查（扩展名与 `static/` 排除规则在 `package.json`，pre-commit 与 CI 共用；离线，毫秒级）
-- `pnpm check:icons` — UI 模板图标纪律检查（src 下 `.svelte` 禁 emoji 与符号图标；离线，毫秒级）
-- `pnpm check:ui` — 按钮与链接令牌纪律检查（src 下 `.svelte` 禁手写按钮/chip 皮肤指纹与裸 text-accent 链接，圆角默认档越出玻璃阶梯；离线，毫秒级）
-- `pnpm check:colors` — 语义色十六进制字面量守门（src 下 `.svelte`/`.ts` 禁裸写颜色 hex，layout.css 是唯一豁免源；离线，毫秒级）
 
-域内命令见子文档：部署与 wrangler 相关在 `packages/worker/AGENTS.md`；管线、抓取、对拍与校验脚本在 `scripts/AGENTS.md`。
+检查命令见 `scripts/AGENTS.md`；部署命令见 `packages/worker/AGENTS.md`。
 
-## 反直觉决策
+## 约定与决策
 
-以下行为在代码中看似错误/死代码/遗漏，但均为故意；本文件收录跨域基础设施条目，域内条目见子文档。
+以下条目是刻意选择，改动前先读完理由；域内条目见子文档。
 
-- **测试只覆盖纯函数层** — vitest 覆盖 `src/lib/utils/`、`src/lib/data/` 的纯逻辑、`src/lib/controllers/` 的页面编排决策、生成器脚本、`packages/mirror` 与 `packages/worker` 里的纯函数。
-  - 纯逻辑指 `search-aggregator` 的身份解析与 `bms-search` 的查询/过滤；页面编排决策是依赖注入收编取数（2026-10 起）。
-  - `include` 含 `packages/**/*.test.ts`；`packages/worker/tsconfig.json` 把 `*.test.ts` 排除在 Worker 类型上下文外，那里没有 vitest 与 Node 的类型；`packages/mirror/tsconfig.json` 则连同测试一起检查，vitest 经根 `node_modules` 解析。
-  - 测试文件为相邻 `*.test.ts`。
-  - 组件（需 browser mode）与数据层的 fetch 编排（需 fs/fetch fixture）刻意不覆盖，避免依赖与 CI 复杂度膨胀。
-  - `pnpm test` 与 format/lint/check 同为门槛，pre-commit 与 CI 都会跑，失败阻断提交与部署。
-  - 给非纯函数层加测试依赖或测试文件前先确认范围。
-- **auto-merge 合并的 PR 不触发 push 工作流** — GitHub 对 `GITHUB_TOKEN` 触发的事件有反递归机制：`dependabot-auto-merge.yml` 启用 auto-merge 后，服务端完成合并产生的 push 事件不会触发 CI/Deploy（只留下 dependabot 的 dynamic 事件）。
+### 测试边界
+
+vitest 覆盖 `src/lib/utils/`、`src/lib/data/` 的纯逻辑、`src/lib/controllers/` 的页面编排决策、生成器脚本、`packages/mirror` 与 `packages/worker` 里的纯函数。
+
+- 纯逻辑指 `search-aggregator` 的身份解析与 `bms-search` 的查询/过滤；页面编排决策是依赖注入收编取数。
+- `include` 含 `packages/**/*.test.ts`；`packages/worker/tsconfig.json` 把 `*.test.ts` 排除在 Worker 类型上下文外，那里没有 vitest 与 Node 的类型；`packages/mirror/tsconfig.json` 则连同测试一起检查，vitest 经根 `node_modules` 解析。
+- 测试文件为相邻 `*.test.ts`。
+- 组件（需 browser mode）与数据层的 fetch 编排（需 fs/fetch fixture）刻意不覆盖，避免依赖与 CI 复杂度膨胀。
+- `pnpm test` 与 format/lint/check 同为门槛，pre-commit 与 CI 都会跑，失败阻断提交与部署。
+- 给非纯函数层加测试依赖或测试文件前先确认范围。
+
+### auto-merge
+
+- **auto-merge 合并的 PR 不触发 push 工作流**：GitHub 对 `GITHUB_TOKEN` 触发的事件有反递归机制：`dependabot-auto-merge.yml` 启用 auto-merge 后，服务端完成合并产生的 push 事件不会触发 CI/Deploy（只留下 dependabot 的 dynamic 事件）。
   - 后果是依赖更新合并后不会立即部署与同步：站点部署由 `deploy.yml` 每 6 小时的 schedule 兜底，代码备份镜像由 `mirror.yml` 的每日 schedule 兜底，也可手动 dispatch。
   - 手动 `gh pr merge` 用个人 token，不受影响，正常触发。
-- **分支 ruleset 不放行任何直推** — ruleset `main-branch-protection` 禁止直接 push main 并要求 PR + 必过检查（见“分支与工作树”）。
-  - 2026-09 之前 update-tables 需要直推清单快照，bypass actors 里因此有 DeployKey；列表变动不再需要直推清单快照，这条直推已删除，**bypass actors 应为空**。
-  - 若发现其中仍有 DeployKey 条目，属于遗留配置，应移除。
+
+### 分支 ruleset
+
+- **分支 ruleset 不放行任何直推**：ruleset `main-branch-protection` 禁止直接 push main 并要求 PR + 必过检查（见“分支与工作树”）。
+  - `bypass actors` 应为空；若发现 DeployKey 条目，属于遗留配置，应移除。
   - CI job 增删或改名时，ruleset 的 required_status_checks context 必须同步更新，否则 PR 合并被永久阻塞。
-- **ruleset 不得启用 Restrict updates 规则** — 实测 ruleset 的 `update` 类型规则会把 PR 合并一起拦死：它只允许 bypass actor 更新 matching refs，而 PR 合并也是 ref 更新，启用后 PR 的 mergeStateStatus 恒为 BLOCKED。
+- **ruleset 不得启用 Restrict updates 规则**：实测 ruleset 的 `update` 类型规则会把 PR 合并一起拦死：它只允许 bypass actor 更新 matching refs，而 PR 合并也是 ref 更新，启用后 PR 的 mergeStateStatus 恒为 BLOCKED。
   - GitHub 报 “base branch policy prohibits the merge”；结果是 checks 全绿也无法合并。
   - 禁止直接 push main 由 `pull_request` 规则独立承担（已实测其拦直推），不要重新加回 `update` 规则。
   - 诊断提示：BLOCKED 且 checks 全绿时，先检查 ruleset 是否含 `update` 规则。
-  - 结果是 checks 全绿也无法合并。
-- **`pnpm-workspace.yaml` 的 `allowBuilds` 由 pnpm 11 维护** — 遇到未决的 build script 时 pnpm 会自动写入占位符（值为字面量 `set this to true or false`），带着占位符提交会让 CI 的 install 直接失败。本地需改成明确的 `true`/`false` 再提交。
-- **pnpm 设置只在 `pnpm-workspace.yaml`** — pnpm 11 起 `.npmrc` 只读 registry/auth 设置，`engineStrict: true`（依赖 engines 与当前 Node 不匹配即安装失败）与工作区 `packages` 都在此文件。
-  - 旧 `.npmrc` 里的 `engine-strict` 被 pnpm 11 静默忽略，2026-09 迁入并启用，`.npmrc` 已删除。
-- **本地 install 可能因 npmmirror 同步延迟失败** — 全局 registry 指向 `registry.npmmirror.com`，其同步有延迟（曾出现 `@inlang/paraglide-js` 2.25.2 缺失导致 `--frozen-lockfile` 报 404）。
+
+### pnpm 行为
+
+- **`pnpm-workspace.yaml` 的 `allowBuilds` 由 pnpm 11 维护**：遇到未决的 build script 时 pnpm 会自动写入占位符（值为字面量 `set this to true or false`），带着占位符提交会让 CI 的 install 直接失败。本地需改成明确的 `true`/`false` 再提交。
+- **pnpm 设置只在 `pnpm-workspace.yaml`**：pnpm 11 起 `.npmrc` 只读 registry/auth 设置，`engineStrict: true`（依赖 engines 与当前 Node 不匹配即安装失败）与工作区 `packages` 都在此文件。
+  - 旧 `.npmrc` 里的 `engine-strict` 被 pnpm 11 静默忽略，已迁入并启用，`.npmrc` 已删除。
+- **本地 install 可能因 npmmirror 同步延迟失败**：全局 registry 指向 `registry.npmmirror.com`，其同步有延迟（曾出现 `@inlang/paraglide-js` 2.25.2 缺失导致 `--frozen-lockfile` 报 404）。
   - 另一类症状是 npmmirror 缺 `@lix-js/sdk-*` 平台包的 manifest（tarball 可下、元数据 404），pnpm 的 lockfile 供应链校验（`minimumReleaseAge`）会因此报 `ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION`。
   - 两种都可用 `pnpm install --registry=https://registry.npmjs.org` 绕过；报策略错时包其实已装好，脚本可继续用。
   - CI 使用官方源，不受影响。
-- **同一事实只允许一个权威点，其余由门槛机械守住** — `config/site.json` 是站点与部署配置的单一来源。
-  - 不能 import 它的地方（`wrangler.jsonc` 的 routes 与 vars、工作流 YAML、`.nvmrc` 与 `devEngines.packageManager`）由 `scripts/check-site-config.ts` 的五条断言守住，进 pre-commit 与 `pnpm check:config`。
-  - 工作流里**任何位置（含注释）**都不该出现域名。
-  - 唯一豁免是仓库自身的远程地址（`git@github.com:owner/brightmeows.github.io.git`）—— 其中的 `brightmeows.github.io` 是仓库名。
-- **`config/site.json` 是站点与部署配置的单一来源** — 字段：`origin`（站点规范域）、`targets[]`（部署目标：cloudflare/worker + hosts；旧主机 301 由 Cloudflare Single Redirects 负责，不再进入本配置）、`r2.base`/`r2.manifestObject`/`r2.corsOrigins`。
-  - 能 import 的消费者直接 import（`src/lib/constants/r2.ts`、`src/lib/constants/site.ts` 导出 `SITE_ORIGIN`）。
-  - 不能 import 的（Worker 的 `vars`、`wrangler.jsonc` 的 routes、工作流里的域名）由 `scripts/check-site-config.ts` 的五条断言守住。
-  - 桶名不入该配置：它只出现在 `wrangler.jsonc` 的 R2 binding（部署期配置，无法用 secret 注入）与 Actions secret（管线 S3 凭据）里，凭据本身不入库。
-- **应用版本由构建期统一注入三个 flavor** — 版本号内嵌进各语言树 HTML 的客户端配置，客户端在未命中路由的 fallback 与跳转前会与 `/_app/version.json` 比对。
+
+### 站点配置
+
+`config/site.json` 是站点与部署配置的单一来源：`origin`（站点规范域）、`targets[]`（部署目标：cloudflare/worker + hosts；旧主机 301 由 Cloudflare Single Redirects 负责，不再进入本配置）、`r2.base`/`r2.manifestObject`/`r2.corsOrigins`。同一事实只允许一个权威点，其余由门槛机械守住。
+
+- 能 import 的消费者直接 import（`src/lib/constants/r2.ts`、`src/lib/constants/site.ts` 导出 `SITE_ORIGIN`）。
+- 不能 import 的（Worker 的 `vars`、`wrangler.jsonc` 的 routes、工作流 YAML、`.nvmrc` 与 `devEngines.packageManager`）由 `scripts/check-site-config.ts` 的五条断言守住，见 `scripts/AGENTS.md`。
+- 工作流里任何位置（含注释）都不该出现域名；唯一豁免是仓库自身的远程地址（`git@github.com:brightmeows/brightmeows.github.io.git`），其中的 `brightmeows.github.io` 是仓库名。
+- 桶名不入该配置：它只出现在 `wrangler.jsonc` 的 R2 binding（部署期配置，无法用 secret 注入）与 Actions secret（管线 S3 凭据）里，凭据本身不入库。
+
+### 应用版本
+
+- **应用版本由构建期统一注入三个 flavor**：版本号内嵌进各语言树 HTML 的客户端配置，客户端在未命中路由的 fallback 与跳转前会与 `/_app/version.json` 比对。
   - 两边不一致就整页刷新，而未命中路由时刷新不收敛（表现为非英语 404 空白页）。
   - `scripts/build-site.ts` 每次组装只生成一个值并经 `BUILD_VERSION` 传给各遍构建，`vite.config.ts` 读它填 `kit.version.name`。
   - 不要再让各 flavor 各自取默认时间戳，也不要事后改写 `_app/version.json`。
-- **外部状态只把会静默退化的项纳入仓库** — 桶 CORS 来源与旧主机 301 规则是两项“改了仓库但线上没跟上就静默退化”的外部状态：漏放 CORS 来源时原生客户端正常、只有浏览器失败；规则被删或被改时旧表导入链接会静默断掉。
+
+### 外部状态
+
+- **外部状态只把会静默退化的项纳入仓库**：桶 CORS 来源与旧主机 301 规则是两项“改了仓库但线上没跟上就静默退化”的外部状态：漏放 CORS 来源时原生客户端正常、只有浏览器失败；规则被删或被改时旧表导入链接会静默断掉。
   - 期望值分别在 `config/site.json` 的 `r2.corsOrigins` 与 `config/redirects.json` 的 zone 列表，由 `scripts/check-r2-cors.ts`、`scripts/check-redirect-rules.ts` 只读比对。
   - `.github/workflows/config-drift.yml` 在相关配置变更的 PR、每周 schedule 与手动触发时跑。
   - 令牌：CORS 复用 `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID`/`R2_BUCKET`，旧主机规则用 `CLOUDFLARE_RULES_TOKEN`，桶名与令牌权限见 `packages/worker/AGENTS.md`。
-  - 其余外部状态（zone 开关、DNS 记录、secrets）维持文档口径——其中 DNS 是发布链路的硬前提（Worker 自定义域的解析）；需要 DNS 编辑权限的凭据（wrangler 的 OAuth scope 不含 DNS，只能控制台或临时令牌）。
-- **旧主机 301 的期望规则单独在 `config/redirects.json`** — zone 列表、托管 ref/规则名、是否匹配 apex 与 R2 排除项在这里。
+  - 其余外部状态（zone 开关、DNS 记录、secrets）维持文档口径：其中 DNS 是发布链路的硬前提（Worker 自定义域的解析）；需要 DNS 编辑权限的凭据（wrangler 的 OAuth scope 不含 DNS，只能控制台或临时令牌）。
+- **旧主机 301 的期望规则单独在 `config/redirects.json`**：zone 列表、托管 ref/规则名、是否匹配 apex 与 R2 排除项在这里。
   - 目标来源取 `config/site.json` 的 `origin`，不复制主站域名。规则由 `scripts/check-redirect-rules.ts` 只读比对，实际应用在 Cloudflare 控制台完成（见 `packages/worker/AGENTS.md`）。
-- **R2 桶与 zone 行为的排障细节在 `packages/worker/AGENTS.md`** — 排障时按症状取用。
+- **R2 桶与 zone 行为的排障细节在 `packages/worker/AGENTS.md`**：排障时按症状取用。
   - 症状对照：取数 `Failed to fetch` 与“索引加载失败”（桶 CORS policy）、表数据无边缘缓存与 `cf-cache-status: DYNAMIC`（zone Cache Rules）、旧 UA 全线 403 error 1010（Browser Integrity Check）。
   - 机制、期望值与验证命令都在那里。
-- **CI 与 Deploy 的检查分工** — CI 的 lint/test/format 不依赖 build 产物（把 `build/` 移走后全部通过），因此只有 check job 跑一次 `pnpm build`，作为 CI 里唯一的构建验证点（frontmatter 校验、构建期数据加载与打包错误都在这里暴露）。
-  - Deploy 只做 build 与部署，不重复 lint/check/test——main 的每次提交已由 PR 必过门槛与 push 触发的 CI 覆盖，所有变更都经 PR。列表变动只影响运行时读取，不再触发部署。
-  - 各工作流持有独立 concurrency group：CI 取消被取代的旧运行，Deploy 排队串行（避免旧提交的部署最后完成、覆盖新版本）。
-  - 各作业均设超时（CI/Deploy 15 分钟、config-drift 10 分钟、update-tables 30 分钟、fetch-table 15 分钟、mirror 10 分钟、dependabot-auto-merge 10 分钟），防挂起占满 runner。
-- **pnpm 缓存只配置一处** — `pnpm/action-setup` 的 `cache: true` 与 `actions/setup-node` 的 `cache: "pnpm"` 缓存的是同一个 pnpm store（实测两份缓存哈希相同、每个 job 各恢复约 312MB）。
-  - 统一只保留 setup-node 的 `cache: "pnpm"`，不要再给 pnpm/action-setup 加缓存输入。
+
+### CI 与 Deploy
+
+CI 的 lint/test/format 不依赖 build 产物（把 `build/` 移走后全部通过），因此只有 check job 跑一次 `pnpm build`，作为 CI 里唯一的构建验证点（frontmatter 校验、构建期数据加载与打包错误都在这里暴露）。
+
+- Deploy 只做 build 与部署，不重复 lint/check/test：main 的每次提交已由 PR 必过门槛与 push 触发的 CI 覆盖，所有变更都经 PR。列表变动只影响运行时读取，不再触发部署。
+- 各工作流持有独立 concurrency group：CI 取消被取代的旧运行，Deploy 排队串行（避免旧提交的部署最后完成、覆盖新版本）。
+- 各作业均设超时（CI/Deploy 15 分钟、config-drift 10 分钟、update-tables 30 分钟、fetch-table 15 分钟、mirror 10 分钟、dependabot-auto-merge 10 分钟），防挂起占满 runner。
+
+### pnpm 缓存
+
+`pnpm/action-setup` 的 `cache: true` 与 `actions/setup-node` 的 `cache: "pnpm"` 缓存的是同一个 pnpm store（实测两份缓存哈希相同、每个 job 各恢复约 312MB）。
+
+- 统一只保留 setup-node 的 `cache: "pnpm"`，不要再给 pnpm/action-setup 加缓存输入。
 
 ## Lint 与校验
 
-- **lint 不含 Svelte 模板级 linter** — 曾用 oxvelte（cargo 全局二进制）补 Svelte 模板规则，其上游 2026 年 5 月起停更、且依赖仓库外的 cargo 全局安装不可复现，已移除。现 `lint` 仅 oxlint（查 `.svelte` 的 script 块）加 svelte-check（编译期诊断）。
+- **lint 不含 Svelte 模板级 linter**：现 `lint` 仅 oxlint（查 `.svelte` 的 script 块）加 svelte-check（编译期诊断）。模板级 linter 因上游停更与仓库外全局安装不可复现而移除。
   - 代价是失去 `svelte/button-has-type` 与 `svelte/no-target-blank` 两条 warn。
   - 回归路径（跟踪 oxc issue #15761 “SFC Template Support”）：oxlint 支持自定义文件解析器后接 eslint-plugin-svelte 或原生规则。
-  - 不要因“模板无 lint”而重新引入停更工具。
-- **oxlint 规则集按“零命中”原则扩展** — `correctness` 类别全开（试跑确认 39 条规则当前 0 命中，10 条死 disable 指令已清理），其余类别只显式挑选。
+  - 模板无 lint 不是重新引入停更工具的理由。
+- **oxlint 规则集按“零命中”原则扩展**：`correctness` 类别全开，试跑确认零命中后才保留；其余类别只显式挑选。
   - 以下规则经实测刻意不启用：
     - `unicorn/no-array-sort`（要求 toSorted，超出 browserslist 兼容范围）；
     - `unicorn/require-post-message-target-origin`（官方文档自述在 Worker 场景误报）；
@@ -116,10 +161,10 @@ Hooks：
     - `eslint/no-await-in-loop`（batch 搜索有意串行）；
     - `typescript/no-unnecessary-type-conversion`（暴露的是实际数据与声明类型不符，待运行时校验补齐）。
   - 不要“顺手”开 suspicious 全类。`perf` 整类亦不开（唯一实质规则 `no-await-in-loop` 即上条禁用项）。
-- **复杂度三闸与 `no-unnecessary-condition` 已启用（2026-10）** — 三闸（complexity 15 / max-depth 4 / max-lines-per-function 150）按域在 overrides 棘轮放宽（Worker 30/5、bms 22/5、mirror 32、scripts 28、src 22/6）。
+- **复杂度三闸与 `no-unnecessary-condition` 已启用**：三闸（complexity 15 / max-depth 4 / max-lines-per-function 150）按域在 overrides 棘轮放宽（Worker 30/5、bms 22/5、mirror 32、scripts 28、src 22/6）。
   - 极端文件（`routeApi` 39、`resolveGroup` 56、`createTableModel` 480 行）per-file 兜底。
   - 触碰重构后收紧回全局线并删除放宽块。
-- **`no-unsafe-type-assertion` 已启用（2026-11）** — 86 处存量分两批分流（构建期与脚本侧走 guards 与 valibot schema、运行时侧走谓词收窄）后随批启用为 error；测试区目录级忽略（构造数据兜底动机，`**/*.test.ts` override）。
+- **`no-unsafe-type-assertion` 已启用**：存量分两批分流（构建期与脚本侧走 guards 与 valibot schema、运行时侧走谓词收窄）后随批启用为 error；测试区目录级忽略（构造数据兜底动机，`**/*.test.ts` override）。
   - 行级豁免四处，各带理由注释：`bms-data.ts` 与 `bms-search.ts` 的
     ChartData[]（全字段可选宽类型，元素级 schema 无信息增益，下游模型层
     按字段兜底）、`bms-search.worker.ts` 的 SearchIndex（形状由索引生成
@@ -127,21 +172,21 @@ Hooks：
     check:i18n 守住）。
   - 新增豁免先想 guard/schema 分流，豁免须带理由注释。
   - 复测口径：trial 配置须放在仓内（/tmp 会断 JS 插件的相对解析）。
-- **`.svelte.ts` 布尔派生走 `$derived.by`** — tsgolint 对直写 `$derived(条件表达式)` 的宏返回类型视图误收窄（`$state(false)` 的字面量类型经直写宏读取泄漏同理），`no-unnecessary-condition` 误报恒真恒假；回调形态推断正确（上游 issue tsgolint#1344）。
+- **`.svelte.ts` 布尔派生走 `$derived.by`**：tsgolint 对直写 `$derived(条件表达式)` 的宏返回类型视图误收窄（`$state(false)` 的字面量类型经直写宏读取泄漏同理），`no-unnecessary-condition` 误报恒真恒假；回调形态推断正确（上游 issue tsgolint#1344）。
   - 主链 svelte-check 不受影响，类型正确性以主链为准。
-- **`lint` 带 `--deny-warnings` 与 `--report-unused-disable-directives`** — warn 同样导致失败；失效的 disable 指令会被检出。
-- **`check` 带 `--fail-on-warnings`** — Svelte 编译器与 a11y 警告按错误处理。
-- **架构边界由 `no-restricted-imports` 强制** — `$lib/loaders`（构建期 Node 层）只能从 `*.server.ts` 导入，客户端代码引用会在 lint 阶段失败。
+- **`lint` 带 `--deny-warnings` 与 `--report-unused-disable-directives`**：warn 同样导致失败；失效的 disable 指令会被检出。
+- **`check` 带 `--fail-on-warnings`**：Svelte 编译器与 a11y 警告按错误处理。
+- **架构边界由 `no-restricted-imports` 强制**：`$lib/loaders`（构建期 Node 层）只能从 `*.server.ts` 导入，客户端代码引用会在 lint 阶段失败。
   - `src/lib/controllers/**`（页面编排层）禁导入组件、`.svelte` 与 Svelte 运行时（overrides 按目录限定，探针实测生效）。
   - 新增构建时数据入口或编排模块时走这两条边界。
-- **内容 frontmatter 在构建期校验** — `validateFrontmatter` 校验 title/date/order/slug/description/tags，非法值直接让 `pnpm build` 失败。不要降级为警告或静默回退，坏数据会在页面上悄悄变形。
+- **内容 frontmatter 在构建期校验**：`validateFrontmatter` 校验 title/date/order/slug/description/tags，非法值直接让 `pnpm build` 失败。不要降级为警告或静默回退，坏数据会在页面上悄悄变形。
 
 ## 架构边界
 
-- **纯 SSG（含一处边缘例外）** — `@sveltejs/adapter-static` + 全局 `prerender = true`，不加 server routes / API endpoints。
-  - 例外是 Cloudflare Worker（`packages/worker/index.ts`）：`assets.run_worker_first` 为全量 `true`，每个请求先过 Worker——镜像表动态路由与写接口之外，还承担边缘语言分发（分发机制见 `packages/worker/AGENTS.md`），其余请求回落静态资源。
+- **纯 SSG（含一处边缘例外）**：`@sveltejs/adapter-static` + 全局 `prerender = true`，不加 server routes / API endpoints。
+  - 例外是 Cloudflare Worker（`packages/worker/index.ts`）：`assets.run_worker_first` 为全量 `true`，每个请求先过 Worker：镜像表动态路由与写接口之外，还承担边缘语言分发（分发机制见 `packages/worker/AGENTS.md`），其余请求回落静态资源。
   - 多语产物由 `pnpm build`（构建机制见 `scripts/AGENTS.md`）三遍 flavor 构建组装。
-  - 静态跳转宿主已全部退役（2026-10-31），旧域由 Cloudflare Single Redirects 301，Worker 只服务主站 apex（见 `packages/worker/AGENTS.md`）。
+  - 静态跳转宿主已全部退役，旧域由 Cloudflare Single Redirects 301，Worker 只服务主站 apex（见 `packages/worker/AGENTS.md`）。
 
 ### 数据流总图
 
@@ -175,7 +220,7 @@ Hooks：
 - Tailwind CSS v4（`@import "tailwindcss"`，无 `tailwind.config.*`）
 - SvelTeX 0.5（Markdown 预处理器：unified 后端 + remark-gfm + katex + shiki）（内容文章用 `.md`）
 - TypeScript 6（`rewriteRelativeImportExtensions: true`）
-- tsconfig 已开启 `noUncheckedIndexedAccess` 与 `exactOptionalPropertyTypes`（2026-09）—— 两者分别修复 45 处与 27 处真实未定义状态问题后开启。批量修法：
+- tsconfig 已开启 `noUncheckedIndexedAccess` 与 `exactOptionalPropertyTypes`。批量修法：
   - `exactOptionalPropertyTypes` 要求给类型定义的可选属性显式写 `| undefined`（项目里确实存在“显式传 undefined”的语义，如调用方把 `string | undefined` 直接放进字面量）；
   - `noUncheckedIndexedAccess` 优先真修（用 `entries()` 遍历消除索引访问、用解构加逐项检查替代 `some` 加 `as` 断言），确证安全处（循环内已保证边界、测试里已有前置断言）用 `!`。
   - 开启后 oxlint 的 `prefer-nullish-coalescing` 会多报几处，属预期。
@@ -185,34 +230,29 @@ Hooks：
 
 ## 浏览器支持口径
 
-- **Baseline Widely available 为默认目标（2026-11-12 grilling 裁决）** — 不设 browserslist，构建目标走 Vite 默认档；特性取舍以本口径为统一判据。
+- **Baseline Widely available 为默认目标**：不设 browserslist，构建目标走 Vite 默认档；特性取舍以本口径为统一判据。
   - 达标特性直接用，不为旧浏览器写回退；未达标特性按指南给回退（如 dialog `closedby` 的外点关闭回退）或任其优雅降级（如 content-visibility 不支持即忽略、popoverLayer 无 Popover API 即跳过 top-layer）。
   - JS 硬依赖型 API 在口径内视为不可用（toSorted 禁令维持）；CSS 渐进增强型允许提前引入。
   - 特性支持数据以 modern-web-guidance 指南的 Baseline 数据为准，不凭记忆判断。
 
 ## 依赖升级挂起项
 
-以下升级经评估后刻意挂起，勿随批升级，各等触发条件；有 dependabot 击穿风险的条目在 `.github/dependabot.yml` 用 ignore 机械挡住（2026-10-06 katex 曾被自动升穿无兜底的挂起项，见下）。
+以下升级经评估后刻意挂起，勿随批升级，各等触发条件；有 dependabot 击穿风险的条目在 `.github/dependabot.yml` 用 ignore 机械挡住。
 
-- **typescript 6 到 7** — Kit 3 已迁移（3.0.1），TS7 双装在 2026-10-07 实测未达可用：双装本身可装（`typescript@~6` 主 + `@typescript/native@npm:typescript@7` 别名，svelte-check 给出的官方方案）。
+- **typescript 6 到 7**：Kit 3 已迁移（3.0.1），TS7 双装在 实测未达可用：双装本身可装（`typescript@~6` 主 + `@typescript/native@npm:typescript@7` 别名，svelte-check 给出的官方方案）。
   - 但 svelte-check 4.7.6 的 `--tsgo` 模式对本仓的 `.svelte` module script 具名导出（`JsonPreview` 的 `jsonPreview`、`TableImportSectionProps` 等）与组件句柄类型解析不工作（13 个 tsgo 特有类型错误，TS6 下为零）。
   - 触发条件：svelte-check 的 tsgo 集成覆盖 Svelte 模块类型后重做双装。
-  - oxlint-tsgolint 7 自带 TS 7 语义的类型检查引擎，与项目 typescript 版本解耦，互不阻塞——lint 侧已在 TS7 语义下运行。
-- **katex 0.18.2 到 0.19** — 0.19 已发布，SvelTeX 0.5.1 的 peer range 仍为 `^0.16 || ^0.17`。
-  - 0.18.2 已于 2026-10-06 由 dependabot 自动升入（PR #158，击穿当时无 ignore 兜底的挂起项），事后实测风险未发生：katex.min.css 与渲染输出同版本，0.18 的内部 class 前缀化（`.strut` 改 `.katex-strut`）两侧一致，站点也无硬编码旧内部 class，数学页正常。
+  - oxlint-tsgolint 7 自带 TS 7 语义的类型检查引擎，与项目 typescript 版本解耦，互不阻塞：lint 侧已在 TS7 语义下运行。
+- **katex 0.18.2 到 0.19**：0.19 已发布，SvelTeX 0.5.1 的 peer range 仍为 `^0.16 || ^0.17`。
+  - 0.18.2 已由 dependabot 升入，事后实测风险未发生：katex.min.css 与渲染输出同版本，0.18 的内部 class 前缀化（`.strut` 改 `.katex-strut`）两侧一致，站点也无硬编码旧内部 class，数学页正常。
   - 触发条件：SvelTeX 放开 peer range 后升 0.19 并目检内容数学页（dependabot.yml 的 ignore 挡 0.19+，届时解除）。
 
 ## 其他挂起项
 
-- **难度表条目按等级组延迟渲染** — content-visibility 渐进增强已按容器级落地（2026-11-12：镜像列表与总览页的表格 wrapper、共享表组 wrapper）；条目表按等级组逐组挂载不可行：tbody 是表格内部盒，规范上吃不到布局包含，挂了静默无效。
-  - 触发条件：大表实测出现渲染卡顿，值得把等级组从单表多 tbody 拆成逐组独立渲染结构时再动。
-- **字号尺收敛** — 全站约 230 处任意值 rem 字号、十余个档位（含 0.78、0.82、1.05 奇数档），另有少量 text-sm/base/lg 命名档混用。
-  - grilling 裁决（2026-11-12）：收敛前需要真正的排版设计决策（定几档、各档语义），churn 全场最大，刻意挂起，不并入 2026-11 的 UI 收敛波次。
-  - 触发条件：圆角尺守门（check:ui 的圆角规则）合入且稳定运行后，为字号尺单独开一轮设计盘问再动手。
-- **knip 与 rumdl** — 分别扫描未使用文件/依赖/导出与 markdown lint。
+- **knip 与 rumdl**：分别扫描未使用文件/依赖/导出与 markdown lint。
   - 评估结论：knip 需为刻意保留项配置豁免、rumdl 对当前 4 个源 md 收益有限，暂不引入。
-  - 2026-11 复审：代理文档与站内路由 md 的结构规则与行宽已由 markdownlint-cli 机械守住（`pnpm check:md`，content 排版自由豁免），rumdl 本身继续挂起，触发条件不变。
-  - 2026-09 复跑过一次 knip：5 个“未使用文件”全是 SvelteKit 特殊文件与动态 import 的误报，9 个“未使用 devDependencies”是 SvelteX 的动态导入依赖（见上文），唯一真实发现（barrel 冗余导出）已通过移除 barrel 解决——维持不引入的结论。
+  - 代理文档与站内路由 md 的结构规则与行宽已由 markdownlint-cli 守住（`pnpm check:md`，content 只关 MD013、MD025、MD033），rumdl 继续挂起。
+  - knip 复跑仍以 SvelteKit 特殊文件与动态 import 误报为主；唯一真实发现（barrel 冗余导出）已修，维持不引入。
   - 触发条件：代码库规模或 md 数量显著增长。
 
 ## 分支与工作树
