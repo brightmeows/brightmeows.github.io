@@ -77,6 +77,14 @@ export function setSectionOpen(
   return orderCards(next);
 }
 
+/** 卡片组合为空时回退到给定默认；用于查看态全部折叠后切入编辑态。 */
+export function ensureVisibleCards(
+  current: readonly TableCardId[],
+  fallback: readonly TableCardId[]
+): TableCardId[] {
+  return current.length > 0 ? orderCards(new Set(current)) : orderCards(new Set(fallback));
+}
+
 /** 字符串是否为已知卡片 id。 */
 export function isTableCardId(value: string): value is TableCardId {
   return (TABLE_CARD_IDS as readonly string[]).includes(value);

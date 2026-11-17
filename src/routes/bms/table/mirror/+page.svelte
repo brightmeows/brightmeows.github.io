@@ -101,7 +101,8 @@
   let addTableOpen = $state(false);
   let addTableNotice = $state<string | null>(null);
 
-  function toggleAddTable(): void {
+  async function toggleAddTable(): Promise<void> {
+    await auth.ensureLoaded();
     if (auth.user === null) {
       addTableNotice = m["mirror.add_login_required"]();
       return;
@@ -483,7 +484,7 @@
           aria-expanded={addTableOpen}
           aria-controls={addTableOpen ? "mirror-add" : undefined}
           title={m["mirror.add_table_hint"]()}
-          onclick={toggleAddTable}
+          onclick={() => void toggleAddTable()}
         >
           <Plus class="size-4 shrink-0" aria-hidden="true" />
           {m["mirror.add_table"]()}

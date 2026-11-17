@@ -37,6 +37,7 @@
   import {
     defaultCardShow,
     defaultViewSections,
+    ensureVisibleCards,
     isTableCardId,
     parseCardShow,
     serializeCardShow,
@@ -165,8 +166,28 @@
     const nextCopy = options?.copy ?? copyIntent;
     const url = new URL(window.location.href);
 
-    if (next === "edit") url.searchParams.set("edit", "1");
-    else url.searchParams.delete("edit");
+    if (next === "edit") {
+      url.searchParams.set("edit", "1");
+      const fallback =
+        readStoredCards() ??
+        defaultCardShow({
+          dataReady: model.dataReady,
+          isNew: createMode,
+          headerUnfilled: model.headerUnfilled,
+        });
+      const nextCards = ensureVisibleCards(cards, fallback);
+      if (nextCards.length !== cards.length || nextCards.some((id, index) => id !== cards[index])) {
+        cards = nextCards;
+        try {
+          sessionStorage.setItem(cardStorageKey, serializeCardShow(nextCards));
+        } catch {
+          // 隐私模式下 sessionStorage 可能不可用；URL 仍保留组合
+        }
+      }
+      url.searchParams.set("show", serializeCardShow(cards));
+    } else {
+      url.searchParams.delete("edit");
+    }
     if (nextCopy) url.searchParams.set("copy", "1");
     else url.searchParams.delete("copy");
 
@@ -271,6 +292,7 @@
     };
     const syncHash = (): void => {
       hashTarget = window.location.hash;
+      if (sectionFromHash(hashTarget) === null) handledHash = "";
     };
     syncHash();
     window.addEventListener("popstate", syncLocation);

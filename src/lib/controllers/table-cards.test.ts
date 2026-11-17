@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   defaultCardShow,
   defaultViewSections,
+  ensureVisibleCards,
   parseCardShow,
   serializeCardShow,
   setCardShow,
@@ -78,6 +79,16 @@ describe("setSectionOpen", () => {
 
   it("展开按固定顺序", () => {
     expect(setSectionOpen(["charts"], "header", true)).toEqual(["header", "charts"]);
+  });
+});
+
+describe("ensureVisibleCards", () => {
+  it("非空组合保持并排序", () => {
+    expect(ensureVisibleCards(["charts", "header"], ["charts"])).toEqual(["header", "charts"]);
+  });
+
+  it("全部折叠时回退默认", () => {
+    expect(ensureVisibleCards([], ["header", "charts"])).toEqual(["header", "charts"]);
   });
 });
 
