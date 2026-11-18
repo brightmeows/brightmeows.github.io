@@ -7,12 +7,21 @@
   import { m } from "#lib/paraglide/messages.js";
 
   let { data }: { data: PageData } = $props();
+
+  const chapterTotal = $derived(data.books.reduce((sum, book) => sum + book.chapterCount, 0));
 </script>
 
 <PageShell hero={heroPane} panes={[contentPane]} />
 
 {#snippet heroPane()}
-  <PageHero titleText={m["content.category.reading"]()}>
+  <PageHero
+    titleText={m["content.category.reading"]()}
+    intro={m["content.reading.intro"]()}
+    meta={m["content.reading.book_summary"]({
+      books: data.books.length,
+      chapters: chapterTotal,
+    })}
+  >
     {#snippet title()}{m["content.category.reading"]()}{/snippet}
   </PageHero>
 {/snippet}

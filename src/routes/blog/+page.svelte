@@ -7,4 +7,9 @@
   let { data }: { data: PageData } = $props();
 </script>
 
-<PostListPage heading={m["content.category.blog"]()} posts={data.posts} />
+<PostListPage
+  heading={m["content.category.blog"]()}
+  posts={data.posts}
+  intro={m["content.blog.intro"]()}
+  meta={m["content.post_count"]({ count: data.posts.length })}
+/>

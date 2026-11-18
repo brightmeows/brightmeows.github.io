@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { ChartData } from "@brightmeows/bms/format";
-  import ArrowRight from "@lucide/svelte/icons/arrow-right";
+  import ArrowLeft from "@lucide/svelte/icons/arrow-left";
   import Check from "@lucide/svelte/icons/check";
   import ChevronDown from "@lucide/svelte/icons/chevron-down";
   import ChevronRight from "@lucide/svelte/icons/chevron-right";
@@ -266,16 +266,13 @@
 <PageShell hero={heroPane} panes={[contentPane]} />
 
 {#snippet heroPane()}
-  <PageHero titleText={m["batch.page_title"]()}>
+  <PageHero titleText={m["batch.page_title"]()} intro={m["batch.subtitle"]()}>
     {#snippet title()}{m["batch.page_title"]()}{/snippet}
-    {#snippet promo()}
-      <div class="flex flex-col items-center gap-4">
-        <p class="m-0 text-center text-[1.1rem] text-white-70">{m["batch.subtitle"]()}</p>
-        <a class={btnGhostMd} href="/bms/table/search">
-          {m["batch.back_link"]()}
-          <ArrowRight class="size-4 shrink-0" aria-hidden="true" />
-        </a>
-      </div>
+    {#snippet actions()}
+      <a class={btnGhostMd} href="/bms/table/search">
+        <ArrowLeft class="size-4 shrink-0" aria-hidden="true" />
+        {m["batch.back_link"]()}
+      </a>
     {/snippet}
   </PageHero>
 {/snippet}

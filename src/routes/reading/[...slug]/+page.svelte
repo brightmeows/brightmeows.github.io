@@ -9,6 +9,7 @@
 <PostArticle
   title={data.post.title}
   date={data.post.date}
+  context={data.chapters?.bookTitle}
   component={data.component}
   prev={data.prev}
   next={data.next}

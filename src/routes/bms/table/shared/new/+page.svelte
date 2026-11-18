@@ -252,11 +252,8 @@
 <PageShell hero={heroPane} panes={[contentPane]} />
 
 {#snippet heroPane()}
-  <PageHero titleText={m["shared.create.title"]()}>
+  <PageHero titleText={m["shared.create.title"]()} intro={m["shared.create.subtitle"]()}>
     {#snippet title()}{m["shared.create.title"]()}{/snippet}
-    {#snippet promo()}
-      <p class="m-0 text-center text-[1.1rem] text-white-70">{m["shared.create.subtitle"]()}</p>
-    {/snippet}
   </PageHero>
 {/snippet}
 
