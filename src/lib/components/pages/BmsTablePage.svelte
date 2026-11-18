@@ -11,6 +11,7 @@
 <script lang="ts">
   import type { BmsDropResult } from "@brightmeows/bms/editor";
   import BookOpen from "@lucide/svelte/icons/book-open";
+  import Check from "@lucide/svelte/icons/check";
   import ChevronDown from "@lucide/svelte/icons/chevron-down";
   import Copy from "@lucide/svelte/icons/copy";
   import Download from "@lucide/svelte/icons/download";
@@ -32,7 +33,12 @@
   import ConfirmDialog from "#lib/components/ui/ConfirmDialog.svelte";
   import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
-  import { badgeCountSm, btnGhost, btnPrimaryLarge } from "#lib/constants/ui-classes.js";
+  import {
+    badgeCountSm,
+    btnGhost,
+    btnGhostMd,
+    btnPrimaryLarge,
+  } from "#lib/constants/ui-classes.js";
   import type { EditorNotice } from "#lib/controllers/editor.js";
   import {
     defaultCardShow,
@@ -75,7 +81,7 @@
     publish?: TablePagePublish | undefined;
     /** 能力三槽：写权限、创建态与初始基线。 */
     capabilities?: TablePageCapabilities | undefined;
-    /** 标题区操作槽（共享表作者信息、下载、登录）。 */
+    /** 标题区操作槽（共享表作者信息、提示文本）。 */
     actions?: Snippet | undefined;
     /** 编辑态概览区的表管理槽（共享表改 id、删除）。 */
     management?: Snippet | undefined;
@@ -593,23 +599,6 @@
     <Download class="size-4 shrink-0" aria-hidden="true" />
     {m["editor.export.package"]()}
   </button>
-  {#if headerUrl !== null}
-    <a class="{btnGhost} w-full" href={headerUrl} target="_blank" rel="noopener noreferrer">
-      <ExternalLink class="size-4 shrink-0" aria-hidden="true" />
-      {m["table.view.header"]()}
-    </a>
-  {/if}
-  {#if dataReady && model.dataFetchUrl !== null}
-    <a
-      class="{btnGhost} w-full"
-      href={model.dataFetchUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      <ExternalLink class="size-4 shrink-0" aria-hidden="true" />
-      {m["table.view.data"]()}
-    </a>
-  {/if}
   <a
     class="{btnGhost} w-full"
     href="https://github.com/brightmeows/bms-skills/blob/main/skills/bms-table/SKILL.md"
@@ -632,11 +621,49 @@
   {/if}
 {/snippet}
 
+{#snippet heroActions()}
+  {#if importUrl !== null}
+    <button
+      class={btnGhostMd}
+      type="button"
+      aria-label={m["table.view.copy_import"]()}
+      title={importUrl}
+      onclick={copyImportUrl}
+    >
+      {#if cb.copied}
+        <Check class="size-4 shrink-0 text-success" aria-hidden="true" />
+      {:else if cb.failed}
+        <TriangleAlert class="size-4 shrink-0 text-error" aria-hidden="true" />
+      {:else}
+        <Copy class="size-4 shrink-0" aria-hidden="true" />
+      {/if}
+      {cb.copied
+        ? m["common.copied"]()
+        : cb.failed
+          ? m["common.copy_failed"]()
+          : m["table.view.copy_import"]()}
+    </button>
+  {/if}
+  {#if headerUrl !== null}
+    <a class={btnGhostMd} href={headerUrl} target="_blank" rel="noopener noreferrer">
+      {m["table.view.header"]()}
+      <ExternalLink class="size-4 shrink-0" aria-hidden="true" />
+    </a>
+  {/if}
+  {#if dataReady && model.dataFetchUrl !== null}
+    <a class={btnGhostMd} href={model.dataFetchUrl} target="_blank" rel="noopener noreferrer">
+      {m["table.view.data"]()}
+      <ExternalLink class="size-4 shrink-0" aria-hidden="true" />
+    </a>
+  {/if}
+{/snippet}
+
 {#snippet heroPane()}
   <PageHero
     clamp={false}
     titleText={model.pageTitle}
     meta={model.symbol.trim() !== "" ? m["table.page.symbol"]({ symbol: model.symbol }) : undefined}
+    actions={headerReady && !createMode ? heroActions : undefined}
   >
     {#snippet title()}
       {#if isEdit}
@@ -669,27 +696,6 @@
       </span>
     {:else if headerReady}
       <span>{m["table.stats.data_pending"]()}</span>
-    {/if}
-    {#if !createMode}
-      {#if headerReady}
-        <span class="text-white-40">·</span>
-      {/if}
-      <span>{m["table.list.import_url"]()}</span>
-      {#if importUrl}
-        <span class="hidden max-w-full font-mono text-[0.85rem] break-all text-white-75 sm:inline">
-          {importUrl}
-        </span>
-        <button class="link-accent text-[0.85rem]" type="button" onclick={copyImportUrl}>
-          {m["common.click_copy"]()}
-        </button>
-      {:else}
-        <span class="text-white-50">{m["table.loading.reading"]()}</span>
-      {/if}
-      {#if cb.copied}
-        <span class="text-success">{m["common.copied"]()}</span>
-      {:else if cb.failed}
-        <span class="text-error">{m["common.copy_failed"]()}</span>
-      {/if}
     {/if}
   </div>
   {#if headerReady && actions}
