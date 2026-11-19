@@ -151,30 +151,10 @@ R2 地址单一来源与镜像、共享两对 URL 构造函数都在 `src/lib/co
 三类表的每张表只有一个地址：`/bms/table/<table>/`、`/bms/table/mirror/<name>/`、`/bms/table/shared/<id>/`。
 
 - 查看态默认、地址即导入地址（meta 注入不变）；点主按钮以 `?edit=1` 浅层路由就地切换（压入历史、返回键回查看态、深链与刷新保持编辑态）。主按钮按权限改文案：共享表作者“编辑此表”，自托管表 admin“本地编辑”，镜像表、他人共享表与自托管表非 admin“创建副本”。副本意图另带 `?copy=1`，保存时跳新建页确认 id（复用草稿认领）。
-- 页面（`BmsTablePage`）持有唯一一份内存模型与两段式加载（header 先行、data 随后、草稿探查殿后）。header 加载完成即激活三张卡；data 未就绪时只读：谱面卡显示加载或错误，段位卡显示“无法判定”，编辑与副本主按钮禁用，菜单仍可导出头部，hero 动作只给出 header.json 入口。data 失败时菜单可恢复本地草稿；恢复后数据来自草稿，继续查看与编辑，保存仍按原表权限。
-- 三张工作卡：头部（含等级参考折叠区）、谱面、段位。查看态用原生 `<details>` 折叠 section，
-  默认展开谱面，三区可同时展开，允许全部折叠；编辑态用 `TableCardBar` toggle 管理可见卡，
-  `?show=header,charts,course` 逗号列表记录组合，空或非法回退动态默认，至少保留一张。
-  跨模式 push、组合 replace；旧 `?show=` 在查看态作为初始展开集合后从地址栏清除，编辑态继续记录。
-  标题区 hero 承载标题、符号 meta 与一行常用动作（复制导入链接、查看 header.json、查看 data.json，走 `btnGhostMd`，两态都显示、创建态隐藏；复制按钮以原生 title 携带完整导入地址，导入地址不再明文展示），
-  统计与 `actions` 留在 hero 下方工具行；统计在 data 未就绪时显示未加载；顶栏目录查看态列三区，
-  编辑态只列可见卡。
-- 默认组合按模式区分：查看态默认只展开谱面，不持久化；编辑态新建、空表或头部未填只开头，其余开头加谱面，同会话用 sessionStorage 记住上次组合。
-- 右下角 dock：查看态收起是主按钮加“菜单”按钮；编辑态收起是只读“编辑中”胶囊、dirty 时的保存按钮与“菜单”按钮；展开面板收导入全三 tab、导出、fork、草稿与 notice 等段（完整段清单见 `TableDock` 模板）。保存常驻菜单外；状态胶囊只读，菜单按钮负责展开。
-- 收展由 `src/lib/controllers/table-dock.ts` 状态机驱动（纯决策配相邻测试）。编辑态默认展开、查看态默认收起，模式切换重置初值并滚回页首；滚动方向用顶栏同款累积阈值（`DOCK_COLLAPSE_THRESHOLD`/`DOCK_EXPAND_THRESHOLD`，下滑收起、上滑展开、停止不展开）；键盘焦点在 dock 内冻结，busy 与待恢复草稿豁免滚动收起。**距页底不再强制展开**：保存常驻与“菜单”文字后，强制展开会遮住行内操作，改为用户主动打开。
-- 成功类 notice 短时自动清除（时长见页面常量）、warn/error 常驻到被替换。
-- 页面单树渲染，卡头即 summary；编辑态卡片行 sticky 在顶栏下方，每区一张玻璃卡。
-  编辑态仅额外动态加载导入器（渲染进 dock 导入段），查看态包体不背导入器；添加抽屉在 `EntriesPanel` 内动态加载。
-- 头部卡含头部字段与共享表管理块（改 id、删除）；等级参考进头部卡的折叠区，不再独立成卡。
-- 条目表按等级分组、取消分页全量渲染；等级行用 `ToggleJumpChip` 隐藏/显示组（组件只服务该场景），组头静态，不再是可折叠目录子项；表格删除等级列，下载与站点链接合并为链接列，图标统一并由容器宽度收进“...”菜单。
-- 本地闭环：草稿按表键存 IndexedDB（`table-drafts.ts`，单快照、防抖落盘；dock 展开态内给恢复或丢弃），导出标准两份与 `{header, data}` 合并包。
-- shared 模式额外接入整包保存（发布前必须全部指派，保存前比对线上 `updated_at` 并发提示），另存共享在同源走草稿认领（sessionStorage）跳新建页。
-- 保存闸门：`save`、`saveAsSharedNow`、Ctrl/Cmd+S 都以 data 就绪为前置。data 加载中 entries 为空，误保存会清空共享表；该闸门是独立 bugfix 语义。
-- 添加谱面：谱面卡“添加谱面”抽屉四 tab（本地文件、其他表、手工单条、JSON 追加），添加后留在抽屉连续操作；跨表来源镜像加共享；编辑态整页拖拽保留；header/package 导入留在菜单。
-  - 导入面板支持合并包与 header/data 的粘贴上传、镜像表 fork、按条目从其他镜像或共享表选择导入，以及本地 BMS/BMSON 拖拽（递归收集、哈希、编码嗅探与头部预填细节见实现）。
-- 段位：picker 多选与跨表（镜像加共享），段位行可读 BMS 文件，只写段位行；条目可拖进段位或经行内“加入段位”动作；段位与谱面两张列表保持独立，不自动互写。反查只做段位到当前表与外部表（镜像走搜索索引，共享表由用户选表查 data.json），只展示元数据，不写入；共享表不建全局索引。
-- 拖拽管线在 `src/lib/utils/infra/bms-drop.ts`（拖拽区与整页遮罩共用）；编辑态整页接收拖入（`BmsDropOverlay` 高亮遮罩），误拖的非 BMS 文件计 failed 呈现。
-- 放弃未保存修改在两态都可用（删草稿并回载远端）。旧 `/edit/` 地址已移除并直接 404。
+- 页面协议（两段式加载、三卡结构、hero 动作契约、notice、保存闸门、shared 整包保存与草稿认领另存、放弃修改）见 `src/lib/components/pages/BmsTablePage.svelte` 头注；
+  dock 收展与面板段见 `src/lib/components/bms/TableDock.svelte` 头注；条目表与等级分组见 `EntriesPanel` 头注；
+  草稿闭环见 `src/lib/data/api/table-drafts.ts` 头注；拖拽管线见 `src/lib/utils/infra/bms-drop.ts` 头注。
+- 添加谱面抽屉四 tab 的跨表来源镜像加共享，header/package 导入留在 dock 菜单；导入面板细节见 `TableImportSection` 头注。段位协议（picker 多选、跨表、反查、两列表独立）见 `CoursePanel` 头注。
 
 #### 玻璃
 
@@ -191,16 +171,8 @@ GlassContainer/GlassPanel/GlassCard/GlassButton 与 `popover-glass` 不带 `bord
 
 ### SvelTeX（Markdown 管线）
 
-- **`frontmatter.head: false` 不删**：SvelTeX 默认把 frontmatter 的 title/meta 等注入页面 `<head>`，但本项目在 `+layout.svelte` 统一管理 `<svelte:head>`。保持关闭，否则页面会出现重复 `<title>`。
-  - `metadata` 导出不受影响（`+page.ts` 仍靠它读 title/date/order）。
-- **`math.css.type: "none"` 不删**：否则 SvelTeX 会从 CDN 注入 katex 样式表（hybrid 模式默认拉 jsdelivr）。本项目 katex CSS 由 `MarkdownContent.svelte` 本地 import，保证离线构建与版本一致。
-- **`remark-gfm` 必须显式挂在 `markdown.remarkPlugins`**：SvelTeX 默认不启用 GFM（表格/任务列表/删除线），不挂就没有表格（已实测证实）。
-- **`remark-retext` 是必需的依赖**：SvelTeX 的 unified 后端在 MarkdownHandler 里无条件 `await import('remark-retext')`，即使不用 `retextPlugins`。缺了它首次构建即报模块找不到错误。
-- **`MarkdownContent` 的 `[&_.katex]` 系选择器不依赖 katex 内部 class 命名**：katex 0.18 的内部 class 前缀化（`.strut` 改 `.katex-strut`）不影响这些选择器（升级实测）。版本升级的挂起与触发条件见根 `AGENTS.md` 的“依赖升级挂起项”。
-- **扩展名两处注册**：`.md`/`.svx` 既要写进 SvelTeX 的 `extensions` 配置，也要写进 `vite.config.ts` 里 `sveltekit()` 插件选项的 `extensions`（Svelte 编译器层面）。漏掉任一处文件就不被处理。
-  - Kit 3 起 svelte.config.ts 不再支持，SvelTeX preprocess 链与 kit 配置都并入该插件选项，SvelTeX 工厂异步、模块顶层 await。
-- **`frontmatter` 导出为 `metadata` 对象**：与 mdsvex 摊平成独立命名导出的行为不同，读取方式为 `post.metadata?.title`。类型声明见 `src/sveltex.d.ts`。
-- **缩进代码块与自动链接被刻意禁用**：SvelTeX 为与 Svelte 语法共存而禁用这两者（同 MDX 的做法）。文章用围栏代码块和显式链接，不要用四空格缩进或裸 URL。
+SvelTeX 配置坑（head 注入关闭、GFM 显式挂载、remark-retext 必需、扩展名两处注册、缩进代码块与自动链接刻意禁用）都注释在 `vite.config.ts` 的工厂配置处；
+katex 选择器兼容性见 `src/lib/components/content/MarkdownContent.svelte` 头注；`frontmatter` 导出为 `metadata` 对象、读取方式为 `post.metadata?.title`，见 `src/sveltex.d.ts` 头注。
 
 ### 内容系统（博客与杂记）
 
@@ -211,9 +183,7 @@ GlassContainer/GlassPanel/GlassCard/GlassButton 与 `popover-glass` 不带 `bord
   - 若放在仓库根的 posts 目录，则模块 URL 会与路由前缀冲突；放在 content/posts 下不冲突。
   - Kit 3 起 `config.alias` 已弃用：内容别名已迁 package.json subpath imports（`#posts/*` → `./content/posts/*`），迁移后模块 URL 形态不变（仍为 content/posts 下相对形态，已验证无路由前缀冲突）。
 - **显式薄路由与共享组件**：`/blog` 与 `/notes` 各自有列表与 `[...slug]` 正文路由；列表共用 `PostListPage`，正文共用 `PostArticle`，正文 import `#posts/<分类>/<slug>.md`。`[...slug]` 在 `load` 中清理末尾 `/`，因为全局 `trailingSlash="always"`。
-- **扫描器只收 `.md`，slug 与文件绑定**：`post-scanner.ts` 拒绝 `.svx` 与其他文件；`metadata.slug` 必须等于文件相对路径（去扩展名），否则构建期报错。排序为 order 优先，其余按 date 降序；首页 `getHomePosts` 只取 `featuredOnHome` 分类（条数见实现）。
-- **`src/lib/loaders/posts.ts` 用 `process.cwd()`**：`POSTS_DIR` 常量值为 content/posts，`process.cwd()` 在 SSG 构建上下文中安全（单进程），但如果将来引入 SSR 路由会出问题。
-- **`src/sveltex.d.ts` 声明 Markdown 模块类型**：`*.md`/`*.svx` 导出 `default`（Svelte 组件）与 `metadata`（frontmatter 镜像，类型 `Partial<PostMetadata>`）。
+  扫描协议（只收 `.md`、slug 与文件绑定、排序规则）、`process.cwd()` 边界与首页取数见 `src/lib/loaders/post-scanner.ts`、`src/lib/loaders/posts.ts` 头注；`src/sveltex.d.ts` 声明 Markdown 模块类型。
 
 ## 架构边界
 

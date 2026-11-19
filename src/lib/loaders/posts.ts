@@ -1,3 +1,8 @@
+/**
+ * 内容加载入口：POSTS_DIR 恒为 content/posts，经 process.cwd() 解析在 SSG
+ * 构建上下文（单进程）中安全，引入 SSR 路由后会出问题；首页 selectHomePosts
+ * 只取 featuredOnHome 分类（条数见实现）。
+ */
 import { resolve } from "node:path";
 
 import { scanPostsDirectory } from "./post-scanner";

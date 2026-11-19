@@ -25,3 +25,8 @@ declare module "*.svx" {
   export default component;
   export const metadata: PostFrontmatter | undefined;
 }
+/**
+ * Markdown 模块类型声明：*.md/*.svx 导出 default（Svelte 组件）与 metadata
+ * （frontmatter 镜像，类型 Partial<PostMetadata>），读取方式为
+ * post.metadata?.title（与 mdsvex 摊平成独立命名导出的行为不同）。
+ */

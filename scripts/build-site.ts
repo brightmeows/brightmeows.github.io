@@ -10,6 +10,10 @@
  * 组装完即清理，避免旧 flavor 残留污染下一次构建。
  *
  * 用法：`pnpm build`（deploy、CI check job 与本地验收共用同一入口）。
+ *
+ * 版本坑：客户端在未命中路由的 fallback 与跳转前会与 `/_app/version.json` 比对，
+ * 两边不一致就整页刷新，而未命中路由时刷新不收敛（表现为非英语 404 空白页）。
+ * 因此三个 flavor 必须注入同一个值，不要事后改写产物里的版本比对文件。
  */
 
 import { spawnSync } from "node:child_process";

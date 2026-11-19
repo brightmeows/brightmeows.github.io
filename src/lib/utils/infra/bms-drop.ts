@@ -1,3 +1,7 @@
+/**
+ * BMS 文件拖拽管线：拖拽区（BmsDropZone）与编辑态整页遮罩（BmsDropOverlay）
+ * 共用；编辑态整页接收拖入，误拖的非 BMS 文件计 failed 呈现。
+ */
 import { entryHashes, type BmsDropResult } from "@brightmeows/bms/editor";
 import {
   bmsTextToFields,
