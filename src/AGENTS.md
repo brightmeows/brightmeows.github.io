@@ -67,9 +67,6 @@
 
 - 两套都 `color-scheme: dark`，玻璃、文字、强调色与 shiki 代码块（github-dark）完全共用，两套主题只改页面背景与星空渐变（玻璃回退实色 `--glass-fallback` 是唯一的主题分叉例外，见本文件主题与玻璃节）。
 - 无跨主题的语义色分支（透明度阶梯收敛为 `@theme` 的 `--color-white-N`/`--color-black-N`，类名即值、不做语义归并，见 `layout.css`）。
-- 偏好存 localStorage 的 `theme` 键（值域仍只有 light/dark，选跟随系统即清除键，无存储值等同跟随系统，首屏脚本因此零改动）。
-- 顶栏主题按钮三项下拉（浅色、深色、跟随系统，与语言菜单同款交互）：固定项写入偏好，跟随系统清除键并随 `prefers-color-scheme` 实时变化。
-- 触发按钮图标表达当前偏好（太阳/月亮/半圆），预渲染首帧为半圆（存储不可知），水合后由 `init()` 同步。
 - 首屏由 `app.html` 的内联脚本在绘制前写入 `<html data-theme>`，运行时由 `src/lib/data/store/theme-store.svelte.ts` 接管（纯逻辑在 `src/lib/utils/ui/theme.ts`）。
 - 主题变量定义在 `layout.css` 的 `:root` 与 `:root[data-theme="dark"]`，**必须放在任何 `@layer` 之外**：Tailwind 的 `@theme` 变量在 theme 层，层内规则无论优先级都压不过未分层规则。
 - 星空画布底色走 `--gradient-sky`；星星与流星在深色端按降亮度绘制（系数见 starfield 实现），动画分支每帧读取主题，静态帧（减少动效偏好）由 MutationObserver 触发重绘。
@@ -157,9 +154,7 @@
 
 #### R2 端点
 
-- **`r2.ts` 集中管理 R2 端点**：`src/lib/constants/r2.ts` 定义了 `R2_BASE`/`R2_TABLES_BASE`/`R2_INDEXES_BASE` 三个常量。修改 R2 地址时仅改此文件。
-  - 另有 `r2TableHeaderUrl()`/`r2TableDataUrl()` 与共享表的 `r2SharedHeaderUrl()`/`r2SharedDataUrl()` 两对构造函数。
-  - 该文件位于 `#lib/constants/`（环境无关层），可供构建时和客户端代码共同使用。
+R2 地址单一来源与镜像、共享两对 URL 构造函数都在 `src/lib/constants/r2.ts`（环境无关层，构建期与客户端共用）；改地址只改 `config/site.json` 的 `r2.base`，文件协议细节见其头注。
 
 #### 共享表
 
@@ -218,10 +213,7 @@ GlassContainer/GlassPanel/GlassCard/GlassButton 与 `popover-glass` 不带 `bord
 
 #### JSON 预览
 
-- **JSON 预览在行内文本上是右键或长按手势**：难度表条目标题与镜像表名称的 JSON 预览由 `contextmenu`（桌面右键）与长按（触屏，时长见组件常量）触发；悬停或左键只显示“右键/长按查看 JSON”小气泡，不打开弹层。
-  - 底部“镜像 JSON / 原始 JSON”两个显式按钮仍是悬停预览加左键复制。
-  - 这是刻意避免鼠标扫过密集表格时被大弹层打断；不要把行内文本改回悬停预览。
-  - 触屏长按期间无额外反馈，触发后吞掉跟随的 `click` 与 `contextmenu`；触发文本禁用选择与系统 callout，代价是不能再直接选中标题文本复制。
+行内文本与显式按钮的两态触发协议、悬停禁用动机与触屏坑见 `src/lib/components/ui/JsonPreview.svelte` 头注；消费方是难度表条目标题与镜像表名称。
 
 ### SvelTeX（Markdown 管线）
 
