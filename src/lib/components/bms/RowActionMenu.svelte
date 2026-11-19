@@ -2,7 +2,7 @@
   import EllipsisVertical from "@lucide/svelte/icons/ellipsis-vertical";
 
   import ClickPopover from "#lib/components/ui/ClickPopover.svelte";
-  import { btnIcon } from "#lib/constants/ui-classes.js";
+  import { btnIcon, menuItem, menuItemDanger } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
 
   /**
@@ -42,9 +42,7 @@
   {#snippet content({ close })}
     {#each items as item (item.label)}
       <button
-        class="flex w-full items-center rounded-glass-sm px-2 py-1.5 text-left text-[0.85rem] transition-colors {item.danger
-          ? 'text-error hover:bg-error/10'
-          : 'text-white-80 hover:bg-white-10 hover:text-white'} disabled:pointer-events-none disabled:opacity-40"
+        class={item.danger ? menuItemDanger : menuItem}
         type="button"
         disabled={item.disabled}
         onclick={() => {
