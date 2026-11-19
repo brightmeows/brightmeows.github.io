@@ -8,15 +8,17 @@
   interface Props {
     heading: string;
     posts: Post[];
+    intro: string;
+    meta: string;
   }
 
-  let { heading, posts }: Props = $props();
+  let { heading, posts, intro, meta }: Props = $props();
 </script>
 
 <PageShell hero={heroPane} panes={[contentPane]} />
 
 {#snippet heroPane()}
-  <PageHero titleText={heading}>
+  <PageHero titleText={heading} {intro} {meta}>
     {#snippet title()}{heading}{/snippet}
   </PageHero>
 {/snippet}

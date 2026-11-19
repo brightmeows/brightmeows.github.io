@@ -632,17 +632,11 @@
   {/if}
 {/snippet}
 
-{#snippet symbolPane()}
-  <div class="text-center text-[1.1rem] text-white-70 italic">
-    {m["table.page.symbol"]({ symbol: model.symbol })}
-  </div>
-{/snippet}
-
 {#snippet heroPane()}
   <PageHero
-    clamp={!isEdit}
+    clamp={false}
     titleText={model.pageTitle}
-    promo={model.symbol.trim() !== "" ? symbolPane : undefined}
+    meta={model.symbol.trim() !== "" ? m["table.page.symbol"]({ symbol: model.symbol }) : undefined}
   >
     {#snippet title()}
       {#if isEdit}

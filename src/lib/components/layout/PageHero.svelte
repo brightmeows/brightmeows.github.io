@@ -4,23 +4,42 @@
   interface Props {
     /** 页面标题；内容由调用方渲染，组件负责 h1 与布局 */
     title: Snippet;
-    /** 标题下的宣传内容（说明、入口按钮等）；不传则只有标题 */
-    promo?: Snippet | undefined;
-    /** 标题对齐；文章页用 start，其余默认 center */
+    /** 标题下的一句定位；组件统一字号、行高、限宽与颜色 */
+    intro?: string | undefined;
+    /** 介绍下的被动元信息（日期、计数、符号）；组件统一小字样式 */
+    meta?: string | undefined;
+    /** 动作行；页面直接放按钮，组件负责换行、间距与对齐 */
+    actions?: Snippet | undefined;
+    /** 额外内容；仅首页目录使用 */
+    extra?: Snippet | undefined;
+    /** 标题与撑持区对齐；文章页用 start，其余默认 center */
     align?: "center" | "start";
-    /** 完整标题文本，供两行截断后的 title 属性使用 */
+    /** 完整标题文本，供截断后的 title 属性使用 */
     titleText?: string | undefined;
-    /** 是否把标题限制为两行；编辑态标题输入框传 false */
+    /** 是否把标题限制为两行；索引页默认 true，详情与文章传 false */
     clamp?: boolean;
     /** 标题锚点 id（保留旧书签落点） */
     id?: string | undefined;
   }
 
-  let { title, promo, align = "center", titleText, clamp = true, id }: Props = $props();
+  let {
+    title,
+    intro,
+    meta,
+    actions,
+    extra,
+    align = "center",
+    titleText,
+    clamp = true,
+    id,
+  }: Props = $props();
+
+  const centered = $derived(align === "center");
+  const hasSupport = $derived(Boolean(intro || meta || actions || extra));
 </script>
 
 <style>
-  .page-hero.no-promo {
+  .page-hero.no-support {
     margin-bottom: 2.5rem;
   }
 
@@ -31,18 +50,41 @@
   }
 </style>
 
-<header class="page-hero" class:no-promo={!promo}>
+<header class="page-hero" class:no-support={!hasSupport}>
   <div class="page-hero-inner mx-auto w-full max-w-[1000px] pt-6">
     <h1
       {id}
-      class="page-title m-0 {clamp ? 'line-clamp-2' : ''} {align === 'center' ? 'text-center' : ''}"
+      class="page-title m-0 {clamp ? 'line-clamp-2' : ''} {centered ? 'text-center' : ''}"
       title={titleText}
     >
       {@render title()}
     </h1>
-    {#if promo}
-      <div class="page-hero-promo pt-6 pb-10">
-        {@render promo()}
+    {#if hasSupport}
+      <div class="flex flex-col gap-5 pt-6 pb-10">
+        {#if intro || meta}
+          <div
+            class="flex flex-col gap-2 {centered
+              ? 'items-center text-center'
+              : 'items-start text-left'}"
+          >
+            {#if intro}
+              <p class="m-0 max-w-[46rem] text-[1.05rem] leading-[1.5] text-white-70">
+                {intro}
+              </p>
+            {/if}
+            {#if meta}
+              <p class="m-0 text-[0.9rem] text-white-60">{meta}</p>
+            {/if}
+          </div>
+        {/if}
+        {#if actions}
+          <div class="flex flex-wrap gap-3 {centered ? 'justify-center' : 'justify-start'}">
+            {@render actions()}
+          </div>
+        {/if}
+        {#if extra}
+          {@render extra()}
+        {/if}
       </div>
     {/if}
   </div>

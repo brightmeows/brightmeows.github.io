@@ -400,34 +400,27 @@
 <PageShell {tocItems} hero={heroPane} panes={[listPane]} />
 
 {#snippet heroPane()}
-  <PageHero id="bms-table-mirror" titleText={pageTitle}>
+  <PageHero id="bms-table-mirror" titleText={pageTitle} intro={m["mirror.intro"]()}>
     {#snippet title()}{pageTitle}{/snippet}
-    {#snippet promo()}
-      <div class="flex flex-col items-center gap-4">
-        <p class="m-0 max-w-[46rem] text-center text-[1.05rem] text-white-70">
-          {m["mirror.bms_hint_before"]()}{m["mirror.bms_hint_after"]()}
-        </p>
-        <div class="flex flex-wrap items-center justify-center gap-3">
-          <button type="button" class={btnGhostMd} onclick={copyTables}>
-            <Copy class="size-4 shrink-0" aria-hidden="true" />
-            {m["common.click_copy"]()}
-          </button>
-          <a
-            class={btnGhostMd}
-            href="https://darksabun.club/table/tablelist.html"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <ExternalLink class="size-4 shrink-0" aria-hidden="true" />
-            {m["mirror.tutorial"]()}
-          </a>
-          {#if cb.copied}
-            <span class="text-success">{m["common.copied"]()}</span>
-          {:else if cb.failed}
-            <span class="text-error">{m["common.copy_failed"]()}</span>
-          {/if}
-        </div>
-      </div>
+    {#snippet actions()}
+      <button type="button" class={btnGhostMd} onclick={copyTables}>
+        <Copy class="size-4 shrink-0" aria-hidden="true" />
+        {m["common.click_copy"]()}
+      </button>
+      <a
+        class={btnGhostMd}
+        href="https://darksabun.club/table/tablelist.html"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {m["mirror.tutorial"]()}
+        <ExternalLink class="size-4 shrink-0" aria-hidden="true" />
+      </a>
+      {#if cb.copied}
+        <span class="text-success">{m["common.copied"]()}</span>
+      {:else if cb.failed}
+        <span class="text-error">{m["common.copy_failed"]()}</span>
+      {/if}
     {/snippet}
   </PageHero>
 {/snippet}

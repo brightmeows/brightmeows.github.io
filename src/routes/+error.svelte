@@ -1,10 +1,21 @@
 <script lang="ts">
+  import Home from "@lucide/svelte/icons/house";
+  import Layers from "@lucide/svelte/icons/layers";
+  import Search from "@lucide/svelte/icons/search";
+  import type { Component } from "svelte";
+
   import PageShell from "#lib/components/layout/PageShell.svelte";
-  import GlassButton from "#lib/components/ui/GlassButton.svelte";
-  import { btnPrimaryLink } from "#lib/constants/ui-classes.js";
+  import { btnGhostMd, btnPrimaryLink } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
   import { resolve } from "$app/paths";
   import { page } from "$app/state";
+
+  interface Exit {
+    href: string;
+    label: () => string;
+    icon: Component;
+    primary: boolean;
+  }
 
   // 错误页：404 与其它错误共用一张卡片，按状态码切换文案。
   // 根 layout 不渲染顶栏（顶栏在各页的 PageShell 里），这里补上站内出口，
@@ -15,10 +26,20 @@
     notFound ? m["error.not_found_hint"]() : m["error.generic_hint"]({ status: page.status })
   );
   // 文案延迟求值：与顶栏菜单同一约定，模块求值期不触碰 m。
-  const exits = [
-    { href: resolve("/"), label: () => m["nav.home"](), primary: true },
-    { href: resolve("/bms/table/mirror"), label: () => m["nav.mirror"](), primary: false },
-    { href: resolve("/bms/table/search"), label: () => m["nav.search"](), primary: false },
+  const exits: Exit[] = [
+    { href: resolve("/"), label: () => m["nav.home"](), icon: Home, primary: true },
+    {
+      href: resolve("/bms/table/mirror"),
+      label: () => m["nav.mirror"](),
+      icon: Layers,
+      primary: false,
+    },
+    {
+      href: resolve("/bms/table/search"),
+      label: () => m["nav.search"](),
+      icon: Search,
+      primary: false,
+    },
   ];
 </script>
 
@@ -33,11 +54,10 @@
     <p class="mx-auto mb-8 max-w-[30rem] text-white-70">{hint}</p>
     <div class="flex flex-wrap justify-center gap-3">
       {#each exits as exit (exit.href)}
-        {#if exit.primary}
-          <a class={btnPrimaryLink} href={exit.href}>{exit.label()}</a>
-        {:else}
-          <GlassButton href={exit.href} size="md">{exit.label()}</GlassButton>
-        {/if}
+        <a class={exit.primary ? btnPrimaryLink : btnGhostMd} href={exit.href}>
+          <exit.icon class="size-4 shrink-0" aria-hidden="true" />
+          {exit.label()}
+        </a>
       {/each}
     </div>
   </div>

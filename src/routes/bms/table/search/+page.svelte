@@ -219,16 +219,13 @@
 <PageShell hero={heroPane} panes={[contentPane]} />
 
 {#snippet heroPane()}
-  <PageHero titleText={m["search.page_title"]()}>
+  <PageHero titleText={m["search.page_title"]()} intro={m["search.subtitle"]()}>
     {#snippet title()}{m["search.page_title"]()}{/snippet}
-    {#snippet promo()}
-      <div class="flex flex-col items-center gap-4">
-        <p class="m-0 text-center text-[1.1rem] text-white-70">{m["search.subtitle"]()}</p>
-        <a class={btnGhostMd} href="/bms/table/search/batch">
-          {m["search.batch_link"]()}
-          <ArrowRight class="size-4 shrink-0" aria-hidden="true" />
-        </a>
-      </div>
+    {#snippet actions()}
+      <a class={btnGhostMd} href="/bms/table/search/batch">
+        {m["search.batch_link"]()}
+        <ArrowRight class="size-4 shrink-0" aria-hidden="true" />
+      </a>
     {/snippet}
   </PageHero>
 {/snippet}

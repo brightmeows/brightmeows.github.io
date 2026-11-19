@@ -8,6 +8,7 @@
   } from "@brightmeows/bms/shared";
   import type { SharedTableItem } from "@brightmeows/mirror/shared";
   import BookOpen from "@lucide/svelte/icons/book-open";
+  import Plus from "@lucide/svelte/icons/plus";
   import { onMount, tick } from "svelte";
 
   import type { PageData } from "./$types";
@@ -125,26 +126,22 @@
 <PageShell {tocItems} hero={heroPane} panes={[contentPane]} />
 
 {#snippet heroPane()}
-  <PageHero titleText={pageTitle}>
+  <PageHero titleText={pageTitle} intro={m["table.page.subtitle"]()}>
     {#snippet title()}{pageTitle}{/snippet}
-    {#snippet promo()}
-      <div class="flex flex-col items-center gap-4">
-        <p class="m-0 text-center text-[1.1rem] text-white-70">{m["table.page.subtitle"]()}</p>
-        <div class="flex flex-wrap items-center justify-center gap-3">
-          <a class={btnPrimaryLink} href={resolve("/bms/table/shared/new")}>
-            {m["shared.create.button"]()}
-          </a>
-          <a
-            class={btnGhostMd}
-            href="https://github.com/brightmeows/bms-skills/blob/main/skills/bms-table/SKILL.md"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <BookOpen class="size-4 shrink-0" aria-hidden="true" />
-            {m["table.page.reference"]()}
-          </a>
-        </div>
-      </div>
+    {#snippet actions()}
+      <a class={btnPrimaryLink} href={resolve("/bms/table/shared/new")}>
+        <Plus class="size-4 shrink-0" aria-hidden="true" />
+        {m["shared.create.button"]()}
+      </a>
+      <a
+        class={btnGhostMd}
+        href="https://github.com/brightmeows/bms-skills/blob/main/skills/bms-table/SKILL.md"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <BookOpen class="size-4 shrink-0" aria-hidden="true" />
+        {m["table.page.reference"]()}
+      </a>
     {/snippet}
   </PageHero>
 {/snippet}

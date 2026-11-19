@@ -18,6 +18,8 @@
   interface Props {
     title: string;
     date?: string | undefined;
+    /** 文章分类或所属书名；与日期合成 hero 元信息 */
+    context?: string | undefined;
     component: Component;
     /** 上一章（章间导航卡片，不传则不渲染导航区） */
     prev?: { href: string; label: string; title: string } | undefined;
@@ -27,7 +29,7 @@
     chapters?: TocSidebarChapters | undefined;
   }
 
-  let { title, date, component, prev, next, chapters }: Props = $props();
+  let { title, date, context, component, prev, next, chapters }: Props = $props();
 
   /** 正文页两栏容器上限（侧栏 260 + 间距 40 + 正文卡 1000 + 页面左右 padding 64）。 */
   const POST_ARTICLE_MAIN_CLASS = "m-0 mx-auto box-border w-full max-w-[1364px] px-8 pt-24 pb-8";
@@ -45,6 +47,8 @@
   let sidebarTocItems = $derived(
     chapters ? [...buildChapterTocItems(chapters), ...tocItems] : tocItems
   );
+
+  const meta = $derived([context, date].filter(Boolean).join(" · ") || undefined);
 
   function collapseSidebar(): void {
     sidebarCollapsed = true;
@@ -73,17 +77,8 @@
 
 {#snippet titleContent()}{title}{/snippet}
 
-{#snippet datePane()}
-  <div class="text-white-60">{date}</div>
-{/snippet}
-
 {#snippet heroPane()}
-  <PageHero
-    align="start"
-    title={titleContent}
-    titleText={title}
-    promo={date ? datePane : undefined}
-  />
+  <PageHero align="start" title={titleContent} titleText={title} clamp={false} {meta} />
 {/snippet}
 
 {#snippet contentPane()}
