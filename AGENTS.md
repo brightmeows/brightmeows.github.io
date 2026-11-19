@@ -42,6 +42,9 @@
 - 超过 10KB 的 AGENTS.md 顶部放纯文本目录；长条目升为 `###` 或 `####` 小节。
 - Markdown 特性按表达需要；保持 MD033，不用原始 HTML 与折叠块；mermaid 可用，但图不作为唯一来源。
 - 命令、常量、配置值写指针或符号名；架构、理由、触发条件内联；历史交给 git。
+- **环境可查的内容不进 AGENTS.md**：常量值、尺寸时长、文件与组件清单、依赖版本、命令清单是环境能查到的缓存，写下的那一刻就在过期；文档只留环境查不到的约定、理由、坑与触发条件。
+  复述数值用符号名指针（如 `HOVER_OPEN_DELAY`）；文档独有理由与坑的承载位是代码头注，收敛时下沉。
+  反引号引用的存在性由 `pnpm check:docs` 机械守住（路径、pnpm 命令、UPPER_SNAKE 符号三类，口径见 `scripts/check-docs.py` 头注）。
 
 ## Commands
 
@@ -56,10 +59,6 @@ pre-commit run --all-files    # 手动触发全部 hooks
 hooks 清单见 `.pre-commit-config.yaml`。
 
 ### 手动命令
-
-- `pnpm dev`
-- `pnpm build`：三遍 flavor 构建并组装多语产物
-- `pnpm test`
 
 检查命令见 `scripts/AGENTS.md`；部署命令见 `packages/worker/AGENTS.md`。
 
@@ -100,7 +99,7 @@ vitest 覆盖 `src/lib/utils/`、`src/lib/data/` 的纯逻辑、`src/lib/control
 - **pnpm 设置只在 `pnpm-workspace.yaml`**：pnpm 11 起 `.npmrc` 只读 registry/auth 设置，`engineStrict: true`（依赖 engines 与当前 Node 不匹配即安装失败）与工作区 `packages` 都在此文件。
   - 旧 `.npmrc` 里的 `engine-strict` 被 pnpm 11 静默忽略，已迁入并启用，`.npmrc` 已删除。
 - **本地 install 可能因 npmmirror 同步延迟失败**：全局 registry 指向 `registry.npmmirror.com`，其同步有延迟（曾出现 `@inlang/paraglide-js` 2.25.2 缺失导致 `--frozen-lockfile` 报 404）。
-  - 另一类症状是 npmmirror 缺 `@lix-js/sdk-*` 平台包的 manifest（tarball 可下、元数据 404），pnpm 的 lockfile 供应链校验（`minimumReleaseAge`）会因此报 `ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION`。
+  - 另一类症状是 npmmirror 缺 `@lix-js/sdk-*` 平台包的 manifest（tarball 可下、元数据 404），pnpm 的 lockfile 供应链校验（`minimumReleaseAge`）会因此报 release age 违规错误。
   - 两种都可用 `pnpm install --registry=https://registry.npmjs.org` 绕过；报策略错时包其实已装好，脚本可继续用。
   - CI 使用官方源，不受影响。
 
@@ -118,7 +117,7 @@ vitest 覆盖 `src/lib/utils/`、`src/lib/data/` 的纯逻辑、`src/lib/control
 - **应用版本由构建期统一注入三个 flavor**：版本号内嵌进各语言树 HTML 的客户端配置，客户端在未命中路由的 fallback 与跳转前会与 `/_app/version.json` 比对。
   - 两边不一致就整页刷新，而未命中路由时刷新不收敛（表现为非英语 404 空白页）。
   - `scripts/build-site.ts` 每次组装只生成一个值并经 `BUILD_VERSION` 传给各遍构建，`vite.config.ts` 读它填 `kit.version.name`。
-  - 不要再让各 flavor 各自取默认时间戳，也不要事后改写 `_app/version.json`。
+  - 不要再让各 flavor 各自取默认时间戳，也不要事后改写产物里的版本比对文件。
 
 ### 外部状态
 
@@ -135,11 +134,11 @@ vitest 覆盖 `src/lib/utils/`、`src/lib/data/` 的纯逻辑、`src/lib/control
 
 ### CI 与 Deploy
 
-CI 的 lint/test/format 不依赖 build 产物（把 `build/` 移走后全部通过），因此只有 check job 跑一次 `pnpm build`，作为 CI 里唯一的构建验证点（frontmatter 校验、构建期数据加载与打包错误都在这里暴露）。
+CI 的 lint/test/format 不依赖 build 产物（把构建产物目录移走后全部通过），因此只有 check job 跑一次 `pnpm build`，作为 CI 里唯一的构建验证点（frontmatter 校验、构建期数据加载与打包错误都在这里暴露）。
 
 - Deploy 只做 build 与部署，不重复 lint/check/test：main 的每次提交已由 PR 必过门槛与 push 触发的 CI 覆盖，所有变更都经 PR。列表变动只影响运行时读取，不再触发部署。
 - 各工作流持有独立 concurrency group：CI 取消被取代的旧运行，Deploy 排队串行（避免旧提交的部署最后完成、覆盖新版本）。
-- 各作业均设超时（CI/Deploy 15 分钟、config-drift 10 分钟、update-tables 30 分钟、fetch-table 15 分钟、mirror 10 分钟、dependabot-auto-merge 10 分钟），防挂起占满 runner。
+- 各工作流均设作业级超时（数值见各 workflow 的 timeout-minutes），防挂起占满 runner。
 
 ### pnpm 缓存
 
@@ -161,15 +160,10 @@ CI 的 lint/test/format 不依赖 build 产物（把 `build/` 移走后全部通
     - `eslint/no-await-in-loop`（batch 搜索有意串行）；
     - `typescript/no-unnecessary-type-conversion`（暴露的是实际数据与声明类型不符，待运行时校验补齐）。
   - 不要“顺手”开 suspicious 全类。`perf` 整类亦不开（唯一实质规则 `no-await-in-loop` 即上条禁用项）。
-- **复杂度三闸与 `no-unnecessary-condition` 已启用**：三闸（complexity 15 / max-depth 4 / max-lines-per-function 150）按域在 overrides 棘轮放宽（Worker 30/5、bms 22/5、mirror 32、scripts 28、src 22/6）。
-  - 极端文件（`routeApi` 39、`resolveGroup` 56、`createTableModel` 480 行）per-file 兜底。
+- **复杂度三闸与 `no-unnecessary-condition` 已启用**：全局线与按域 overrides 棘轮放宽、per-file 兜底的现值与理由注释都在 `.oxlintrc.json`。
   - 触碰重构后收紧回全局线并删除放宽块。
 - **`no-unsafe-type-assertion` 已启用**：存量分两批分流（构建期与脚本侧走 guards 与 valibot schema、运行时侧走谓词收窄）后随批启用为 error；测试区目录级忽略（构造数据兜底动机，`**/*.test.ts` override）。
-  - 行级豁免四处，各带理由注释：`bms-data.ts` 与 `bms-search.ts` 的
-    ChartData[]（全字段可选宽类型，元素级 schema 无信息增益，下游模型层
-    按字段兜底）、`bms-search.worker.ts` 的 SearchIndex（形状由索引生成
-    管线保证）、`i18n.ts` 的 paraglide 动态键查表（key 存在性由
-    check:i18n 守住）。
+  - 行级豁免与理由注释集中在 `.oxlintrc.json`。
   - 新增豁免先想 guard/schema 分流，豁免须带理由注释。
   - 复测口径：trial 配置须放在仓内（/tmp 会断 JS 插件的相对解析）。
 - **`.svelte.ts` 布尔派生走 `$derived.by`**：tsgolint 对直写 `$derived(条件表达式)` 的宏返回类型视图误收窄（`$state(false)` 的字面量类型经直写宏读取泄漏同理），`no-unnecessary-condition` 误报恒真恒假；回调形态推断正确（上游 issue tsgolint#1344）。
@@ -179,7 +173,7 @@ CI 的 lint/test/format 不依赖 build 产物（把 `build/` 移走后全部通
 - **架构边界由 `no-restricted-imports` 强制**：`$lib/loaders`（构建期 Node 层）只能从 `*.server.ts` 导入，客户端代码引用会在 lint 阶段失败。
   - `src/lib/controllers/**`（页面编排层）禁导入组件、`.svelte` 与 Svelte 运行时（overrides 按目录限定，探针实测生效）。
   - 新增构建时数据入口或编排模块时走这两条边界。
-- **内容 frontmatter 在构建期校验**：`validateFrontmatter` 校验 title/date/order/slug/description/tags，非法值直接让 `pnpm build` 失败。不要降级为警告或静默回退，坏数据会在页面上悄悄变形。
+- **内容 frontmatter 在构建期校验**：`validateFrontmatter` 的字段集以实现为准，非法值直接让 `pnpm build` 失败。不要降级为警告或静默回退，坏数据会在页面上悄悄变形。
 
 ## 架构边界
 
@@ -216,17 +210,14 @@ CI 的 lint/test/format 不依赖 build 产物（把 `build/` 移走后全部通
 
 ## 技术栈
 
-- Svelte 5（runes：`$state`、`$derived`、`$effect`）
-- Tailwind CSS v4（`@import "tailwindcss"`，无 `tailwind.config.*`）
-- SvelTeX 0.5（Markdown 预处理器：unified 后端 + remark-gfm + katex + shiki）（内容文章用 `.md`）
-- TypeScript 6（`rewriteRelativeImportExtensions: true`）
+- 版本以 `package.json`（dependencies 与 devEngines）为准，此处只留环境查不到的约定。
+- Svelte 5 runes 模式（`$state`、`$derived`、`$effect`），`.svelte.ts` 同规；Tailwind CSS v4 无 config 文件；Markdown 预处理器（unified 后端 + remark-gfm + katex + shiki）与内容文章管线见 `src/AGENTS.md` 的 SvelTeX 节。
 - tsconfig 已开启 `noUncheckedIndexedAccess` 与 `exactOptionalPropertyTypes`。批量修法：
   - `exactOptionalPropertyTypes` 要求给类型定义的可选属性显式写 `| undefined`（项目里确实存在“显式传 undefined”的语义，如调用方把 `string | undefined` 直接放进字面量）；
   - `noUncheckedIndexedAccess` 优先真修（用 `entries()` 遍历消除索引访问、用解构加逐项检查替代 `some` 加 `as` 断言），确证安全处（循环内已保证边界、测试里已有前置断言）用 `!`。
   - 开启后 oxlint 的 `prefer-nullish-coalescing` 会多报几处，属预期。
-- Vitest 5（纯函数单测，Node 环境）
 - Node 版本以 `.nvmrc` 为准（工作流用 `node-version-file: .nvmrc`）；pnpm 版本以 `package.json` 的 `devEngines.packageManager` 范围为准（工作流不传 `version`，解析结果记入 lockfile）。两者都由 `pnpm check:config` 断言
-- Paraglide JS（i18n，全站三语 en/zh-cn/ja，边缘分发）
+- Paraglide JS（i18n，全站三语，边缘分发机制见 `packages/worker/AGENTS.md`）
 
 ## 浏览器支持口径
 
@@ -239,7 +230,7 @@ CI 的 lint/test/format 不依赖 build 产物（把 `build/` 移走后全部通
 
 以下升级经评估后刻意挂起，勿随批升级，各等触发条件；有 dependabot 击穿风险的条目在 `.github/dependabot.yml` 用 ignore 机械挡住。
 
-- **typescript 6 到 7**：TS 7 是 Go 端口，根导出只剩 `lib/version.cjs`，编译器 API 挪到 `./unstable/*`，7.1 之前没有稳定 API；Kit 的 tsconfig 读取（`ts.sys.readFile`）与 svelte-check 都还在用旧 API。
+- **typescript 6 到 7**：TS 7 是 Go 端口，根导出只剩一个 version 占位文件，编译器 API 挪到 unstable 子路径，7.1 之前没有稳定 API；Kit 的 tsconfig 读取（`ts.sys.readFile`）与 svelte-check 都还在用旧 API。
   - 直接升 TS7 会让 `pnpm prepare` 的 `svelte-kit sync` 崩溃，全部必过检查一并失败（PR #365 实测）；`.github/dependabot.yml` 用 ignore 挡住 `>=7`。
   - 双装（`typescript@~6` 主 + `@typescript/native@npm:typescript@7` 别名，svelte-check 给出的官方方案）本身可装，但 svelte-check 4.7.6 的 `--tsgo` 模式
     对本仓的 `.svelte` module script 具名导出（`JsonPreview` 的 `jsonPreview`、`TableImportSectionProps` 等）与组件句柄类型解析不工作

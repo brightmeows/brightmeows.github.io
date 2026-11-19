@@ -22,7 +22,7 @@
 
 ## Commands
 
-- `pnpm exec wrangler deploy`：把 `build/` 发布到 Cloudflare Workers（需环境变量 `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID`）
+- `pnpm exec wrangler deploy`：把构建产物发布到 Cloudflare Workers（需环境变量 `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID`）
 - `pnpm exec wrangler dev`：本地 Workers 运行时，含 `/bms/table/mirror/*` 的动态路由（需先 `pnpm build`；这些路由在 `pnpm dev` 下不可用）
 - `pnpm exec wrangler d1 execute brightmeows-user --remote --json --command "SELECT ..."`：只读查询线上用户层（需已 `wrangler login`）
 - `node scripts/restore-user-layer.ts --file=<快照> [--out=<sql>]`：从备份快照生成用户层恢复 SQL（人工 review 后用 `wrangler d1 execute --file` 导入）
@@ -33,10 +33,10 @@
 
 - **主站与跳转宿主**：Cloudflare Workers 是唯一主站（多语静态资源 + Worker，镜像表页面与 tables.json 运行时生成）；静态跳转宿主（GitHub/Codeberg Pages）已全部退役；旧主机 301 由 Cloudflare Single Redirects 负责（见 `### 旧域与 301`），Worker 只服务主站 apex。
 - **边缘语言分发在 Worker，内部前缀永不进 URL**：`assets.run_worker_first: true` 全量生效。
-  - 每个请求先过 `index.ts`，镜像/写接口判定后，按 cookie（`PARAGLIDE_LOCALE`）→ Accept-Language → en 把非共享资源路径映射到 `build/_i18n/<locale>/`（zh-cn 与 ja 两棵内部树，`worker/i18n.ts`）。
+  - 每个请求先过 `index.ts`，镜像/写接口判定后，按 cookie（`PARAGLIDE_LOCALE`）→ Accept-Language → en 把非共享资源路径映射到对应语言内部树（zh-cn 与 ja 两棵，`packages/worker/i18n.ts`）。
   - `/_app` 与 `/assets` 是构建期合并的多语共享树（`scripts/build-site.ts` 负责合并，三个 flavor 共用一个应用版本），按原样取。
   - 直接命中内部前缀的请求 301 回干净路径，静态层重定向的 Location 也会去前缀。
-  - SPA 外壳、单表页与 404 按语言取树，页面级 `textResponse` 走 `worker/i18n.ts` 的三语词表。
+  - SPA 外壳、单表页与 404 按语言取树，页面级 `textResponse` 走 `packages/worker/i18n.ts` 的三语词表。
   - API 错误体是 `{error, code, params?}`：`error` 恒为英文兜底（直连与日志可读），`code` 是 `api.*` 消息键（条目在 `messages/`，由 `pnpm check:i18n` 对齐），前端按当前语言翻译、自由文本透传。
   - 错误码只经 `@brightmeows/mirror/api` 的 `API_ERROR_CODES` 常量表引用：`failure` 的 code 参数收 `ApiErrorCode` 类型，Worker 源码里的 `code: "..."` 字面量被 `pnpm check:i18n` 视为漂移；响应构造以 `json<契约类型>` 标注，形状同出一处。
 - **API 只接受同源写请求**：静态宿主已退役，不再承载应用；会话 cookie 为 host-only，写接口的 Origin 必须等于请求 origin（`checkSameOrigin`），不做跨源白名单。
@@ -52,7 +52,7 @@ CI 的 `CLOUDFLARE_API_TOKEN` 必须在 **Manage Account → Account API Tokens*
   - `Account / Workers R2 Storage / Read`（**必须账户级**：`config-drift` 读的桶 CORS policy 属桶配置，桶级权限（`Workers R2 Storage Bucket Item Read`）只覆盖对象，资源级在本用途实测报 `Authentication error`）；
   - `Zone / Workers Routes / Write`（scoped 到 `brightmeows.com`，`wrangler.jsonc` 里 `custom_domain` 的绑定，失败形态见后文）；
   - `Account / Account Settings / Read`（wrangler 读账户信息）。
-- 界面入口见 `workers/ci-cd/external-cicd/github-actions` 文档的 “Permission policies → Edit Cloudflare Workers”。
+- 界面入口见 Cloudflare 文档的 “Permission policies → Edit Cloudflare Workers” 一节。
 - `config-drift` 另用 `CLOUDFLARE_RULES_TOKEN`（`Zone / Single Redirect / Read` 加 `Zone / Zone / Read`，scoped 到 `brightmeows.com`、`brightmeows.cn`、`miyakomeow.site`），不复用部署令牌。
 - 一次性运维动作（如清边缘缓存）另用临时令牌或控制台操作，不要复用部署令牌。
   - R2 的 S3 凭据（`R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY`/`R2_ENDPOINT`）来自 R2 页面的独立令牌（桶级 `Workers R2 Storage Bucket Item Write`，限定 `bms-table-mirror` 单桶，不能建删桶），与部署令牌无关。
@@ -95,14 +95,14 @@ CI 的 `CLOUDFLARE_API_TOKEN` 必须在 **Manage Account → Account API Tokens*
 
 - 规则体：`set_cache_settings`（eligible for cache，edge TTL 600 秒，browser TTL 600 秒）。
 - 受影响路径：`/tables/*/header.json`、`/tables/*/data.json`、`/indexes/`。
-- 覆盖对象：`tables.json`、`shared/`、`meta/` 由表达式排除。
+- 覆盖对象：tables.json 清单与共享表、meta 两个 R2 前缀由表达式排除。
 - R2 对象本身没有 Cache-Control，JSON 不在 Cloudflare 默认缓存扩展名列表里；不配这条规则时客户端每次直连 R2（实测 `cf-cache-status` 恒为 DYNAMIC），浏览器侧也没有缓存头（规则生效后响应带 `cache-control: max-age=600`）。
 - 属外部状态、不进仓库断言：漏配是性能退化而非功能故障。
 - **验证必须用 GET**（`curl -s -o /dev/null -D -` 连发两次，第二次应为 `HIT` 且有 `age`）：HEAD 请求不参与缓存查找与填充，`curl -I` 恒显示 DYNAMIC；排查时曾被这一点误导（先怀疑了规则与表达式，实际机制一直有效）。
 
 ### Browser Integrity Check
 
-实测 `Java/1.8.x`、`Python-urllib`、`libwww-perl` 在 r2.dev、R2 自定义域与 workers.dev 上一律 403（Cloudflare error 1010）。
+实测 Java 1.8.x、Python-urllib、libwww-perl 等旧 UA 在 r2.dev、R2 自定义域与 workers.dev 上一律 403（Cloudflare error 1010）。
 
 - 根因是 Browser Integrity Check，不是 r2.dev 的特有策略。
 - 本 zone 已关闭该开关（`browser_check = off`），因此 `bms-table-mirror-r2.brightmeows.com` 与站点对旧 UA 全部放行。
@@ -114,7 +114,7 @@ CI 的 `CLOUDFLARE_API_TOKEN` 必须在 **Manage Account → Account API Tokens*
 - **镜像表单表页由 Worker 动态生成**：Worker 接管 `/bms/table/mirror/*`：单表页取站点 SPA 外壳并注入 `bmstable` meta；`tables.json` 由 R2 清单叠加 D1 用户层合成；共享表路由同构。静态宿主不再生成镜像页。
 - **清单兜底快照写在独立 Cache API 命名空间**：快照必须走 `caches.open("mirror-manifest-snapshot")`，只在真正回源时刷新；写入失败静默忽略，不应反向影响主路径。
 - **清单合成的 CPU 成本已实测，不为它单独缓存**：本地实测（Node，与 workerd 同为 V8；清单与用户层等规模）parse、merge 与完整响应构造都在毫秒级；线上 Worker CPU P99 在免费计划上限附近，合成只占一部分。
-  监控触发条件：GraphQL Analytics 的 `workersInvocationsAdaptive`（`quantiles.cpuTimeP50/P99` 与 `errors`，近 7 天窗口）出现 1102 错误或 P99 持续越过 8ms 时再处理。
+  监控触发条件：GraphQL Analytics 的 `workersInvocationsAdaptive`（cpuTime P50/P99 分位与 errors，近 7 天窗口）出现 1102 错误或 P99 持续越过 8ms 时再处理。
 - **清单在主站读取侧合成，用户层存于 D1**：Worker 把 R2 清单与 D1 用户层合并后响应；用户层不可用时退化为纯管线清单。桶名与 D1 库名在 `wrangler.jsonc` 的绑定里入库。
 - **难度表导入链接与查看页是同一条 URL**：`/bms/table/mirror/<dir_name>/` 既是 beatoraja / BeMusicSeeker 的导入地址（beatoraja 对不以 `.json` 结尾的 URL 会当 HTML 页解析 `bmstable` meta，对 `.json` 结尾的 URL 直读 header），也是浏览器里的查看页。
   - 页面直接展示当前地址作为可导入链接（`BmsTablePage` 从地址栏取，带复制按钮）。
@@ -204,7 +204,7 @@ CI 的 `CLOUDFLARE_API_TOKEN` 必须在 **Manage Account → Account API Tokens*
     `consumeMutation`；扣减刻意独立于鉴权：业务检查失败的请求不扣量。
 - **本地 `pnpm dev` 不提供 mirror 动态路由**：验证 mirror 行为用 `pnpm build && pnpm exec wrangler dev`（`localhost:8787` 已在桶 CORS 放行）。
 - **自托管个人表的旧地址由 Worker 静态映射 301**：`self-sp`/`self-dp` 已迁入共享表（新 id `meow-sp`/`meow-dp`），旧地址 `/bms/table/<旧名>/` 由 `legacy-self-tables.ts` 的两条硬编码映射 301（含无尾斜杠形态，透传 query），接线在静态树分发之前。
-  - 共享表列表页并入 `/bms/table` 后，`/bms/table/shared`（含无尾斜杠形态）同样由 `legacy-shared-list.ts` 静态映射 301（子路径 `new/`、`[id]/`、`tables.json` 在 index.ts 既有分支先分流，不受影响）。
+  - 共享表列表页并入 `/bms/table` 后，`/bms/table/shared`（含无尾斜杠形态）同样由 `legacy-shared-list.ts` 静态映射 301（新建页与详情子路径、tables.json 在 index.ts 既有分支先分流，不受影响）。
   - 两者刻意不走 shared_alias 或 Single Redirects：别名表只覆盖 `/bms/table/shared/` 根下的旧 id（这是跨体系迁移不是改 id），zone 级重定向则是外部状态、要控制台人工应用。
   - 旧 JSON 子路径直链刻意 404（无对外分发场景）。
   - 共享表日后改名时须同步更新映射目标为最终 id，否则与 shared_alias 叠成两跳。

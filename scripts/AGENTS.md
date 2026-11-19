@@ -17,9 +17,9 @@
 ## Commands
 
 - `pnpm build`：多语构建入口（`scripts/build-site.ts`）：en、zh-cn、ja 三个主站 flavor 各跑一遍（各自经 `BUILD_OUT` 落临时目录）。
-  - 组装出 `build/`（en 根 + `_i18n/zh-cn`、`_i18n/ja` 内部树，`_app` 多语 chunk 合并到共享根、三个 flavor 由 `BUILD_VERSION` 注入同一个应用版本（各树 HTML 内嵌 version 与 `_app/version.json` 一致）、各语言树 `html lang` 改写）。
+  - 组装结构、多语 chunk 合并与版本注入细节见 `scripts/build-site.ts` 头注。
   - `pnpm build:flavor` 跑单遍。
-- `node scripts/fetch-tables.ts`：本地跑数据管线（基线经 rclone 同步自 R2，用户层经站点 Worker 的内部接口读取，需要 `INTERNAL_API_TOKEN`；写 `tables/`、`indexes/`、`warnings.log`；产物已 gitignore）
+- `node scripts/fetch-tables.ts`：本地跑数据管线（基线经 rclone 同步自 R2，用户层经站点 Worker 的内部接口读取，需要 `INTERNAL_API_TOKEN`；写表数据与索引两个 R2 前缀加 `warnings.log`；产物已 gitignore）
 - `node scripts/fetch-table-once.ts --url=<表源> --request-id=<id> --out-dir=./out`：单表抓取（复用管线抓取与命名逻辑）：数据目录供 `fetch-table` 工作流上传到 R2，抓取结果与状态经内部接口写进 D1
 - `pnpm test:parity`：手动新旧实现对拍（用公开 R2 基线与归档工具 v0.4.2 的二进制，逐对象比对产物；`PARITY_LIMIT` 可只对拍前 N 张表）
 - `pnpm check:quotes`：全量中文引号检查（扩展名与 `static/` 排除规则在 `package.json`，pre-commit 与 CI 共用）
@@ -77,24 +77,24 @@
 
 ### 列表变动与部署
 
-主站运行时读 R2 清单与 D1 用户层，静态跳转宿主已退役；`update-tables` 抓取并双向同步 R2 后即可结束，不再比对基线、不推 `meta/last-notified.json`、不用 App token 触发 `deploy`。单表抓取仍由 Worker 派发 `fetch-table.yml`；抓取完成后也不需要部署。
+主站运行时读 R2 清单与 D1 用户层，静态跳转宿主已退役；`update-tables` 抓取并双向同步 R2 后即可结束，不再比对基线、不推通知状态对象、不用 App token 触发 `deploy`。单表抓取仍由 Worker 派发 `fetch-table.yml`；抓取完成后也不需要部署。
 
 - **单表抓取是独立工作流（`fetch-table`）**：用户提交添加后由 Worker 触发，也可手动 dispatch 演练：复用管线的 `fetchTable` 与命名逻辑（`scripts/fetch-table-once.ts`）。
-  - `tables/<dir_name>/` 数据写到 `out/` 后经 rclone 上传，抓取结果与状态则经 `POST /api/internal/fetch-result` 写进 D1。
+  - 表数据写到本地输出目录（out，gitignored）后经 rclone 上传，抓取结果与状态则经 `POST /api/internal/fetch-result` 写进 D1。
   - **失败只写 failed 状态、不产出数据目录**（半成品目录会被管线当作基线）。
-  - 抓取脚本退出码恒为 0（除参数错误），结果由 `out/result.json` 表达，前端轮询 `/api/tables/status/<id>` 据此结束。
+  - 抓取脚本退出码恒为 0（除参数错误），结果由输出目录里的结果 JSON 表达，前端轮询 `/api/tables/status/<id>` 据此结束。
   - 主站运行时读取 R2/D1，抓取完成后不再触发部署。输入经 env 传入、不直接插值进 shell 命令。
 
 ### 旧配置
 
-- **旧配置只作对拍输入**：`scripts/pipeline/fixtures/legacy-table.toml` 与 `legacy-config.ts` 保留，供 `parity` 驱动旧二进制（它固定找 `config/table.toml`，`prepareBaseline` 会拷过去）；运行时列表源已不读 toml。
+- **旧配置只作对拍输入**：`scripts/pipeline/fixtures/legacy-table.toml` 与 `legacy-config.ts` 保留，供 `parity` 驱动旧二进制（它固定找仓库根的 toml 配置路径，`prepareBaseline` 会拷过去）；运行时列表源已不读 toml。
 
 ### 数据管线
 
 `.github/workflows/update-tables.yml` 每 6 小时（或 `scripts/fetch-tables.ts`、`scripts/pipeline/**` 变更时，以及手动 dispatch）跑 `scripts/fetch-tables.ts`。
 
 - 实现位于 `scripts/pipeline/`，与站点同仓演进。
-- 经 rclone 与 Cloudflare R2 双向同步：先拉取 R2 基线保留增量，跑完抓取再推回。输出 `tables/`、`indexes/`、`warnings.log`（均 gitignored，仅存在于 CI 工作区与 R2）。
+- 经 rclone 与 Cloudflare R2 双向同步：先拉取 R2 基线保留增量，跑完抓取再推回。输出表数据与索引两个 R2 前缀加 `warnings.log`（均 gitignored，仅存在于 CI 工作区与 R2）。
 - 活跃表集合 = R2 基线（`info.json`）叠加**用户层**：站长与访客的添加、删除、禁用、替换、授权记录存于 D1（Worker 与单表抓取工作流经内部接口维护，管线经同一接口读取，需要 `INTERNAL_API_TOKEN`）。
 - 运行时依赖 `parse5` 与 `smol-toml`（devDependencies，因此工作流有 pnpm install 步骤）。R2 凭据以 Actions secrets 注入（`R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY`/`R2_ENDPOINT`/`R2_BUCKET`）。
 
