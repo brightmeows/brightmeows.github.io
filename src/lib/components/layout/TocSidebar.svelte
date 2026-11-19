@@ -17,6 +17,18 @@
     writeSidebarFlag,
   } from "#lib/utils/ui/toc-sidebar.js";
 
+  /**
+   * 正文页左侧目录侧栏（宽屏断点由 PageShell 控制）：章节段 reading 专属
+   * （段头书名链接回书目录页，当前章按路由静态高亮，与滚动推导的锚点高亮并存
+   * 于 TocPanel 的 activeHref），本页目录段两段各自折叠；折叠与整栏收缩状态存
+   * localStorage 的 tocSidebar.* 键（旗标逻辑在 utils/ui/toc-sidebar，配相邻
+   * 测试）。收缩后左缘贴边把手展开（PageShell 的
+   * sidebarCollapsed/onExpandSidebar）；收缩与折叠只在宽屏有语义，SSR 首帧视为
+   * 未收缩。reading 章节数据由 reading/[...slug]/+page.ts 提供（bookHref/
+   * bookTitle/items 含 current，按 order 排序）；blog/notes 不传 chapters 即
+   * 降级为纯标题段。
+   */
+
   interface Props {
     /** 书章节导航（reading 专属；不传则只有标题段） */
     chapters?: TocSidebarChapters | undefined;

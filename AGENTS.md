@@ -115,8 +115,8 @@ vitest 覆盖 `src/lib/utils/`、`src/lib/data/` 的纯逻辑、`src/lib/control
 ### 应用版本
 
 - **应用版本由构建期统一注入三个 flavor**：版本号内嵌进各语言树 HTML 的客户端配置，客户端在未命中路由的 fallback 与跳转前会与 `/_app/version.json` 比对。
-  - 两边不一致就整页刷新，而未命中路由时刷新不收敛（表现为非英语 404 空白页）。
   - `scripts/build-site.ts` 每次组装只生成一个值并经 `BUILD_VERSION` 传给各遍构建，`vite.config.ts` 读它填 `kit.version.name`。
+  - 版本比对与刷新收敛的坑见 `scripts/build-site.ts` 头注。
   - 不要再让各 flavor 各自取默认时间戳，也不要事后改写产物里的版本比对文件。
 
 ### 外部状态

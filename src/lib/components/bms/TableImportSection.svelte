@@ -24,6 +24,11 @@
 </script>
 
 <script lang="ts">
+  /**
+   * 导入面板：合并包与 header/data 的粘贴上传、镜像表 fork、按条目从其他镜像
+   * 或共享表选择导入，以及本地 BMS/BMSON 拖拽（目录递归收集、MD5 与 SHA-256、
+   * UTF-8/Shift_JIS 编码嗅探、头部字段预填与文件等级建议一键指派）。
+   */
   import {
     splitNewEntries,
     type BmsDropResult,

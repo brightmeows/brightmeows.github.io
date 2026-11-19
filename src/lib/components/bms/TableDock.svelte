@@ -23,6 +23,15 @@
   } from "#lib/controllers/table-dock.js";
   import type { TableModel } from "#lib/data/table-page-model.svelte.js";
   import { m } from "#lib/paraglide/messages.js";
+  /**
+   * 右下角 dock：查看态收起是主按钮加“菜单”按钮，编辑态收起是只读“编辑中”胶囊、
+   * dirty 时的保存按钮与“菜单”按钮；展开面板收导入全三 tab、导出下载、格式参考、
+   * fork、草稿与 notice 等段。保存常驻菜单外，状态胶囊只读，菜单按钮负责展开。
+   * 收展由 controllers/table-dock 状态机驱动（编辑态默认展开、查看态默认收起，
+   * 模式切换重置初值并滚回页首；滚动累积阈值下滑收起、上滑展开、停止不展开；
+   * 键盘焦点在 dock 内冻结，busy 与待恢复草稿豁免滚动收起；距页底不强制展开——
+   * 保存常驻后强制展开会遮住行内操作）。编辑态仅额外动态加载导入器渲染进导入段。
+   */
   import { panelFly } from "#lib/utils/ui/transitions.js";
 
   /**

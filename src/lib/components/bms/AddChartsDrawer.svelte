@@ -40,6 +40,8 @@
   /** 统一添加谱面抽屉：本地文件、其他表、手工单条、JSON 追加四个来源。
    * 只负责选择来源与结果汇总；条目去重、写入与 dirty 由父级 onAdd 收口。
    * 添加后留在抽屉，可连续操作，用户自己关闭。
+   * 跨表来源（其他表 tab）覆盖镜像表与共享表；编辑态整页拖拽由
+   * utils/infra/bms-drop 管线承担，header/package 导入留在 dock 菜单。
    */
   let { entries, levels, disabled, onClose, onAdd }: AddChartsDrawerProps = $props();
 

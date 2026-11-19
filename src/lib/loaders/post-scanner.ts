@@ -1,3 +1,8 @@
+/**
+ * 内容扫描器：只收 .md（拒绝 .svx 与其他文件），slug 与文件路径绑定——
+ * metadata.slug 必须等于文件相对路径（去扩展名），否则构建期报错；排序为
+ * order 优先，其余按 date 降序。
+ */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, sep } from "node:path";
 

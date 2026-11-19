@@ -1,3 +1,7 @@
+/**
+ * 难度表草稿本地闭环：按表键存 IndexedDB，单快照、防抖落盘；dock 展开态内给
+ * 恢复或丢弃，导出标准两份与 {header, data} 合并包。
+ */
 import type { DraftPayload } from "@brightmeows/bms/editor";
 
 import { isRecord } from "#lib/utils/infra/object.js";

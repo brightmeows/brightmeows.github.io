@@ -54,6 +54,15 @@
   import type { AsyncState } from "#lib/types/common.js";
   import type { JsonPreviewHandle, TocItem } from "#lib/types/ui.js";
   import { errorMessageOf } from "#lib/utils/infra/error.js";
+  /**
+   * 镜像列表页规格：登录入口在顶栏（全局共享登录态 store），配额剩余在列表页
+   * 操作区（与“我删除的表”同行，写后实时刷新）；页顶只留添加表单（预览后提交、
+   * 轮询抓取状态）与回收站入口。登录后每行出现行尾操作列（管理员铅笔、贡献者
+   * 删除图标，受保护行不显删除）；表状态由授权图标列承担，管理员点图标开编辑
+   * 卡片、非管理员只读。无卡片行，全部难度表始终显示，标签浏览是 plain 子折叠，
+   * API 故障呈错误态。页面内写操作经带 `?t=` 的拉取穿透 60 秒边缘缓存
+   * （MANIFEST_MAX_AGE）即时刷新，其他访客可能读到缓存期内的旧清单。
+   */
   import {
     buildSearchNeedles,
     collectTagValues,

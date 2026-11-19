@@ -2,6 +2,11 @@
   import "katex/dist/katex.min.css";
   import { onDestroy, onMount } from "svelte";
   import type { Snippet } from "svelte";
+  /**
+   * Markdown 正文渲染容器：katex CSS 本地 import（不依赖 katex 内部 class 命名，
+   * [&_.katex] 系选择器在 0.18 内部 class 前缀化后已验证不受影响）；标题锚点
+   * innerHTML 的 path 数据取自 lucide 并注明来源。
+   */
 
   import { m } from "#lib/paraglide/messages.js";
   import { slugifyHeadingText } from "#lib/utils/infra/slugify.js";

@@ -9,6 +9,21 @@
 </script>
 
 <script lang="ts">
+  /**
+   * 难度表页面协议：三类表共用一个路由面（地址即导入地址），主按钮按权限改文案
+   * （作者编辑、admin 本地编辑、他人创建副本），?edit=1 浅层路由就地切换编辑态。
+   * 页面持有唯一一份内存模型与两段式加载（header 先行、data 随后、草稿探查殿后）；
+   * data 未就绪时只读（编辑与副本主按钮禁用），data 失败可从菜单恢复本地草稿。
+   * 三张工作卡：头部（含等级参考折叠区）、谱面、段位；查看态原生 details 折叠且
+   * 默认只展开谱面，编辑态 TableCardBar 管理可见卡（?show= 逗号列表记录组合，
+   * 编辑态用 sessionStorage 记住上次组合）。标题区 hero 承载标题、符号 meta 与
+   * 一行常用动作（复制导入链接、查看 header.json、查看 data.json，走 btnGhostMd，
+   * 复制按钮以原生 title 携带完整导入地址，导入地址不明文展示）。notice：成功类
+   * 短时自动清除（时长见常量），warn/error 常驻到被替换。保存闸门：save/
+   * saveAsSharedNow/Ctrl+S 都以 data 就绪为前置（加载中 entries 为空，误保存会
+   * 清空共享表）。shared 模式接入整包保存（发布前必须全部指派，保存前比对线上
+   * updated_at 并发提示）与同源草稿认领另存；放弃未保存修改在两态都可用。
+   */
   import type { BmsDropResult } from "@brightmeows/bms/editor";
   import BookOpen from "@lucide/svelte/icons/book-open";
   import Check from "@lucide/svelte/icons/check";

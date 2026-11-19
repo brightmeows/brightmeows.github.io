@@ -9,6 +9,13 @@
   import type { TopbarPanel } from "#lib/types/ui.js";
   import type { ThemePreference } from "#lib/utils/ui/theme.js";
 
+  /**
+   * 顶栏主题切换器：三项下拉（浅色、深色、跟随系统），与语言菜单同款交互
+   * （panel 协议由 TopBar 统一承载）。选固定项写入偏好，选跟随系统清除存储键
+   * 并随 prefers-color-scheme 实时变化。触发按钮图标表达当前偏好（太阳/月亮/半圆），
+   * 预渲染首帧为半圆（存储不可知），水合后由 theme-store 的 init() 同步。
+   */
+
   interface Props {
     panel: TopbarPanel;
   }

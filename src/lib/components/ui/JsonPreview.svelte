@@ -245,6 +245,17 @@
   import { writeToClipboard } from "#lib/utils/ui/clipboard.svelte.js";
   import { popoverFly } from "#lib/utils/ui/transitions.js";
 
+  /**
+   * JSON 预览弹层，两态触发：
+   * - 行内文本（难度表条目标题、镜像表名称）：contextmenu（桌面右键）或长按（触屏，
+   *   LONG_PRESS_DELAY_MS）；悬停或左键只显示“右键/长按查看 JSON”气泡，不打开弹层。
+   *   刻意不用悬停预览：避免鼠标扫过密集表格时被大弹层打断，不要改回悬停。
+   * - 底部“镜像 JSON / 原始 JSON”显式按钮：悬停预览加左键复制。
+   *
+   * 触屏坑：长按期间无额外反馈；触发后吞掉跟随的 click 与 contextmenu；触发文本
+   * 禁用选择与系统 callout，代价是标题文本不能再直接选中复制。
+   */
+
   let open = $state(false);
   let pinnedOpen = $state(false);
   let value = $state<unknown>(undefined);

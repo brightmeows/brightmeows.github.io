@@ -39,6 +39,11 @@ const sveltexPreprocess = await sveltex(
     math: { css: { type: "none" } },
   }
 );
+// remark-retext 是必需依赖：unified 后端在 MarkdownHandler 里无条件动态 import，
+// 缺了首次构建即报模块找不到。extensions（.md/.svx）要同步写进下方 sveltekit()
+// 插件选项的 extensions（Svelte 编译器层面），漏一处文件就不被处理；Kit 3 起
+// svelte.config.ts 不再支持，preprocess 链并入该插件选项。SvelTeX 刻意禁用
+// 缩进代码块与自动链接（与 Svelte 语法共存，同 MDX 做法）。
 
 export default defineConfig({
   server: {

@@ -1,3 +1,8 @@
+/**
+ * R2 端点单一来源：地址只来自 config/site.json 的 r2.base，改地址仅改配置文件。
+ * 镜像表与共享表两对 URL 构造函数都经 @brightmeows/mirror/urls 生成；本文件在
+ * #lib/constants/（环境无关层），构建期与客户端代码共用。
+ */
 import {
   r2SharedDataUrl as buildR2SharedDataUrl,
   r2SharedHeaderUrl as buildR2SharedHeaderUrl,
