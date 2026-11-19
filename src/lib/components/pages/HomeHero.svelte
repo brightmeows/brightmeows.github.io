@@ -65,7 +65,7 @@
 
 {#snippet directoryPane()}
   <div
-    class="grid w-full max-w-[820px] grid-cols-1 items-center gap-x-4 gap-y-3 sm:grid-cols-[auto_1fr]"
+    class="mx-auto grid w-full max-w-[820px] grid-cols-1 items-center gap-x-4 gap-y-3 sm:grid-cols-[auto_1fr]"
   >
     {#each groups as group (group.label())}
       <span
