@@ -22,9 +22,9 @@
   撤销优先级统一为“删除与禁用先于添加”。改匹配语义只改这里。
 - **镜像表目录名 `dir_name` 由数据管线生成**：格式为 `[host] name`（如 `[4uri.web.fc2.com] Youri差分難易度表`），与 R2 目录名一致；Worker 的清单校验与站点清单变换直接消费该字段，缺失即失败。不要改为纯数字或 UUID 标识符。
 - **共享表内核在 `src/shared.ts`（`./shared` 子路径）**：服务端与前端必须共用同一套（错一个键即不一致）。
-  - id 规则（NFC 归一 + ASCII 大小写折叠 + `[a-z0-9-]` 与中日韩字符集 + 保留词 `new`/`edit`，`.` 不入字符集故天然挡掉 `tables.json`）、三档上限（header 1MB / data 10MB / 条目 10000）、载荷校验与导出改写（下载时 `data_url` → `./data.json`）全在这里。
+  - id 规则（NFC 归一 + ASCII 大小写折叠 + `[a-z0-9-]` 与中日韩字符集 + 保留词 `new`/`edit`，`.` 不入字符集故天然挡掉 `tables.json`）、三档上限（数值以实现为准）、载荷校验与导出改写（下载时 `data_url` → `./data.json`）全在这里。
   - R2 对象键用原始 id（`sharedObjectPrefix`），公开 URL 才经 `encodeTableId` 百分号编码。
-  - `shared/` 是与 `tables/` 平行的独立命名空间，镜像管线的 rclone 白名单不含它：**共享表永远不要并入 `tables/` 或镜像清单**，否则会被管线当镜像表重抓、并混进 BeMusicSeeker 清单。
+  - 共享表的 R2 前缀是与镜像表前缀平行的独立命名空间，镜像管线的 rclone 白名单不含它：**共享表对象永远不要并进镜像表前缀或镜像清单**，否则会被管线当镜像表重抓、并混进 BeMusicSeeker 清单。
 - **动态键构造 plain object 一律走安全形态**：以动态（尤其用户输入）键名构造或填充对象时，用 `Object.fromEntries`（内部 `CreateDataPropertyOrThrow`）或 `Object.create(null)` 底。
   - 裸赋值 `out[key] = value` 会让名为 `__proto__` 的字段触发 setter：对象值改原型、原始值静默丢失，违反“未知字段原样保留”纪律（于 `serializeSharedJson` 实发，CodeRabbit 评审捕获）。固定键清单（如 `normalizeHeader` 的 `HEADER_FIELDS`）不受此限。
 
