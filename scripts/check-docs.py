@@ -29,7 +29,6 @@ stdin；受检范围（AGENTS.md）在 package.json 的 check:docs。
 import json
 import os
 import re
-import subprocess
 import sys
 
 INLINE_CODE = re.compile(r"`([^`]+)`")
@@ -44,6 +43,11 @@ EXTERNAL_NS = {
 ALIAS_LIB = {"#lib/": "src/lib/", "#posts/": "content/posts/", "$lib/": "src/lib/"}
 
 SYMBOL_DIRS = ("src", "packages", "scripts", "config", ".github")
+
+SYMBOL_EXTS = (
+    ".ts", ".tsx", ".js", ".mjs", ".svelte", ".json", ".jsonc", ".yaml",
+    ".yml", ".toml", ".py", ".css", ".html",
+)
 
 
 def is_pathlike(span: str) -> bool:
@@ -83,17 +87,31 @@ def resolve_span(span: str) -> str | None:
     return span
 
 
-def symbol_exists(name: str, repo_root: str) -> bool:
-    result = subprocess.run(
-        ["rg", "--hidden", "-g", "!*.md", "-F", "-l", name, *SYMBOL_DIRS],
-        cwd=repo_root,
-        capture_output=True,
-        text=True,
-    )
-    return result.returncode == 0
+def build_symbol_corpus(repo_root: str) -> str:
+    """目录内代码文件并成一份语料（排除 md 与隐藏、依赖目录），一次构建反复查。"""
+    parts: list[str] = []
+    for directory in SYMBOL_DIRS:
+        root = os.path.join(repo_root, directory)
+        if not os.path.isdir(root):
+            continue
+        for base, dirs, files in os.walk(root):
+            dirs[:] = [d for d in dirs if not d.startswith(".") and d != "node_modules"]
+            for f in files:
+                if not f.endswith(SYMBOL_EXTS):
+                    continue
+                try:
+                    with open(os.path.join(base, f), encoding="utf-8", errors="ignore") as fp:
+                        parts.append(fp.read())
+                except OSError:
+                    pass
+    return "\n".join(parts)
 
 
-def check_file(path: str, repo_root: str, scripts: set[str]) -> list[str]:
+def symbol_exists(name: str, corpus: str) -> bool:
+    return name in corpus
+
+
+def check_file(path: str, repo_root: str, scripts: set[str], corpus: str) -> list[str]:
     with open(path, encoding="utf-8") as fp:
         content = fp.read()
     content = FENCES.sub("", content)
@@ -118,7 +136,7 @@ def check_file(path: str, repo_root: str, scripts: set[str]) -> list[str]:
                     failed.append(f"{path}:{line_number} 未知 pnpm 命令: `{span}`")
                 continue
             for match in SYMBOL.findall(span):
-                if not symbol_exists(match, repo_root):
+                if not symbol_exists(match, corpus):
                     failed.append(f"{path}:{line_number} 符号不存在: `{match}`")
     return failed
 
@@ -135,10 +153,11 @@ def read_files() -> list[str]:
 def main() -> int:
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     scripts = load_scripts(repo_root)
+    corpus = build_symbol_corpus(repo_root)
     paths = read_files()
     failed: list[str] = []
     for path in paths:
-        failed.extend(check_file(path, repo_root, scripts))
+        failed.extend(check_file(path, repo_root, scripts, corpus))
     if failed:
         print(
             "AGENTS.md 存在断链引用（路径/pnpm 命令/符号），请修正或下沉：",
