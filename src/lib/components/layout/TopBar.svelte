@@ -36,6 +36,23 @@
   import { hasScrolledPastViewport, isNearDocumentBottom } from "#lib/utils/ui/topbar-scroll.js";
   import { page } from "$app/state";
 
+  /**
+   * 顶栏布局与弹层协议：导航贴左，页面工具与主题/语言/账户贴右，右胶囊顺序为
+   * 目录、回到顶部、分隔线、主题、语言、账户。目录只在当前页有标题时出现
+   * （难度表查看态列三区、编辑态只列可见卡，数据由页面传入）。
+   *
+   * 显隐与弹层动画共用一套滚动信号：下滑隐藏、上滑显示用累积阈值
+   * （utils/ui/topbar-scroll），另有顶部悬停带、键盘焦点、距文档底部自动显示；
+   * 滚动即收弹层并隐藏顶栏。弹层悬停协议：意图延迟 HOVER_OPEN_DELAY/HOVER_CLOSE_DELAY，
+   * 移入面板保持；悬停展开后首次点击钉住，二次点击或外点/Escape 才收；面板内
+   * 链接点击即关。互斥状态与焦点恢复在 dropdown-panel 原语，悬停意图、钉住、
+   * 定位与动画由本文件统一承载。根容器 pointer-events-none、胶囊自身
+   * pointer-events-auto：点两胶囊之间的空白按外部点击关闭弹层。
+   * 窄屏菜单为汉堡图标（菜单里分组标题也是链接）；Home 是回首页链接，悬停或
+   * 键盘焦点展开资料卡，移动端 Menu 顶部承载同一资料区。显隐状态在
+   * topbarVisibility store；全部过渡遵守减少动效偏好。
+   */
+
   interface Props {
     tocItems?: TocItem[];
   }

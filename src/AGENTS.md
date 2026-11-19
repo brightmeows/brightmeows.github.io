@@ -82,22 +82,9 @@
 
 #### 顶栏
 
-导航贴左，页面工具与主题/语言/账户贴右；右胶囊顺序为目录、回到顶部、分隔线、主题、语言、账户。
-
-- 目录只在当前页有标题时出现，由 `TocPanel` 渲染，构建函数在 `src/lib/utils/ui/toc.ts`；回到顶部滚过一个视口高度后出现。
-- 正文页（blog/notes/reading）的目录项是“章节段 + 标题树”合并后的扁平树（章节在前，depth 缩进区分章节与标题），数据由 `PostArticle` 合并后传入。
-- 难度表两态目录都由同一 `TocPanel` 承载：查看态列三区，编辑态只列可见卡；点击目录项时若目标折叠则先展开再滚动。
-- 根容器 `pointer-events-none`，胶囊自身 `pointer-events-auto`，点两胶囊之间的空白按外部点击关闭弹层。
-- 分组导航文字是链接（BMS 公共服务到 `/bms`，BMS 个人表到 `/bms/table`），右侧箭头单独展开或钉住，悬停整组仍展开。
-- 窄屏菜单按钮为汉堡图标，菜单里的分组标题也是链接。Home 仍是回首页链接，悬停或键盘焦点展开原资料卡；移动端 Menu 顶部承载同一资料区。
-  - 资料卡与首页外部入口共用 `src/lib/constants/social.ts` 的 `SOCIAL_LINKS`（含图标，GitHub 排第一）；新增社交账号只改这一处。
-- 面包屑与 `deriveBreadcrumbs`/`currentLabel` 已删除，页面层级由正文标题承担。
-- 顶栏高度与导航断点值在 TopBar 组件常量与类名里（640–767 曾溢出才定到现断点）。
-
-- **顶栏显隐与弹层动画共用一套滚动信号**：下滑隐藏、上滑显示用累积阈值（常量在 `src/lib/utils/ui/topbar-scroll.ts`）；另有顶部悬停带、顶栏键盘焦点、距文档底部自动显示，唤出后保持到下一次滚动。滚动即收弹层并隐藏顶栏，“弹层打开不隐藏”只约束非滚动操作。
-  - 所有弹层（Home 资料卡、BMS 下拉、窄屏 Menu、目录、账户、主题、语言）都在鼠标悬停时展开（打开与关闭意图延迟 HOVER_OPEN_DELAY/HOVER_CLOSE_DELAY，TopBar 常量），移入面板保持；悬停已展开时第一次点击把面板钉住，指针离开不收起，第二次点击或外点/Escape 才收起；面板内链接点击即关闭。
-  - 展开淡入并轻微下滑（过渡时长 PANEL_IN_DURATION/PANEL_OUT_DURATION 常量），`prefers-reduced-motion` 时关闭；顶栏自身的 transform 过渡同样遵守减少动效偏好。
-  - 显隐状态在 `topbarVisibility` store，顶栏自身使用；hero 不做吸顶，标题条与表头不再依赖它。
+布局、显隐信号与弹层悬停协议（意图延迟、钉住、外点/Escape、减少动效偏好）见 `src/lib/components/layout/TopBar.svelte` 头注；目录构建在 `src/lib/utils/ui/toc.ts`，
+正文页目录树由 `PostArticle` 合并（章节在前，depth 缩进区分章节与标题）。
+资料卡与首页外部入口共用 `src/lib/constants/social.ts` 的 `SOCIAL_LINKS`（含图标，GitHub 排第一），新增社交账号只改这一处。
 
 #### Hero
 
@@ -118,12 +105,9 @@
 
 #### 侧栏
 
-- **内容正文页宽屏有左侧目录侧栏**：`PostArticle` 在宽屏断点（组件类名）经 `PageShell` 的 `sidebar` snippet 渲染 `TocSidebar`（列宽与正文卡收窄值同在组件类名）；窄屏整列隐藏，由顶栏目录弹层接管，正文行宽（`MarkdownContent` 的 max-w-4xl）不随布局变化。
-  - 侧栏本体包 `GlassPanel`（与顶栏弹层同构）：浮动内容面板（弹层、侧栏、抽屉等）一律用玻璃家族容器承载，不允许裸列表浮在星空背景上。
-  - 侧栏两段：章节段（reading 专属，段头书名链接回书目录页，当前章按路由静态高亮，与滚动推导的锚点高亮并存于 `TocPanel` 的 `activeHref`）与本页目录段；两段各自折叠，折叠与整栏收缩状态都存 localStorage 的 `tocSidebar.*` 键（旗标逻辑在 `src/lib/utils/ui/toc-sidebar.ts`，配相邻测试）。
-  - 侧栏头部收缩钮收起整列，收缩后左缘贴边把手展开（`PageShell` 的 `sidebarCollapsed`/`onExpandSidebar`）；收缩与折叠只在宽屏有语义，SSR 首帧视为未收缩。
-  - reading 的章节数据由 `reading/[...slug]/+page.ts` 提供（`bookHref`/`bookTitle`/`items` 含 `current`，按 order 排序）；blog/notes 不传 `chapters` 即自动降级为纯标题段。
-  - 文末“本书目录”链接（`bookToc`）已随侧栏章节段删除（`content.reading.book_toc` key 一并清理）；prev/next 章间导航保留。
+正文页宽屏有左侧目录侧栏（`PostArticle` 经 `PageShell` 的 `sidebar` snippet 渲染 `TocSidebar`，窄屏由顶栏目录弹层接管，正文行宽不随布局变化）：
+章节段、折叠与收缩、reading 数据来源等协议见 `src/lib/components/layout/TocSidebar.svelte` 头注。
+侧栏本体包 `GlassPanel`，浮动内容面板（弹层、侧栏、抽屉等）一律用玻璃家族容器承载，不允许裸列表浮在星空背景上。
 
 #### 搜索索引
 
@@ -135,22 +119,12 @@
 
 #### 镜像列表
 
-- **列表页的用户操作区与“已授权”筛选**：登录入口在页面顶栏（全局共享登录态 store），配额剩余展示在列表页的操作区（与“我删除的表”同行，写操作后实时刷新）；列表页顶部只保留添加表单（预览后提交、轮询抓取状态）与“我删除的表”回收站入口。
-  - 登录后每行出现行尾操作列（管理员铅笔、贡献者删除图标；受保护行不显删除）；表状态由授权图标列承担，管理员点图标开编辑卡片、非管理员只读，“我删除的表”可自助恢复。
-  - 勾选框由原来的“精选难度表”改为“已授权（受保护）”筛选（精选概念的常量与配套排序已一并删除）。
-  - 无卡片行：添加表是卡头筛选行右侧按钮，登录后展开内联表单；全部难度表始终显示，标签浏览是 plain 子折叠，API 故障呈错误态。
-  - 注意：页面内写操作通过带 `?t=` 的拉取穿透 60 秒边缘缓存（`MANIFEST_MAX_AGE`）即时刷新，其他访客可能读到缓存期内的旧清单。
+列表页规格（操作区、行尾操作列、授权图标列、无卡片行、缓存穿透注意）见 `src/routes/bms/table/mirror/+page.svelte` 头注。
 
 #### 管理功能
 
-- **管理功能并入镜像列表页，旧后台路径已移除**：`/bms/table/mirror/admin/` 不再存在（访问得到 404，Worker 里也没有对应的 SPA 外壳分支），治理操作全部收进列表页。
-  - 授权列：名称列后的窄图标列，绿勾为已授权、黄色警告为未授权，管理员点击打开编辑卡片、非管理员只读。
-  - 行尾铅笔展开行内编辑卡片：“授权保护”分区（状态切换需弹确认，禁用带可选原因；受保护时删除禁用并提示先移出）与元数据覆盖分区（预填来自 `GET /api/admin/overview`；标签输入带现有值建议，新标签序号建议现有最大值加一）。
-  - 替换规则、禁用名单、回收站（不限作者恢复）与最近一段审计在列表上方“管理”折叠区；`#mirror-admin` 锚点直达仍在（书签与历史链接落页后自动展开），顶栏不再设入口。
-  - 回收站与审计时间戳相对显示，悬停 title 保留绝对时间。
-  - 权限模型：`/api/admin/*` 只认 `ADMIN_LOGIN`，前端仅按角色显隐控件。
-  - 清单条目的 `url` 在客户端被重写为站内镜像路径，提交前用 `url_from` 还原源 URL（接口以源 URL 为键）。
-  - 写操作写审计、触发部署（10 分钟节流）。
+治理操作全部收进列表页（旧后台路径已移除）：管理折叠区与行内编辑卡片协议见 `src/lib/components/bms/MirrorAdminPanel.svelte` 头注。
+权限模型跨端：`/api/admin/*` 只认 `ADMIN_LOGIN`，前端仅按角色显隐控件；清单条目的 `url` 在客户端被重写为站内镜像路径，提交前用 `url_from` 还原源 URL（接口以源 URL 为键）。
 
 #### R2 端点
 
