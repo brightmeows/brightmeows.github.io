@@ -32,6 +32,15 @@ repos:
 
   - repo: local
     hooks:
+      - id: docs-refs
+        name: pnpm check:docs
+        entry: pnpm check:docs
+        language: system
+        types: [markdown]
+        pass_filenames: false
+
+  - repo: local
+    hooks:
       - id: lint
         name: pnpm lint
         entry: pnpm lint
