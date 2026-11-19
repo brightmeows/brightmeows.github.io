@@ -623,13 +623,7 @@
 
 {#snippet heroActions()}
   {#if importUrl !== null}
-    <button
-      class={btnGhostMd}
-      type="button"
-      aria-label={m["table.view.copy_import"]()}
-      title={importUrl}
-      onclick={copyImportUrl}
-    >
+    <button class={btnGhostMd} type="button" title={importUrl} onclick={copyImportUrl}>
       {#if cb.copied}
         <Check class="size-4 shrink-0 text-success" aria-hidden="true" />
       {:else if cb.failed}
