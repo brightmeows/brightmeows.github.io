@@ -108,6 +108,17 @@ export const topbarMenuItem =
 export const topbarMenuItemSm =
   "block rounded-glass-md px-3 py-2.5 text-xs font-medium text-white-60 no-underline transition-colors hover:bg-white-10 hover:text-white";
 
+// ---- 行内弹层菜单项(ClickPopover 的 content snippet 用，2026-11 自
+// RowActionMenu 本地类串收敛；与顶栏弹层菜单项是不同视觉形态，圆角
+// glass-sm、字号 0.85rem、无 gap) ----
+
+/** 行内弹层菜单项(行级“...”菜单的普通行)。 */
+export const menuItem =
+  "flex w-full items-center rounded-glass-sm px-2 py-1.5 text-left text-[0.85rem] transition-colors text-white-80 hover:bg-white-10 hover:text-white disabled:pointer-events-none disabled:opacity-40";
+/** 行内弹层菜单项危险变体(删除等破坏性动作，语义错误色)。 */
+export const menuItemDanger =
+  "flex w-full items-center rounded-glass-sm px-2 py-1.5 text-left text-[0.85rem] transition-colors text-error hover:bg-error/10 disabled:pointer-events-none disabled:opacity-40";
+
 // ---- 渐变按钮（2026-10 自 layout.css 的 .gradient-btn 全局类收敛，形态为
 // 面板行的标准尺寸；渐变色板 --color-*-from/to 单源在 layout.css 的 @theme；
 // 行内紧凑尺寸与 green/custom 变体走 GradientButton、IconButton 组件） ----

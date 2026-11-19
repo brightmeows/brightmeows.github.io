@@ -325,3 +325,5 @@ GlassContainer/GlassPanel/GlassCard/GlassButton 与 `popover-glass` 不带 `bord
 - **字号尺收敛**：全站有大量任意值 rem 字号、十余个档位（含 0.78、0.82、1.05 奇数档），另有少量 text-sm/base/lg 命名档混用。
   - 收敛前需要真正的排版设计决策（定几档、各档语义），churn 全场最大，刻意挂起，不并入 UI 收敛波次。
   - 触发条件：圆角尺守门（check:ui 的圆角规则）稳定运行后，为字号尺单独开一轮设计盘问再动手。
+- **ClickPopover 菜单的方向键导航挂起**：行内菜单当前不占 menu 角色（不欠 ARIA menu 契约的合规降级），菜单项经 Tab 可达；roving focus 自建方案量级数十行（tabindex 管理、方向键循环、Home/End）。
+  - 触发条件：菜单场景膨胀出 submenu、多级或 command palette 需求，或 Vercel UI SDK（vercel-labs/ui）出 GA 后作为首个引入模块重评。
