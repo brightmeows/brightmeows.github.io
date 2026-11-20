@@ -3,6 +3,7 @@
   import { mirrorTablePath } from "@brightmeows/mirror/urls";
   import Check from "@lucide/svelte/icons/check";
   import Copy from "@lucide/svelte/icons/copy";
+  import ExternalLink from "@lucide/svelte/icons/external-link";
   import Trash2 from "@lucide/svelte/icons/trash-2";
   import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 
@@ -12,7 +13,7 @@
   import GradientButton from "#lib/components/ui/GradientButton.svelte";
   import { jsonPreview } from "#lib/components/ui/JsonPreview.svelte";
   import ToggleButton from "#lib/components/ui/ToggleButton.svelte";
-  import { btnDanger, btnGhostXs, btnIconPlain } from "#lib/constants/ui-classes.js";
+  import { btnDanger, btnIconPlain, linkInline } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { MirrorAdminUi } from "#lib/types/bms-view.js";
   import type { JsonPreviewHandle } from "#lib/types/ui.js";
@@ -146,12 +147,12 @@
         <span class="text-error">{m["common.copy_failed"]()}</span>
       {:else}
         <button
-          class="flex-none {btnGhostXs}"
+          class="flex-none {btnIconPlain}"
           onclick={() => cb.copy("mirror", new URL(item.url, window.location.origin).toString())}
           aria-label={m["mirror.copy_mirror_aria"]()}
+          title={m["mirror.copy_mirror_aria"]()}
         >
           <Copy class="size-4 shrink-0" aria-hidden="true" />
-          {m["common.copy"]()}
         </button>
       {/if}
     </div>
@@ -161,28 +162,27 @@
   >
     {#if item.url_from}
       <div class="flex items-center gap-1">
-        <GradientButton
-          variant="orange"
+        <a
+          class="{linkInline} flex min-w-0 flex-1 items-center gap-1"
           href={item.url_from}
-          size="sm"
-          class="flex min-w-0 flex-1"
           target="_blank"
           rel="noopener noreferrer"
         >
           {m["mirror.original_link"]()}
-        </GradientButton>
+          <ExternalLink class="size-3.5 shrink-0" aria-hidden="true" />
+        </a>
         {#if cb.copiedField === "original"}
           <span class="badge-copied">{m["common.copied_bang"]()}</span>
         {:else if cb.failedField === "original"}
           <span class="text-error">{m["common.copy_failed"]()}</span>
         {:else}
           <button
-            class="flex-none {btnGhostXs}"
+            class="flex-none {btnIconPlain}"
             onclick={() => cb.copy("original", item.url_from!)}
             aria-label={m["mirror.copy_original_aria"]()}
+            title={m["mirror.copy_original_aria"]()}
           >
             <Copy class="size-4 shrink-0" aria-hidden="true" />
-            {m["common.copy"]()}
           </button>
         {/if}
       </div>
