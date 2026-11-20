@@ -161,9 +161,11 @@
           tabindex="0"
           aria-label={m["common.table_scroll_region"]()}
         >
-          <table class="w-full min-w-200 table-fixed border-collapse">
+          <table
+            class="w-full min-w-200 table-fixed border-collapse max-sm:block max-sm:min-w-0 max-sm:table-auto"
+          >
             <caption class="sr-only">{m["table.caption.mirror"]()}</caption>
-            <colgroup>
+            <colgroup class="max-sm:hidden">
               <col class="w-15" />
               <col class="w-30" />
               <col class="w-[320px]" />
@@ -172,7 +174,7 @@
               <col class="w-40" />
               {#if showActions}<col class="w-28" />{/if}
             </colgroup>
-            <thead>
+            <thead class="max-sm:hidden">
               <tr>
                 <th class="table-th-compact table-th-sticky" scope="col"
                   >{m["common.th_select"]()}</th
@@ -200,11 +202,11 @@
             </thead>
             {#each groups as g (g.tag1)}
               {@const tag1 = tag1State(g, selectedMap)}
-              <tbody id={`tag1-group-${slugifyTag(g.tag1)}`} class="scroll-mt-20">
-                <tr>
+              <tbody id={`tag1-group-${slugifyTag(g.tag1)}`} class="scroll-mt-20 max-sm:block">
+                <tr class="max-sm:mb-2 max-sm:block">
                   <td
                     colspan={columnCount}
-                    class="border-b-2 border-white-10 bg-black-30 px-4 py-2"
+                    class="border-b-2 border-white-10 bg-black-30 px-4 py-2 max-sm:block"
                   >
                     <div class="flex items-center gap-3">
                       <Checkbox
@@ -221,9 +223,12 @@
                   {@const tag2 = tag2State(sg, selectedMap)}
                   <tr
                     id={`tag2-group-${slugifyTag(g.tag1)}-${slugifyTag(sg.tag2)}`}
-                    class="scroll-mt-20"
+                    class="scroll-mt-20 max-sm:mb-2 max-sm:block"
                   >
-                    <td colspan={columnCount} class="border-b border-white-5 bg-white-5 px-4 py-2">
+                    <td
+                      colspan={columnCount}
+                      class="border-b border-white-5 bg-white-5 px-4 py-2 max-sm:block"
+                    >
                       <div class="flex items-center gap-2">
                         <Checkbox
                           ariaLabel={m["mirror.select_group_aria"]({ name: sg.tag2 })}
