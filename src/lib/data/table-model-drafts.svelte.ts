@@ -25,6 +25,8 @@ export interface DraftLifecycleDeps {
   draftKey: () => string;
   /** 模型是否加载完成（header 与 data 双就绪）；防抖落盘的前置条件。 */
   isReady: () => boolean;
+  /** 模型是否有未保存修改（基线比较派生）；防抖落盘与离页守卫的开关。 */
+  isDirty: () => boolean;
   /** 装配当前草稿载荷（header 字段、条目、并发基线、时间戳）。 */
   capturePayload: () => DraftPayload;
   /** 草稿内容套用到模型：header 字段、条目、并发基线并清空通知。 */
@@ -37,20 +39,13 @@ export interface DraftLifecycleDeps {
  * 在此私有的行为冻结拆分；模型侧状态经 deps 注入读写。
  */
 export function createDraftLifecycle(deps: DraftLifecycleDeps) {
-  let dirty = $state(false);
   let pendingDraft = $state<DraftPayload | null>(null);
   let draftStatus = $state<DraftStatus>("idle");
   let lastSavedAt = $state<string | null>(null);
   let draftChecked = $state(false);
 
-  /** 编辑标记（通知清空由调用方与 markDirty 一并处理）。 */
-  function markEdited(): void {
-    dirty = true;
-  }
-
-  /** 保存成功后的落账：清脏标记与草稿状态（成功通知由模型侧处理）。 */
+  /** 保存成功后的落账：清草稿状态（脏标记由基线比较派生，成功通知由模型侧处理）。 */
   function markSaved(): void {
-    dirty = false;
     draftStatus = "idle";
     lastSavedAt = null;
   }
@@ -59,7 +54,6 @@ export function createDraftLifecycle(deps: DraftLifecycleDeps) {
   function restore(draft: DraftPayload): void {
     deps.adoptDraft(draft);
     pendingDraft = null;
-    dirty = true;
     draftStatus = "saved";
     lastSavedAt = draft.savedAt;
   }
@@ -100,7 +94,6 @@ export function createDraftLifecycle(deps: DraftLifecycleDeps) {
   /** 放弃全部未保存修改：删草稿并复位草稿态（模型内容回载由调用方负责）。 */
   async function resetAfterDiscard(): Promise<void> {
     await deleteDraft(deps.draftKey());
-    dirty = false;
     pendingDraft = null;
     draftStatus = "idle";
     lastSavedAt = null;
@@ -109,7 +102,7 @@ export function createDraftLifecycle(deps: DraftLifecycleDeps) {
 
   // ---- 草稿自动落盘（防抖 1.2 秒；草稿未决时不写，避免覆盖待恢复内容） ----
   $effect(() => {
-    if (!dirty || !deps.isReady() || pendingDraft !== null) return;
+    if (!deps.isDirty() || !deps.isReady() || pendingDraft !== null) return;
     const payload = deps.capturePayload();
     const timer = setTimeout(() => {
       void persist(payload);
@@ -133,7 +126,8 @@ export function createDraftLifecycle(deps: DraftLifecycleDeps) {
   // 草稿不可用时退回离页警告（草稿可用时无警告，防误关由草稿承担）。
   const draftGuardActive = $derived.by(
     () =>
-      dirty && (draftStatus === "unavailable" || draftStatus === "quota" || draftStatus === "error")
+      deps.isDirty() &&
+      (draftStatus === "unavailable" || draftStatus === "quota" || draftStatus === "error")
   );
   $effect(() => {
     if (!draftGuardActive) return;
@@ -166,10 +160,6 @@ export function createDraftLifecycle(deps: DraftLifecycleDeps) {
   });
 
   return {
-    get dirty() {
-      return dirty;
-    },
-    markEdited,
     markSaved,
     get pendingDraft() {
       return pendingDraft;

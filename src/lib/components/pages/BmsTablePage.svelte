@@ -23,6 +23,9 @@
    * saveAsSharedNow/Ctrl+S 都以 data 就绪为前置（加载中 entries 为空，误保存会
    * 清空共享表）。shared 模式接入整包保存（发布前必须全部指派，保存前比对线上
    * updated_at 并发提示）与同源草稿认领另存；放弃未保存修改在两态都可用。
+   * 编辑会话历史（撤销/重做，模型见 table-model-history）：输入框外 Ctrl+Z 与
+   * Ctrl+Shift+Z 及 dock 面板按钮；脏标记由基线比较派生，回基线即视为无未保存
+   * 修改（保存按钮隐去、旧草稿清掉）；保存成功清栈，undo 不可撤回已落库内容。
    */
   import type { BmsDropResult } from "@brightmeows/bms/editor";
   import BookOpen from "@lucide/svelte/icons/book-open";
@@ -247,18 +250,31 @@
   function handleKeydown(event: KeyboardEvent): void {
     // 确认弹层打开时冻结页面快捷键：待确认操作不得被切模式打断后跨态落地
     if (confirmDialog.open) return;
-    if (!(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return;
+    if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
     if (event.key === "s" || event.key === "S") {
+      if (event.shiftKey) return;
       if (!model.canSave || model.busy) return;
       event.preventDefault();
       void model.save();
     } else if (event.key === "e" || event.key === "E") {
+      if (event.shiftKey) return;
       // 文本输入里 Ctrl/Cmd+E 是编辑器光标习惯，不抢
       if (isEditableTarget(event.target)) return;
       // 创建态没有查看分支（表头尚不存在），不切走
       if (createMode && isEdit) return;
       event.preventDefault();
       handleDockSetMode(isEdit ? "view" : "edit");
+    } else if (event.key === "z" || event.key === "Z") {
+      // 文本输入框内留原生文本撤销（只还原本字段文本，bind 链路自洽）；
+      // 模型栈撤销在输入框外响应，撤的是“操作”
+      if (isEditableTarget(event.target)) return;
+      if (!isEdit) return;
+      event.preventDefault();
+      if (event.shiftKey) {
+        model.redo();
+      } else {
+        model.undo();
+      }
     }
   }
 
@@ -833,6 +849,7 @@
     nested={model.courseModel.shape === "nested"}
     disabled={isEdit ? model.busy || !dataReady : false}
     onChange={model.markDirty}
+    onBeforeChange={model.captureForUndo}
     onNotice={(value: EditorNotice) => (model.notice = value)}
   />
 {/snippet}

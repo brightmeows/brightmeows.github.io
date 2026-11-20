@@ -43,7 +43,9 @@
     nested?: boolean | undefined;
     disabled?: boolean;
     onChange?: (() => void) | undefined;
-    /** 删除类撤销通知的出口（dock notice 区渲染撤销按钮）；缺省不通知。 */
+    /** 操作前压撤销快照的出口：mutator 原地改与拖入段位不走 bind setter，须显式压栈。 */
+    onBeforeChange?: (() => void) | undefined;
+    /** 编辑反馈通知的出口（dock notice 区展示）；缺省不通知。 */
     onNotice?: ((notice: EditorNotice) => void) | undefined;
   }
 
@@ -57,6 +59,7 @@
     nested = undefined,
     disabled = false,
     onChange,
+    onBeforeChange = undefined,
     onNotice = undefined,
   }: Props = $props();
 
@@ -232,7 +235,6 @@
     const course = model.groups[groupIndex]?.courses[courseIndex];
     if (course === undefined) return;
     const name = course.name.trim() || m["course.unnamed"]();
-    const snapshot = model;
     const key = editKey(course);
     model = removeCourseFromModel(model, groupIndex, courseIndex);
     if (expandedKey === key) expandedKey = null;
@@ -240,13 +242,6 @@
     onNotice?.({
       kind: "ok",
       text: m["editor.undo.course_deleted"]({ name }),
-      action: {
-        label: m["common.undo"](),
-        run: () => {
-          model = snapshot;
-          onChange?.();
-        },
-      },
     });
   }
 
@@ -260,7 +255,6 @@
     if (model === undefined) return;
     const group = model.groups[groupIndex];
     if (group === undefined) return;
-    const snapshot = model;
     const courseCount = group.courses.length;
     model = removeGroupFromModel(model, groupIndex);
     expandedKey = null;
@@ -268,13 +262,6 @@
     onNotice?.({
       kind: "ok",
       text: m["editor.undo.group_deleted"]({ index: groupIndex + 1, count: courseCount }),
-      action: {
-        label: m["common.undo"](),
-        run: () => {
-          model = snapshot;
-          onChange?.();
-        },
-      },
     });
   }
 </script>
@@ -367,12 +354,14 @@
                   onMoveDown={() => moveCourse(group.groupIndex, item.courseIndex, 1)}
                   onDropChart={(chart) => {
                     if (model === undefined) return;
+                    onBeforeChange?.();
                     if (addChartToCourse(model, group.groupIndex, item.courseIndex, chart)) {
                       onChange?.();
                     }
                   }}
                   {onNotice}
                   onedit={(mutate) => {
+                    onBeforeChange?.();
                     mutate(item.course);
                     onChange?.();
                   }}

@@ -203,7 +203,7 @@ katex 选择器兼容性见 `src/lib/components/content/MarkdownContent.svelte` 
   （镜像列表/单搜/批量搜与段位反查共用，勿再各自复制）、`shared-new` 新建共享表状态、`topbar-visibility` 顶栏显隐。
 - store 反向引用 api 走 `../api/` 相对路径；`bms-search.worker.ts` 的 `new URL` 挂在 store 侧客户端，模块移位时两边要同步。
 - 响应式的页面模型也在此层（`table-page-model.svelte.ts`：难度表页的主模型：内存模型态、派生展示、保存发布与对外门面）。
-- 两段式加载与草稿生命周期拆在同目录的 `table-model-loader.svelte.ts` 与 `table-model-drafts.svelte.ts` 子模型（行为冻结拆分，依赖单向：loader 引用 drafts）。
+- 两段式加载、草稿生命周期与编辑会话历史（撤销/重做快照栈）拆在同目录的 `table-model-loader.svelte.ts`、`table-model-drafts.svelte.ts` 与 `table-model-history.svelte.ts` 子模型（行为冻结拆分，依赖单向：loader 引用 drafts）。
 - 路由组件持模式切换、目录与模板，等级参考状态属主是页面组件（LevelRefTable 自取数经 bind 回写，页面据此生成目录）；模型经 getter 收 props 保持响应式，编排胶水按既有口径不测，纯决策在 controllers 与 bms 包。
 - API 传输层单份在 `src/lib/data/api/http.ts`（`requestJson` 与 `ApiUnavailableError`：同源请求、凭据携带与错误封套翻译；`toFailure` 把异常集中分流为 `AsyncState` 失败态，代替各页手写 instanceof 分支）。
 - 端点形状与窄化来自 `@brightmeows/mirror/api`（契约单一来源），不要在端点模块里重写响应形状或另建传输层；同站清单（镜像与共享）的取数骨架在 `src/lib/data/api/table-list.ts`。fetch 仅在 `onMount` 中调用。

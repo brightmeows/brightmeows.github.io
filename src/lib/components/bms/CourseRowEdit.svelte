@@ -151,23 +151,12 @@
   function removeTrophy(index: number): void {
     const removed = course.trophies[index];
     if (removed === undefined) return;
-    // 快照在可写目标里捕获：只读视图的深只读类型不能直接写回
-    let snapshot: EditableCourse["trophies"] = [];
     onedit((target) => {
-      snapshot = [...target.trophies];
       target.trophies = target.trophies.filter((_, i) => i !== index);
     });
     onNotice?.({
       kind: "ok",
       text: m["editor.undo.trophy_deleted"]({ name: removed.name }),
-      action: {
-        label: m["common.undo"](),
-        run: () => {
-          onedit((target) => {
-            target.trophies = snapshot;
-          });
-        },
-      },
     });
   }
 

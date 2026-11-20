@@ -26,6 +26,7 @@ import {
   formatClock,
   type DraftLifecycle,
 } from "#lib/data/table-model-drafts.svelte.js";
+import { createHistoryLifecycle } from "#lib/data/table-model-history.svelte.js";
 import { createTableLoader } from "#lib/data/table-model-loader.svelte.js";
 import { m } from "#lib/paraglide/messages.js";
 import { downloadTextFile } from "#lib/utils/infra/download.js";
@@ -71,10 +72,10 @@ export interface TablePageCapabilities {
 /**
  * 难度表页面的页面模型：内存模型（header 字段、条目、段位）、两段式加载、
  * 草稿生命周期、保存发布与导出的编排。加载与草稿两个子域拆在同目录的
- * table-model-loader / table-model-drafts（行为冻结拆分）；路由组件持有
- * 查看/编辑模式切换（pushState）与模板；本模型不触碰模式态。交互原语级的
- * 纯决策在 controllers/editor 与 @brightmeows/bms/editor（均有测试），
- * 这里是编排胶水（按既有口径不测）。
+ * table-model-loader / table-model-drafts / table-model-history（行为冻结
+ * 拆分）；路由组件持有查看/编辑模式切换（pushState）与模板；本模型不触碰
+ * 模式态。交互原语级的纯决策在 controllers/editor 与 @brightmeows/bms/editor
+ * 与 @brightmeows/bms/history（均有测试），这里是编排胶水（按既有口径不测）。
  */
 export interface TableModelInput {
   source: () => TablePageSource;
@@ -147,6 +148,31 @@ export function createTableModel(input: TableModelInput) {
       : name.trim()
   );
 
+  // ---- 编辑会话历史子模型（快照栈、基线与脏标记派生；语义见 table-model-history） ----
+  const historyDomain = createHistoryLifecycle({
+    current: () => ({ name, symbol, tag, headerMode, levels, entries, course: courseModel }),
+    apply: (snapshot) => {
+      // 直写模型状态绕公共 setter：setter 会把应用动作再压栈产生自环
+      name = snapshot.name;
+      symbol = snapshot.symbol;
+      tag = snapshot.tag;
+      headerMode = snapshot.headerMode;
+      levels = snapshot.levels;
+      entries = snapshot.entries;
+      courseModel = snapshot.course;
+    },
+    baselineAbsentDirty: () => createMode && draftDataActive,
+    baselineReady: () => ready && !draftDataActive,
+    clearOkNotice: () => {
+      if (notice?.kind === "ok") notice = null;
+    },
+    onBaseline: () => {
+      // 回到基线：无未保存修改，旧草稿一并清掉
+      drafts.markSaved();
+      void deleteDraft(draftKey);
+    },
+  });
+
   // ---- 模型装配 ----
   function applyHeaderState(header: Record<string, unknown>): void {
     const state = editorHeaderState(header);
@@ -169,8 +195,7 @@ export function createTableModel(input: TableModelInput) {
   }
 
   function markDirty(): void {
-    drafts.markEdited();
-    // error/warn 常驻到被新通知替换；ok 类（含撤销窗口）随下一次编辑失效
+    // 脏标记由基线比较派生；error/warn 常驻到被新通知替换，ok 类随下一次编辑清除
     if (notice?.kind === "ok") notice = null;
   }
 
@@ -202,6 +227,7 @@ export function createTableModel(input: TableModelInput) {
   const drafts: DraftLifecycle = createDraftLifecycle({
     draftKey: () => draftKey,
     isReady: () => ready,
+    isDirty: () => historyDomain.isDirty,
     capturePayload: buildDraftPayload,
     adoptDraft,
   });
@@ -238,6 +264,7 @@ export function createTableModel(input: TableModelInput) {
   async function discardEdits(): Promise<void> {
     if (!(await askConfirm(m["editor.discard.unsaved_confirm"]()))) return;
     draftDataActive = false;
+    historyDomain.resetHistory();
     await drafts.resetAfterDiscard();
     notice = null;
     levelHints = {};
@@ -274,6 +301,7 @@ export function createTableModel(input: TableModelInput) {
     if (outcome.kind === "saved") {
       if (outcome.nextBaseline !== undefined) baselineUpdatedAt = outcome.nextBaseline;
       drafts.markSaved();
+      historyDomain.commitBaseline();
       notice = { kind: "ok", text: m["editor.save.done"]({ count: outcome.count }) };
     } else {
       notice = { kind: "error", text: outcome.text };
@@ -357,30 +385,35 @@ export function createTableModel(input: TableModelInput) {
       return name;
     },
     set name(v: string) {
+      historyDomain.captureForUndo("header.name");
       name = v;
     },
     get symbol() {
       return symbol;
     },
     set symbol(v: string) {
+      historyDomain.captureForUndo("header.symbol");
       symbol = v;
     },
     get tag() {
       return tag;
     },
     set tag(v: string) {
+      historyDomain.captureForUndo("header.tag");
       tag = v;
     },
     get headerMode() {
       return headerMode;
     },
     set headerMode(v: string) {
+      historyDomain.captureForUndo("header.mode");
       headerMode = v;
     },
     get levels() {
       return levels;
     },
     set levels(v: string[]) {
+      historyDomain.captureForUndo();
       levels = v;
     },
     get extraHeader() {
@@ -393,12 +426,14 @@ export function createTableModel(input: TableModelInput) {
       return courseModel;
     },
     set courseModel(v: CourseModel) {
+      historyDomain.captureForUndo();
       courseModel = v;
     },
     get entries() {
       return entries;
     },
     set entries(v: ChartData[]) {
+      historyDomain.captureForUndo();
       entries = v;
     },
     get levelHints() {
@@ -468,8 +503,18 @@ export function createTableModel(input: TableModelInput) {
     },
     // 草稿（委托 drafts）
     get dirty() {
-      return drafts.dirty;
+      return historyDomain.isDirty;
     },
+    // 编辑会话历史（快照栈；captureForUndo 供 mutator 原地改的组件显式压栈）
+    get canUndo() {
+      return historyDomain.canUndo;
+    },
+    get canRedo() {
+      return historyDomain.canRedo;
+    },
+    captureForUndo: historyDomain.captureForUndo,
+    undo: historyDomain.undo,
+    redo: historyDomain.redo,
     get busy() {
       return busy;
     },
