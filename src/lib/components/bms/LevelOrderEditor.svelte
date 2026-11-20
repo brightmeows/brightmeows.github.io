@@ -57,18 +57,11 @@
 
   function handleRemove(index: number): void {
     const removed = levels[index];
-    const snapshot = levels;
     commit(removeLevelAt(levels, index));
     if (removed !== undefined) {
       onNotice?.({
         kind: "ok",
         text: m["editor.undo.level_deleted"]({ level: removed }),
-        action: {
-          label: m["common.undo"](),
-          run: () => {
-            commit(snapshot);
-          },
-        },
       });
     }
   }

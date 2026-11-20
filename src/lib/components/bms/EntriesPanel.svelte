@@ -4,7 +4,6 @@
     assignHintLevels,
     assignLevel,
     buildEntrySegments,
-    captureEntryRemoval,
     countUnassigned,
     duplicateEntryLabel,
     encodeLevelFilterOption,
@@ -22,10 +21,8 @@
     moveItem,
     parseLevelFilterOption,
     removeIndices,
-    restoreEntryRemoval,
     setIndices,
     splitNewEntries,
-    type EntryRemovalSnapshot,
   } from "@brightmeows/bms/editor";
   import type { ChartData } from "@brightmeows/bms/format";
   import { findUnlistedLevels, levelSegmentColor } from "@brightmeows/bms/table";
@@ -71,6 +68,9 @@
    * 条目面板：查看与编辑共用条目表、组头、难度导航与搜索/筛选。
    * 查看态严格只读；编辑态增加添加、批量、勾选与行内编辑。
    * 未知自定义字段经 commitEntryEdit 保留并在详情表单里可编辑。
+   * 删除与增改经 bind 回写触发模型 setter 压撤销快照（编辑会话历史见
+   * table-model-history）；模型侧 undo/redo 整体替换 entries 时按对象身份
+   * 重定位编辑中行与勾选（见 entries effect）。
    * 条目表按等级分组、取消分页全量渲染；等级行用 ToggleJumpChip 隐藏/显示组
    * （组件只服务该场景），组头静态；表格无等级列，下载与站点链接合并为链接列，
    * 图标统一并由容器宽度收进“...”菜单。添加谱面抽屉在面板内动态加载。
@@ -97,7 +97,7 @@
     dataError?: string | null;
     onRetry?: (() => void | Promise<void>) | undefined;
     onChange?: (() => void) | undefined;
-    /** 删除类撤销通知的出口（dock notice 区渲染撤销按钮）；缺省不通知。 */
+    /** 编辑反馈通知的出口（dock notice 区展示）；缺省不通知。 */
     onNotice?: ((notice: EditorNotice) => void) | undefined;
     /** 添加抽屉开合上报：页面据此暂停整页拖拽遮罩。 */
     onAddDrawerOpenChange?: ((open: boolean) => void) | undefined;
@@ -140,6 +140,35 @@
   let selected = $state<Set<number>>(new Set());
   let editingIndex = $state<number | null>(null);
   let editKey = $state(0);
+
+  // 模型侧 undo/redo 与草稿恢复会整体替换 entries：按上一轮数组取出对象身份，
+  // 在新数组里重定位编辑中行与勾选；找不到的对象复位（表单收起、勾选剔除）。
+  let prevEntries: ChartData[] = [];
+  $effect(() => {
+    const current = entries;
+    const prev = prevEntries;
+    prevEntries = current;
+    if (prev === current) return;
+    if (editingIndex !== null) {
+      const entry = prev[editingIndex];
+      if (entry === undefined) {
+        editingIndex = null;
+      } else {
+        const next = current.indexOf(entry);
+        editingIndex = next >= 0 ? next : null;
+      }
+    }
+    if (selected.size > 0) {
+      const relocated = new Set<number>();
+      for (const index of selected) {
+        const entry = prev[index];
+        if (entry === undefined) continue;
+        const next = current.indexOf(entry);
+        if (next >= 0) relocated.add(next);
+      }
+      selected = relocated;
+    }
+  });
   let batchChoice = $state<string>(BATCH_NONE);
   let batchOpen = $state(false);
   let addOpen = $state(false);
@@ -622,16 +651,15 @@
 
   function deleteSelected(): void {
     if (selected.size === 0) return;
-    const snapshot = captureEntryRemoval(entries, [...selected]);
-    entries = removeIndices(entries, snapshot.indices);
+    const count = selected.size;
+    entries = removeIndices(entries, [...selected]);
     selected = new Set();
     editingIndex = null;
     notice = null;
     onChange?.();
     onNotice?.({
       kind: "ok",
-      text: m["editor.undo.entries_deleted"]({ count: snapshot.items.length }),
-      action: { label: m["common.undo"](), run: () => restoreRemoval(snapshot) },
+      text: m["editor.undo.entries_deleted"]({ count }),
     });
   }
 
@@ -783,8 +811,7 @@
     const entry = entries[index];
     if (entry === undefined) return;
     const label = entryLabel(entry) || m["editor.entry.unnamed"]();
-    const snapshot = captureEntryRemoval(entries, [index]);
-    entries = removeIndices(entries, snapshot.indices);
+    entries = removeIndices(entries, [index]);
     selected = new Set();
     if (editingIndex === index) editingIndex = null;
     notice = null;
@@ -792,27 +819,7 @@
     onNotice?.({
       kind: "ok",
       text: m["editor.undo.entry_deleted"]({ title: label }),
-      action: { label: m["common.undo"](), run: () => restoreRemoval(snapshot) },
     });
-  }
-
-  /** 撤销删除：快照条目按原下标原位插回（引用保持），经 onChange 落 dirty。 */
-  function restoreRemoval(snapshot: EntryRemovalSnapshot): void {
-    // 插回会推移后续下标：勾选与编辑中的行按对象身份重算，避免指向错行
-    const editingEntry = editingIndex !== null ? entries[editingIndex] : undefined;
-    const selectedEntries = [...selected].flatMap((index) => {
-      const entry = entries[index];
-      return entry !== undefined ? [entry] : [];
-    });
-    entries = restoreEntryRemoval(entries, snapshot);
-    editingIndex = editingEntry !== undefined ? entries.indexOf(editingEntry) : null;
-    selected = new Set(
-      selectedEntries.flatMap((entry) => {
-        const index = entries.indexOf(entry);
-        return index >= 0 ? [index] : [];
-      })
-    );
-    onChange?.();
   }
 
   function deleteEditing(): void {

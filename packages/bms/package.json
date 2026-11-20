@@ -32,6 +32,10 @@
       "types": "./src/hash-list.ts",
       "default": "./src/hash-list.ts"
     },
+    "./history": {
+      "types": "./src/history.ts",
+      "default": "./src/history.ts"
+    },
     "./header": {
       "types": "./src/header.ts",
       "default": "./src/header.ts"
