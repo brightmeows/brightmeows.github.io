@@ -7,7 +7,12 @@
   import type { EditorNotice } from "#lib/controllers/editor.js";
   import { m } from "#lib/paraglide/messages.js";
 
-  /** 头部字段区：查看态文本/胶囊，编辑态输入/编辑器，布局与标签共用。 */
+  /**
+   * 头部字段区：两态共用同一套字段单元（HeaderField 查看 readonly 与编辑输入
+   * 为同一个 input）。等级顺序查看态胶囊流、编辑态 LevelOrderEditor 行列表，
+   * 形态差异是刻意选择：信息等价，编辑态的增删排序按钮没有查看态对应物。
+   * extra 自定义字段两态都只读展示，编辑器不提供 header 自定义字段的编辑。
+   */
   interface Props {
     editing: boolean;
     name: string;
