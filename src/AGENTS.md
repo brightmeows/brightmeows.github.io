@@ -136,7 +136,7 @@ R2 地址单一来源与镜像、共享两对 URL 构造函数都在 `src/lib/co
 
 - 两条路由：新建页 new（预渲染前置屏：id 实时预览与查重、可选 name/symbol 种子，**不创建**，首次保存才创建；确认后跳带 `?edit=1` 的编辑器地址：新表只在编辑态呈现，查看分支会去拉尚不存在的表头）。
 - `[id]/`（查看与编辑合并的页面，默认查看态复用 `BmsTablePage`，`?edit=1` 就地切换编辑；`[id]/+layout.ts` 把整个子树设为 `prerender = false`）。
-- 列表页已并入 `/bms/table`（共享表在上、自托管表在下的总览页，客户端拉 `/bms/table/shared/tables.json`），旧列表地址由 Worker 301（见 `packages/worker/AGENTS.md`）。
+- 列表页在 `/bms/table/shared`（客户端拉 `/bms/table/shared/tables.json`）；`/bms/table` 是表总览索引页：共享与镜像入口卡在上、自托管表列表内联在下，刻意无运行时取数。
 - 查看与编辑对所有人开放，本地草稿、导出与另存共享不变；保存、改名与删除仅作者（admin 可删）。非作者的主按钮是“创建副本”，进入带 `?copy=1` 的副本编辑态，保存时跳新建页确认 id；admin 对他人共享表在查看态菜单多“管理此表”删除入口，不进编辑器。未知自定义字段经 `applyEntryFields` 原样保留，段位（course）与导入面板由编辑态内容承担。
 - 写操作不消耗每日配额（防线是持有上限 + 全操作审计 + admin 删除）。
 - 查看态的 `actions` snippet 是 `BmsTablePage` 标题操作行的扩展点（作者与提示文本；表整体下载统一走 dock 表操作段，登录入口在顶栏）；`management` snippet 在编辑态头部卡承载改 id 与删除，副本模式隐藏；admin 对他人共享表的删除入口在查看态菜单的“管理此表”。
@@ -255,7 +255,7 @@ katex 选择器兼容性见 `src/lib/components/content/MarkdownContent.svelte` 
 
 ## 挂起项
 
-- **难度表条目按等级组延迟渲染**：content-visibility 渐进增强已按容器级落地（镜像列表与总览页的表格 wrapper、共享表组 wrapper）；条目表按等级组逐组挂载不可行，tbody 是表格内部盒，规范上吃不到布局包含，挂了静默无效。
+- **难度表条目按等级组延迟渲染**：content-visibility 渐进增强已按容器级落地（镜像列表与共享列表的表格 wrapper）；条目表按等级组逐组挂载不可行，tbody 是表格内部盒，规范上吃不到布局包含，挂了静默无效。
   - 触发条件：大表实测出现渲染卡顿，值得把等级组从单表多 tbody 拆成逐组独立渲染结构时再动。
 - **字号尺收敛**：全站有大量任意值 rem 字号、十余个档位（含 0.78、0.82、1.05 奇数档），另有少量 text-sm/base/lg 命名档混用。
   - 收敛前需要真正的排版设计决策（定几档、各档语义），churn 全场最大，刻意挂起，不并入 UI 收敛波次。

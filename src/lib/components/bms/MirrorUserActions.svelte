@@ -1,5 +1,5 @@
 <script lang="ts">
-  import ArrowLeft from "@lucide/svelte/icons/arrow-left";
+  import ArrowRight from "@lucide/svelte/icons/arrow-right";
   import Plus from "@lucide/svelte/icons/plus";
   import Search from "@lucide/svelte/icons/search";
   import Undo2 from "@lucide/svelte/icons/undo-2";
@@ -162,9 +162,9 @@
   <div class="flex flex-col gap-3">
     <div class="text-[0.9rem] text-white-60">
       {m["shared.detail.promo_before"]()}
-      <a class={btnGhostXs} href="/bms/table">
-        <ArrowLeft class="size-4 shrink-0" aria-hidden="true" />
-        {m["nav.table"]()}
+      <a class={btnGhostXs} href="/bms/table/shared/">
+        {m["nav.shared"]()}
+        <ArrowRight class="size-4 shrink-0" aria-hidden="true" />
       </a>
       {m["shared.detail.promo_after"]()}
     </div>

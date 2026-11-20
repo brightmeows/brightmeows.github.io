@@ -39,6 +39,7 @@ export const bmsServicesNav: NavDropdown = {
   children: [
     { href: "/bms", label: () => m["nav.overview"]() },
     { href: "/bms/table", label: () => m["nav.table"]() },
+    { href: "/bms/table/shared", label: () => m["nav.shared"]() },
     { href: "/bms/table/mirror", label: () => m["nav.mirror"]() },
     { href: "/bms/table/search", label: () => m["nav.search"]() },
   ],
