@@ -1,4 +1,4 @@
-import type { SearchIndex, SearchIndexBundle } from "./bms-search";
+import type { HashIndexBundle, SearchIndex, TextIndexBundle } from "./bms-search";
 
 const DB_NAME = "bms-search-v1";
 const DB_VERSION = 1;
@@ -46,52 +46,74 @@ function closeDB(): void {
   });
 }
 
-/** 从 IDB 读取缓存的索引，缺失任何一个 key 时返回 null */
-export async function getCachedIndices(): Promise<SearchIndexBundle | null> {
+/** 从 IDB 读取文本索引组，缺失任何一个 key 时返回 null */
+export async function getCachedTextIndices(): Promise<TextIndexBundle | null> {
   const db = await getDB();
   if (!db) return null;
 
-  const indices = await Promise.all([
+  const [title, artist] = await Promise.all([
     getFromStore<SearchIndex>(db, INDEX_STORE, "title"),
     getFromStore<SearchIndex>(db, INDEX_STORE, "artist"),
+  ]);
+
+  if (!title || !artist) return null;
+  return { title, artist };
+}
+
+/** 从 IDB 读取哈希索引组，缺失任何一个 key 时返回 null */
+export async function getCachedHashIndices(): Promise<HashIndexBundle | null> {
+  const db = await getDB();
+  if (!db) return null;
+
+  const [md5, sha256] = await Promise.all([
     getFromStore<SearchIndex>(db, INDEX_STORE, "md5"),
     getFromStore<SearchIndex>(db, INDEX_STORE, "sha256"),
   ]);
 
-  const [title, artist, md5, sha256] = indices;
-  if (!title || !artist || !md5 || !sha256) return null;
-
-  return { title, artist, md5, sha256 };
+  if (!md5 || !sha256) return null;
+  return { md5, sha256 };
 }
 
-/** 将索引存入 IDB 缓存 */
-export async function setCachedIndices(indices: SearchIndexBundle): Promise<void> {
+/** 将文本索引组存入 IDB 缓存 */
+export async function setCachedTextIndices(indices: TextIndexBundle): Promise<void> {
   const db = await getDB();
   if (!db) return;
 
   await Promise.all([
     putInStore(db, INDEX_STORE, indices.title, "title"),
     putInStore(db, INDEX_STORE, indices.artist, "artist"),
+  ]);
+}
+
+/** 将哈希索引组存入 IDB 缓存 */
+export async function setCachedHashIndices(indices: HashIndexBundle): Promise<void> {
+  const db = await getDB();
+  if (!db) return;
+
+  await Promise.all([
     putInStore(db, INDEX_STORE, indices.md5, "md5"),
     putInStore(db, INDEX_STORE, indices.sha256, "sha256"),
   ]);
 }
 
-/** 读取缓存的版本标识 */
-export async function getVersion(): Promise<string | null> {
+/** 索引组名称：两组分开缓存与校验，互不阻塞。 */
+export type IndexGroup = "text" | "hash";
+
+/** 读取指定索引组的版本标识 */
+export async function getVersion(group: IndexGroup): Promise<string | null> {
   const db = await getDB();
   if (!db) return null;
 
-  const v = await getFromStore<string>(db, META_STORE, "version");
+  const v = await getFromStore<string>(db, META_STORE, `version:${group}`);
   return v ?? null;
 }
 
-/** 写入版本标识 */
-export async function setVersion(v: string): Promise<void> {
+/** 写入指定索引组的版本标识 */
+export async function setVersion(group: IndexGroup, v: string): Promise<void> {
   const db = await getDB();
   if (!db) return;
 
-  await putInStore(db, META_STORE, v, "version");
+  await putInStore(db, META_STORE, v, `version:${group}`);
 }
 
 /** 清空缓存并关闭连接 */

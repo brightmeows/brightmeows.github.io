@@ -1,8 +1,14 @@
 import type { ChartData } from "@brightmeows/bms/format";
 import { describe, expect, it } from "vitest";
 
-import type { SearchIndexBundle } from "./bms-search";
-import { detectQueryType, filterChartsByKeys, searchIndices } from "./bms-search";
+import type { HashIndexBundle, SearchIndexBundle, TextIndexBundle } from "./bms-search";
+import {
+  detectQueryType,
+  filterChartsByKeys,
+  searchHashIndices,
+  searchIndices,
+  searchTextIndices,
+} from "./bms-search";
 
 const MD5 = "d41d8cd98f00b204e9800998ecf8427e";
 const SHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
@@ -104,5 +110,42 @@ describe("filterChartsByKeys", () => {
   it("无匹配键时返回空", () => {
     expect(filterChartsByKeys(charts, new Set(["nomatch"]), "text")).toHaveLength(0);
     expect(filterChartsByKeys(charts, new Set([MD5]), "sha256")).toHaveLength(0);
+  });
+});
+
+describe("分层搜索", () => {
+  const textIndices: TextIndexBundle = {
+    title: { another: ["t1", "t2"], 星空の下で: ["t3"] },
+    artist: { "artist-a": ["t1"] },
+  };
+  const hashIndices: HashIndexBundle = {
+    md5: { [MD5]: ["t1"] },
+    sha256: { [SHA256]: ["t2"] },
+  };
+
+  it("文本组只查标题与艺术家，不依赖哈希索引", () => {
+    const result = searchTextIndices("another", textIndices);
+    expect(result.get("t1")).toEqual([{ key: "another", source: "title" }]);
+    expect(result.has("t2")).toBe(true);
+    expect(result.has("t3")).toBe(false);
+  });
+
+  it("哈希组按输入长度选择索引", () => {
+    expect(searchHashIndices(MD5, hashIndices).get("t1")).toEqual([{ key: MD5, source: "md5" }]);
+    expect(searchHashIndices(SHA256, hashIndices).get("t2")).toEqual([
+      { key: SHA256, source: "sha256" },
+    ]);
+  });
+
+  it("哈希组不命中另一条索引", () => {
+    expect(searchHashIndices(MD5, { md5: {}, sha256: { [MD5]: ["t9"] } }).size).toBe(0);
+  });
+
+  it("组合入口按查询类型分派到对应组", () => {
+    const complete: SearchIndexBundle = { ...textIndices, ...hashIndices };
+    expect(searchIndices(MD5, complete).get("t1")).toEqual([{ key: MD5, source: "md5" }]);
+    expect(searchIndices("another", complete).get("t1")).toEqual([
+      { key: "another", source: "title" },
+    ]);
   });
 });

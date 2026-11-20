@@ -8,13 +8,20 @@ import { isRecord } from "#lib/utils/infra/object.js";
 /** 搜索索引类型 */
 export type SearchIndex = Record<string, string[]>;
 
-/** 四个搜索索引的捆绑类型 */
-export interface SearchIndexBundle {
+/** 文本索引组：标题与艺术家，模糊搜索用。 */
+export interface TextIndexBundle {
   title: SearchIndex;
   artist: SearchIndex;
+}
+
+/** 哈希索引组：MD5 与 SHA256，按输入类型按需加载。 */
+export interface HashIndexBundle {
   md5: SearchIndex;
   sha256: SearchIndex;
 }
+
+/** 四个搜索索引的完整捆绑类型 */
+export interface SearchIndexBundle extends TextIndexBundle, HashIndexBundle {}
 
 /** 索引匹配条目，携带来源信息 */
 export interface KeyMatch {
@@ -39,6 +46,13 @@ export interface WorkerSearchRequest {
   needles?: string[] | undefined;
 }
 
+/** Worker 收到的哈希索引加载请求 */
+export interface WorkerLoadHashRequest {
+  type: "load-hash";
+}
+
+export type WorkerRequest = WorkerSearchRequest | WorkerLoadHashRequest;
+
 /** Worker → 主线程：索引加载进度 */
 export interface WorkerIndexProgress {
   type: "index-progress";
@@ -59,7 +73,16 @@ export interface WorkerSearchResult {
   searchId: number;
   candidates: CandidateEntry[];
 }
-export type WorkerMessage = WorkerIndexProgress | WorkerReady | WorkerSearchResult;
+/** Worker → 主线程：哈希索引组就绪（或失败） */
+export interface WorkerHashReady {
+  type: "hash-ready";
+  error?: string;
+}
+export type WorkerMessage =
+  | WorkerIndexProgress
+  | WorkerReady
+  | WorkerSearchResult
+  | WorkerHashReady;
 
 /** 查询类型 */
 export type QueryType = "md5" | "sha256" | "text";
@@ -72,45 +95,69 @@ export function detectQueryType(query: string): QueryType {
   return "text";
 }
 
-/** 在索引中搜索，返回候选 tableId → 匹配键集合（含来源信息） */
+/** 把命中键并入结果表：同一个 tableId 累积多个来源的匹配键。 */
+function addMatches(
+  result: Map<string, KeyMatch[]>,
+  index: SearchIndex,
+  keys: string[],
+  source: KeyMatch["source"]
+): void {
+  for (const key of keys) {
+    const tableIds = index[key];
+    if (!tableIds) continue;
+    for (const tid of tableIds) {
+      let arr = result.get(tid);
+      if (!arr) {
+        arr = [];
+        result.set(tid, arr);
+      }
+      arr.push({ key, source });
+    }
+  }
+}
+
+/** 文本索引搜索：标题与艺术家模糊匹配。 */
+export function searchTextIndices(
+  query: string,
+  indices: TextIndexBundle,
+  needles?: string[]
+): Map<string, KeyMatch[]> {
+  const result = new Map<string, KeyMatch[]>();
+  // O(needles × totalKeys × avgKeyLength)。当前索引规模（千级 key）下耗时毫秒级。
+  // 若索引增长到万级 key，可按首字符分桶降低常数因子。
+  const searchTerms = needles ?? [query.trim().toLowerCase()];
+  const matchingKeys = (index: SearchIndex): string[] =>
+    Object.keys(index).filter((k) => searchTerms.some((term) => k.toLowerCase().includes(term)));
+  addMatches(result, indices.title, matchingKeys(indices.title), "title");
+  addMatches(result, indices.artist, matchingKeys(indices.artist), "artist");
+  return result;
+}
+
+/** 哈希索引搜索：按输入是 MD5 还是 SHA256 精确命中。 */
+export function searchHashIndices(
+  query: string,
+  indices: HashIndexBundle
+): Map<string, KeyMatch[]> {
+  const result = new Map<string, KeyMatch[]>();
+  const trimmed = query.trim().toLowerCase();
+  if (detectQueryType(query) === "sha256") {
+    addMatches(result, indices.sha256, [trimmed], "sha256");
+  } else {
+    addMatches(result, indices.md5, [trimmed], "md5");
+  }
+  return result;
+}
+
+/** 在完整索引中搜索，返回候选 tableId → 匹配键集合（含来源信息）。 */
 export function searchIndices(
   query: string,
   indices: SearchIndexBundle,
   needles?: string[]
 ): Map<string, KeyMatch[]> {
-  const type = detectQueryType(query);
-  const result = new Map<string, KeyMatch[]>();
-
-  const addMatches = (index: SearchIndex, keys: string[], source: KeyMatch["source"]): void => {
-    for (const key of keys) {
-      const tableIds = index[key];
-      if (!tableIds) continue;
-      for (const tid of tableIds) {
-        let arr = result.get(tid);
-        if (!arr) {
-          arr = [];
-          result.set(tid, arr);
-        }
-        arr.push({ key, source });
-      }
-    }
-  };
-
-  if (type === "md5") {
-    addMatches(indices.md5, [query.trim().toLowerCase()], "md5");
-  } else if (type === "sha256") {
-    addMatches(indices.sha256, [query.trim().toLowerCase()], "sha256");
-  } else {
-    // O(needles × totalKeys × avgKeyLength)。当前索引规模（千级 key）下耗时毫秒级。
-    // 若索引增长到万级 key，可按首字符分桶降低常数因子。
-    const searchTerms = needles ?? [query.trim().toLowerCase()];
-    const matchingKeys = (index: SearchIndex): string[] =>
-      Object.keys(index).filter((k) => searchTerms.some((term) => k.toLowerCase().includes(term)));
-    addMatches(indices.title, matchingKeys(indices.title), "title");
-    addMatches(indices.artist, matchingKeys(indices.artist), "artist");
+  if (detectQueryType(query) === "text") {
+    return searchTextIndices(query, indices, needles);
   }
-
-  return result;
+  return searchHashIndices(query, indices);
 }
 
 /** 根据 matchedKeys 和 queryType 过滤谱面列表 */

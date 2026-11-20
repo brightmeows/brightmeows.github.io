@@ -1,4 +1,10 @@
-import type { CandidateEntry, WorkerMessage, WorkerSearchRequest } from "../api/bms-search";
+import { detectQueryType } from "../api/bms-search";
+import type {
+  CandidateEntry,
+  WorkerLoadHashRequest,
+  WorkerMessage,
+  WorkerSearchRequest,
+} from "../api/bms-search";
 
 import { m } from "#lib/paraglide/messages.js";
 import { errorDetailOf } from "#lib/utils/infra/error.js";
@@ -6,13 +12,17 @@ import { errorDetailOf } from "#lib/utils/infra/error.js";
 /** 索引加载阶段。 */
 export type IndexPhase = "loading" | "ready" | "error";
 
+/** 哈希索引组阶段：首屏不加载，输入哈希时才按需拉取。 */
+export type HashIndexPhase = "idle" | "loading" | "ready" | "error";
+
 /** 单个索引文件的加载状态（模板进度列表用）。 */
 export interface IndexProgressItem {
   name: string;
   status: "loading" | "done" | "error";
 }
 
-const INDEX_NAMES = ["title", "artist", "md5", "sha256"] as const;
+/** 首屏加载的索引组；哈希组按需加载，不进入这张进度表。 */
+const INDEX_NAMES = ["title", "artist"] as const;
 
 /**
  * 搜索索引 Worker 的共享客户端（Svelte 5 runes）。
@@ -33,10 +43,15 @@ export class SearchIndexClient {
   );
   /** 加载失败原因；phase 为 `error` 时展示。 */
   errorMessage = $state<string | null>(null);
+  /** 哈希索引组阶段；`idle` 表示尚未按需加载。 */
+  hashPhase = $state<HashIndexPhase>("idle");
+  /** 哈希索引组失败原因。 */
+  hashErrorMessage = $state<string | null>(null);
 
   #worker: Worker | null = null;
   #nextSearchId = 1;
   #pending = new Map<number, (candidates: CandidateEntry[]) => void>();
+  #hashWaiters: (() => void)[] = [];
 
   /** 创建 Worker 并接线消息监听；重复调用只建一次，创建失败进入 error 态。 */
   start(): void {
@@ -63,13 +78,37 @@ export class SearchIndexClient {
     this.#worker?.terminate();
     this.#worker = null;
     this.#settlePending([]);
+    this.#settleHashWaiters();
+  }
+
+  /**
+   * 确保哈希索引组已加载：首次调用触发 Worker 拉取，后续复用同一份内存。
+   * 失败或不可用时直接落定，调用方的搜索会得到空结果。
+   */
+  ensureHashIndices(): Promise<void> {
+    if (this.hashPhase === "ready" || this.hashPhase === "error") {
+      return Promise.resolve();
+    }
+    const waiter = new Promise<void>((resolve) => {
+      this.#hashWaiters.push(resolve);
+    });
+    if (this.hashPhase === "idle" && this.#worker) {
+      this.hashPhase = "loading";
+      const request: WorkerLoadHashRequest = { type: "load-hash" };
+      this.#worker.postMessage(request);
+    }
+    return waiter;
   }
 
   /**
    * 发起一次索引搜索；结果按 searchId 配对返回。
    * Worker 不存在或索引未就绪时返回空结果（调用方应先检查 phase）。
    */
-  search(query: string, needles?: string[]): Promise<CandidateEntry[]> {
+  async search(query: string, needles?: string[]): Promise<CandidateEntry[]> {
+    // 哈希查询依赖按需加载的索引组，先等它就绪再发请求
+    if (detectQueryType(query) !== "text") {
+      await this.ensureHashIndices();
+    }
     return new Promise((resolve) => {
       if (!this.#worker || this.phase !== "ready") {
         resolve([]);
@@ -94,6 +133,14 @@ export class SearchIndexClient {
     this.#pending.clear();
   }
 
+  #settleHashWaiters(): void {
+    const waiters = this.#hashWaiters;
+    this.#hashWaiters = [];
+    for (const resolve of waiters) {
+      resolve();
+    }
+  }
+
   #onMessage(msg: WorkerMessage): void {
     switch (msg.type) {
       case "index-progress": {
@@ -111,6 +158,18 @@ export class SearchIndexClient {
         } else {
           this.phase = "ready";
         }
+        break;
+      }
+      case "hash-ready": {
+        if (msg.error) {
+          this.hashPhase = "error";
+          this.hashErrorMessage =
+            msg.error === "index-load-failed" ? m["search.index_load_failed"]() : msg.error;
+        } else {
+          this.hashPhase = "ready";
+          this.hashErrorMessage = null;
+        }
+        this.#settleHashWaiters();
         break;
       }
       case "search-result": {

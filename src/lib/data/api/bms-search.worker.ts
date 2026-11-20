@@ -1,41 +1,42 @@
 /// <reference lib="webworker" />
 
-import { searchIndices } from "./bms-search";
+import { detectQueryType, searchHashIndices, searchTextIndices } from "./bms-search";
 import type {
-  SearchIndex,
-  SearchIndexBundle,
   CandidateEntry,
+  HashIndexBundle,
+  KeyMatch,
+  SearchIndex,
+  TextIndexBundle,
   WorkerMessage,
+  WorkerRequest,
   WorkerSearchRequest,
 } from "./bms-search";
-import { getCachedIndices, setCachedIndices, getVersion, setVersion } from "./bms-search-idb";
+import {
+  getCachedHashIndices,
+  getCachedTextIndices,
+  getVersion,
+  setCachedHashIndices,
+  setCachedTextIndices,
+  setVersion,
+} from "./bms-search-idb";
 
 import { R2_INDEXES_BASE } from "#lib/constants/r2.js";
 
 // ---- state ----
 
-let cachedIndices: SearchIndexBundle | null = null;
+let textIndices: TextIndexBundle | null = null;
+let hashIndices: HashIndexBundle | null = null;
+/** 哈希索引的加载中 Promise：并发请求合并成一次网络拉取。 */
+let hashLoadPromise: Promise<void> | null = null;
 
 // ---- helpers ----
 
-const INDEX_NAMES = ["title", "artist", "md5", "sha256"] as const;
+const TEXT_INDEX_NAMES = ["title", "artist"] as const;
+const HASH_INDEX_NAMES = ["md5", "sha256"] as const;
 const INDEX_BASE = `${R2_INDEXES_BASE}/`;
 
-/** 计算所有 4 个索引的联合摘要（用于版本比对） */
-function computeCombinedDigest(bundle: SearchIndexBundle): string {
-  // 分别计算每个索引的摘要，取前 6 字符拼接
-  const parts = [
-    computeDigest(bundle.title),
-    computeDigest(bundle.artist),
-    computeDigest(bundle.md5),
-    computeDigest(bundle.sha256),
-  ];
-  return parts.join("|");
-}
-
-/** 计算一个索引对象的轻量摘要 */
-function computeDigest(obj: Record<string, string[]>): string {
-  // 排序 key 确保 JSON key 顺序不影响摘要
+/** 计算单个索引对象的轻量摘要（排序 key，避免 JSON 顺序影响）。 */
+function computeIndexDigest(obj: Record<string, string[]>): string {
   const keys = Object.keys(obj).sort();
   let hash = 0;
   for (const k of keys) {
@@ -57,60 +58,170 @@ function computeDigest(obj: Record<string, string[]>): string {
   return keys.length + ":" + hash.toString(36);
 }
 
+/** 计算一组索引的联合摘要（组内各索引摘要拼接）。 */
+function computeGroupDigest(group: TextIndexBundle | HashIndexBundle): string {
+  if ("title" in group) {
+    return [
+      `artist:${computeIndexDigest(group.artist)}`,
+      `title:${computeIndexDigest(group.title)}`,
+    ].join("|");
+  }
+  return [
+    `md5:${computeIndexDigest(group.md5)}`,
+    `sha256:${computeIndexDigest(group.sha256)}`,
+  ].join("|");
+}
+
 // ---- index loading ----
 
 function post(out: WorkerMessage): void {
   self.postMessage(out);
 }
 
-async function loadIndices(): Promise<void> {
-  // Step 1: try IDB cache
-  const idbIndices = await getCachedIndices();
-  const idbVersion = await getVersion();
+/** 拉取一组索引；任一文件失败时整组返回 null。 */
+async function fetchIndexGroup(names: readonly string[]): Promise<SearchIndex[] | null> {
+  const total = names.length;
+  for (const [i, name] of names.entries()) {
+    post({ type: "index-progress", name, status: "loading", current: i, total });
+  }
 
-  if (idbIndices && idbVersion !== null) {
-    // IDB hit — immediate ready, then background revalidate
-    cachedIndices = idbIndices;
+  const results = await Promise.all(
+    names.map(async (name, i) => {
+      const data = await fetchSingleIndex(name, `${INDEX_BASE}${name}.json`);
+      post({
+        type: "index-progress",
+        name,
+        status: data ? "done" : "error",
+        current: i + 1,
+        total,
+      });
+      return data;
+    })
+  );
+
+  const loaded: SearchIndex[] = [];
+  for (const item of results) {
+    if (item === null) return null;
+    loaded.push(item);
+  }
+  return loaded;
+}
+
+/** 首屏加载：文本索引组（title 与 artist），命中缓存立即就绪并后台校验。 */
+async function loadTextIndices(): Promise<void> {
+  const [cached, cachedVersion] = await Promise.all([getCachedTextIndices(), getVersion("text")]);
+
+  if (cached && cachedVersion !== null) {
+    textIndices = cached;
     post({ type: "ready", source: "idb" });
-
-    // Background: fetch all 4 indices and compare combined digest
-    const fresh = await fetchAllIndices();
-    if (fresh) {
-      const newDigest = computeCombinedDigest(fresh);
-      if (newDigest !== idbVersion) {
-        // Index changed — update cache
-        cachedIndices = fresh;
-        void setCachedIndices(fresh).catch(() => {
-          /* IDB silent */
-        });
-        void setVersion(newDigest).catch(() => {
-          /* IDB silent */
-        });
-      }
-    }
-    // fetchAllIndices returned null → network error, keep stale cache as-is
+    void revalidateTextIndices();
     return;
   }
 
-  // Step 2: IDB miss — fetch from network
-  const fresh = await fetchAllIndices();
-  if (!fresh) {
+  const fresh = await fetchIndexGroup(TEXT_INDEX_NAMES);
+  const [title, artist] = fresh ?? [];
+  if (!title || !artist) {
     post({ type: "ready", source: "network", error: "index-load-failed" });
     return;
   }
 
-  cachedIndices = fresh;
-  const digest = computeCombinedDigest(fresh);
-
-  // Store in IDB (fire-and-forget)
-  void setCachedIndices(fresh).catch(() => {
+  textIndices = { title, artist };
+  void setCachedTextIndices(textIndices).catch(() => {
     /* IDB silent */
   });
-  void setVersion(digest).catch(() => {
+  void setVersion("text", computeGroupDigest(textIndices)).catch(() => {
     /* IDB silent */
   });
 
   post({ type: "ready", source: "network" });
+}
+
+/** 缓存命中后的后台校验：摘要变化时替换内存与缓存，失败时保留旧缓存。 */
+async function revalidateTextIndices(): Promise<void> {
+  const fresh = await fetchIndexGroup(TEXT_INDEX_NAMES);
+  const [title, artist] = fresh ?? [];
+  if (!title || !artist) return;
+  const bundle: TextIndexBundle = { title, artist };
+  const digest = computeGroupDigest(bundle);
+  const cachedVersion = await getVersion("text");
+  if (digest === cachedVersion) return;
+
+  textIndices = bundle;
+  void setCachedTextIndices(bundle).catch(() => {
+    /* IDB silent */
+  });
+  void setVersion("text", digest).catch(() => {
+    /* IDB silent */
+  });
+}
+
+/** 执行一次哈希索引组加载；返回是否成功，失败由调用方决定是否允许重试。 */
+async function runHashLoad(): Promise<boolean> {
+  const [cached, cachedVersion] = await Promise.all([getCachedHashIndices(), getVersion("hash")]);
+  if (cached && cachedVersion !== null) {
+    hashIndices = cached;
+    post({ type: "hash-ready" });
+    void revalidateHashIndices();
+    return true;
+  }
+
+  const fresh = await fetchIndexGroup(HASH_INDEX_NAMES);
+  const [md5, sha256] = fresh ?? [];
+  if (!md5 || !sha256) {
+    post({ type: "hash-ready", error: "index-load-failed" });
+    return false;
+  }
+
+  hashIndices = { md5, sha256 };
+  void setCachedHashIndices(hashIndices).catch(() => {
+    /* IDB silent */
+  });
+  void setVersion("hash", computeGroupDigest(hashIndices)).catch(() => {
+    /* IDB silent */
+  });
+
+  post({ type: "hash-ready" });
+  return true;
+}
+
+/** 按需加载：哈希索引组（md5 与 sha256），只在输入哈希时拉取。 */
+async function loadHashIndices(): Promise<void> {
+  if (hashIndices) {
+    post({ type: "hash-ready" });
+    return;
+  }
+  if (hashLoadPromise) {
+    await hashLoadPromise;
+    return;
+  }
+
+  const attempt = runHashLoad().then((ok) => {
+    if (!ok && hashLoadPromise === attempt) {
+      // 失败后允许下一次输入重试
+      hashLoadPromise = null;
+    }
+  });
+  hashLoadPromise = attempt;
+  await attempt;
+}
+
+/** 哈希缓存命中后的后台校验，语义与文本索引组一致。 */
+async function revalidateHashIndices(): Promise<void> {
+  const fresh = await fetchIndexGroup(HASH_INDEX_NAMES);
+  const [md5, sha256] = fresh ?? [];
+  if (!md5 || !sha256) return;
+  const bundle: HashIndexBundle = { md5, sha256 };
+  const digest = computeGroupDigest(bundle);
+  const cachedVersion = await getVersion("hash");
+  if (digest === cachedVersion) return;
+
+  hashIndices = bundle;
+  void setCachedHashIndices(bundle).catch(() => {
+    /* IDB silent */
+  });
+  void setVersion("hash", digest).catch(() => {
+    /* IDB silent */
+  });
 }
 
 /** 获取单个索引文件，失败时重试 1 次 */
@@ -141,76 +252,39 @@ async function fetchSingleIndex(
   return null;
 }
 
-async function fetchAllIndices(): Promise<SearchIndexBundle | null> {
-  const total = INDEX_NAMES.length;
-
-  // 先发 loading 消息
-  for (const [i, name] of INDEX_NAMES.entries()) {
-    post({
-      type: "index-progress",
-      name,
-      status: "loading",
-      current: i,
-      total,
-    });
-  }
-
-  const results = await Promise.all(
-    INDEX_NAMES.map(async (name, i) => {
-      const url = `${INDEX_BASE}${name}.json`;
-      const data = await fetchSingleIndex(name, url);
-
-      post({
-        type: "index-progress",
-        name,
-        status: data ? "done" : "error",
-        current: i + 1,
-        total,
-      });
-
-      return data;
-    })
-  );
-
-  if (results.some((r) => r === null)) return null;
-
-  return {
-    title: results[0]!,
-    artist: results[1]!,
-    md5: results[2]!,
-    sha256: results[3]!,
-  };
-}
-
 // ---- search ----
 
 function handleSearch(req: WorkerSearchRequest): void {
-  if (!cachedIndices) {
-    post({ type: "search-result", searchId: req.searchId, candidates: [] });
-    return;
+  const type = detectQueryType(req.query);
+  let candidates: Map<string, KeyMatch[]> | null = null;
+
+  if (type === "text") {
+    if (textIndices) {
+      candidates = searchTextIndices(req.query, textIndices, req.needles);
+    }
+  } else if (hashIndices) {
+    candidates = searchHashIndices(req.query, hashIndices);
   }
 
-  const query = req.query;
-  const needles = req.needles;
-
-  const candidates = searchIndices(query, cachedIndices, needles);
-
-  // Convert Map<string, KeyMatch[]> to serializable format
   const serialized: CandidateEntry[] = [];
-  for (const [tableId, keys] of candidates) {
-    serialized.push({ tableId, matchedKeys: keys });
+  if (candidates) {
+    for (const [tableId, keys] of candidates) {
+      serialized.push({ tableId, matchedKeys: keys });
+    }
   }
-
   post({ type: "search-result", searchId: req.searchId, candidates: serialized });
 }
 
 // ---- message handler ----
 
-self.addEventListener("message", (e: MessageEvent<WorkerSearchRequest>) => {
-  // WorkerSearchRequest 当前仅 search 一种消息，类型扩展时再恢复分派
+self.addEventListener("message", (e: MessageEvent<WorkerRequest>) => {
+  if (e.data.type === "load-hash") {
+    void loadHashIndices();
+    return;
+  }
   handleSearch(e.data);
 });
 
 // ---- startup ----
 
-void loadIndices();
+void loadTextIndices();
