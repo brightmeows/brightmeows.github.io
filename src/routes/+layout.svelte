@@ -40,12 +40,16 @@
   {#if page.data.robots}
     <meta name="robots" content={page.data.robots} />
   {/if}
-  <link rel="canonical" href={canonicalUrl} />
+  {#if page.status < 400}
+    <link rel="canonical" href={canonicalUrl} />
+  {/if}
   <meta property="og:type" content={page.data.post === undefined ? "website" : "article"} />
   <meta property="og:site_name" content={m["site.name"]()} />
   <meta property="og:title" content={pageTitle} />
   <meta property="og:description" content={description} />
-  <meta property="og:url" content={canonicalUrl} />
+  {#if page.status < 400}
+    <meta property="og:url" content={canonicalUrl} />
+  {/if}
   <meta property="og:image" content={`${SITE_ORIGIN}/assets/avatar.png`} />
   <meta name="twitter:card" content="summary" />
 </svelte:head>
