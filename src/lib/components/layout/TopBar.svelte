@@ -671,8 +671,9 @@
     <!-- 右胶囊：页面工具（目录、回到顶部）、主题、语言、账户（账户固定最右） -->
     <GlassPanel class={pillClass} padding="none" rounded="none" overflow={false}>
       <div bind:this={rightPill} class="flex items-center gap-1.5">
-        {#if showToc}
-          <div class="relative">
+        <!-- 目录位常驻：无目录页保留同宽占位，页面切换时右胶囊宽度不跳 -->
+        <div class="relative size-9">
+          {#if showToc}
             <button
               type="button"
               class={topbarIcon}
@@ -700,8 +701,8 @@
                 </GlassPanel>
               </div>
             {/if}
-          </div>
-        {/if}
+          {/if}
+        </div>
 
         {#if showBackToTop}
           <button
@@ -725,9 +726,7 @@
           </button>
         {/if}
 
-        {#if showToc || showBackToTop}
-          <div class="mx-1 h-5 w-px bg-white-15" aria-hidden="true"></div>
-        {/if}
+        <div class="mx-1 h-5 w-px bg-white-15" aria-hidden="true"></div>
 
         <ThemeMenu panel={themePanel} />
 
