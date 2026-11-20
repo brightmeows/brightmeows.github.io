@@ -38,7 +38,7 @@
 
   /**
    * 顶栏布局与弹层协议：导航贴左，主题/语言/账户贴右，右胶囊只有这三件。
-   * 目录浮动件在顶栏容器外：常驻头像正下方、不随顶栏隐藏，纯点击弹层走
+   * 目录浮动件挂在顶栏容器内：头像正下方，随顶栏一起隐藏与唤出，纯点击弹层走
    * ClickPopover 原语（外点/Escape/滚动关闭，面板内容与正文侧栏共用
    * TocPanel），只在当前页有标题时渲染（难度表查看态列三区、编辑态只列
    * 可见卡，数据由页面传入）；回到顶部在右下浮动件 BackToTopButton
@@ -64,6 +64,9 @@
   let { tocItems = [] }: Props = $props();
 
   // —— 滚动自动隐藏（阈值与节奏沿用原 BreadcrumbNav） ——
+  // 隐藏位移取 -250%（约 120px）：目录浮动件 absolute 挂在本容器下方
+  // 88px 深处且不占容器高度，-150%（72px）只够藏胶囊本身，会在视口上缘
+  // 露出目录件下缘约 28px 的残边；按目录件底缘（视口内约 100px）加深。
 
   const SCROLL_DOWN_THRESHOLD = 50;
   const SCROLL_UP_THRESHOLD = 20;
@@ -415,10 +418,11 @@
   // 亮化写法，独立玻璃底用同体系令牌）。
   const tocFabClass =
     "flex cursor-pointer items-center gap-1.5 rounded-glass-lg bg-glass px-3 py-1.5 text-sm text-white-85 shadow-(--glass-lighting) backdrop-blur transition-colors duration-150 hover:bg-glass-light hover:text-white";
-  // 目录浮动件定位：常驻头像正下方、不随顶栏隐藏（在顶栏 transform 容器
-  // 外）。right 取右胶囊内缘（视口 12px 页边距 + 胶囊 6px 内边距）与头像
-  // 右缘对齐；top 为顶栏下缘（top-3 加 48px 胶囊高）再留 8px。纯点击弹层，
-  // 外点/Escape/滚动关闭由 ClickPopover 原语承担。
+  // 目录浮动件定位：absolute 挂在顶栏容器内，随顶栏 transform 一起隐藏
+  // 与唤出。right 取视口 12px 页边距加胶囊 6px 内边距与头像右缘对齐
+  // （root 已有 px-3，此处补差值 6px）；top 为顶栏下缘（48px 胶囊高）再
+  // 留 8px。纯点击弹层，外点/Escape/滚动关闭由 ClickPopover 原语承担；
+  // 滚动即收弹层后顶栏才隐藏，弹层不会脱离按钮悬挂。
 </script>
 
 <!-- 下拉子页条目，宽屏各导航下拉共用 -->
@@ -485,10 +489,31 @@
 <div
   bind:this={root}
   class="pointer-events-none fixed inset-x-0 top-3 z-1000 px-3 transition-transform duration-150 ease-out motion-reduce:transition-none"
-  style="transform: {topbarVisibility.visible ? 'none' : 'translateY(-150%)'}"
+  style="transform: {topbarVisibility.visible ? 'none' : 'translateY(-250%)'}"
   onfocusin={() => topbarVisibility.show()}
 >
   <div class="flex items-center justify-between gap-3">
+    <!-- 目录浮动件：头像正下方，跟随顶栏隐藏与唤出（absolute 于 transform 容器内） -->
+    {#if showToc}
+      <div class="pointer-events-auto absolute top-[56px] right-[6px]">
+        <ClickPopover
+          label={m["toc.title"]()}
+          triggerClass={tocFabClass}
+          width={320}
+          align="right"
+          bottomReserve={16}
+          menuClass="w-[min(20rem,calc(100vw-1.5rem))] p-4"
+        >
+          <span class="flex items-center gap-1.5">
+            <List class="size-4" aria-hidden="true" />
+            <span class="text-sm">{m["toc.title"]()}</span>
+          </span>
+          {#snippet content({ close })}
+            <TocPanel items={tocItems} header={false} onNavigate={close} />
+          {/snippet}
+        </ClickPopover>
+      </div>
+    {/if}
     <!-- 左胶囊：桌面导航；窄屏只剩菜单入口 -->
     <GlassPanel class={pillClass} padding="none" rounded="none" overflow={false}>
       <nav aria-label={m["topbar.nav.aria"]()} class="hidden items-center md:flex">
@@ -725,24 +750,3 @@
     </GlassPanel>
   </div>
 </div>
-
-{#if showToc}
-  <div class="fixed top-17 right-[18px] z-1000">
-    <ClickPopover
-      label={m["toc.title"]()}
-      triggerClass={tocFabClass}
-      width={320}
-      align="right"
-      bottomReserve={16}
-      menuClass="w-[min(20rem,calc(100vw-1.5rem))] p-4"
-    >
-      <span class="flex items-center gap-1.5">
-        <List class="size-4" aria-hidden="true" />
-        <span class="text-sm">{m["toc.title"]()}</span>
-      </span>
-      {#snippet content({ close })}
-        <TocPanel items={tocItems} onNavigate={close} />
-      {/snippet}
-    </ClickPopover>
-  </div>
-{/if}

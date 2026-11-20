@@ -167,7 +167,9 @@
 {/if}
 
 <nav
-  class={constrained ? "max-h-[calc(60vh-3rem)] overflow-auto pr-1" : "overflow-hidden pr-1"}
+  class={constrained
+    ? "max-h-[calc(60vh-3rem)] overflow-auto [mask-image:linear-gradient(to_bottom,black_calc(100%-28px),transparent)] pr-1"
+    : "overflow-hidden pr-1"}
   aria-label={title}
 >
   {#each flatItems as item (item.id)}
