@@ -5,9 +5,10 @@ import { m } from "#lib/paraglide/messages.js";
 import { formatTitle } from "#lib/utils/title.js";
 
 /** 难度表列表页 SSG 数据：自托管表枚举与页面标题。 */
+/** 表总览页 SSG 数据：自托管表枚举与页面标题。 */
 export const load: PageServerLoad = () => {
   return {
-    title: formatTitle(m["table.page.title"]()),
+    title: formatTitle(m["table.index.title"]()),
     tables: getBmsTableEntries(),
   };
 };
