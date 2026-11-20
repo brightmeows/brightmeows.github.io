@@ -59,8 +59,12 @@
   );
 </script>
 
-<tr class="hover:bg-white-5 last:[&>td]:border-b-0">
-  <td class="table-td-compact wrap-break-word">
+<tr
+  class="hover:bg-white-5 max-sm:mb-2 max-sm:grid max-sm:grid-cols-[auto_1fr_auto] max-sm:items-center max-sm:gap-x-3 max-sm:gap-y-2 max-sm:rounded-glass-md max-sm:bg-white-5 max-sm:p-3 last:[&>td]:border-b-0"
+>
+  <td
+    class="table-td-compact wrap-break-word max-sm:col-start-1 max-sm:row-start-1 max-sm:border-0 max-sm:p-0"
+  >
     <Checkbox
       ariaLabel={m["mirror.select_row_aria"]({ name: tableLabelOf(item) })}
       checked={selected}
@@ -69,11 +73,13 @@
   </td>
   <th
     scope="row"
-    class="table-th-row-sticky table-td-compact text-left font-normal wrap-break-word"
+    class="table-th-row-sticky table-td-compact text-left font-normal wrap-break-word max-sm:static max-sm:col-start-2 max-sm:row-start-1 max-sm:border-0 max-sm:bg-transparent max-sm:p-0"
   >
     {item.symbol ?? ""}
   </th>
-  <td class="table-td-compact min-w-50 wrap-break-word">
+  <td
+    class="table-td-compact min-w-50 wrap-break-word max-sm:col-start-1 max-sm:col-end-4 max-sm:row-start-2 max-sm:min-w-0 max-sm:border-0 max-sm:p-0"
+  >
     <strong
       use:jsonPreview={{
         preview: mirrorPreview,
@@ -88,7 +94,9 @@
       {item.name}
     </strong>
   </td>
-  <td class="table-td-compact px-2">
+  <td
+    class="table-td-compact px-2 max-sm:col-start-3 max-sm:row-start-1 max-sm:border-0 max-sm:p-0"
+  >
     {#if adminUi.isAdmin}
       <button
         class={btnIconPlain}
@@ -118,7 +126,9 @@
       </span>
     {/if}
   </td>
-  <td class="table-td-compact min-w-32.5 wrap-break-word">
+  <td
+    class="table-td-compact min-w-32.5 wrap-break-word max-sm:col-start-1 max-sm:col-end-4 max-sm:row-start-3 max-sm:min-w-0 max-sm:border-0 max-sm:p-0"
+  >
     <div class="flex items-center gap-1">
       <GradientButton
         variant="blue"
@@ -146,7 +156,9 @@
       {/if}
     </div>
   </td>
-  <td class="table-td-compact min-w-32.5 wrap-break-word">
+  <td
+    class="table-td-compact min-w-32.5 wrap-break-word max-sm:col-start-1 max-sm:col-end-4 max-sm:row-start-4 max-sm:min-w-0 max-sm:border-0 max-sm:p-0"
+  >
     {#if item.url_from}
       <div class="flex items-center gap-1">
         <GradientButton
@@ -179,7 +191,9 @@
     {/if}
   </td>
   {#if showActions}
-    <td class="table-td-compact px-2">
+    <td
+      class="table-td-compact px-2 max-sm:col-start-1 max-sm:col-end-4 max-sm:row-start-5 max-sm:border-0 max-sm:p-0"
+    >
       <div class="flex items-center gap-1">
         {#if adminUi.isAdmin}
           <ToggleButton
@@ -208,8 +222,8 @@
 
 {#if adminUi.isAdmin && isExpanded}
   {#if adminUi.overviewState === "idle" || adminUi.overviewState === "loading"}
-    <tr class="bg-black-30 last:[&>td]:border-b-0">
-      <td colspan={columnCount} class="table-td-compact text-[0.9rem] text-white-60">
+    <tr class="bg-black-30 max-sm:block last:[&>td]:border-b-0">
+      <td colspan={columnCount} class="table-td-compact text-[0.9rem] text-white-60 max-sm:block">
         {m["mirror.loading_override"]()}
       </td>
     </tr>

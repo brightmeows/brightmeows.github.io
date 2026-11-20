@@ -95,8 +95,8 @@
   }
 </script>
 
-<tr class="bg-black-30 last:[&>td]:border-b-0">
-  <td colspan={colCount} class="table-td-compact">
+<tr class="bg-black-30 max-sm:block last:[&>td]:border-b-0">
+  <td colspan={colCount} class="table-td-compact max-sm:block">
     <div class="flex flex-col gap-3 rounded-glass-sm border border-white-10 bg-black-20 p-3">
       <section class="flex flex-col gap-2">
         <h4 class="text-[0.95rem] font-semibold text-white-90">{m["admin.auth.section"]()}</h4>
