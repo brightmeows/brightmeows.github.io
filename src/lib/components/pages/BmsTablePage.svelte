@@ -10,10 +10,11 @@
 
 <script lang="ts">
   /**
-   * 难度表页面协议：三类表共用一个路由面（地址即导入地址），主按钮按权限改文案
-   * （作者编辑、admin 本地编辑、他人创建副本），?edit=1 浅层路由就地切换编辑态。
+   * 难度表页面协议：三类表共用一个路由面（地址即导入地址），主按钮按权限取舍
+   * （作者编辑、admin 本地编辑；镜像、他人共享与自托管非 admin 无主按钮，
+   * 创建副本作为小按钮收在 dock 菜单的表操作段），?edit=1 浅层路由就地切换编辑态。
    * 页面持有唯一一份内存模型与两段式加载（header 先行、data 随后、草稿探查殿后）；
-   * data 未就绪时只读（编辑与副本主按钮禁用），data 失败可从菜单恢复本地草稿。
+   * data 未就绪时只读（主按钮禁用、副本入口不出现），data 失败可从菜单恢复本地草稿。
    * 三张工作卡：头部（含等级参考折叠区）、谱面、段位；查看态原生 details 折叠且
    * 默认只展开谱面，编辑态 TableCardBar 管理可见卡（?show= 逗号列表记录组合，
    * 编辑态用 sessionStorage 记住上次组合）。标题区 hero 承载标题、符号 meta 与
@@ -166,6 +167,8 @@
     if (primaryKind === "local") return m["editor.permission.local_edit"]();
     return m["editor.enter.table"]();
   });
+  /** 副本场景（镜像、他人共享、自托管非 admin）不渲染主按钮，入口收进表操作段。 */
+  const showDockPrimary = $derived(primaryKind !== "copy");
   const editHint = $derived.by(() => {
     if (copyMode || primaryKind === "copy") return m["editor.enter.table_hint_copy"]();
     if (createMode) return m["editor.enter.table_hint_create"]();
@@ -230,7 +233,7 @@
     window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
   }
 
-  /** 查看态主按钮：编辑、本地编辑或创建副本。 */
+  /** 查看态主按钮与表操作段副本入口的回调：编辑、本地编辑或进入副本编辑。 */
   function handlePrimary(): void {
     if (!dataReady) return;
     handleDockSetMode("edit", { copy: primaryKind === "copy" });
@@ -582,6 +585,7 @@
     {adminActions}
     importSection={isEdit ? importSection : undefined}
     onSetMode={handleDockSetMode}
+    showPrimary={showDockPrimary}
     {primaryLabel}
     primaryDisabled={!dataReady}
     primaryTitle={!dataReady ? m["editor.partial.edit_disabled"]() : undefined}
@@ -639,16 +643,23 @@
     <BookOpen class="size-4 shrink-0" aria-hidden="true" />
     {m["table.page.reference"]()}
   </a>
-  {#if !isEdit && !copyMode && dataReady && saveAsShared === "same-origin" && primaryKind !== "copy"}
-    <button
-      class="{btnGhost} w-full"
-      type="button"
-      disabled={model.busy}
-      onclick={() => void model.saveAsSharedNow()}
-    >
-      <Copy class="size-4 shrink-0" aria-hidden="true" />
-      {sharedMode ? m["shared.detail.fork"]() : m["editor.save.as_shared"]()}
-    </button>
+  {#if !isEdit && dataReady && saveAsShared === "same-origin"}
+    {#if primaryKind === "copy"}
+      <button class="{btnGhost} w-full" type="button" disabled={model.busy} onclick={handlePrimary}>
+        <Copy class="size-4 shrink-0" aria-hidden="true" />
+        {primaryLabel}
+      </button>
+    {:else if !copyMode}
+      <button
+        class="{btnGhost} w-full"
+        type="button"
+        disabled={model.busy}
+        onclick={() => void model.saveAsSharedNow()}
+      >
+        <Copy class="size-4 shrink-0" aria-hidden="true" />
+        {sharedMode ? m["shared.detail.fork"]() : m["editor.save.as_shared"]()}
+      </button>
+    {/if}
   {/if}
 {/snippet}
 

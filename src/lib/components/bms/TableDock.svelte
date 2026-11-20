@@ -25,7 +25,8 @@
   import type { TableModel } from "#lib/data/table-page-model.svelte.js";
   import { m } from "#lib/paraglide/messages.js";
   /**
-   * 右下角 dock：查看态收起是主按钮加“菜单”按钮，编辑态收起是只读“编辑中”胶囊、
+   * 右下角 dock：查看态收起有主按钮时是主按钮加“菜单”按钮（副本场景无主按钮，
+   * 只剩“菜单”，创建副本收进面板表操作段），编辑态收起是只读“编辑中”胶囊、
    * dirty 时的保存按钮与“菜单”按钮；展开面板收导入全三 tab、导出下载、格式参考、
    * fork、草稿与 notice 等段。保存常驻菜单外，状态胶囊只读，菜单按钮负责展开。
    * 收展由 controllers/table-dock 状态机驱动（编辑态默认展开、查看态默认收起，
@@ -37,9 +38,10 @@
 
   /**
    * 难度表页底部操作 dock：
-   * - 常驻右下角：查看态收起是主按钮（按权限显示编辑、本地编辑或创建
-   *   副本）加“菜单”按钮（SlidersHorizontal 图标加文字；信号色点挂在
-   *   按钮上）；编辑态收起是只读“编辑中”胶囊（色点加短词：黄=未保存、
+   * - 常驻右下角：查看态收起是主按钮（编辑、本地编辑；副本场景不渲染
+   *   主按钮，收起只剩“菜单”）加“菜单”按钮（SlidersHorizontal 图标加
+   *   文字；信号色点挂在按钮上）；编辑态收起是只读“编辑中”胶囊（色点
+   *   加短词：黄=未保存、
    *   橙=警告、红=错误、绿=完成、浅蓝=待恢复草稿，悬停 title 保留完整
    *   notice 文本）、dirty 时的保存按钮与“菜单”按钮。展开态是 340px
    *   玻璃面板（窄屏回退全宽），面板头为模式状态标识，下方纵排承载
@@ -65,6 +67,8 @@
     mode: DockMode;
     /** 创建态（共享表首次保存前）：无“查看模式”按钮。 */
     createMode: boolean;
+    /** 查看态是否渲染主按钮；副本场景为 false，创建副本收进表操作段。 */
+    showPrimary: boolean;
     /** 是否显示“另存为我的共享表”。 */
     showSaveAsShared: boolean;
     /** “编辑此表”按钮下方的内联说明文案。 */
@@ -77,7 +81,7 @@
     adminActions?: Snippet | undefined;
     /** 模式切换回调：页面实现切换后的滚回页首。 */
     onSetMode: (next: DockMode) => void;
-    /** 查看态主按钮文案、禁用态与回调（编辑、本地编辑或创建副本）。 */
+    /** 查看态主按钮文案、禁用态与回调（编辑、本地编辑；仅 showPrimary 时渲染）。 */
     primaryLabel: string;
     primaryDisabled: boolean;
     primaryTitle?: string | undefined;
@@ -90,6 +94,7 @@
     model,
     mode,
     createMode,
+    showPrimary,
     showSaveAsShared,
     editHint,
     tableActions = undefined,
@@ -326,21 +331,23 @@
             </button>
           {/if}
         {:else}
-          <button
-            class="{btnPrimary} w-full"
-            type="button"
-            disabled={primaryDisabled}
-            title={primaryTitle}
-            onclick={onPrimary}
-          >
-            {#if copyMode}
-              <Copy class="size-4 shrink-0" aria-hidden="true" />
-            {:else}
-              <Pencil class="size-4 shrink-0" aria-hidden="true" />
-            {/if}
-            {primaryLabel}
-          </button>
-          <p class="text-center text-[0.8rem] text-white-50">{editHint}</p>
+          {#if showPrimary}
+            <button
+              class="{btnPrimary} w-full"
+              type="button"
+              disabled={primaryDisabled}
+              title={primaryTitle}
+              onclick={onPrimary}
+            >
+              {#if copyMode}
+                <Copy class="size-4 shrink-0" aria-hidden="true" />
+              {:else}
+                <Pencil class="size-4 shrink-0" aria-hidden="true" />
+              {/if}
+              {primaryLabel}
+            </button>
+            <p class="text-center text-[0.8rem] text-white-50">{editHint}</p>
+          {/if}
         {/if}
 
         {#if model.dirty}
@@ -507,20 +514,22 @@
         </button>
       {/if}
     {:else}
-      <button
-        class={btnPrimary}
-        type="button"
-        disabled={primaryDisabled}
-        title={primaryTitle}
-        onclick={onPrimary}
-      >
-        {#if copyMode}
-          <Copy class="size-4 shrink-0" aria-hidden="true" />
-        {:else}
-          <Pencil class="size-4 shrink-0" aria-hidden="true" />
-        {/if}
-        {primaryLabel}
-      </button>
+      {#if showPrimary}
+        <button
+          class={btnPrimary}
+          type="button"
+          disabled={primaryDisabled}
+          title={primaryTitle}
+          onclick={onPrimary}
+        >
+          {#if copyMode}
+            <Copy class="size-4 shrink-0" aria-hidden="true" />
+          {:else}
+            <Pencil class="size-4 shrink-0" aria-hidden="true" />
+          {/if}
+          {primaryLabel}
+        </button>
+      {/if}
       {#if model.dirty && model.canSave}
         <button
           class={btnGhostMd}
