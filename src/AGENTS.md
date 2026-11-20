@@ -84,7 +84,11 @@
 
 布局、显隐信号与弹层悬停协议（意图延迟、钉住、外点/Escape、减少动效偏好）见 `src/lib/components/layout/TopBar.svelte` 头注；目录构建在 `src/lib/utils/ui/toc.ts`，
 正文页目录树由 `PostArticle` 合并（章节在前，depth 缩进区分章节与标题）。
-资料卡与首页外部入口共用 `src/lib/constants/social.ts` 的 `SOCIAL_LINKS`（含图标，GitHub 排第一），新增社交账号只改这一处。
+右胶囊只剩主题、语言、账户；目录与回到顶部是两个独立浮动件：
+
+- **目录浮动件**：常驻头像正下方、不随顶栏下滑隐藏（渲染在顶栏 transform 容器外），纯点击弹层走 `ClickPopover` 原语（外点/Escape/滚动关闭），面板与正文侧栏共用 `TocPanel`；只在当前页有标题时渲染，无目录页不占位（原顶栏占位防跳逻辑已随迁撤销）。正文页与左侧 `TocSidebar` 并存是刻意保留：侧栏折叠后浮动件是唯一目录入口。
+- **回到顶部浮动件**：右下角 `BackToTopButton`，滚过一个视口高度出现（阈值即 `hasScrolledPastViewport`）；难度表详情页经 `hasTableDock` 判定抬高一枚 dock 收起态高度避让 `TableDock`，dock 展开面板盖住本钮属预期。顶栏“接近页面底部自动显示”原是为顶栏内回到顶部可达性服务，随迁出撤销，顶栏只剩滚动方向、悬停带与键盘焦点三个唤出信号。
+  资料卡与首页外部入口共用 `src/lib/constants/social.ts` 的 `SOCIAL_LINKS`（含图标，GitHub 排第一），新增社交账号只改这一处。
 
 #### Hero
 

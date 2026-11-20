@@ -5,13 +5,14 @@
   import User from "@lucide/svelte/icons/user";
   import { onMount } from "svelte";
   import { cubicOut } from "svelte/easing";
-  import { fade, fly } from "svelte/transition";
+  import { fly } from "svelte/transition";
 
   import LanguageMenu from "./LanguageMenu.svelte";
   import ThemeMenu from "./ThemeMenu.svelte";
   import TocPanel from "./TocPanel.svelte";
   import { consumeNavHoverSuppression, suppressNextNavHover } from "./topbar-nav-hover.js";
 
+  import ClickPopover from "#lib/components/ui/ClickPopover.svelte";
   import { createPanelGroup } from "#lib/components/ui/dropdown-panel.svelte.js";
   import GlassButton from "#lib/components/ui/GlassButton.svelte";
   import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
@@ -33,17 +34,20 @@
     type PanelAlign,
     type PanelPosition,
   } from "#lib/utils/ui/panel-position.js";
-  import { hasScrolledPastViewport, isNearDocumentBottom } from "#lib/utils/ui/topbar-scroll.js";
   import { page } from "$app/state";
 
   /**
-   * 顶栏布局与弹层协议：导航贴左，页面工具与主题/语言/账户贴右，右胶囊顺序为
-   * 目录、回到顶部、分隔线、主题、语言、账户。目录只在当前页有标题时出现
-   * （难度表查看态列三区、编辑态只列可见卡，数据由页面传入）。
+   * 顶栏布局与弹层协议：导航贴左，主题/语言/账户贴右，右胶囊只有这三件。
+   * 目录浮动件在顶栏容器外：常驻头像正下方、不随顶栏隐藏，纯点击弹层走
+   * ClickPopover 原语（外点/Escape/滚动关闭，面板内容与正文侧栏共用
+   * TocPanel），只在当前页有标题时渲染（难度表查看态列三区、编辑态只列
+   * 可见卡，数据由页面传入）；回到顶部在右下浮动件 BackToTopButton
+   * （含 TableDock 避让），不再进顶栏。
    *
    * 显隐与弹层动画共用一套滚动信号：下滑隐藏、上滑显示用累积阈值
-   * （utils/ui/topbar-scroll），另有顶部悬停带、键盘焦点、距文档底部自动显示；
-   * 滚动即收弹层并隐藏顶栏。弹层悬停协议：意图延迟 HOVER_OPEN_DELAY/HOVER_CLOSE_DELAY，
+   * （utils/ui/topbar-scroll），另有顶部悬停带与键盘焦点唤出（原“距文档底部
+   * 自动显示”随回到顶部迁出撤销）；滚动即收弹层并隐藏顶栏。弹层悬停协议：
+   * 意图延迟 HOVER_OPEN_DELAY/HOVER_CLOSE_DELAY，
    * 移入面板保持；悬停展开后首次点击钉住，二次点击或外点/Escape 才收；面板内
    * 链接点击即关。互斥状态与焦点恢复在 dropdown-panel 原语，悬停意图、钉住、
    * 定位与动画由本文件统一承载。根容器 pointer-events-none、胶囊自身
@@ -73,15 +77,13 @@
 
   let lastScrollY = $state(0);
   let accumulatedDelta = $state(0);
-  let scrolledPastViewport = $state(false);
   let reduceMotion = $state(false);
 
-  // —— 弹层：Home 资料卡 / 导航下拉与菜单 / 目录 / 用户菜单 / 主题 / 语言，
+  // —— 弹层：Home 资料卡 / 导航下拉与菜单 / 用户菜单 / 主题 / 语言，
   // 互斥展开；交互原语在 dropdown-panel.svelte.ts（Escape 焦点恢复、外点
   // 关闭、互斥状态），滚动即收起与悬停意图是顶栏自身行为，在本文件里处理。 ——
 
   let root: HTMLDivElement | undefined;
-  let rightPill: HTMLDivElement | undefined;
   const panels = createPanelGroup(() => root);
 
   // —— 弹层定位：弹层经 popoverLayer 进 top layer，脱离 DOM 流后位置由触
@@ -102,7 +104,6 @@
   let suppressProfileFocus = false;
 
   const showToc = $derived(tocItems.length > 0);
-  const showBackToTop = $derived(scrolledPastViewport);
 
   const panelIn = $derived(
     reduceMotion ? { duration: 0 } : { y: -4, duration: PANEL_IN_DURATION, easing: cubicOut }
@@ -266,16 +267,6 @@
       if (window.innerHeight !== lastHeight) {
         lastHeight = window.innerHeight;
       }
-      scrolledPastViewport = hasScrolledPastViewport(window.scrollY, window.innerHeight);
-      if (
-        isNearDocumentBottom(
-          window.scrollY,
-          window.innerHeight,
-          document.documentElement.scrollHeight
-        )
-      ) {
-        topbarVisibility.show();
-      }
     };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
@@ -285,7 +276,6 @@
     const currentScrollY = window.scrollY;
     const delta = currentScrollY - lastScrollY;
     lastScrollY = currentScrollY;
-    scrolledPastViewport = hasScrolledPastViewport(currentScrollY, window.innerHeight);
 
     // 弹层展开或悬停计时中滚动即视为离开信号
     if (panels.openId !== null || hoverOpenTimer !== null || hoverCloseTimer !== null) {
@@ -294,19 +284,6 @@
 
     // 键盘焦点仍在顶栏内时保持可见，避免滚动把用户正在操作的链接移出视口。
     if (hasKeyboardFocusWithin()) {
-      accumulatedDelta = 0;
-      return;
-    }
-
-    // 接近页面底部时始终显示顶栏，让回到顶部在长页末尾仍然可达。
-    if (
-      isNearDocumentBottom(
-        currentScrollY,
-        window.innerHeight,
-        document.documentElement.scrollHeight
-      )
-    ) {
-      topbarVisibility.show();
       accumulatedDelta = 0;
       return;
     }
@@ -347,7 +324,6 @@
 
   onMount(() => {
     lastScrollY = window.scrollY;
-    scrolledPastViewport = hasScrolledPastViewport(window.scrollY, window.innerHeight);
 
     const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     reduceMotion = motionQuery.matches;
@@ -366,10 +342,6 @@
       clearHoverTimers();
     };
   });
-
-  function scrollToTop(): void {
-    window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
-  }
 
   async function doLogout(): Promise<void> {
     closePanels();
@@ -438,6 +410,15 @@
   const linkBase =
     "rounded-glass-sm px-3 py-2 text-sm no-underline transition-colors duration-150 cursor-pointer";
   const pillClass = "pointer-events-auto rounded-glass-lg p-1.5";
+  // 目录浮动胶囊触发钮：玻璃家族圆角档、底色体系与光照令牌，悬停提亮
+  // 取玻璃 light 档（顶栏胶囊内按钮的 hover:bg-white-10 是深色胶囊上的
+  // 亮化写法，独立玻璃底用同体系令牌）。
+  const tocFabClass =
+    "flex cursor-pointer items-center gap-1.5 rounded-glass-lg bg-glass px-3 py-1.5 text-sm text-white-85 shadow-(--glass-lighting) backdrop-blur transition-colors duration-150 hover:bg-glass-light hover:text-white";
+  // 目录浮动件定位：常驻头像正下方、不随顶栏隐藏（在顶栏 transform 容器
+  // 外）。right 取右胶囊内缘（视口 12px 页边距 + 胶囊 6px 内边距）与头像
+  // 右缘对齐；top 为顶栏下缘（top-3 加 48px 胶囊高）再留 8px。纯点击弹层，
+  // 外点/Escape/滚动关闭由 ClickPopover 原语承担。
 </script>
 
 <!-- 下拉子页条目，宽屏各导航下拉共用 -->
@@ -668,66 +649,9 @@
       </div>
     </GlassPanel>
 
-    <!-- 右胶囊：页面工具（目录、回到顶部）、主题、语言、账户（账户固定最右） -->
+    <!-- 右胶囊：主题、语言、账户（账户固定最右） -->
     <GlassPanel class={pillClass} padding="none" rounded="none" overflow={false}>
-      <div bind:this={rightPill} class="flex items-center gap-1.5">
-        <!-- 目录位常驻：无目录页保留同宽占位，页面切换时右胶囊宽度不跳 -->
-        <div class="relative size-9">
-          {#if showToc}
-            <button
-              type="button"
-              class={topbarIcon}
-              title={m["toc.title"]()}
-              aria-label={m["toc.title"]()}
-              aria-expanded={panels.isOpen("toc")}
-              {...triggerHoverHandlers("toc", "right", () => rightPill)}
-              onclick={(event) => togglePanel("toc", "right", event, rightPill)}
-            >
-              <List class="size-5" aria-hidden="true" />
-            </button>
-
-            {#if panels.isOpen("toc")}
-              <div
-                use:popoverLayer
-                role="presentation"
-                class="fixed w-[min(20rem,calc(100vw-1.5rem))]"
-                style={panelPositionStyle("toc")}
-                {...panelHoverHandlers()}
-                in:fly={panelIn}
-                out:fly={panelOut}
-              >
-                <GlassPanel class="rounded-glass-lg p-4" padding="none" rounded="none">
-                  <TocPanel items={tocItems} onNavigate={closePanels} />
-                </GlassPanel>
-              </div>
-            {/if}
-          {/if}
-        </div>
-
-        {#if showBackToTop}
-          <button
-            type="button"
-            class={topbarIcon}
-            title={m["common.back_to_top"]()}
-            aria-label={m["common.back_to_top"]()}
-            onclick={scrollToTop}
-            in:fade={{ duration: reduceMotion ? 0 : 120 }}
-            out:fade={{ duration: reduceMotion ? 0 : 80 }}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              class="size-5"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path d="M12 4l-7 7h4v9h6v-9h4L12 4z" />
-            </svg>
-          </button>
-        {/if}
-
-        <div class="mx-1 h-5 w-px bg-white-15" aria-hidden="true"></div>
-
+      <div class="flex items-center gap-1.5">
         <ThemeMenu panel={themePanel} />
 
         <LanguageMenu panel={languagePanel} />
@@ -801,3 +725,24 @@
     </GlassPanel>
   </div>
 </div>
+
+{#if showToc}
+  <div class="fixed top-17 right-[18px] z-1000">
+    <ClickPopover
+      label={m["toc.title"]()}
+      triggerClass={tocFabClass}
+      width={320}
+      align="right"
+      bottomReserve={16}
+      menuClass="w-[min(20rem,calc(100vw-1.5rem))] p-4"
+    >
+      <span class="flex items-center gap-1.5">
+        <List class="size-4" aria-hidden="true" />
+        <span class="text-sm">{m["toc.title"]()}</span>
+      </span>
+      {#snippet content({ close })}
+        <TocPanel items={tocItems} onNavigate={close} />
+      {/snippet}
+    </ClickPopover>
+  </div>
+{/if}

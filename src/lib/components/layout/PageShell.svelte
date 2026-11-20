@@ -2,6 +2,7 @@
   import ChevronsRight from "@lucide/svelte/icons/chevrons-right";
   import type { Snippet } from "svelte";
 
+  import BackToTopButton from "./BackToTopButton.svelte";
   import TopBar from "./TopBar.svelte";
 
   import DustTrailCanvas from "#lib/components/ui/DustTrailCanvas.svelte";
@@ -51,6 +52,7 @@
 <StarryBackground />
 <DustTrailCanvas />
 <TopBar {tocItems} />
+<BackToTopButton />
 <main
   id="main"
   class="{mainStack} {mainClass ?? 'm-0 mx-auto box-border w-full max-w-350 px-8 pt-24 pb-8'}"
