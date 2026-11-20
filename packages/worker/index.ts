@@ -34,6 +34,7 @@ import { handleApi } from "./api.ts";
 import { backupUserLayer } from "./backup.ts";
 import { canonicalSlashRedirect } from "./canonical-slash.ts";
 import type { Env } from "./env.ts";
+import { handleExternalData } from "./handlers/external-data.ts";
 import {
   cleanInternalPath,
   detectLocale,
@@ -122,6 +123,41 @@ async function localizedNotFound(env: Env, url: URL, locale: Locale): Promise<Re
       vary: "Cookie, Accept-Language",
     },
   });
+}
+
+/**
+ * 静态树分发：共享资源（/_app、/assets，构建期已合并双语产物）按原样取，
+ * 其余路径按语言映射到对应树；重定向 Location 若携带内部前缀则改写回干净路径。
+ */
+async function serveLocalizedAsset(
+  request: Request,
+  env: Env,
+  url: URL,
+  locale: Locale
+): Promise<Response> {
+  const assetPath = localizedAssetPath(url.pathname, locale);
+  if (assetPath === url.pathname) {
+    return env.ASSETS.fetch(request);
+  }
+  const localized = await env.ASSETS.fetch(new URL(assetPath, url.origin));
+  const location = localized.headers.get("location");
+  if (location !== null) {
+    // 静态资源层的尾斜杠等重定向会带上内部前缀，改写回干净路径
+    const target = new URL(location, url.origin);
+    const cleaned = cleanInternalPath(target.pathname);
+    if (cleaned !== null) {
+      target.pathname = cleaned;
+      const headers = new Headers(localized.headers);
+      headers.set("location", target.toString());
+      return new Response(localized.body, { status: localized.status, headers });
+    }
+  }
+  if (localized.status === 404) {
+    // 树内缺失：回对应语言的 404 页而不是根树的英文 404
+    //（本分支只在 assetPath 加了内部前缀时到达，locale 必为 zh-cn / ja）
+    return localizedNotFound(env, url, locale);
+  }
+  return localized;
 }
 
 /** 清单路由：从 R2 清单叠加用户层后生成站点清单。 */
@@ -253,6 +289,11 @@ export default {
       return Response.redirect(new URL(`${cleanPath}${url.search}`, url.origin).toString(), 301);
     }
 
+    // 外部表数据代理：白名单转发，不经过用户层与静态树
+    if (path === "/api/table-data" && request.method === "GET") {
+      return handleExternalData(ctx, url);
+    }
+
     // 用户层在 D1（见 worker/store/user-layer.ts）：首个请求初始化 schema（isolate 内只执行一次）。
     // 读取路径容忍失败并按纯管线清单降级；写接口依赖 D1，初始化失败即报错。
     if (
@@ -323,31 +364,7 @@ export default {
     const legacy = legacySelfTableRedirect(path, url.origin, url.search);
     if (legacy !== null) return legacy;
 
-    // 静态树分发：共享资源（/_app、/assets，构建期已合并双语产物）按原样取，
-    // 其余路径按语言映射到对应树；重定向 Location 若携带内部前缀则改写回干净路径
-    const assetPath = localizedAssetPath(url.pathname, locale);
-    if (assetPath === url.pathname) {
-      return env.ASSETS.fetch(request);
-    }
-    const localized = await env.ASSETS.fetch(new URL(assetPath, url.origin));
-    const location = localized.headers.get("location");
-    if (location !== null) {
-      // 静态资源层的尾斜杠等重定向会带上内部前缀，改写回干净路径
-      const target = new URL(location, url.origin);
-      const cleaned = cleanInternalPath(target.pathname);
-      if (cleaned !== null) {
-        target.pathname = cleaned;
-        const headers = new Headers(localized.headers);
-        headers.set("location", target.toString());
-        return new Response(localized.body, { status: localized.status, headers });
-      }
-    }
-    if (localized.status === 404) {
-      // 树内缺失：回对应语言的 404 页而不是根树的英文 404
-      //（本分支只在 assetPath 加了内部前缀时到达，locale 必为 zh-cn / ja）
-      return localizedNotFound(env, url, locale);
-    }
-    return localized;
+    return serveLocalizedAsset(request, env, url, locale);
   },
 
   /** 定时任务：每天导出一次用户层快照（见 worker/backup.ts）。 */

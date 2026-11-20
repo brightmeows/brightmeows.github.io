@@ -176,7 +176,14 @@
 
   async function performSearch(): Promise<void> {
     const q = query.trim();
-    if (!q || indexClient.phase !== "ready") return;
+    if (!q) return;
+    // 索引加载期间允许提前输入：点搜索时先等首屏索引组落定
+    searchPhase = "searching";
+    await indexClient.waitReady();
+    if (indexClient.phase !== "ready") {
+      searchPhase = "idle";
+      return;
+    }
 
     abortController?.abort();
     const ctrl = new AbortController();
@@ -231,11 +238,60 @@
 {/snippet}
 
 {#snippet contentPane()}
+  <!-- ===== 搜索输入：索引加载期间也可提前输入 ===== -->
+  <div class="mb-8">
+    <div class="flex gap-3">
+      <div class="relative flex-1">
+        <input
+          type="text"
+          bind:value={query}
+          onkeydown={onKeydown}
+          onfocus={searchConverters.ensureLoaded}
+          placeholder={m["search.input_placeholder"]()}
+          disabled={isSearching}
+          class={inputSearchLg}
+        />
+      </div>
+      <button
+        type="button"
+        disabled={searchPhase === "loading-tables" ? false : isSearching || !query.trim()}
+        onclick={() => {
+          if (searchPhase === "loading-tables") {
+            cancelSearch();
+          } else {
+            void performSearch();
+          }
+        }}
+        class="{btnSearchSubmit} w-14"
+        aria-label={searchPhase === "loading-tables" ? m["search.cancel"]() : m["search.search"]()}
+      >
+        {#if searchPhase === "loading-tables"}
+          <X class="size-5" aria-hidden="true" />
+        {:else if isSearching}
+          <div class={spinnerLg}></div>
+        {:else}
+          <Search class="size-5" aria-hidden="true" />
+        {/if}
+      </button>
+    </div>
+    <div class="mt-2 flex items-center gap-4">
+      {#if queryTypeHint}
+        <span class="text-[0.95rem] text-white-50">{queryTypeHint}</span>
+      {/if}
+    </div>
+    <p class="mt-3 text-[0.95rem] text-white-40">
+      {m["search.help_prefix"]()}
+      <kbd class="rounded bg-white-10 px-1.5 py-0.5 text-white-60">Enter</kbd>
+      {m["search.help_rest"]()}
+    </p>
+  </div>
+
   {#if indexClient.phase === "loading"}
     <!-- 索引加载进度 -->
     <div class="p-8 text-center">
       <Hourglass class="mx-auto mb-6 size-12 text-white-30" strokeWidth={1.5} aria-hidden="true" />
-      <p class="mb-4 text-white-80">{m["search.loading_index"]()}</p>
+      <p class="mb-2 text-white-80">{m["search.loading_index"]()}</p>
+      <p class="mb-6 text-[0.9rem] text-white-50">{m["search.loading_index_hint"]()}</p>
       <div class="mx-auto max-w-xs space-y-2 text-left">
         {#each indexClient.progress as item (item.name)}
           <div class="flex items-center gap-3 text-[0.9rem]">
@@ -263,56 +319,6 @@
       </p>
     </div>
   {:else}
-    <!-- ===== 搜索输入 ===== -->
-    <div class="mb-8">
-      <div class="flex gap-3">
-        <div class="relative flex-1">
-          <input
-            type="text"
-            bind:value={query}
-            onkeydown={onKeydown}
-            onfocus={searchConverters.ensureLoaded}
-            placeholder={m["search.input_placeholder"]()}
-            disabled={isSearching}
-            class={inputSearchLg}
-          />
-        </div>
-        <button
-          type="button"
-          disabled={searchPhase === "loading-tables" ? false : isSearching || !query.trim()}
-          onclick={() => {
-            if (searchPhase === "loading-tables") {
-              cancelSearch();
-            } else {
-              void performSearch();
-            }
-          }}
-          class="{btnSearchSubmit} w-14"
-          aria-label={searchPhase === "loading-tables"
-            ? m["search.cancel"]()
-            : m["search.search"]()}
-        >
-          {#if searchPhase === "loading-tables"}
-            <X class="size-5" aria-hidden="true" />
-          {:else if isSearching}
-            <div class={spinnerLg}></div>
-          {:else}
-            <Search class="size-5" aria-hidden="true" />
-          {/if}
-        </button>
-      </div>
-      <div class="mt-2 flex items-center gap-4">
-        {#if queryTypeHint}
-          <span class="text-[0.95rem] text-white-50">{queryTypeHint}</span>
-        {/if}
-      </div>
-      <p class="mt-3 text-[0.95rem] text-white-40">
-        {m["search.help_prefix"]()}
-        <kbd class="rounded bg-white-10 px-1.5 py-0.5 text-white-60">Enter</kbd>
-        {m["search.help_rest"]()}
-      </p>
-    </div>
-
     <!-- ===== 搜索结果 ===== -->
     {#if searchResults.length > 0}
       <div>

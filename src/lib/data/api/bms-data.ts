@@ -1,5 +1,6 @@
 import type { ChartData } from "@brightmeows/bms/format";
 
+import { externalDataProxyUrl } from "#lib/constants/external-data.js";
 import { m } from "#lib/paraglide/messages.js";
 import type { ProgressCallback } from "#lib/types/bms-view.js";
 import { errorDetailOf } from "#lib/utils/infra/error.js";
@@ -165,9 +166,13 @@ export async function fetchBmsTableData(
     onProgress?.({ percent: 85, phase: "parsing", message: m["bmsdata.jsonp.received"]() });
   } else {
     onProgress?.({ percent: 5, phase: "connecting", message: m["bmsdata.status.connecting"]() });
+    // 白名单内的外部源改走同站代理：上游没有 CORS 头时直连会被浏览器拦截。
+    // 代理只为缓存与转发服务，展示用的 fetchUrl 仍保留原始地址。
+    const proxyUrl = externalDataProxyUrl(finalDataUrl);
+    const requestUrl = proxyUrl ?? finalDataUrl;
     try {
       const { response: dataResponse } = await fetchStream(
-        finalDataUrl,
+        requestUrl,
         undefined,
         onProgress
           ? ({ loaded, total }) => {

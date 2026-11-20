@@ -1,5 +1,6 @@
 import { loadSharedTables } from "./shared-api.js";
 
+import { externalDataProxyUrl } from "#lib/constants/external-data.js";
 import {
   r2SharedDataUrl,
   r2SharedHeaderUrl,
@@ -72,7 +73,8 @@ export async function loadChartSourceData(source: ChartSource): Promise<ChartSou
   if (!isRecord(header)) throw new Error(m["editor.import.invalid"]());
   const dataUrl =
     typeof header.data_url === "string" && header.data_url !== "" ? header.data_url : fallbackData;
-  const dataRes = await fetch(new URL(dataUrl, headerUrl).toString());
+  const resolvedDataUrl = new URL(dataUrl, headerUrl).toString();
+  const dataRes = await fetch(externalDataProxyUrl(resolvedDataUrl) ?? resolvedDataUrl);
   if (!dataRes.ok) throw new Error(String(dataRes.status));
   const data: unknown = await dataRes.json();
   if (!Array.isArray(data)) throw new Error(m["editor.import.invalid"]());

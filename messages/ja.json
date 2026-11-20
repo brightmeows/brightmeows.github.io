@@ -629,6 +629,7 @@
   "search.load_url_failed": "{url} の読み込みに失敗しました: {status}",
   "search.loading_header": "ヘッダーを読み込み中…",
   "search.loading_index": "検索インデックスを読み込み中…",
+  "search.loading_index_hint": "初回は数十 MB のテキスト索引を読み込みます。先に入力できます。ハッシュ索引は入力時に読み込みます。",
   "search.loading_tables": "表を読み込み中…",
   "search.no_results_desc": "一致する譜面がありません。別のキーワードを試してください。",
   "search.no_results_title": "結果なし",
