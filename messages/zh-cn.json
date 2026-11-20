@@ -629,6 +629,7 @@
   "search.load_url_failed": "加载 {url} 失败: {status}",
   "search.loading_header": "加载表头...",
   "search.loading_index": "正在加载搜索索引...",
+  "search.loading_index_hint": "首次加载需要下载数十 MB 的文本索引，可先输入关键词；哈希索引在输入哈希后按需加载。",
   "search.loading_tables": "正在加载难度表...",
   "search.no_results_desc": "没有匹配的谱面，请尝试其他关键词。",
   "search.no_results_title": "未找到结果",

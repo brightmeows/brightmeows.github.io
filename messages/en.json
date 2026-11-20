@@ -629,6 +629,7 @@
   "search.load_url_failed": "Failed to load {url}: {status}",
   "search.loading_header": "Loading header...",
   "search.loading_index": "Loading search index...",
+  "search.loading_index_hint": "The first load downloads tens of MB of text indexes. You can type ahead; hash indexes load when you enter a hash.",
   "search.loading_tables": "Loading tables...",
   "search.no_results_desc": "No matching charts; try other keywords.",
   "search.no_results_title": "No results",

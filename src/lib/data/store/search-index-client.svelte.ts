@@ -52,6 +52,7 @@ export class SearchIndexClient {
   #nextSearchId = 1;
   #pending = new Map<number, (candidates: CandidateEntry[]) => void>();
   #hashWaiters: (() => void)[] = [];
+  #readyWaiters: (() => void)[] = [];
 
   /** 创建 Worker 并接线消息监听；重复调用只建一次，创建失败进入 error 态。 */
   start(): void {
@@ -79,6 +80,20 @@ export class SearchIndexClient {
     this.#worker = null;
     this.#settlePending([]);
     this.#settleHashWaiters();
+    this.#settleReadyWaiters();
+  }
+
+  /**
+   * 等待首屏索引组就绪：加载期间允许用户提前输入，搜索时再等它落定。
+   * 已就绪或失败时立即返回。
+   */
+  waitReady(): Promise<void> {
+    if (this.phase !== "loading") {
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+      this.#readyWaiters.push(resolve);
+    });
   }
 
   /**
@@ -141,6 +156,14 @@ export class SearchIndexClient {
     }
   }
 
+  #settleReadyWaiters(): void {
+    const waiters = this.#readyWaiters;
+    this.#readyWaiters = [];
+    for (const resolve of waiters) {
+      resolve();
+    }
+  }
+
   #onMessage(msg: WorkerMessage): void {
     switch (msg.type) {
       case "index-progress": {
@@ -158,6 +181,7 @@ export class SearchIndexClient {
         } else {
           this.phase = "ready";
         }
+        this.#settleReadyWaiters();
         break;
       }
       case "hash-ready": {
