@@ -20,6 +20,7 @@
   import { topLevelNav, type NavDropdown, type NavItem } from "#lib/constants/nav.js";
   import { SOCIAL_LINKS } from "#lib/constants/social.js";
   import {
+    tocFabPinned,
     topbarIcon,
     topbarIconSolid,
     topbarMenuItem,
@@ -425,12 +426,14 @@
   // 取玻璃 light 档（顶栏胶囊内按钮的 hover:bg-white-10 是深色胶囊上的
   // 亮化写法，独立玻璃底用同体系令牌）。
   const tocFabBase =
-    "flex cursor-pointer items-center gap-1.5 rounded-glass-lg px-3 py-1.5 text-sm shadow-(--glass-lighting) backdrop-blur transition-colors duration-150 hover:bg-glass-light hover:text-white";
-  // 钉住态背景常亮 glass-light 档（与 hover 同档常驻）+ 文字全白：utilities
-  // 同族背景类同时挂载时覆盖序不可靠（bg-glass 会压过 bg-glass-light），
-  // 背景由常态/钉住二选一拼接，不叠加。
+    "flex cursor-pointer items-center gap-1.5 rounded-glass-lg border px-3 py-1.5 text-sm shadow-(--glass-lighting) backdrop-blur transition-colors duration-150";
+  // 常态与钉住二选一拼接：玻璃底色同族类同时挂载时 utilities 覆盖序不可靠
+  // （bg-glass 会压过 bg-glass-light），不叠加。钉住态用 accent 激活形态
+  // （tocFabPinned，与筛选 chip 激活同族），比白底透明度阶梯醒目。
   const tocFabClass = (pinned: boolean): string =>
-    pinned ? `${tocFabBase} bg-glass-light text-white` : `${tocFabBase} bg-glass text-white-85`;
+    pinned
+      ? `${tocFabBase} ${tocFabPinned}`
+      : `${tocFabBase} border-transparent bg-glass text-white-85 hover:bg-glass-light hover:text-white`;
   // 目录浮动件定位：absolute 挂在顶栏容器内，随顶栏 transform 一起隐藏
   // 与唤出。containing block 是 root 的 padding box（无 border，即视口
   // 全宽），right 取 18px 与头像右缘（视口 12px 页边距 + 胶囊 6px 内边

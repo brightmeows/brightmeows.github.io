@@ -107,6 +107,11 @@ export const topbarMenuItem =
 /** 顶栏弹层分组标题(窄屏菜单的分组行，字号降档、文字更暗)。 */
 export const topbarMenuItemSm =
   "block rounded-glass-md px-3 py-2.5 text-xs font-medium text-white-60 no-underline transition-colors hover:bg-white-10 hover:text-white";
+/** 目录浮动钮钉住态(accent 激活，与筛选 chip 激活同族的描边淡底形态；
+ * 控件描边属 border 的合法职责，常态侧以 border-transparent 占位防跳)。
+ * 宿主把常态与本令牌按钉住态二选一拼接——玻璃底色同族类同时挂载时
+ * utilities 覆盖序不可靠，不叠加。 */
+export const tocFabPinned = "border-accent/60 bg-accent/20 text-accent hover:bg-accent/30";
 
 // ---- 行内弹层菜单项(ClickPopover 的 content snippet 用，2026-11 自
 // RowActionMenu 本地类串收敛；与顶栏弹层菜单项是不同视觉形态，圆角
