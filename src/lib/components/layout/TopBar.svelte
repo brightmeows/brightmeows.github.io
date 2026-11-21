@@ -38,7 +38,7 @@
 
   /**
    * 顶栏布局与弹层协议：导航贴左，主题/语言/账户贴右，右胶囊只有这三件。
-   * 目录浮动件挂在顶栏容器内：头像正下方，随顶栏一起隐藏与唤出，纯点击弹层走
+   * 目录浮动件挂在顶栏容器内：头像正下方，随顶栏一起隐藏与唤出，弹层走
    * ClickPopover 原语（外点/Escape/滚动关闭，面板内容与正文侧栏共用
    * TocPanel），只在当前页有标题时渲染（难度表查看态列三区、编辑态只列
    * 可见卡，数据由页面传入）；回到顶部在右下浮动件 BackToTopButton
@@ -107,6 +107,7 @@
   let suppressProfileFocus = false;
 
   const showToc = $derived(tocItems.length > 0);
+  let tocPanelOpen = $state(false);
 
   const panelIn = $derived(
     reduceMotion ? { duration: 0 } : { y: -4, duration: PANEL_IN_DURATION, easing: cubicOut }
@@ -280,6 +281,12 @@
     const delta = currentScrollY - lastScrollY;
     lastScrollY = currentScrollY;
 
+    // 目录弹层打开期间顶栏保持显示：面板锚定触发钮，按钮藏走弹层会悬空。
+    if (tocPanelOpen) {
+      accumulatedDelta = 0;
+      return;
+    }
+
     // 弹层展开或悬停计时中滚动即视为离开信号
     if (panels.openId !== null || hoverOpenTimer !== null || hoverCloseTimer !== null) {
       closePanels();
@@ -421,9 +428,10 @@
   // 目录浮动件定位：absolute 挂在顶栏容器内，随顶栏 transform 一起隐藏
   // 与唤出。containing block 是 root 的 padding box（无 border，即视口
   // 全宽），right 取 18px 与头像右缘（视口 12px 页边距 + 胶囊 6px 内边
-  // 距）对齐；top 为顶栏下缘（48px 胶囊高）再留 8px。纯点击弹层，外点/
-  // Escape/滚动关闭由 ClickPopover 原语承担；滚动即收弹层后顶栏才隐藏，
-  // 弹层不会脱离按钮悬挂。
+  // 距）对齐；top 为顶栏下缘（48px 胶囊高）再留 8px。弹层协议：悬停
+  // 150ms 展开、移入面板保持、指针离开 250ms 收，点击钉住后滚动不自动
+  // 关闭（外点与 Esc 收）；弹层打开期间顶栏豁免滚动隐藏（tocPanelOpen
+  // 分支），按钮不会带着弹层一起藏走。
 </script>
 
 <!-- 下拉子页条目，宽屏各导航下拉共用 -->
@@ -504,6 +512,9 @@
           align="right"
           bottomReserve={16}
           menuClass="w-[min(20rem,calc(100vw-1.5rem))] p-4"
+          hoverIntent
+          pinOnClick
+          onOpenChange={(next) => (tocPanelOpen = next)}
         >
           <span class="flex items-center gap-1.5">
             <List class="size-4" aria-hidden="true" />
