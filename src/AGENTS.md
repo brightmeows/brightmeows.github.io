@@ -84,7 +84,15 @@
 
 布局、显隐信号与弹层悬停协议（意图延迟、钉住、外点/Escape、减少动效偏好）见 `src/lib/components/layout/TopBar.svelte` 头注；目录构建在 `src/lib/utils/ui/toc.ts`，
 正文页目录树由 `PostArticle` 合并（章节在前，depth 缩进区分章节与标题）。
-资料卡与首页外部入口共用 `src/lib/constants/social.ts` 的 `SOCIAL_LINKS`（含图标，GitHub 排第一），新增社交账号只改这一处。
+右胶囊只剩主题、语言、账户；目录与回到顶部是两个独立浮动件：
+
+- **目录浮动件**：横排玻璃胶囊挂在顶栏 transform 容器内（头像正下方，随顶栏一起隐藏与唤出），弹层走 `ClickPopover` 原语并开启 `hoverIntent` 与 `pinOnClick`：
+  悬停 150ms 展开、移入面板保持、指针离开 250ms 收；点击钉住后滚动不自动关闭，外点与 Esc 收。弹层打开期间顶栏豁免滚动隐藏（按钮藏走弹层会悬空）。
+  钉住态按钮背景常亮 glass-light 档（与 hover 同档常驻）；玻璃底色同族类同时挂载的覆盖序不可靠，常态与钉住背景由条件拼接二选一，不叠加。
+  面板与正文侧栏共用 `TocPanel`；只在当前页有标题时渲染，无目录页不占位。正文页与左侧 `TocSidebar` 并存是刻意保留：侧栏折叠后浮动件是唯一目录入口。
+- **回到顶部浮动件**：右下角 `BackToTopButton`，滚过一个视口高度出现（阈值即 `hasScrolledPastViewport`）；难度表详情页经 `hasTableDock` 判定抬高一枚 dock 收起态高度避让 `TableDock`，
+  dock 展开面板盖住本钮属预期。顶栏“接近页面底部自动显示”原是为顶栏内回到顶部可达性服务，随迁出撤销，顶栏只剩滚动方向、悬停带、键盘焦点与目录弹层打开四个保持/唤出信号。
+  资料卡与首页外部入口共用 `src/lib/constants/social.ts` 的 `SOCIAL_LINKS`（含图标，GitHub 排第一），新增社交账号只改这一处。
 
 #### Hero
 
@@ -234,7 +242,8 @@ katex 选择器兼容性见 `src/lib/components/content/MarkdownContent.svelte` 
   - **组件导入一律用直接路径**（`#lib/components/<域>/<组件>.svelte`）：barrel 文件已移除（`ui`/`bms`/`layout`/`content`/`pages` 下的 `index.ts`），原因是它们与实际使用漂移：knip 报出一批只被直接路径引用、在 barrel 里却仍挂着导出的冗余项。
   - 直接路径无维护面、语义无歧义，不要再新增 barrel。
   - 写 UI 前 `glob src/lib/components/**/*.svelte` 检索已有组件。
-  - 点击型浮动菜单（行内“...”溢出、行级操作）统一走 `ClickPopover` 原语（视口钳制定位、外点/Esc/滚动关闭、popover-glass 加 top-layer 一并封装，定位纯函数在 `src/lib/utils/ui/menu-position.ts`）；悬停型下拉走 dropdown-panel 原语，显式预览弹层（JSON 预览）自挂 popoverLayer。
+  - 点击型浮动菜单（行内“...”溢出、行级操作）统一走 `ClickPopover` 原语（视口钳制定位、外点/Esc/滚动关闭、popover-glass 加 top-layer 一并封装，定位纯函数在 `src/lib/utils/ui/menu-position.ts`）；
+    悬停型下拉走 dropdown-panel 原语，显式预览弹层（JSON 预览）自挂 popoverLayer。需要悬停展开或点击钉住的特例传 `hoverIntent`/`pinOnClick` 开启（目录浮动件），不传即纯点击。
   - 按钮与输入框的类串用 `src/lib/constants/ui-classes.ts` 的令牌（类串自组件本地复制收敛为令牌，按家族与尺寸逐变体命名；`.gradient-btn` 全局类一并收敛为 `btnGradientBlue`/`btnGradientOrange` 令牌），不要再本地复制类串；变体之间不组合，新视觉形态加新令牌。
 
 ### 样式令牌
