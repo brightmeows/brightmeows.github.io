@@ -419,10 +419,11 @@
   const tocFabClass =
     "flex cursor-pointer items-center gap-1.5 rounded-glass-lg bg-glass px-3 py-1.5 text-sm text-white-85 shadow-(--glass-lighting) backdrop-blur transition-colors duration-150 hover:bg-glass-light hover:text-white";
   // 目录浮动件定位：absolute 挂在顶栏容器内，随顶栏 transform 一起隐藏
-  // 与唤出。right 取视口 12px 页边距加胶囊 6px 内边距与头像右缘对齐
-  // （root 已有 px-3，此处补差值 6px）；top 为顶栏下缘（48px 胶囊高）再
-  // 留 8px。纯点击弹层，外点/Escape/滚动关闭由 ClickPopover 原语承担；
-  // 滚动即收弹层后顶栏才隐藏，弹层不会脱离按钮悬挂。
+  // 与唤出。containing block 是 root 的 padding box（无 border，即视口
+  // 全宽），right 取 18px 与头像右缘（视口 12px 页边距 + 胶囊 6px 内边
+  // 距）对齐；top 为顶栏下缘（48px 胶囊高）再留 8px。纯点击弹层，外点/
+  // Escape/滚动关闭由 ClickPopover 原语承担；滚动即收弹层后顶栏才隐藏，
+  // 弹层不会脱离按钮悬挂。
 </script>
 
 <!-- 下拉子页条目，宽屏各导航下拉共用 -->
@@ -495,7 +496,7 @@
   <div class="flex items-center justify-between gap-3">
     <!-- 目录浮动件：头像正下方，跟随顶栏隐藏与唤出（absolute 于 transform 容器内） -->
     {#if showToc}
-      <div class="pointer-events-auto absolute top-[56px] right-[6px]">
+      <div class="pointer-events-auto absolute top-[56px] right-[18px]">
         <ClickPopover
           label={m["toc.title"]()}
           triggerClass={tocFabClass}
