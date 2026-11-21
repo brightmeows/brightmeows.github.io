@@ -25,21 +25,14 @@
 
 {#if hasMd5(chart)}
   <IconButton
-    variant="orange"
+    skin="gradient-orange"
     href={bmsLinks.bmsScoreViewer}
-    target="_blank"
-    rel="noopener noreferrer"
+    external
     ariaLabel="BMS Score Viewer"
   >
     <ChartColumn class="size-5" aria-hidden="true" />
   </IconButton>
-  <IconButton
-    variant="blue"
-    href={bmsLinks.bmsIr}
-    target="_blank"
-    rel="noopener noreferrer"
-    ariaLabel="BMS-IR"
-  >
+  <IconButton skin="gradient-blue" href={bmsLinks.bmsIr} external ariaLabel="BMS-IR">
     <svg viewBox="0 0 24 24" class="h-8 w-8">
       <text
         x="12"
@@ -63,22 +56,10 @@
   </IconButton>
 {/if}
 {#if hasSha256(chart)}
-  <IconButton
-    variant="brown"
-    href={bmsLinks.mocha}
-    target="_blank"
-    rel="noopener noreferrer"
-    ariaLabel="Mocha"
-  >
+  <IconButton skin="gradient-brown" href={bmsLinks.mocha} external ariaLabel="Mocha">
     <img src="/assets/logo/mocha_logo.gif" alt="Mocha" class="h-6 w-6 object-contain" />
   </IconButton>
-  <IconButton
-    variant="cyan"
-    href={bmsLinks.minir}
-    target="_blank"
-    rel="noopener noreferrer"
-    ariaLabel="Minir"
-  >
+  <IconButton skin="gradient-cyan" href={bmsLinks.minir} external ariaLabel="Minir">
     <img src="/assets/logo/minir_logo.gif" alt="Minir" class="h-6 w-6 object-contain" />
   </IconButton>
 {/if}

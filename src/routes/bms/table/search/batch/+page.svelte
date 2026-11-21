@@ -16,8 +16,8 @@
   import BmsSearchResult from "#lib/components/bms/BmsSearchResult.svelte";
   import PageHero from "#lib/components/layout/PageHero.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
+  import Button from "#lib/components/ui/Button.svelte";
   import EmptyState from "#lib/components/ui/EmptyState.svelte";
-  import GradientButton from "#lib/components/ui/GradientButton.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
   import {
     btnGhostMd,
@@ -409,10 +409,10 @@
               </p>
             {/if}
           </div>
-          <GradientButton variant="green" size="md" onclick={() => downloadJson()}>
+          <Button variant="gradient-green" size="md" onclick={() => downloadJson()}>
             <Download class="size-4" aria-hidden="true" />
             {m["batch.download"]()}
-          </GradientButton>
+          </Button>
         </div>
 
         <!-- 可折叠预览 -->

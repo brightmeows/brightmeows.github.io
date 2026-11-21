@@ -12,9 +12,9 @@
   import TocPanel from "./TocPanel.svelte";
   import { consumeNavHoverSuppression, suppressNextNavHover } from "./topbar-nav-hover.js";
 
+  import Button from "#lib/components/ui/Button.svelte";
   import ClickPopover from "#lib/components/ui/ClickPopover.svelte";
   import { createPanelGroup } from "#lib/components/ui/dropdown-panel.svelte.js";
-  import GlassButton from "#lib/components/ui/GlassButton.svelte";
   import GlassPanel from "#lib/components/ui/GlassPanel.svelte";
   import { popoverLayer } from "#lib/components/ui/popover-layer.js";
   import { topLevelNav, type NavDropdown, type NavItem } from "#lib/constants/nav.js";
@@ -475,10 +475,9 @@
     <p class="mb-5 text-sm leading-relaxed text-white-90">{m["topbar.account.bio"]()}</p>
     <div class="flex flex-wrap justify-center gap-3">
       {#each SOCIAL_LINKS as link (link.href)}
-        <GlassButton
+        <Button
           href={link.href}
-          target="_blank"
-          rel="noopener noreferrer"
+          external
           size={compact ? "sm" : "md"}
           onclick={() => closePanels()}
         >
@@ -486,7 +485,7 @@
             <link.icon class="size-4 shrink-0" aria-hidden="true" />
             {link.label}
           </span>
-        </GlassButton>
+        </Button>
       {/each}
     </div>
   </section>
