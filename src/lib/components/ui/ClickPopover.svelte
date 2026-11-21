@@ -42,7 +42,7 @@
     /** 启用点击钉住（见头注）。 */
     pinOnClick?: boolean;
     /** 弹层开合通知：宿主据此决定是否豁免自身的滚动收起逻辑。 */
-    onOpenChange?: (open: boolean) => void;
+    onOpenChange?: (open: boolean, pinned: boolean) => void;
     /** 触发钮内容（图标）。 */
     children: Snippet;
     /** 弹层内容；close 供菜单项点击后收起。 */
@@ -69,6 +69,7 @@
   let menuEl = $state<HTMLDivElement | undefined>(undefined);
   let open = $state(false);
   let posStyle = $state("");
+  let pinned = $state(false);
 
   // 打开来源标记，纯状态机位（非响应式）：hover 态指针离开即收，pin 态
   // 滚动与指针移动都不再自动关闭。
@@ -93,8 +94,9 @@
   function dismiss(): void {
     clearHoverTimers();
     open = false;
+    pinned = false;
     openedBy = null;
-    onOpenChange?.(false);
+    onOpenChange?.(false, false);
   }
 
   /** 关闭并归还触发钮焦点：Esc 与菜单项激活走这里，外点与滚动不打扰焦点。 */
@@ -119,8 +121,9 @@
   function openPanel(by: "hover" | "pin"): void {
     positionPanel();
     open = true;
+    pinned = by === "pin";
     openedBy = by;
-    onOpenChange?.(true);
+    onOpenChange?.(true, pinned);
   }
 
   function toggle(): void {
@@ -129,6 +132,7 @@
       // 悬停展开态的首次点击是钉住：把“指针离开即收”换成显式关闭。
       if (pinOnClick && openedBy === "hover") {
         openedBy = "pin";
+        pinned = true;
         return;
       }
       dismiss();
