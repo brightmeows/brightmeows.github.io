@@ -12,6 +12,8 @@
   interface Props {
     children?: Snippet;
     state?: State;
+    /** 开关语义的按压态，透传 aria-pressed；复制反馈（success）等非开关用法不传。 */
+    pressed?: boolean;
     disabled?: boolean;
     onclick?: (event: Event) => void;
     title?: string;
@@ -21,6 +23,7 @@
   let {
     children,
     state = "off",
+    pressed = undefined,
     disabled = false,
     onclick,
     title,
@@ -38,7 +41,14 @@
   };
 </script>
 
-<button type="button" {disabled} {onclick} {title} class="{base} {stateOf[state]} {className}">
+<button
+  type="button"
+  {disabled}
+  {onclick}
+  {title}
+  aria-pressed={pressed}
+  class="{base} {stateOf[state]} {className}"
+>
   {#if children}
     {@render children()}
   {/if}
