@@ -8,8 +8,8 @@
 
   import MirrorTableEditRow from "./MirrorTableEditRow.svelte";
 
+  import Button from "#lib/components/ui/Button.svelte";
   import Checkbox from "#lib/components/ui/Checkbox.svelte";
-  import GradientButton from "#lib/components/ui/GradientButton.svelte";
   import { jsonPreview } from "#lib/components/ui/JsonPreview.svelte";
   import ToggleButton from "#lib/components/ui/ToggleButton.svelte";
   import { btnDanger, btnGhostXs, btnIconPlain } from "#lib/constants/ui-classes.js";
@@ -130,16 +130,15 @@
     class="table-td-compact min-w-32.5 wrap-break-word max-sm:col-start-1 max-sm:col-end-4 max-sm:row-start-3 max-sm:min-w-0 max-sm:border-0 max-sm:p-0"
   >
     <div class="flex items-center gap-1">
-      <GradientButton
-        variant="blue"
+      <Button
+        variant="gradient-blue"
         href={item.dir_name ? mirrorTablePath(item.dir_name) : item.url}
-        size="sm"
+        size="xs"
         class="flex min-w-0 flex-1"
-        target="_blank"
-        rel="noopener noreferrer"
+        external
       >
         {m["mirror.mirror_link"]()}
-      </GradientButton>
+      </Button>
       {#if cb.copiedField === "mirror"}
         <span class="badge-copied">{m["common.copied_bang"]()}</span>
       {:else if cb.failedField === "mirror"}
@@ -161,16 +160,15 @@
   >
     {#if item.url_from}
       <div class="flex items-center gap-1">
-        <GradientButton
-          variant="orange"
+        <Button
+          variant="gradient-orange"
           href={item.url_from}
-          size="sm"
+          size="xs"
           class="flex min-w-0 flex-1"
-          target="_blank"
-          rel="noopener noreferrer"
+          external
         >
           {m["mirror.original_link"]()}
-        </GradientButton>
+        </Button>
         {#if cb.copiedField === "original"}
           <span class="badge-copied">{m["common.copied_bang"]()}</span>
         {:else if cb.failedField === "original"}

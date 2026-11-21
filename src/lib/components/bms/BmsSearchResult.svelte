@@ -8,8 +8,8 @@
 
   import BmsLinkButtons from "./BmsLinkButtons.svelte";
 
+  import Button from "#lib/components/ui/Button.svelte";
   import GlassContainer from "#lib/components/ui/GlassContainer.svelte";
-  import GradientButton from "#lib/components/ui/GradientButton.svelte";
   import {
     btnChip,
     btnChipOnSuccess,
@@ -126,28 +126,16 @@
           {#if bundleUrl ?? diffUrl}
             <div class="flex shrink-0 flex-row gap-[0.3rem]">
               {#if bundleUrl}
-                <GradientButton
-                  variant="green"
-                  href={bundleUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  size="sm"
-                >
+                <Button variant="gradient-green" href={bundleUrl} external size="xs">
                   <Package class="size-4" aria-hidden="true" />
                   {m["common.bundle"]()}
-                </GradientButton>
+                </Button>
               {/if}
               {#if diffUrl}
-                <GradientButton
-                  variant="blue"
-                  href={diffUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  size="sm"
-                >
+                <Button variant="gradient-blue" href={diffUrl} external size="xs">
                   <RefreshCw class="size-4" aria-hidden="true" />
                   {m["common.diff"]()}
-                </GradientButton>
+                </Button>
               {/if}
             </div>
           {/if}
