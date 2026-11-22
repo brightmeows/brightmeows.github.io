@@ -857,6 +857,7 @@
         oninput={handleQueryInput}
         onchange={handleQueryChange}
         placeholder={m["editor.entries.search_placeholder"]()}
+        aria-label={m["editor.entries.search_aria"]()}
         {disabled}
       />
       {#if filtering}

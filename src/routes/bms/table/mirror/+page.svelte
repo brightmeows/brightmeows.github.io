@@ -513,6 +513,7 @@
           class="{inputPanel} pr-12"
           type="text"
           placeholder={m["mirror.search_placeholder"]()}
+          aria-label={m["mirror.search_aria"]()}
           bind:value={searchQuery}
           onfocus={searchConverters.ensureLoaded}
         />
