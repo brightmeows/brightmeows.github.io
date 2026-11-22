@@ -129,6 +129,8 @@ export function decideNewTableDraft(
 export interface EditorNotice {
   kind: "ok" | "warn" | "error";
   text: string;
+  /** 成功类通知的可选后续动作；带动作的通知不自动清除。 */
+  action?: { label: string; run: () => void } | undefined;
 }
 
 export type EditorSavePlan =

@@ -5,6 +5,7 @@ import {
   addCourseToModel,
   addChartToCourse,
   addGroupToModel,
+  courseChartRefsFromEntries,
   courseChartResolvedIn,
   courseHashIssue,
   emptyCourseModel,
@@ -252,5 +253,33 @@ describe("courseHashIssue", () => {
         extra: {},
       })
     ).toBe("ok");
+  });
+});
+
+describe("courseChartRefsFromEntries", () => {
+  const md5 = "a".repeat(32);
+  const sha256 = "b".repeat(64);
+
+  it("prefers the current entry level over the file hint", () => {
+    expect(
+      courseChartRefsFromEntries([{ md5, sha256 }], { [md5]: "11" }, [
+        { md5: md5.toUpperCase(), level: "12" },
+      ])
+    ).toEqual([{ md5, sha256, levelText: "12" }]);
+  });
+
+  it("falls back to the file hint when the entry is absent or has no level", () => {
+    expect(courseChartRefsFromEntries([{ md5, sha256 }], { [md5]: "11" }, [])).toEqual([
+      { md5, sha256, levelText: "11" },
+    ]);
+    expect(
+      courseChartRefsFromEntries([{ md5, sha256 }], { [md5]: "11" }, [{ md5, level: "" }])
+    ).toEqual([{ md5, sha256, levelText: "11" }]);
+  });
+
+  it("uses numeric levels and skips entries without hashes", () => {
+    expect(
+      courseChartRefsFromEntries([{ md5, sha256 }, { title: "no hash" }], {}, [{ md5, level: 7 }])
+    ).toEqual([{ md5, sha256, levelText: "7" }]);
   });
 });

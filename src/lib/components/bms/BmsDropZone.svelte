@@ -3,21 +3,27 @@
 
   import { btnGhost } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
-  import { isHashingAvailable, processBmsFiles } from "#lib/utils/infra/bms-drop.js";
+  import {
+    collectDroppedFiles,
+    isHashingAvailable,
+    processBmsFiles,
+  } from "#lib/utils/infra/bms-drop.js";
 
   /**
-   * 本地 BMS/BMSON 拖拽区：管线在 utils/infra/bms-drop。落点的解析统一由
-   * 页面级 BmsDropOverlay 处理（同一次拖放只有一个解析入口），本组件只管
-   * 区域视觉与文件选择按钮（移动端与键盘可达）。
+   * 本地 BMS/BMSON 拖拽区：管线在 utils/infra/bms-drop。页面落点由页面级
+   * BmsDropOverlay 统一解析（同一次拖放只有一个解析入口）；模态抽屉内的
+   * 拖拽用 selfHandle 自管，避免与页面遮罩的禁用态互抢。
    */
   interface Props {
     /** 当前表已有条目（判重）。 */
     entries: readonly Record<string, unknown>[];
     disabled?: boolean;
+    /** 自己处理 drop；页面遮罩不参与时使用（添加谱面抽屉）。 */
+    selfHandle?: boolean;
     onadd: (result: BmsDropResult) => void;
   }
 
-  let { entries, disabled = false, onadd }: Props = $props();
+  let { entries, disabled = false, selfHandle = false, onadd }: Props = $props();
 
   let dragging = $state(false);
   let busy = $state(false);
@@ -41,6 +47,22 @@
       busy = false;
     }
   }
+
+  function isFileDrag(event: DragEvent): boolean {
+    return event.dataTransfer?.types.includes("Files") ?? false;
+  }
+
+  async function handleDrop(event: DragEvent): Promise<void> {
+    if (!isFileDrag(event)) return;
+    event.preventDefault();
+    dragging = false;
+    if (!selfHandle || disabled || busy) return;
+    const dataTransfer = event.dataTransfer;
+    if (dataTransfer === null) return;
+    const files = await collectDroppedFiles(dataTransfer);
+    if (files.length === 0) return;
+    await processFiles(files);
+  }
 </script>
 
 <div
@@ -50,6 +72,7 @@
     ? 'border-accent bg-accent/10'
     : 'border-white-25 bg-black-10'}"
   ondragover={(event) => {
+    if (!isFileDrag(event)) return;
     event.preventDefault();
     if (!disabled && !busy) dragging = true;
   }}
@@ -59,8 +82,7 @@
     dragging = false;
   }}
   ondrop={(event) => {
-    event.preventDefault();
-    dragging = false;
+    void handleDrop(event);
   }}
 >
   <div class="flex flex-wrap items-center gap-3">
