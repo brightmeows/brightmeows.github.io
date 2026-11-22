@@ -107,7 +107,9 @@
           <ul class="mt-2 flex flex-col gap-1 text-[0.85rem] text-white-70">
             {#each overview.replace as rule (rule.from)}
               <li class="flex flex-wrap items-center justify-between gap-2">
-                <span>{m["admin.replace.item"]({ from: rule.from, to: rule.to })}</span>
+                <span class="[overflow-wrap:anywhere]"
+                  >{m["admin.replace.item"]({ from: rule.from, to: rule.to })}</span
+                >
                 <button
                   class={btnGhost}
                   type="button"
@@ -131,7 +133,7 @@
           <ul class="flex flex-col gap-1 text-[0.85rem] text-white-70">
             {#each overview.disabled as item (item.url)}
               <li class="flex flex-wrap items-center justify-between gap-2">
-                <span>
+                <span class="[overflow-wrap:anywhere]">
                   {item.dir_name ?? item.url}{#if item.note}<span class="ml-1 text-white-50"
                       >{m["admin.disable.note_wrap"]({ note: item.note })}</span
                     >{/if}
@@ -194,7 +196,9 @@
                 </span>
                 <span class="ml-2 text-white-90">{entry.actor}</span>
                 <span class="ml-2 text-accent">{entry.action}</span>
-                <span class="ml-2">{entry.dir_name ?? entry.url ?? ""}</span>
+                <span class="ml-2 [overflow-wrap:anywhere]"
+                  >{entry.dir_name ?? entry.url ?? ""}</span
+                >
                 {#if entry.detail}<span class="ml-2 text-white-50">{entry.detail}</span>{/if}
               </li>
             {/each}
