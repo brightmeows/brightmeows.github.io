@@ -18,7 +18,8 @@
    * 三张工作卡：头部（含等级参考折叠区）、谱面、段位；查看态原生 details 折叠且
    * 默认只展开谱面，编辑态 TableCardBar 管理可见卡（?show= 逗号列表记录组合，
    * 编辑态用 sessionStorage 记住上次组合）。标题区 hero 承载标题、符号 meta 与
-   * 一行常用动作（复制导入链接、查看 header.json、查看 data.json，走 btnGhostMd，
+   * 一行常用动作（模式主按钮加复制导入链接、查看 header.json、查看 data.json：
+   * 查看态主按钮进编辑或本地编辑，编辑态主按钮切回预览；ghost 走 btnGhostMd，
    * 复制按钮以原生 title 携带完整导入地址，导入地址不明文展示）。编辑态整页
    * 文件拖拽按落点路由：段位行写入该段位，其余位置追加谱面条目。notice：成功类
    * 短时自动清除（带动作的跳过清除），warn/error 常驻到被替换。保存闸门：save/
@@ -42,6 +43,8 @@
   import Copy from "@lucide/svelte/icons/copy";
   import Download from "@lucide/svelte/icons/download";
   import ExternalLink from "@lucide/svelte/icons/external-link";
+  import Eye from "@lucide/svelte/icons/eye";
+  import Pencil from "@lucide/svelte/icons/pencil";
   import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
   import type { Component, Snippet } from "svelte";
   import { onMount, tick } from "svelte";
@@ -63,6 +66,7 @@
     badgeCountSm,
     btnGhost,
     btnGhostMd,
+    btnPrimary,
     btnPrimaryLarge,
   } from "#lib/constants/ui-classes.js";
   import type { EditorNotice } from "#lib/controllers/editor.js";
@@ -778,6 +782,29 @@
 {/snippet}
 
 {#snippet heroActions()}
+  {#if isEdit}
+    {#if !createMode}
+      <button class={btnPrimary} type="button" onclick={() => handleDockSetMode("view")}>
+        <Eye class="size-4 shrink-0" aria-hidden="true" />
+        {m["editor.dock.preview"]()}
+      </button>
+    {/if}
+  {:else if showDockPrimary}
+    <button
+      class={btnPrimary}
+      type="button"
+      disabled={!dataReady}
+      title={!dataReady ? m["editor.partial.edit_disabled"]() : editHint}
+      onclick={handlePrimary}
+    >
+      {#if copyMode}
+        <Copy class="size-4 shrink-0" aria-hidden="true" />
+      {:else}
+        <Pencil class="size-4 shrink-0" aria-hidden="true" />
+      {/if}
+      {primaryLabel}
+    </button>
+  {/if}
   {#if importUrl !== null}
     <button class={btnGhostMd} type="button" title={importUrl} onclick={copyImportUrl}>
       {#if cb.copied}
