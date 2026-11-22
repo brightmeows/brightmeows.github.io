@@ -24,6 +24,15 @@ jobs:
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
+      # 类型检查与小检查不依赖 build 产物，由本 job 与构建并行：塞进 verify
+      # 会排在 flavor 之后成为串行段，实测白拉约 23 秒
+      - run: pnpm check
+      - run: pnpm check:worker
+      - run: pnpm check:mirror
+      - run: pnpm check:bms
+      - run: pnpm check:config
+      - run: pnpm check:i18n
+      - run: pnpm check:jsdoc
       - run: pnpm check:md
       - run: pnpm check:docs
       - run: pnpm check:icons
@@ -73,21 +82,14 @@ jobs:
           node-version-file: .nvmrc
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
-      # CI 里唯一的构建验证点：多语组装、frontmatter 校验、构建期数据加载与
-      # 打包错误都在这里暴露（lint/test/format 不依赖 build 产物）
+      # CI 里完整产物组装的唯一验证点：frontmatter 校验、构建期数据加载与
+      # 打包错误在 flavor job 的 build 里暴露，组装错误在这里暴露
       - uses: actions/download-artifact@v8
         with:
           pattern: build-out-*
           path: .build-out
           merge-multiple: true
       - run: node scripts/assemble-site.ts
-      - run: pnpm check
-      - run: pnpm check:worker
-      - run: pnpm check:mirror
-      - run: pnpm check:bms
-      - run: pnpm check:config
-      - run: pnpm check:i18n
-      - run: pnpm check:jsdoc
 
   test:
     runs-on: ubuntu-latest

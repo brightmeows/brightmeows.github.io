@@ -134,10 +134,11 @@ vitest 覆盖 `src/lib/utils/`、`src/lib/data/` 的纯逻辑、`src/lib/control
 
 ### CI 与 Deploy
 
-CI 的 lint/test/format 不依赖 build 产物（把构建产物目录移走后全部通过），构建验证集中在 build-flavor 加 verify 两个 job。
+CI 的 lint/test/format 不依赖 build 产物（把构建产物目录移走后全部通过），构建相关分落三处 job。
 
 - build-flavor 按 locale matrix 拆三个 runner 各自单遍 `pnpm build:flavor`：三个 flavor 的 `.svelte-kit` 与 `src/lib/paraglide` 中间输出路径固定，同 runner 并发会互踩出语言互串的产物，runner 隔离是结构性解法。
-- verify 经 artifact 汇合各 flavor 后跑 `node scripts/assemble-site.ts` 组装，再跑 svelte-check 与各 `check:*`，是 CI 里完整产物组装的唯一验证点（组装、frontmatter 校验、构建期数据加载与打包错误都在这里暴露）。
+- verify 经 artifact 汇合各 flavor 后跑 `node scripts/assemble-site.ts` 组装，是 CI 里完整产物组装的唯一验证点；verify 是 `needs: build-flavor` 的串行后段，只放组装。
+- svelte-check 与各 `check:*` 不依赖产物，由 lint job 与构建并行承担：塞进 verify 会排在 flavor 之后白拉 wall（实测约 23 秒）。
 
 - Deploy 只做 build 与部署，不重复 lint/check/test：main 的每次提交已由 PR 必过门槛与 push 触发的 CI 覆盖，所有变更都经 PR。列表变动只影响运行时读取，不再触发部署。
 - 各工作流持有独立 concurrency group：CI 取消被取代的旧运行，Deploy 排队串行（避免旧提交的部署最后完成、覆盖新版本）。
