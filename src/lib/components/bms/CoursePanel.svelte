@@ -26,8 +26,9 @@
   /**
    * 段位内容：查看态与编辑态共用组遍历、组标题与全宽课程行；卡片显隐由页面管理。
    * 查看态严格只读；编辑态在行内展开表单，一次只展开一行。
-   * picker 多选与跨表来源（镜像加共享）；段位行可读 BMS 文件，只写段位行；条目
-   * 可拖进段位或经行内“加入段位”动作；段位与谱面两张列表保持独立，不自动互写。
+   * picker 多选与跨表来源（镜像加共享）；段位行可读 BMS 文件，也可接页面遮罩
+   * 路由来的文件拖入；拖拽与按钮共用课程文件管线，只写段位行；条目可拖进段位
+   * 或经行内“加入段位”动作；段位与谱面两张列表保持独立，不自动互写。
    * 反查只做段位到当前表与外部表（镜像走搜索索引，共享表由用户选表查
    * data.json），只展示元数据，不写入；共享表不建全局索引。
    */
@@ -47,6 +48,8 @@
     onBeforeChange?: (() => void) | undefined;
     /** 编辑反馈通知的出口（dock notice 区展示）；缺省不通知。 */
     onNotice?: ((notice: EditorNotice) => void) | undefined;
+    /** 页面遮罩解析到的活动文件落点 key；编辑态用于行高亮。 */
+    dropTargetKey?: string | null | undefined;
   }
 
   let {
@@ -61,6 +64,7 @@
     onChange,
     onBeforeChange = undefined,
     onNotice = undefined,
+    dropTargetKey = null,
   }: Props = $props();
 
   interface ViewCourseItem {
@@ -338,6 +342,7 @@
                 />
               {:else}
                 {@const flatIndex = (groupOffsets[group.groupIndex] ?? 0) + item.courseIndex}
+                {@const dropKey = `${group.groupIndex}:${item.courseIndex}`}
                 <CourseRowEdit
                   course={item.course}
                   {entries}
@@ -348,6 +353,8 @@
                   canMoveDown={item.courseIndex < group.items.length - 1}
                   dragList={dnd}
                   dragIndex={flatIndex}
+                  {dropKey}
+                  fileDropActive={dropTargetKey === dropKey}
                   onToggle={() => toggle(item.key)}
                   onDelete={() => removeCourse(group.groupIndex, item.courseIndex)}
                   onMoveUp={() => moveCourse(group.groupIndex, item.courseIndex, -1)}

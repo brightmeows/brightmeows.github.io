@@ -19,8 +19,9 @@
    * 默认只展开谱面，编辑态 TableCardBar 管理可见卡（?show= 逗号列表记录组合，
    * 编辑态用 sessionStorage 记住上次组合）。标题区 hero 承载标题、符号 meta 与
    * 一行常用动作（复制导入链接、查看 header.json、查看 data.json，走 btnGhostMd，
-   * 复制按钮以原生 title 携带完整导入地址，导入地址不明文展示）。notice：成功类
-   * 短时自动清除（时长见常量），warn/error 常驻到被替换。保存闸门：save/
+   * 复制按钮以原生 title 携带完整导入地址，导入地址不明文展示）。编辑态整页
+   * 文件拖拽按落点路由：段位行写入该段位，其余位置追加谱面条目。notice：成功类
+   * 短时自动清除（带动作的跳过清除），warn/error 常驻到被替换。保存闸门：save/
    * saveAsSharedNow/Ctrl+S 都以 data 就绪为前置（加载中 entries 为空，误保存会
    * 清空共享表）。shared 模式接入整包保存（发布前必须全部指派，保存前比对线上
    * updated_at 并发提示）与同源草稿认领另存；放弃未保存修改在两态都可用。
@@ -28,7 +29,13 @@
    * Ctrl+Shift+Z 及 dock 面板按钮；脏标记由基线比较派生，回基线即视为无未保存
    * 修改（保存按钮隐去、旧草稿清掉）；保存成功清栈，undo 不可撤回已落库内容。
    */
-  import type { BmsDropResult } from "@brightmeows/bms/editor";
+  import {
+    addChartToCourse,
+    courseChartRefsFromEntries,
+    splitNewCourseCharts,
+    type EditableCourse,
+  } from "@brightmeows/bms/course";
+  import { splitNewEntries, type BmsDropResult } from "@brightmeows/bms/editor";
   import BookOpen from "@lucide/svelte/icons/book-open";
   import Check from "@lucide/svelte/icons/check";
   import ChevronDown from "@lucide/svelte/icons/chevron-down";
@@ -39,7 +46,7 @@
   import type { Component, Snippet } from "svelte";
   import { onMount, tick } from "svelte";
 
-  import BmsDropOverlay from "#lib/components/bms/BmsDropOverlay.svelte";
+  import BmsDropOverlay, { type BmsDropTarget } from "#lib/components/bms/BmsDropOverlay.svelte";
   import CoursePanel from "#lib/components/bms/CoursePanel.svelte";
   import EntriesPanel from "#lib/components/bms/EntriesPanel.svelte";
   import TableCardBar, { type TableCardBarItem } from "#lib/components/bms/TableCardBar.svelte";
@@ -281,24 +288,96 @@
     }
   }
 
+  function handleDropTargetChange(key: string | null): void {
+    dropTargetKey = key;
+  }
+
+  function isCourseDropTarget(target: BmsDropTarget): target is CourseDropTarget {
+    return "groupIndex" in target && "courseIndex" in target && "course" in target;
+  }
+
   /**
-   * 全页拖拽导入的追加处理：与导入折叠段拖拽区的追加逻辑一致
-   * （追加条目、合并文件等级建议、标记未保存并给出结果通知）。
+   * 全页拖拽导入：落在段位行走段位追加，其余位置按旧口径追加谱面条目。
+   * 判重集合已由遮罩按落点选好，这里只负责写入与通知。
    */
-  function handlePageDrop(result: BmsDropResult): void {
-    if (result.added.length > 0) {
-      model.entries = [...model.entries, ...result.added];
+  function handlePageDrop(result: BmsDropResult, target: BmsDropTarget | null): void {
+    if (target === null) {
+      handleDataDrop(result);
+      return;
+    }
+    if (!isCourseDropTarget(target)) {
+      model.notice = { kind: "warn", text: m["editor.drop.target_missing"]() };
+      return;
+    }
+    handleCourseDrop(target, result);
+  }
+
+  function handleDataDrop(result: BmsDropResult): void {
+    const fresh = splitNewEntries(model.entries, result.added);
+    if (fresh.added.length > 0) {
+      model.entries = [...model.entries, ...fresh.added];
       model.levelHints = { ...model.levelHints, ...result.hints };
       model.markDirty();
     }
     model.notice = {
-      kind: result.added.length > 0 ? "ok" : "warn",
+      kind: fresh.added.length > 0 ? "ok" : "warn",
       text: m["editor.drop.done"]({
-        added: result.added.length,
-        skipped: result.skipped,
+        added: fresh.added.length,
+        skipped: result.skipped + fresh.skipped,
         failed: result.failed,
       }),
     };
+  }
+
+  function handleCourseDrop(target: CourseDropTarget, result: BmsDropResult): void {
+    const course = model.courseModel.groups[target.groupIndex]?.courses[target.courseIndex];
+    if (course === undefined || course !== target.course) {
+      model.notice = { kind: "warn", text: m["editor.drop.target_missing"]() };
+      return;
+    }
+    const refs = courseChartRefsFromEntries(result.added, result.hints, model.entries);
+    const fresh = splitNewCourseCharts(course.charts, refs);
+    const addedCount = fresh.added.length;
+    const skippedCount = result.skipped + fresh.skipped;
+    if (addedCount > 0) {
+      model.captureForUndo();
+      for (const ref of fresh.added) {
+        addChartToCourse(model.courseModel, target.groupIndex, target.courseIndex, ref);
+      }
+      model.markDirty();
+    }
+    const missing = splitNewEntries(model.entries, result.added).added;
+    const hints = result.hints;
+    const notice: EditorNotice = {
+      kind: addedCount > 0 ? "ok" : "warn",
+      text: m["editor.drop.course_done"]({
+        name: target.label,
+        added: addedCount,
+        skipped: skippedCount,
+        failed: result.failed,
+      }),
+    };
+    if (missing.length > 0) {
+      notice.action = {
+        label: m["editor.drop.course_add_data"]({ count: missing.length }),
+        run: () => {
+          const { added, skipped } = splitNewEntries(model.entries, missing);
+          if (added.length > 0) {
+            model.entries = [...model.entries, ...added];
+            model.levelHints = { ...model.levelHints, ...hints };
+            model.markDirty();
+          }
+          model.notice = {
+            kind: added.length > 0 ? "ok" : "warn",
+            text: m["editor.drop.course_add_data_done"]({
+              added: added.length,
+              skipped,
+            }),
+          };
+        },
+      };
+    }
+    model.notice = notice;
   }
 
   // ---- 导入区按需加载（查看态不载入导入器包体） ----
@@ -361,12 +440,45 @@
 
   let cards = $state<TableCardId[]>([]);
   let addDrawerOpen = $state(false);
+  let dropTargetKey = $state<string | null>(null);
   let hiddenLevels = $state<Set<string>>(new Set());
   let hideUnassigned = $state(false);
 
   const courseCount = $derived(
     model.courseGroups.reduce((total, group) => total + group.length, 0)
   );
+
+  interface CourseDropTarget extends BmsDropTarget {
+    groupIndex: number;
+    courseIndex: number;
+    course: EditableCourse;
+  }
+
+  /** 段位行落点：key 与 CoursePanel 的行标识一致，entries 是段位判重基线。 */
+  const courseDropTargets = $derived.by<CourseDropTarget[]>(() => {
+    const targets: CourseDropTarget[] = [];
+    const nested = model.courseModel.shape === "nested";
+    model.courseModel.groups.forEach((group, groupIndex) => {
+      group.courses.forEach((course, courseIndex) => {
+        const courseName = course.name.trim() || m["course.unnamed"]();
+        targets.push({
+          key: `${groupIndex}:${courseIndex}`,
+          label: nested
+            ? `${m["editor.course.group"]({ index: groupIndex + 1 })} / ${courseName}`
+            : courseName,
+          entries: course.charts.map((chart) => ({ md5: chart.md5, sha256: chart.sha256 })),
+          groupIndex,
+          courseIndex,
+          course,
+        });
+      });
+    });
+    return targets;
+  });
+
+  $effect(() => {
+    if (!isEdit || !dataReady || addDrawerOpen) dropTargetKey = null;
+  });
 
   /** 卡的计数；data 未就绪时不显示。 */
   function sectionCount(id: TableCardId): number | undefined {
@@ -600,7 +712,9 @@
 {#if isEdit && dataReady}
   <BmsDropOverlay
     entries={model.entries}
+    targets={courseDropTargets}
     disabled={model.busy || addDrawerOpen}
+    onTargetChange={handleDropTargetChange}
     onadd={handlePageDrop}
   />
 {/if}
@@ -859,6 +973,7 @@
     dataReady={model.dataReady}
     nested={model.courseModel.shape === "nested"}
     disabled={isEdit ? model.busy || !dataReady : false}
+    {dropTargetKey}
     onChange={model.markDirty}
     onBeforeChange={model.captureForUndo}
     onNotice={(value: EditorNotice) => (model.notice = value)}

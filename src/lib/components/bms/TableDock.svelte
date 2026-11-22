@@ -14,7 +14,7 @@
   import { fly } from "svelte/transition";
 
   import ToggleButton from "#lib/components/ui/ToggleButton.svelte";
-  import { btnGhostMd, btnPrimary } from "#lib/constants/ui-classes.js";
+  import { btnGhostMd, btnGhostSm, btnPrimary } from "#lib/constants/ui-classes.js";
   import {
     applyDockScroll,
     createDockScrollState,
@@ -110,7 +110,7 @@
     copyMode,
   }: Props = $props();
 
-  /** 成功类 notice 的自动清除时延；warn 与 error 常驻到被下一次替换。 */
+  /** 成功类 notice 的自动清除时延；带动作的成功类通知跳过自动清除，warn 与 error 常驻到被下一次替换。 */
   const NOTICE_OK_TTL_MS = 8000;
 
   let editing = $derived(mode === "edit");
@@ -160,7 +160,7 @@
   // 成功类 notice 短暂展示后自动清除；期间被替换（引用不同）则不清除
   $effect(() => {
     const notice = model.notice;
-    if (notice === null || notice.kind !== "ok") return;
+    if (notice === null || notice.kind !== "ok" || notice.action !== undefined) return;
     const timer = window.setTimeout(() => {
       if (model.notice === notice) model.notice = null;
     }, NOTICE_OK_TTL_MS);
@@ -314,7 +314,7 @@
             <button
               class="{btnPrimary} w-full"
               type="button"
-              disabled={model.busy}
+              disabled={model.busy || model.saving}
               onclick={() => void model.save()}
             >
               <Save class="size-4 shrink-0" aria-hidden="true" />
@@ -325,7 +325,7 @@
             <button
               class="{btnGhostMd} w-full"
               type="button"
-              disabled={model.busy || !model.dataReady}
+              disabled={model.busy || model.saving || !model.dataReady}
               onclick={() => void model.saveAsSharedNow()}
             >
               <Copy class="size-4 shrink-0" aria-hidden="true" />
@@ -357,7 +357,7 @@
             <button
               class="{btnPrimary} w-full"
               type="button"
-              disabled={model.busy}
+              disabled={model.busy || model.saving}
               onclick={() => void model.save()}
             >
               <Save class="size-4 shrink-0" aria-hidden="true" />
@@ -367,7 +367,7 @@
           <button
             class="{btnGhostMd} w-full"
             type="button"
-            disabled={model.busy}
+            disabled={model.busy || model.saving}
             onclick={() => void model.discardEdits()}
           >
             <Undo2 class="size-4 shrink-0" aria-hidden="true" />
@@ -377,7 +377,7 @@
             <button
               class="{btnGhostMd} flex-1"
               type="button"
-              disabled={!model.canUndo}
+              disabled={!model.canUndo || model.saving}
               onclick={() => model.undo()}
             >
               <Undo2 class="size-4 shrink-0" aria-hidden="true" />
@@ -386,7 +386,7 @@
             <button
               class="{btnGhostMd} flex-1"
               type="button"
-              disabled={!model.canRedo}
+              disabled={!model.canRedo || model.saving}
               onclick={() => model.redo()}
             >
               <Redo2 class="size-4 shrink-0" aria-hidden="true" />
@@ -465,15 +465,26 @@
       {/if}
 
       {#if model.notice !== null}
+        {@const notice = model.notice}
         <div
-          class="mt-3 rounded-glass-sm border px-3 py-2 text-center text-[0.85rem] {model.notice
-            .kind === 'ok'
+          class="mt-3 rounded-glass-sm border px-3 py-2 text-center text-[0.85rem] {notice.kind ===
+          'ok'
             ? 'border-success/40 bg-success/10 text-success'
-            : model.notice.kind === 'warn'
+            : notice.kind === 'warn'
               ? 'border-warning/40 bg-warning/10 text-warning-light'
               : 'border-error/40 bg-error/10 text-error'}"
         >
-          {model.notice.text}
+          <p class="m-0">{notice.text}</p>
+          {#if notice.action !== undefined && editing}
+            <button
+              class="{btnGhostSm} mt-2"
+              type="button"
+              disabled={model.busy || model.saving}
+              onclick={notice.action.run}
+            >
+              {notice.action.label}
+            </button>
+          {/if}
         </div>
       {/if}
     </div>
@@ -508,7 +519,7 @@
         <button
           class={btnPrimary}
           type="button"
-          disabled={model.busy}
+          disabled={model.busy || model.saving}
           onclick={() => void model.save()}
         >
           <Save class="size-4 shrink-0" aria-hidden="true" />
@@ -536,7 +547,7 @@
         <button
           class={btnGhostMd}
           type="button"
-          disabled={model.busy}
+          disabled={model.busy || model.saving}
           onclick={() => void model.save()}
         >
           <Save class="size-4 shrink-0" aria-hidden="true" />

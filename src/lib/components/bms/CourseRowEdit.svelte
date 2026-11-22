@@ -3,8 +3,11 @@
   import {
     COURSE_CONSTRAINTS,
     TROPHY_NAMES,
+    courseChartRefsFromEntries,
     courseChartResolvedIn,
     courseHashIssue,
+    splitNewCourseCharts,
+    type CourseChartRef,
     type EditableCourse,
   } from "@brightmeows/bms/course";
   import { buildEntryHashSet, moveItem } from "@brightmeows/bms/editor";
@@ -14,7 +17,7 @@
   import Trash2 from "@lucide/svelte/icons/trash-2";
 
   import CourseChartLookup from "./CourseChartLookup.svelte";
-  import CourseChartPicker, { type CourseChartRef } from "./CourseChartPicker.svelte";
+  import CourseChartPicker from "./CourseChartPicker.svelte";
   import CourseRow from "./CourseRow.svelte";
   import DragHandle from "./DragHandle.svelte";
   import RowActionMenu from "./RowActionMenu.svelte";
@@ -30,7 +33,7 @@
   import type { EditorNotice } from "#lib/controllers/editor.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { DeepReadonly } from "#lib/types/bms-view.js";
-  import { decodeBmsFile } from "#lib/utils/infra/bms-drop.js";
+  import { isHashingAvailable, processBmsFiles } from "#lib/utils/infra/bms-drop.js";
   import { createDragList, type DragList } from "#lib/utils/ui/dnd-list.svelte.js";
 
   /**
@@ -52,6 +55,10 @@
     /** 组内拖拽：列表实例（把手用其 handle，行动作传 CourseRow）；未传不启用。 */
     dragList?: DragList | undefined;
     dragIndex?: number | undefined;
+    /** 文件落点 key；页面遮罩据此把文件路由到本课程。 */
+    dropKey?: string | undefined;
+    /** 页面遮罩解析到的活动文件落点是否为本行。 */
+    fileDropActive?: boolean | undefined;
     onToggle: () => void;
     onDelete: () => void;
     onMoveUp: () => void;
@@ -74,6 +81,8 @@
     canMoveDown,
     dragList = undefined,
     dragIndex = -1,
+    dropKey = undefined,
+    fileDropActive = false,
     onToggle,
     onDelete,
     onMoveUp,
@@ -174,27 +183,33 @@
 
   async function readCourseFiles(files: File[]): Promise<void> {
     if (disabled || fileBusy || files.length === 0) return;
+    if (!isHashingAvailable()) {
+      fileError = m["editor.drop.unavailable"]();
+      return;
+    }
     fileBusy = true;
     fileError = "";
-    let added = 0;
-    for (const file of files) {
-      const decoded = await decodeBmsFile(file);
-      if (decoded === null) {
-        fileError = m["editor.entry.file_failed"]();
-        continue;
+    try {
+      const known = course.charts.map((chart) => ({ md5: chart.md5, sha256: chart.sha256 }));
+      const result = await processBmsFiles(files, known);
+      const refs = courseChartRefsFromEntries(result.added, result.hints, entries);
+      const fresh = splitNewCourseCharts(course.charts, refs);
+      if (fresh.added.length > 0) addChartRows(fresh.added);
+      if (result.failed > 0) {
+        fileError = m["editor.course.file.failed"]({ failed: result.failed });
       }
-      const md5 = typeof decoded.entry.md5 === "string" ? decoded.entry.md5 : "";
-      const sha256 = typeof decoded.entry.sha256 === "string" ? decoded.entry.sha256 : "";
-      if (md5 === "" && sha256 === "") {
-        fileError = m["editor.entry.file_failed"]();
-        continue;
-      }
-      addChartRow(md5, sha256, decoded.levelHint);
-      added += 1;
-    }
-    fileBusy = false;
-    if (added > 0) {
-      onNotice?.({ kind: "ok", text: m["editor.course.file.done"]({ added }) });
+      onNotice?.({
+        kind: fresh.added.length > 0 ? "ok" : "warn",
+        text: m["editor.course.file.done"]({
+          added: fresh.added.length,
+          skipped: result.skipped + fresh.skipped,
+          failed: result.failed,
+        }),
+      });
+    } catch {
+      fileError = m["editor.entry.file_failed"]();
+    } finally {
+      fileBusy = false;
     }
   }
 
@@ -242,6 +257,8 @@
 
 <CourseRow
   {expanded}
+  {dropKey}
+  {fileDropActive}
   onDropChart={disabled ? undefined : onDropChart}
   dragItem={rowDrag?.dnd.item}
   dragIndex={rowDrag?.index}

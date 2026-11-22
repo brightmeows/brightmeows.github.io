@@ -15,6 +15,7 @@
 
 <script lang="ts">
   import { extractBmsIrSongMd5 } from "@brightmeows/bms/bms-ir";
+  import type { BmsDropResult } from "@brightmeows/bms/editor";
   import Braces from "@lucide/svelte/icons/braces";
   import FileUp from "@lucide/svelte/icons/file-up";
   import Link2 from "@lucide/svelte/icons/link-2";
@@ -40,8 +41,9 @@
   /** 统一添加谱面抽屉：本地文件、其他表、手工单条、JSON 追加四个来源。
    * 只负责选择来源与结果汇总；条目去重、写入与 dirty 由父级 onAdd 收口。
    * 添加后留在抽屉，可连续操作，用户自己关闭。
-   * 跨表来源（其他表 tab）覆盖镜像表与共享表；编辑态整页拖拽由
-   * utils/infra/bms-drop 管线承担，header/package 导入留在 dock 菜单。
+   * 跨表来源（其他表 tab）覆盖镜像表与共享表；抽屉内的本地文件拖拽由
+   * BmsDropZone 自管，页面遮罩在抽屉打开时禁用；header/package 导入留在
+   * dock 菜单。
    */
   let { entries, levels, disabled, onClose, onAdd }: AddChartsDrawerProps = $props();
 
@@ -82,13 +84,13 @@
     summary = m["editor.add.summary"]({ added, skipped });
   }
 
-  function handleDropAdd(result: {
-    added: Record<string, unknown>[];
-    hints: Record<string, string>;
-    skipped: number;
-  }): void {
+  function handleDropAdd(result: BmsDropResult): void {
     const outcome = onAdd(result.added, result.hints);
-    showSummary(outcome.added, result.skipped + outcome.skipped);
+    summary = m["editor.drop.done"]({
+      added: outcome.added,
+      skipped: result.skipped + outcome.skipped,
+      failed: result.failed,
+    });
   }
 
   function handleEntryImport(result: { added: Record<string, unknown>[]; skipped: number }): void {
@@ -269,7 +271,7 @@
 
       <div class="mt-4">
         {#if tab === "files"}
-          <BmsDropZone {entries} {disabled} onadd={handleDropAdd} />
+          <BmsDropZone {entries} {disabled} onadd={handleDropAdd} selfHandle />
         {:else if tab === "tables"}
           <TableEntryImportPanel
             {entries}

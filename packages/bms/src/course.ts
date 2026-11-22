@@ -4,7 +4,7 @@
  * charts/md5/sha256 归一到统一的编辑行，序列化时统一写为 `charts`。
  */
 
-import { hashFormatOk, moveItem } from "./editor.ts";
+import { findChartByHashes, hashFormatOk, moveItem } from "./editor.ts";
 
 /**
  * 段位约束词表与标准奖牌名：单一来源是 mirror/shared-strict 的
@@ -263,6 +263,68 @@ export interface CourseChartRef {
   md5: string;
   sha256: string;
   levelText: string;
+}
+
+/**
+ * 从 BMS 文件解析结果生成段位谱面引用：文件命中当前表条目时沿用条目的
+ * level，否则回退到文件内 #PLAYLEVEL 建议。无哈希的条目跳过。
+ */
+export function courseChartRefsFromEntries(
+  added: readonly Record<string, unknown>[],
+  hints: Readonly<Record<string, string>>,
+  dataEntries: readonly Record<string, unknown>[]
+): CourseChartRef[] {
+  const refs: CourseChartRef[] = [];
+  for (const entry of added) {
+    const md5 = typeof entry.md5 === "string" ? entry.md5 : "";
+    const sha256 = typeof entry.sha256 === "string" ? entry.sha256 : "";
+    if (md5.trim() === "" && sha256.trim() === "") continue;
+    const current = findChartByHashes(dataEntries, { md5, sha256 });
+    const currentLevel = current?.level;
+    const levelText =
+      typeof currentLevel === "string" && currentLevel.trim() !== ""
+        ? currentLevel
+        : typeof currentLevel === "number"
+          ? String(currentLevel)
+          : (hints[md5.trim().toLowerCase()] ?? "").trim();
+    refs.push({ md5, sha256, levelText });
+  }
+  return refs;
+}
+
+/**
+ * 按目标课程当前谱面重新判重：异步解析前取得的 known 集合可能已过期，
+ * 写入前用它剔除并发入口已加入的同一谱面，并同步批内互重。
+ */
+export function splitNewCourseCharts(
+  current: readonly { readonly md5: string; readonly sha256: string }[],
+  incoming: readonly CourseChartRef[]
+): { added: CourseChartRef[]; skipped: number } {
+  const known = new Set<string>();
+  for (const chart of current) {
+    const md5 = chart.md5.trim().toLowerCase();
+    const sha256 = chart.sha256.trim().toLowerCase();
+    if (md5 !== "") known.add(md5);
+    if (sha256 !== "") known.add(sha256);
+  }
+  const added: CourseChartRef[] = [];
+  let skipped = 0;
+  for (const chart of incoming) {
+    const md5 = chart.md5.trim().toLowerCase();
+    const sha256 = chart.sha256.trim().toLowerCase();
+    if (md5 === "" && sha256 === "") {
+      skipped += 1;
+      continue;
+    }
+    if ((md5 !== "" && known.has(md5)) || (sha256 !== "" && known.has(sha256))) {
+      skipped += 1;
+      continue;
+    }
+    if (md5 !== "") known.add(md5);
+    if (sha256 !== "") known.add(sha256);
+    added.push(chart);
+  }
+  return { added, skipped };
 }
 
 /**
