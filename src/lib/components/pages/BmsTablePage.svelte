@@ -32,6 +32,7 @@
   import {
     addChartToCourse,
     courseChartRefsFromEntries,
+    splitNewCourseCharts,
     type EditableCourse,
   } from "@brightmeows/bms/course";
   import { splitNewEntries, type BmsDropResult } from "@brightmeows/bms/editor";
@@ -334,9 +335,12 @@
       return;
     }
     const refs = courseChartRefsFromEntries(result.added, result.hints, model.entries);
-    if (refs.length > 0) {
+    const fresh = splitNewCourseCharts(course.charts, refs);
+    const addedCount = fresh.added.length;
+    const skippedCount = result.skipped + fresh.skipped;
+    if (addedCount > 0) {
       model.captureForUndo();
-      for (const ref of refs) {
+      for (const ref of fresh.added) {
         addChartToCourse(model.courseModel, target.groupIndex, target.courseIndex, ref);
       }
       model.markDirty();
@@ -344,11 +348,11 @@
     const missing = splitNewEntries(model.entries, result.added).added;
     const hints = result.hints;
     const notice: EditorNotice = {
-      kind: refs.length > 0 ? "ok" : "warn",
+      kind: addedCount > 0 ? "ok" : "warn",
       text: m["editor.drop.course_done"]({
         name: target.label,
-        added: refs.length,
-        skipped: result.skipped,
+        added: addedCount,
+        skipped: skippedCount,
         failed: result.failed,
       }),
     };

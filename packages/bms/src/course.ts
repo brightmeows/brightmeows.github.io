@@ -293,6 +293,41 @@ export function courseChartRefsFromEntries(
 }
 
 /**
+ * 按目标课程当前谱面重新判重：异步解析前取得的 known 集合可能已过期，
+ * 写入前用它剔除并发入口已加入的同一谱面，并同步批内互重。
+ */
+export function splitNewCourseCharts(
+  current: readonly { readonly md5: string; readonly sha256: string }[],
+  incoming: readonly CourseChartRef[]
+): { added: CourseChartRef[]; skipped: number } {
+  const known = new Set<string>();
+  for (const chart of current) {
+    const md5 = chart.md5.trim().toLowerCase();
+    const sha256 = chart.sha256.trim().toLowerCase();
+    if (md5 !== "") known.add(md5);
+    if (sha256 !== "") known.add(sha256);
+  }
+  const added: CourseChartRef[] = [];
+  let skipped = 0;
+  for (const chart of incoming) {
+    const md5 = chart.md5.trim().toLowerCase();
+    const sha256 = chart.sha256.trim().toLowerCase();
+    if (md5 === "" && sha256 === "") {
+      skipped += 1;
+      continue;
+    }
+    if ((md5 !== "" && known.has(md5)) || (sha256 !== "" && known.has(sha256))) {
+      skipped += 1;
+      continue;
+    }
+    if (md5 !== "") known.add(md5);
+    if (sha256 !== "") known.add(sha256);
+    added.push(chart);
+  }
+  return { added, skipped };
+}
+
+/**
  * 把一条谱面引用追加到指定段位；组或课程越界时返回 false，不改变模型。
  * 段位与谱面列表保持独立，这里只写段位行。
  */

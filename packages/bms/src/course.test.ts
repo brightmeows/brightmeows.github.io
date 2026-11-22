@@ -17,6 +17,7 @@ import {
   removeCourseFromModel,
   removeGroupFromModel,
   serializeCourse,
+  splitNewCourseCharts,
   type EditableCourse,
 } from "./course.ts";
 import { buildEntryHashSet } from "./editor.ts";
@@ -281,5 +282,33 @@ describe("courseChartRefsFromEntries", () => {
     expect(
       courseChartRefsFromEntries([{ md5, sha256 }, { title: "no hash" }], {}, [{ md5, level: 7 }])
     ).toEqual([{ md5, sha256, levelText: "7" }]);
+  });
+});
+
+describe("splitNewCourseCharts", () => {
+  const md5 = "a".repeat(32);
+  const sha256 = "b".repeat(64);
+
+  it("skips existing and batch duplicate hashes", () => {
+    const incoming = [
+      { md5: md5.toUpperCase(), sha256: "", levelText: "" },
+      { md5: "", sha256, levelText: "" },
+      { md5: "", sha256: sha256.toUpperCase(), levelText: "" },
+      { md5: "", sha256: "", levelText: "" },
+      { md5: "c".repeat(32), sha256: "", levelText: "" },
+    ];
+    expect(splitNewCourseCharts([{ md5, sha256: "" }], incoming)).toEqual({
+      added: [incoming[1], incoming[4]],
+      skipped: 3,
+    });
+  });
+
+  it("matches sha256-only current charts", () => {
+    expect(
+      splitNewCourseCharts(
+        [{ md5: "", sha256 }],
+        [{ md5: "", sha256: sha256.toUpperCase(), levelText: "" }]
+      )
+    ).toEqual({ added: [], skipped: 1 });
   });
 });

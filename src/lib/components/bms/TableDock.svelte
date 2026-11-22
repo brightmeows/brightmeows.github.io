@@ -314,7 +314,7 @@
             <button
               class="{btnPrimary} w-full"
               type="button"
-              disabled={model.busy}
+              disabled={model.busy || model.saving}
               onclick={() => void model.save()}
             >
               <Save class="size-4 shrink-0" aria-hidden="true" />
@@ -325,7 +325,7 @@
             <button
               class="{btnGhostMd} w-full"
               type="button"
-              disabled={model.busy || !model.dataReady}
+              disabled={model.busy || model.saving || !model.dataReady}
               onclick={() => void model.saveAsSharedNow()}
             >
               <Copy class="size-4 shrink-0" aria-hidden="true" />
@@ -357,7 +357,7 @@
             <button
               class="{btnPrimary} w-full"
               type="button"
-              disabled={model.busy}
+              disabled={model.busy || model.saving}
               onclick={() => void model.save()}
             >
               <Save class="size-4 shrink-0" aria-hidden="true" />
@@ -367,7 +367,7 @@
           <button
             class="{btnGhostMd} w-full"
             type="button"
-            disabled={model.busy}
+            disabled={model.busy || model.saving}
             onclick={() => void model.discardEdits()}
           >
             <Undo2 class="size-4 shrink-0" aria-hidden="true" />
@@ -377,7 +377,7 @@
             <button
               class="{btnGhostMd} flex-1"
               type="button"
-              disabled={!model.canUndo}
+              disabled={!model.canUndo || model.saving}
               onclick={() => model.undo()}
             >
               <Undo2 class="size-4 shrink-0" aria-hidden="true" />
@@ -386,7 +386,7 @@
             <button
               class="{btnGhostMd} flex-1"
               type="button"
-              disabled={!model.canRedo}
+              disabled={!model.canRedo || model.saving}
               onclick={() => model.redo()}
             >
               <Redo2 class="size-4 shrink-0" aria-hidden="true" />
@@ -476,7 +476,12 @@
         >
           <p class="m-0">{notice.text}</p>
           {#if notice.action !== undefined && editing}
-            <button class="{btnGhostSm} mt-2" type="button" onclick={notice.action.run}>
+            <button
+              class="{btnGhostSm} mt-2"
+              type="button"
+              disabled={model.busy || model.saving}
+              onclick={notice.action.run}
+            >
               {notice.action.label}
             </button>
           {/if}
@@ -514,7 +519,7 @@
         <button
           class={btnPrimary}
           type="button"
-          disabled={model.busy}
+          disabled={model.busy || model.saving}
           onclick={() => void model.save()}
         >
           <Save class="size-4 shrink-0" aria-hidden="true" />
@@ -542,7 +547,7 @@
         <button
           class={btnGhostMd}
           type="button"
-          disabled={model.busy}
+          disabled={model.busy || model.saving}
           onclick={() => void model.save()}
         >
           <Save class="size-4 shrink-0" aria-hidden="true" />

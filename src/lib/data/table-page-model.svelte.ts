@@ -85,6 +85,20 @@ export interface TableModelInput {
   confirm?: (() => (message: string) => Promise<boolean>) | undefined;
 }
 
+/** 保存成功后的基线快照：取实际提交的 header 与 data，不用完成时的当前模型。 */
+function savedSnapshot(header: Record<string, unknown>, data: Record<string, unknown>[]) {
+  const savedHeader = editorHeaderState(header);
+  return {
+    name: savedHeader.name,
+    symbol: savedHeader.symbol,
+    tag: savedHeader.tag,
+    headerMode: savedHeader.mode,
+    levels: savedHeader.levels,
+    entries: data,
+    course: savedHeader.courseModel,
+  };
+}
+
 /** 难度表页内存模型工厂：两段式加载、草稿与保存发布的响应式编排（输入经 getter 保持响应式）。 */
 export function createTableModel(input: TableModelInput) {
   const source = input.source;
@@ -120,6 +134,8 @@ export function createTableModel(input: TableModelInput) {
 
   // ---- 编辑与保存状态（草稿域状态在 createDraftLifecycle） ----
   let busy = $state(false);
+  /** 保存规划到提交完成期间为 true；通知动作等异步写入口据此禁用。 */
+  let saving = $state(false);
   let baselineUpdatedAt = $state<string | undefined>(undefined);
   let notice = $state<EditorNotice | null>(null);
 
@@ -281,32 +297,42 @@ export function createTableModel(input: TableModelInput) {
       await saveAsSharedNow();
       return;
     }
-    if (busy || onSave === undefined || !canWrite) return;
-    const plan = await planEditorSave({
-      header: buildHeader(),
-      entries,
-      baselineUpdatedAt,
-      conflictCheck,
-      confirm: (message) => askConfirm(message),
-    });
-    if (plan.kind === "rejected") {
-      notice = plan.notice;
-      return;
+    if (busy || saving || onSave === undefined || !canWrite) return;
+    saving = true;
+    try {
+      const plan = await planEditorSave({
+        header: buildHeader(),
+        entries,
+        baselineUpdatedAt,
+        conflictCheck,
+        confirm: (message) => askConfirm(message),
+      });
+      if (plan.kind === "rejected") {
+        notice = plan.notice;
+        return;
+      }
+      busy = true;
+      try {
+        // 强验证警告不阻断：放行的同时给出警告清单，成功通知随后替换
+        notice =
+          plan.warnings.length > 0
+            ? { kind: "warn", text: strictWarningsNotice(plan.warnings) }
+            : null;
+        const outcome = await commitEditorSave({ plan, onSave, deleteDraft, draftKey });
+        if (outcome.kind === "saved") {
+          if (outcome.nextBaseline !== undefined) baselineUpdatedAt = outcome.nextBaseline;
+          drafts.markSaved();
+          historyDomain.commitBaseline(savedSnapshot(plan.header, plan.data));
+          notice = { kind: "ok", text: m["editor.save.done"]({ count: outcome.count }) };
+        } else {
+          notice = { kind: "error", text: outcome.text };
+        }
+      } finally {
+        busy = false;
+      }
+    } finally {
+      saving = false;
     }
-    busy = true;
-    // 强验证警告不阻断：放行的同时给出警告清单，成功通知随后替换
-    notice =
-      plan.warnings.length > 0 ? { kind: "warn", text: strictWarningsNotice(plan.warnings) } : null;
-    const outcome = await commitEditorSave({ plan, onSave, deleteDraft, draftKey });
-    if (outcome.kind === "saved") {
-      if (outcome.nextBaseline !== undefined) baselineUpdatedAt = outcome.nextBaseline;
-      drafts.markSaved();
-      historyDomain.commitBaseline();
-      notice = { kind: "ok", text: m["editor.save.done"]({ count: outcome.count }) };
-    } else {
-      notice = { kind: "error", text: outcome.text };
-    }
-    busy = false;
   }
 
   async function saveAsSharedNow(): Promise<void> {
@@ -517,6 +543,9 @@ export function createTableModel(input: TableModelInput) {
     redo: historyDomain.redo,
     get busy() {
       return busy;
+    },
+    get saving() {
+      return saving;
     },
     get pendingDraft() {
       return drafts.pendingDraft;

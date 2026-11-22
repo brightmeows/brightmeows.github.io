@@ -6,6 +6,7 @@
     courseChartRefsFromEntries,
     courseChartResolvedIn,
     courseHashIssue,
+    splitNewCourseCharts,
     type CourseChartRef,
     type EditableCourse,
   } from "@brightmeows/bms/course";
@@ -192,15 +193,16 @@
       const known = course.charts.map((chart) => ({ md5: chart.md5, sha256: chart.sha256 }));
       const result = await processBmsFiles(files, known);
       const refs = courseChartRefsFromEntries(result.added, result.hints, entries);
-      if (refs.length > 0) addChartRows(refs);
+      const fresh = splitNewCourseCharts(course.charts, refs);
+      if (fresh.added.length > 0) addChartRows(fresh.added);
       if (result.failed > 0) {
         fileError = m["editor.course.file.failed"]({ failed: result.failed });
       }
       onNotice?.({
-        kind: refs.length > 0 ? "ok" : "warn",
+        kind: fresh.added.length > 0 ? "ok" : "warn",
         text: m["editor.course.file.done"]({
-          added: refs.length,
-          skipped: result.skipped,
+          added: fresh.added.length,
+          skipped: result.skipped + fresh.skipped,
           failed: result.failed,
         }),
       });

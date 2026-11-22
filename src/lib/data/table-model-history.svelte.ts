@@ -54,9 +54,12 @@ export function createHistoryLifecycle(deps: HistoryLifecycleDeps) {
     return { ...current, course: $state.snapshot(current.course) };
   }
 
-  function captureBaseline(): BaselineSnapshot {
-    const snapshot = captureSnapshot();
+  function baselineOf(snapshot: EditSnapshot): BaselineSnapshot {
     return { ...snapshot, courseSerialized: JSON.stringify(serializeCourse(snapshot.course)) };
+  }
+
+  function captureBaseline(): BaselineSnapshot {
+    return baselineOf(captureSnapshot());
   }
 
   /** 操作前压当前快照进撤销栈；同键且静默窗口内的连续输入合并为一条。 */
@@ -116,9 +119,12 @@ export function createHistoryLifecycle(deps: HistoryLifecycleDeps) {
     history = emptyHistory();
   });
 
-  /** 保存成功：基线推进到已保存内容并清会话历史（undo 不得撤回已落库内容）。 */
-  function commitBaseline(): void {
-    baseline = captureBaseline();
+  /**
+   * 保存成功：基线推进到实际提交的快照并清会话历史（undo 不得撤回已落库内容）。
+   * 保存规划期间模型可能被其他操作改动，不能拿完成时的当前状态当基线。
+   */
+  function commitBaseline(snapshot?: EditSnapshot): void {
+    baseline = snapshot === undefined ? captureBaseline() : baselineOf(snapshot);
     history = emptyHistory();
   }
 
