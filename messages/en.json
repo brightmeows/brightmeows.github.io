@@ -344,6 +344,7 @@
   "editor.entries.select_row": "Select entry",
   "editor.entries.selected": "{count} selected",
   "editor.entry.add_title": "Add entry",
+  "editor.entry.edit_panel_aria": "Entry details being edited",
   "editor.entry.advanced": "Advanced fields",
   "editor.entry.bmsir_add": "Add from URL",
   "editor.entry.course_add": "Add to course",

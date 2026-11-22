@@ -140,6 +140,9 @@
   let selected = $state<Set<number>>(new Set());
   let editingIndex = $state<number | null>(null);
   let editKey = $state(0);
+  let innerWidth = $state(0);
+  /** 窄屏（表格容器横向滚动）下编辑表单脱离表格，在表格下方全宽渲染。 */
+  let narrowEditor = $derived(innerWidth < 800);
 
   // 模型侧 undo/redo 与草稿恢复会整体替换 entries：按上一轮数组取出对象身份，
   // 在新数组里重定位编辑中行与勾选；找不到的对象复位（表单收起、勾选剔除）。
@@ -666,6 +669,12 @@
   function startEdit(index: number): void {
     editingIndex = index;
     editKey += 1;
+    if (narrowEditor) {
+      void tick().then(() => {
+        document.getElementById("entry-edit-panel")?.focus();
+        document.getElementById("entry-edit-panel")?.scrollIntoView({ block: "center" });
+      });
+    }
   }
 
   /** 编辑中条目在所属等级组内上移或下移；保持详情表单跟随移动后的行。 */
@@ -826,6 +835,8 @@
     if (editingIndex !== null) removeEntry(editingIndex);
   }
 </script>
+
+<svelte:window bind:innerWidth />
 
 <div class="flex flex-col gap-3">
   {#if loadState === "idle" || loadState === "loading"}
@@ -1071,7 +1082,7 @@
           </td>
         </tr>
       {/if}
-      {#if editing && editingIndex === item.index}
+      {#if editing && editingIndex === item.index && !narrowEditor}
         <tr>
           <td colspan={columnCount} class="table-td-compact">
             {#key editKey}
@@ -1218,6 +1229,29 @@
         {/if}
       </table>
     </div>
+    {#if editing && narrowEditor && editingIndex !== null}
+      <div
+        id="entry-edit-panel"
+        class="mt-3 rounded-glass-md border border-white-15 bg-glass p-3 outline-none"
+        tabindex="-1"
+        aria-label={m["editor.entry.edit_panel_aria"]()}
+      >
+        {#key editKey}
+          <EntryDetailForm
+            entry={entries[editingIndex] ?? null}
+            {levels}
+            {disabled}
+            oncommit={commitDetail}
+            oncancel={cancelDetail}
+            ondelete={deleteEditing}
+            onmoveup={() => moveEditing(-1)}
+            onmovedown={() => moveEditing(1)}
+            canmoveup={editingMove?.canUp ?? false}
+            canmovedown={editingMove?.canDown ?? false}
+          />
+        {/key}
+      </div>
+    {/if}
     <JsonPreview bind:this={chartPreview} />
   {/if}
 </div>

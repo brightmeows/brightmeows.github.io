@@ -344,6 +344,7 @@
   "editor.entries.select_row": "このエントリを選択",
   "editor.entries.selected": "{count} 件選択中",
   "editor.entry.add_title": "エントリを追加",
+  "editor.entry.edit_panel_aria": "編集中の譜面の詳細",
   "editor.entry.advanced": "詳細フィールド",
   "editor.entry.bmsir_add": "URL から追加",
   "editor.entry.course_add": "コースに追加",
