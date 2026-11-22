@@ -96,11 +96,13 @@ export function createHistoryLifecycle(deps: HistoryLifecycleDeps) {
     const base = baseline;
     if (base === null) return deps.baselineAbsentDirty();
     const current = deps.current();
+    // buildEditorHeader 对核心文本字段 trim 后落库；基线可能来自已 trim 的保存
+    // 载荷，比较时两侧统一 trim，避免保存后因表单保留空白而永久判脏。
     return (
-      current.name !== base.name ||
-      current.symbol !== base.symbol ||
-      current.tag !== base.tag ||
-      current.headerMode !== base.headerMode ||
+      current.name.trim() !== base.name.trim() ||
+      current.symbol.trim() !== base.symbol.trim() ||
+      current.tag.trim() !== base.tag.trim() ||
+      current.headerMode.trim() !== base.headerMode.trim() ||
       current.levels.length !== base.levels.length ||
       current.levels.some((level, index) => base.levels[index] !== level) ||
       current.entries !== base.entries ||

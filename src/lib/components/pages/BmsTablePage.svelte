@@ -313,16 +313,17 @@
   }
 
   function handleDataDrop(result: BmsDropResult): void {
-    if (result.added.length > 0) {
-      model.entries = [...model.entries, ...result.added];
+    const fresh = splitNewEntries(model.entries, result.added);
+    if (fresh.added.length > 0) {
+      model.entries = [...model.entries, ...fresh.added];
       model.levelHints = { ...model.levelHints, ...result.hints };
       model.markDirty();
     }
     model.notice = {
-      kind: result.added.length > 0 ? "ok" : "warn",
+      kind: fresh.added.length > 0 ? "ok" : "warn",
       text: m["editor.drop.done"]({
-        added: result.added.length,
-        skipped: result.skipped,
+        added: fresh.added.length,
+        skipped: result.skipped + fresh.skipped,
         failed: result.failed,
       }),
     };

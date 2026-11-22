@@ -99,6 +99,11 @@ function savedSnapshot(header: Record<string, unknown>, data: Record<string, unk
   };
 }
 
+/** 保存期间冻结撤销/重做；快捷键与面板按钮共用。 */
+function historyAction(saving: boolean, run: () => void): void {
+  if (!saving) run();
+}
+
 /** 难度表页内存模型工厂：两段式加载、草稿与保存发布的响应式编排（输入经 getter 保持响应式）。 */
 export function createTableModel(input: TableModelInput) {
   const source = input.source;
@@ -134,8 +139,7 @@ export function createTableModel(input: TableModelInput) {
 
   // ---- 编辑与保存状态（草稿域状态在 createDraftLifecycle） ----
   let busy = $state(false);
-  /** 保存规划到提交完成期间为 true；通知动作等异步写入口据此禁用。 */
-  let saving = $state(false);
+  let saving = $state(false); // 保存规划到提交完成期间为 true；通知动作等异步写入口据此禁用。
   let baselineUpdatedAt = $state<string | undefined>(undefined);
   let notice = $state<EditorNotice | null>(null);
 
@@ -312,25 +316,22 @@ export function createTableModel(input: TableModelInput) {
         return;
       }
       busy = true;
-      try {
-        // 强验证警告不阻断：放行的同时给出警告清单，成功通知随后替换
-        notice =
-          plan.warnings.length > 0
-            ? { kind: "warn", text: strictWarningsNotice(plan.warnings) }
-            : null;
-        const outcome = await commitEditorSave({ plan, onSave, deleteDraft, draftKey });
-        if (outcome.kind === "saved") {
-          if (outcome.nextBaseline !== undefined) baselineUpdatedAt = outcome.nextBaseline;
-          drafts.markSaved();
-          historyDomain.commitBaseline(savedSnapshot(plan.header, plan.data));
-          notice = { kind: "ok", text: m["editor.save.done"]({ count: outcome.count }) };
-        } else {
-          notice = { kind: "error", text: outcome.text };
-        }
-      } finally {
-        busy = false;
+      // 强验证警告不阻断：放行的同时给出警告清单，成功通知随后替换
+      notice =
+        plan.warnings.length > 0
+          ? { kind: "warn", text: strictWarningsNotice(plan.warnings) }
+          : null;
+      const outcome = await commitEditorSave({ plan, onSave, deleteDraft, draftKey });
+      if (outcome.kind === "saved") {
+        if (outcome.nextBaseline !== undefined) baselineUpdatedAt = outcome.nextBaseline;
+        drafts.markSaved();
+        historyDomain.commitBaseline(savedSnapshot(plan.header, plan.data));
+        notice = { kind: "ok", text: m["editor.save.done"]({ count: outcome.count }) };
+      } else {
+        notice = { kind: "error", text: outcome.text };
       }
     } finally {
+      busy = false;
       saving = false;
     }
   }
@@ -539,8 +540,9 @@ export function createTableModel(input: TableModelInput) {
       return historyDomain.canRedo;
     },
     captureForUndo: historyDomain.captureForUndo,
-    undo: historyDomain.undo,
-    redo: historyDomain.redo,
+    // 保存规划与提交期间冻结撤销/重做，快捷键与面板按钮共用此入口。
+    undo: () => historyAction(saving, historyDomain.undo),
+    redo: () => historyAction(saving, historyDomain.redo),
     get busy() {
       return busy;
     },
