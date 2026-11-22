@@ -7,6 +7,7 @@ import {
   undoSnapshot,
   type HistoryState,
 } from "@brightmeows/bms/history";
+import { untrack } from "svelte";
 
 /**
  * 编辑会话历史子模型：撤销/重做快照栈与基线（行为冻结拆分，与 loader/drafts
@@ -117,7 +118,9 @@ export function createHistoryLifecycle(deps: HistoryLifecycleDeps) {
   // 草稿恢复不算基线，基线停留远端态，恢复后即为“有修改”。
   $effect(() => {
     if (!deps.baselineReady()) return;
-    baseline = captureBaseline();
+    // 只随 baselineReady 翻转记一次；captureBaseline 会读 entries 等状态，
+    // 不 untrack 的话任何编辑都会重记基线并清空撤销栈。
+    baseline = untrack(captureBaseline);
     history = emptyHistory();
   });
 
