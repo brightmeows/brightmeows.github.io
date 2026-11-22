@@ -44,8 +44,10 @@ jobs:
           node-version-file: .nvmrc
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
-      # 每个 flavor 在独立 runner 单独 build（BUILD_OUT 带 locale 子层，与
-      # build-site.ts 的中间目录约定一致，artifact 汇合后 verify 可直接组装）；
+      # 每个 flavor 在独立 runner 单独 build：三 flavor 的 .svelte-kit 与
+      # src/lib/paraglide 中间输出路径固定，同 runner 并发 build 会互踩出
+      # 语言互串的产物，runner 隔离是结构性解法（BUILD_OUT 带 locale 子层，
+      # 与 build-site.ts 的中间目录约定一致，artifact 汇合后 verify 可直接组装）；
       # BUILD_VERSION 用 run_id 保证三个 job 注入同一个值（见 build-site.ts 头注）
       - run: pnpm build:flavor
         env:

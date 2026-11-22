@@ -16,8 +16,8 @@
 
 ## Commands
 
-- `pnpm build`：多语构建入口（`scripts/build-site.ts`）：en、zh-cn、ja 三个主站 flavor 各跑一遍（各自经 `BUILD_OUT` 落临时目录）。
-  - 组装结构、多语 chunk 合并与版本注入细节见 `scripts/build-site.ts` 头注。
+- `pnpm build`：多语构建入口（`scripts/build-site.ts`）：en、zh-cn、ja 三个主站 flavor 各跑一遍（各自经 `BUILD_OUT` 落临时目录）后组装。
+  - 组装结构、多语 chunk 合并与版本坑见 `scripts/assemble-site.ts` 头注；`node scripts/assemble-site.ts` 单独跑组装（CI verify job 的 matrix 路径：flavor 在独立 runner 单遍 build，artifact 汇合后组装，不经 `pnpm build`）。
   - `pnpm build:flavor` 跑单遍。
 - `node scripts/fetch-tables.ts`：本地跑数据管线（基线经 rclone 同步自 R2，用户层经站点 Worker 的内部接口读取，需要 `INTERNAL_API_TOKEN`；写表数据与索引两个 R2 前缀加 `warnings.log`；产物已 gitignore）
 - `node scripts/fetch-table-once.ts --url=<表源> --request-id=<id> --out-dir=./out`：单表抓取（复用管线抓取与命名逻辑）：数据目录供 `fetch-table` 工作流上传到 R2，抓取结果与状态经内部接口写进 D1

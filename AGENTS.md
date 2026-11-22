@@ -134,7 +134,10 @@ vitest 覆盖 `src/lib/utils/`、`src/lib/data/` 的纯逻辑、`src/lib/control
 
 ### CI 与 Deploy
 
-CI 的 lint/test/format 不依赖 build 产物（把构建产物目录移走后全部通过），因此只有 check job 跑一次 `pnpm build`，作为 CI 里唯一的构建验证点（frontmatter 校验、构建期数据加载与打包错误都在这里暴露）。
+CI 的 lint/test/format 不依赖 build 产物（把构建产物目录移走后全部通过），构建验证集中在 build-flavor 加 verify 两个 job。
+
+- build-flavor 按 locale matrix 拆三个 runner 各自单遍 `pnpm build:flavor`：三个 flavor 的 `.svelte-kit` 与 `src/lib/paraglide` 中间输出路径固定，同 runner 并发会互踩出语言互串的产物，runner 隔离是结构性解法。
+- verify 经 artifact 汇合各 flavor 后跑 `node scripts/assemble-site.ts` 组装，再跑 svelte-check 与各 `check:*`，是 CI 里完整产物组装的唯一验证点（组装、frontmatter 校验、构建期数据加载与打包错误都在这里暴露）。
 
 - Deploy 只做 build 与部署，不重复 lint/check/test：main 的每次提交已由 PR 必过门槛与 push 触发的 CI 覆盖，所有变更都经 PR。列表变动只影响运行时读取，不再触发部署。
 - 各工作流持有独立 concurrency group：CI 取消被取代的旧运行，Deploy 排队串行（避免旧提交的部署最后完成、覆盖新版本）。
@@ -253,7 +256,7 @@ CI 的 lint/test/format 不依赖 build 产物（把构建产物目录移走后�
 
 - **新分支在 `.worktrees/` 隔离开发**：`.worktrees/` 已 gitignore，用 `git worktree add .worktrees/<分支名> -b <分支>` 创建，不在主工作树上直接切分支。
 - **合并闸门：PR + CI + 用户授权**。main 不接受直接 push，一切变更经 PR 合并，代理会话不在 main 上直接提交。
-  - ruleset `main-branch-protection` 机械强制：禁直推、禁删除、禁 force push，PR 合并方式仅限 merge commit，CI 的 lint/check/test/format/commit-msg 五个 job 必过。
+  - ruleset `main-branch-protection` 机械强制：禁直推、禁删除、禁 force push，PR 合并方式仅限 merge commit，CI 的 lint、build-flavor (en/zh-cn/ja)、verify、test、format、commit-msg 八个 context 必过。
   - 用户授权是流程约定，GitHub 侧没有机械闸：单人仓库里作者不能批准自己的 PR，`required_approving_review_count` 保持 0。代理开 PR 后、执行 `gh pr merge` 前，把 PR 链接、变更摘要与检查结果交给用户，等明确授权再合并。
   - dependabot 的 patch/minor 与安全更新由 `dependabot-auto-merge.yml` 自动合并，major 更新留用户手动审阅合并。
 - **分支合并即清理**：分支经 PR 合并后立即清理现场，不留挂起引用。
