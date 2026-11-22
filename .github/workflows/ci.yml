@@ -30,7 +30,10 @@ jobs:
       - run: pnpm check:ui
       - run: pnpm check:colors
 
-  check:
+  build-flavor:
+    strategy:
+      matrix:
+        locale: [en, zh-cn, ja]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -41,9 +44,41 @@ jobs:
           node-version-file: .nvmrc
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
-      # CI 里唯一的构建验证点：frontmatter 校验、构建期数据加载与打包错误都在
-      # 这里暴露（lint/test/format 不依赖 build 产物）
-      - run: pnpm build
+      # 每个 flavor 在独立 runner 单独 build（BUILD_OUT 带 locale 子层，与
+      # build-site.ts 的中间目录约定一致，artifact 汇合后 verify 可直接组装）；
+      # BUILD_VERSION 用 run_id 保证三个 job 注入同一个值（见 build-site.ts 头注）
+      - run: pnpm build:flavor
+        env:
+          BUILD_OUT: .build-out/${{ matrix.locale }}
+          PUBLIC_SITE_LOCALE: ${{ matrix.locale }}
+          BUILD_VERSION: ${{ github.run_id }}
+      # .build-out 是 hidden 目录，v4.4 起 hidden files 默认排除，必须显式打开
+      - uses: actions/upload-artifact@v7
+        with:
+          name: build-out-${{ matrix.locale }}
+          path: .build-out
+          include-hidden-files: true
+
+  verify:
+    needs: build-flavor
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      # CI 里唯一的构建验证点：多语组装、frontmatter 校验、构建期数据加载与
+      # 打包错误都在这里暴露（lint/test/format 不依赖 build 产物）
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: build-out-*
+          path: .build-out
+          merge-multiple: true
+      - run: node scripts/assemble-site.ts
       - run: pnpm check
       - run: pnpm check:worker
       - run: pnpm check:mirror
