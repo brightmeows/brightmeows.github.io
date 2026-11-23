@@ -1028,6 +1028,8 @@
   <EntriesPanel
     editing={isEdit}
     bind:entries={model.entries}
+    bind:staged={model.staging.staged}
+    stagedEpoch={model.staging.epoch}
     levels={model.levels}
     symbol={model.symbol}
     bind:levelHints={model.levelHints}

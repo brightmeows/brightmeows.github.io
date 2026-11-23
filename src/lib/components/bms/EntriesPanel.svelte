@@ -1,5 +1,10 @@
 <script lang="ts">
-  import { addChartToCourse, type CourseModel } from "@brightmeows/bms/course";
+  import {
+    addChartToCourse,
+    addChartsToCourse,
+    type CourseChartRef,
+    type CourseModel,
+  } from "@brightmeows/bms/course";
   import {
     assignHintLevels,
     assignLevel,
@@ -34,6 +39,7 @@
   import WandSparkles from "@lucide/svelte/icons/wand-sparkles";
   import X from "@lucide/svelte/icons/x";
   import { onDestroy, onMount, tick, type Component } from "svelte";
+  import { fly } from "svelte/transition";
 
   import type { AddChartsDrawerProps } from "./AddChartsDrawer.svelte";
 
@@ -42,7 +48,6 @@
   import EntryDetailForm from "#lib/components/bms/EntryDetailForm.svelte";
   import JsonPreview from "#lib/components/ui/JsonPreview.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
-  import ToggleButton from "#lib/components/ui/ToggleButton.svelte";
   import ToggleJumpChip from "#lib/components/ui/ToggleJumpChip.svelte";
   import {
     btnChipOnWarning,
@@ -63,14 +68,22 @@
     readTableUrlState,
     writeTableUrlState,
   } from "#lib/utils/ui/table-url.js";
+  import { panelFly } from "#lib/utils/ui/transitions.js";
 
   /**
    * 条目面板：查看与编辑共用条目表、组头、难度导航与搜索/筛选。
-   * 查看态严格只读；编辑态增加添加、批量、勾选与行内编辑。
+   * 查看态严格只读；编辑态增加添加、勾选暂存与行内编辑。
+   * 暂存篮（勾选即暂存）状态归页面模型所有并随草稿持久化（DraftPayload.staged），
+   * 落位动作收编在底部居中浮条：指派等级、加入段位、删除；全选筛选结果与按
+   * 文件等级指派留在工具行（不依赖篮非空）。加入段位按哈希与课程现有及批内
+   * 谱面判重、缺哈希跳过，计数经通知出口回报。
+   * 浮条形态同镜像列表页 SelectedTablesPanel：底部居中滚动全程可见、篮空隐藏，
+   * 与右下 TableDock 一居中一角落并存；窄屏抬高避开 dock 的全宽收起行。
    * 未知自定义字段经 commitEntryEdit 保留并在详情表单里可编辑。
    * 删除与增改经 bind 回写触发模型 setter 压撤销快照（编辑会话历史见
    * table-model-history）；模型侧 undo/redo 整体替换 entries 时按对象身份
-   * 重定位编辑中行与勾选（见 entries effect）。
+   * 重定位编辑中行与暂存（见 entries effect），整包套用（stagedEpoch 递增，
+   * 草稿恢复/远端回载）跳过一次重定位、索引以模型写入为准。
    * 条目表按等级分组、取消分页全量渲染；等级行用 ToggleJumpChip 隐藏/显示组
    * （组件只服务该场景），组头静态；表格无等级列，下载与站点链接合并为链接列，
    * 图标统一并由容器宽度收进“...”菜单。添加谱面抽屉在面板内动态加载。
@@ -103,6 +116,13 @@
     onAddDrawerOpenChange?: ((open: boolean) => void) | undefined;
     hiddenLevels?: Set<string>;
     hideUnassigned?: boolean;
+    /**
+     * 暂存篮（勾选即暂存）：状态归页面模型所有并随草稿持久化，面板经 bind 读写。
+     * 就地批量工具条已收编进暂存浮条（见组件尾部的浮条标记）。
+     */
+    staged?: Set<number>;
+    /** 模型整包套用（草稿恢复/远端回载）时递增：面板跳过一次身份重定位。 */
+    stagedEpoch?: number;
   }
 
   let {
@@ -125,6 +145,8 @@
     onAddDrawerOpenChange = undefined,
     hiddenLevels = $bindable(new Set()),
     hideUnassigned = $bindable(false),
+    staged = $bindable(new Set<number>()),
+    stagedEpoch = 0,
   }: Props = $props();
 
   const BATCH_NONE = "__none__";
@@ -137,7 +159,6 @@
   }
 
   let query = $state("");
-  let selected = $state<Set<number>>(new Set());
   let editingIndex = $state<number | null>(null);
   let editKey = $state(0);
   let innerWidth = $state(0);
@@ -145,13 +166,22 @@
   let narrowEditor = $derived(innerWidth < 800);
 
   // 模型侧 undo/redo 与草稿恢复会整体替换 entries：按上一轮数组取出对象身份，
-  // 在新数组里重定位编辑中行与勾选；找不到的对象复位（表单收起、勾选剔除）。
+  // 在新数组里重定位编辑中行与暂存；找不到的对象复位（表单收起、出篮）。
+  // 整包套用（stagedEpoch 递增）是例外：模型已按草稿/远端数据写入暂存索引，
+  // 身份重定位只会误清，跳过一次并顺势收起编辑行。
+  // svelte-ignore state_referenced_locally —— 刻意取 prop 初值：后续以 seen 比对检测递增
+  let seenStagedEpoch = stagedEpoch;
   let prevEntries: ChartData[] = [];
   $effect(() => {
     const current = entries;
     const prev = prevEntries;
     prevEntries = current;
     if (prev === current) return;
+    if (stagedEpoch !== seenStagedEpoch) {
+      seenStagedEpoch = stagedEpoch;
+      editingIndex = null;
+      return;
+    }
     if (editingIndex !== null) {
       const entry = prev[editingIndex];
       if (entry === undefined) {
@@ -161,19 +191,18 @@
         editingIndex = next >= 0 ? next : null;
       }
     }
-    if (selected.size > 0) {
+    if (staged.size > 0) {
       const relocated = new Set<number>();
-      for (const index of selected) {
+      for (const index of staged) {
         const entry = prev[index];
         if (entry === undefined) continue;
         const next = current.indexOf(entry);
         if (next >= 0) relocated.add(next);
       }
-      selected = relocated;
+      staged = relocated;
     }
   });
   let batchChoice = $state<string>(BATCH_NONE);
-  let batchOpen = $state(false);
   let addOpen = $state(false);
   let AddChartsDrawer = $state<Component<AddChartsDrawerProps> | null>(null);
   let coursePickerTarget = $state<Record<string, unknown> | null>(null);
@@ -474,7 +503,7 @@
   });
 
   const unassignedCount = $derived(countUnassigned(entries));
-  const selectedCount = $derived(selected.size);
+  const stagedCount = $derived(staged.size);
   const columnCount = $derived(editing ? 6 : 4);
   const filtering = $derived(query.trim() !== "" || hiddenLevels.size > 0 || hideUnassigned);
   const hintApplicableCount = $derived(
@@ -613,8 +642,6 @@
   $effect(() => {
     if (editing) return;
     editingIndex = null;
-    batchOpen = false;
-    selected = new Set();
     batchChoice = BATCH_NONE;
     notice = null;
     coursePickerTarget = null;
@@ -632,32 +659,32 @@
   });
 
   function setSelected(index: number, checked: boolean): void {
-    selected = setIndices(selected, [index], checked);
+    staged = setIndices(staged, [index], checked);
   }
 
   function selectAllFiltered(): void {
-    selected = setIndices(selected, filteredIndices, true);
+    staged = setIndices(staged, filteredIndices, true);
   }
 
   function clearSelection(): void {
-    selected = new Set();
+    staged = new Set();
   }
 
   function assignSelected(): void {
-    if (batchChoice === BATCH_NONE || selected.size === 0) return;
+    if (batchChoice === BATCH_NONE || staged.size === 0) return;
     const parsed = parseLevelFilterOption(batchChoice);
-    entries = assignLevel(entries, [...selected], parsed.kind === "level" ? parsed.level : "");
+    entries = assignLevel(entries, [...staged], parsed.kind === "level" ? parsed.level : "");
     batchChoice = BATCH_NONE;
     notice = null;
     onChange?.();
   }
 
-  function deleteSelected(): void {
-    if (selected.size === 0) return;
-    const count = selected.size;
-    entries = removeIndices(entries, [...selected]);
-    selected = new Set();
-    editingIndex = null;
+  function deleteStaged(): void {
+    if (staged.size === 0) return;
+    const count = staged.size;
+    entries = removeIndices(entries, [...staged]);
+    // 编辑行与暂存篮的去留由 entries effect 的身份重定位收口：删到的出篮收起，
+    // 没删到的原位保留。
     notice = null;
     onChange?.();
     onNotice?.({
@@ -816,12 +843,52 @@
     onChange?.();
   }
 
+  // 暂存浮条的段位下拉：目标集变化时回落到首个可用项。
+  let batchCourseChoice = $state("");
+  $effect(() => {
+    if (!courseTargets.some((item) => item.key === batchCourseChoice)) {
+      batchCourseChoice = courseTargets[0]?.key ?? "";
+    }
+  });
+
+  /** 暂存篮批量加入段位：判重与缺哈希跳过在 addChartsToCourse，计数经通知出口回报。 */
+  function addStagedToCourse(): void {
+    if (disabled || courseModel === undefined || staged.size === 0) return;
+    const target = courseTargets.find((item) => item.key === batchCourseChoice);
+    if (target === undefined) return;
+    const refs: CourseChartRef[] = [...staged].map((index) => {
+      const entry = entries[index] ?? {};
+      return {
+        md5: typeof entry.md5 === "string" ? entry.md5 : "",
+        sha256: typeof entry.sha256 === "string" ? entry.sha256 : "",
+        levelText: typeof entry.level === "string" ? entry.level : "",
+      };
+    });
+    const result = addChartsToCourse(courseModel, target.groupIndex, target.courseIndex, refs);
+    courseModel = result.model;
+    if (result.added === 0) {
+      onNotice?.({ kind: "warn", text: m["editor.entries.batch_course_none"]() });
+      return;
+    }
+    onNotice?.({
+      kind: "ok",
+      text:
+        result.skipped > 0
+          ? m["editor.entries.batch_course_partial"]({
+              name: target.label,
+              added: result.added,
+              skipped: result.skipped,
+            })
+          : m["editor.entries.batch_course_done"]({ name: target.label, added: result.added }),
+    });
+    onChange?.();
+  }
+
   function removeEntry(index: number): void {
     const entry = entries[index];
     if (entry === undefined) return;
     const label = entryLabel(entry) || m["editor.entry.unnamed"]();
     entries = removeIndices(entries, [index]);
-    selected = new Set();
     if (editingIndex === index) editingIndex = null;
     notice = null;
     onChange?.();
@@ -887,12 +954,16 @@
             <Plus class="size-4 shrink-0" aria-hidden="true" />
             {m["editor.add.title"]()}
           </button>
-          <ToggleButton
-            expanded={batchOpen}
-            label={m["editor.entries.batch_toggle"]()}
-            {disabled}
-            onToggle={() => (batchOpen = !batchOpen)}
-          />
+          {#if hintApplicableCount > 0}
+            <button class={btnGhost} type="button" {disabled} onclick={assignFromHints}>
+              <WandSparkles class="size-4 shrink-0" aria-hidden="true" />
+              {m["editor.entries.assign_hint"]({ count: hintApplicableCount })}
+            </button>
+          {/if}
+          <button class={btnGhost} type="button" {disabled} onclick={selectAllFiltered}>
+            <CheckCheck class="size-4 shrink-0" aria-hidden="true" />
+            {m["editor.entries.select_filtered"]()}
+          </button>
         </div>
       {/if}
     </div>
@@ -912,61 +983,6 @@
             onJump={() => void jumpToGroup(item)}
           />
         {/each}
-      </div>
-    {/if}
-
-    {#if editing && batchOpen}
-      <div class="rounded-glass-sm border border-white-15 bg-black-20 p-3">
-        <div class="flex flex-wrap items-center gap-2">
-          <span class="text-[0.85rem] text-white-60">
-            {m["editor.entries.selected"]({ count: selectedCount })}
-          </span>
-          <div class="ml-auto flex flex-wrap items-center gap-2">
-            <button class={btnGhost} type="button" {disabled} onclick={selectAllFiltered}>
-              <CheckCheck class="size-4 shrink-0" aria-hidden="true" />
-              {m["editor.entries.select_filtered"]()}
-            </button>
-            <button class={btnGhost} type="button" {disabled} onclick={clearSelection}>
-              <X class="size-4 shrink-0" aria-hidden="true" />
-              {m["editor.entries.clear_selection"]()}
-            </button>
-            <select
-              class="rounded-glass-sm border border-white-20 bg-black-30 px-2 py-1 text-[0.85rem] text-white outline-none"
-              bind:value={batchChoice}
-              {disabled}
-            >
-              <option value={BATCH_NONE} disabled>{m["editor.entries.batch_choose"]()}</option>
-              {#each levels as level (level)}
-                <option value={encodeLevelFilterOption(level)}>{level}</option>
-              {/each}
-              <option value="">{m["editor.entries.batch_clear"]()}</option>
-            </select>
-            <button
-              class={btnGhost}
-              type="button"
-              disabled={disabled || selectedCount === 0 || batchChoice === BATCH_NONE}
-              onclick={assignSelected}
-            >
-              <ListChecks class="size-4 shrink-0" aria-hidden="true" />
-              {m["editor.entries.batch_apply"]()}
-            </button>
-            <button
-              class={btnDanger}
-              type="button"
-              disabled={disabled || selectedCount === 0}
-              onclick={deleteSelected}
-            >
-              <Trash2 class="size-4 shrink-0" aria-hidden="true" />
-              {m["editor.entries.batch_delete"]()}
-            </button>
-            {#if hintApplicableCount > 0}
-              <button class={btnGhost} type="button" {disabled} onclick={assignFromHints}>
-                <WandSparkles class="size-4 shrink-0" aria-hidden="true" />
-                {m["editor.entries.assign_hint"]({ count: hintApplicableCount })}
-              </button>
-            {/if}
-          </div>
-        </div>
       </div>
     {/if}
 
@@ -1027,7 +1043,7 @@
         rowId={`entry-${item.index}`}
         showLevel={searchMode}
         selectable={editing}
-        selected={selected.has(item.index)}
+        selected={staged.has(item.index)}
         {disabled}
         drag={editing ? { dnd, index: item.index, disabled } : undefined}
         canMoveUp={(groupPos?.position ?? 0) > 0}
@@ -1255,6 +1271,69 @@
     <JsonPreview bind:this={chartPreview} />
   {/if}
 </div>
+
+<!-- 暂存浮条：形态、收编与 dock 避让见组件头注；仅编辑态且篮非空渲染 -->
+{#if editing && stagedCount > 0}
+  <div
+    class="fixed bottom-4 left-1/2 z-999 max-w-[calc(100vw-2rem)] translate-x-[-50%] max-sm:bottom-24"
+    in:fly={panelFly().in}
+    out:fly={panelFly().out}
+  >
+    <div
+      class="glass-shadow-float flex max-w-full flex-wrap items-center gap-2 rounded-glass-md bg-glass p-3 px-4 backdrop-blur"
+    >
+      <span class="font-semibold whitespace-nowrap text-white">
+        {m["editor.entries.selected"]({ count: stagedCount })}
+      </span>
+      <select
+        class="rounded-glass-sm border border-white-20 bg-black-30 px-2 py-1 text-[0.85rem] text-white outline-none"
+        bind:value={batchChoice}
+        {disabled}
+        aria-label={m["editor.entries.batch_choose"]()}
+      >
+        <option value={BATCH_NONE} disabled>{m["editor.entries.batch_choose"]()}</option>
+        {#each levels as level (level)}
+          <option value={encodeLevelFilterOption(level)}>{level}</option>
+        {/each}
+        <option value="">{m["editor.entries.batch_clear"]()}</option>
+      </select>
+      <button
+        class={btnGhost}
+        type="button"
+        disabled={disabled || batchChoice === BATCH_NONE}
+        onclick={assignSelected}
+      >
+        <ListChecks class="size-4 shrink-0" aria-hidden="true" />
+        {m["editor.entries.batch_apply"]()}
+      </button>
+      {#if courseTargets.length > 0}
+        <select
+          class="rounded-glass-sm border border-white-20 bg-black-30 px-2 py-1 text-[0.85rem] text-white outline-none"
+          bind:value={batchCourseChoice}
+          {disabled}
+          aria-label={m["editor.entry.course_add_title"]()}
+        >
+          <option value="" disabled>{m["editor.entry.course_add_title"]()}</option>
+          {#each courseTargets as target (target.key)}
+            <option value={target.key}>{target.label}</option>
+          {/each}
+        </select>
+        <button class={btnGhost} type="button" {disabled} onclick={addStagedToCourse}>
+          <Plus class="size-4 shrink-0" aria-hidden="true" />
+          {m["editor.entry.course_add"]()}
+        </button>
+      {/if}
+      <button class={btnDanger} type="button" {disabled} onclick={deleteStaged}>
+        <Trash2 class="size-4 shrink-0" aria-hidden="true" />
+        {m["editor.entries.batch_delete"]()}
+      </button>
+      <button class={btnGhost} type="button" {disabled} onclick={clearSelection}>
+        <X class="size-4 shrink-0" aria-hidden="true" />
+        {m["editor.entries.clear_selection"]()}
+      </button>
+    </div>
+  </div>
+{/if}
 
 {#if addOpen && AddChartsDrawer}
   {@const Drawer = AddChartsDrawer}

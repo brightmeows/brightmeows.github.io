@@ -34,6 +34,7 @@ import {
   removeLevelAt,
   setIndices,
   shortenHash,
+  sanitizeStagedIndices,
   shouldWarnOverwrite,
   splitNewEntries,
   toggleSelection,
@@ -70,6 +71,22 @@ describe("valueToText", () => {
     expect(valueToText({ a: [1] })).toBe('{"a":[1]}');
     expect(valueToText(undefined)).toBe("");
     expect(valueToText(null)).toBe("");
+  });
+});
+
+describe("sanitizeStagedIndices", () => {
+  it("过滤越界、非整数与非数值索引，去重并升序", () => {
+    expect(sanitizeStagedIndices([5, 1, 5, 2.5, -1, "3", 7, 0], 6)).toEqual([0, 1, 5]);
+  });
+
+  it("非数组与空输入返回空篮", () => {
+    expect(sanitizeStagedIndices(undefined, 3)).toEqual([]);
+    expect(sanitizeStagedIndices("staged", 3)).toEqual([]);
+    expect(sanitizeStagedIndices([], 0)).toEqual([]);
+  });
+
+  it("空表把所有索引判为越界", () => {
+    expect(sanitizeStagedIndices([0, 1], 0)).toEqual([]);
   });
 });
 

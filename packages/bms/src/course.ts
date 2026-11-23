@@ -343,6 +343,38 @@ export function addChartToCourse(
   return true;
 }
 
+/**
+ * 批量把谱面引用并入指定课程：与课程现有谱面及批内互重判重（双哈希任一命中
+ * 即跳过），缺双哈希跳过；追加在目标课程末尾，返回新模型与计数。
+ * 模型走不可变更新：站点侧经 bind 回写赋值时由模型 setter 压撤销快照。
+ */
+export function addChartsToCourse(
+  model: CourseModel,
+  groupIndex: number,
+  courseIndex: number,
+  charts: readonly CourseChartRef[]
+): { model: CourseModel; added: number; skipped: number } {
+  const group = model.groups[groupIndex];
+  const course = group?.courses[courseIndex];
+  if (group === undefined || course === undefined) {
+    return { model, added: 0, skipped: charts.length };
+  }
+  const { added, skipped } = splitNewCourseCharts(course.charts, charts);
+  if (added.length === 0) return { model, added: 0, skipped };
+  const nextCourse: EditableCourse = {
+    ...course,
+    charts: [...course.charts, ...added.map((chart) => ({ ...chart, extra: {} }))],
+  };
+  const nextGroup: EditableCourseGroup = {
+    courses: group.courses.map((item, index) => (index === courseIndex ? nextCourse : item)),
+  };
+  const nextModel: CourseModel = {
+    ...model,
+    groups: model.groups.map((item, index) => (index === groupIndex ? nextGroup : item)),
+  };
+  return { model: nextModel, added: added.length, skipped };
+}
+
 /** 删除指定课程；删空后保留组结构（序列化时为空组）。 */
 export function removeCourseFromModel(
   model: CourseModel,

@@ -4,7 +4,9 @@ import {
   addCourseToGroup,
   addCourseToModel,
   addChartToCourse,
+  addChartsToCourse,
   addGroupToModel,
+  type CourseModel,
   courseChartRefsFromEntries,
   courseChartResolvedIn,
   courseHashIssue,
@@ -310,5 +312,65 @@ describe("splitNewCourseCharts", () => {
         [{ md5: "", sha256: sha256.toUpperCase(), levelText: "" }]
       )
     ).toEqual({ added: [], skipped: 1 });
+  });
+});
+
+describe("addChartsToCourse", () => {
+  const md5 = "a".repeat(32);
+  const sha256 = "b".repeat(64);
+
+  function modelWithCourse(): CourseModel {
+    return {
+      shape: "flat",
+      present: true,
+      groups: [
+        {
+          courses: [
+            {
+              name: "course",
+              constraints: [],
+              trophies: [],
+              charts: [{ md5, sha256: "", levelText: "1", extra: {} }],
+              extra: {},
+            },
+          ],
+        },
+        { courses: [{ name: "other", constraints: [], trophies: [], charts: [], extra: {} }] },
+      ],
+    };
+  }
+
+  it("追加去重后的谱面到目标课程末尾并补 extra", () => {
+    const original = modelWithCourse();
+    const result = addChartsToCourse(original, 0, 0, [
+      { md5: md5.toUpperCase(), sha256: "", levelText: "" },
+      { md5: "", sha256, levelText: "2" },
+      { md5: "", sha256: "", levelText: "3" },
+    ]);
+    expect(result.added).toBe(1);
+    expect(result.skipped).toBe(2);
+    expect(result.model.groups[0]?.courses[0]?.charts).toEqual([
+      { md5, sha256: "", levelText: "1", extra: {} },
+      { md5: "", sha256, levelText: "2", extra: {} },
+    ]);
+    expect(original.groups[0]?.courses[0]?.charts).toHaveLength(1);
+  });
+
+  it("目标组或课程越界时原样返回", () => {
+    const model = modelWithCourse();
+    expect(addChartsToCourse(model, 5, 0, [{ md5: "c", sha256: "", levelText: "" }])).toEqual({
+      model,
+      added: 0,
+      skipped: 1,
+    });
+    expect(addChartsToCourse(model, 0, 9, [])).toEqual({ model, added: 0, skipped: 0 });
+  });
+
+  it("其余组不受影响", () => {
+    const { model } = addChartsToCourse(modelWithCourse(), 0, 0, [
+      { md5: "", sha256, levelText: "" },
+    ]);
+    expect(model.groups[1]?.courses[0]?.charts).toEqual([]);
+    expect(model.groups[1]?.courses[0]?.name).toBe("other");
   });
 });
