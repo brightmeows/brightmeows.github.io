@@ -16,7 +16,8 @@
    * 页面持有唯一一份内存模型与两段式加载（header 先行、data 随后、草稿探查殿后）；
    * data 未就绪时只读（主按钮禁用、副本入口不出现），data 失败可从菜单恢复本地草稿。
    * 三张工作卡：头部（含等级参考折叠区）、谱面、段位；查看态原生 details 折叠且
-   * 默认只展开谱面，编辑态 TableCardBar 管理可见卡（?show= 逗号列表记录组合，
+   * 默认只展开谱面，且段位折叠区置于谱面条目之前：大表的条目区极长，段位入口
+   * 不能被压到页底不可达。编辑态 TableCardBar 管理可见卡（?show= 逗号列表记录组合，
    * 编辑态用 sessionStorage 记住上次组合）。标题区 hero 承载标题、符号 meta 与
    * 一行常用动作（模式主按钮加复制导入链接、查看 header.json、查看 data.json：
    * 查看态主按钮进编辑或本地编辑，编辑态主按钮切回预览；ghost 走 btnGhostMd，
@@ -686,7 +687,7 @@
             ...(cards.includes("charts") ? [chartsPane] : []),
             ...(cards.includes("course") ? [coursePane] : []),
           ]
-        : [viewHeaderPane, viewChartsPane, viewCoursePane]}
+        : [viewHeaderPane, viewCoursePane, viewChartsPane]}
 />
 
 <!-- 底部操作 dock：header 就绪即可打开；data 未就绪时编辑与保存禁用 -->
