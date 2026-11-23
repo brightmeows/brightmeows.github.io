@@ -551,6 +551,7 @@
   "mirror.delete_failed": "删除失败",
   "mirror.deleted": "已删除“{name}”，清单约 1 分钟后更新。",
   "mirror.deleting": "删除中…",
+  "mirror.disclaimer": "本镜像收录的难度表默认未经原作者同意，希望移除请联系站长，会马上处理喵。",
   "mirror.disable_confirm": "将“{name}”禁用？禁用后它会从公开清单消失，可在管理区重新启用。",
   "mirror.empty_desc": "未找到镜像列表。",
   "mirror.empty_title": "暂无镜像数据",

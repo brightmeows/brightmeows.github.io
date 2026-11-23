@@ -58,9 +58,10 @@
    * 镜像列表页规格：登录入口在顶栏（全局共享登录态 store），配额剩余在列表页
    * 操作区（与“我删除的表”同行，写后实时刷新）。hero 动作行承载复制清单、
    * 教程与添加表入口：添加表是页面级动作，点击后表单在列表区顶部展开并滚动
-   * 到位，未登录点击给登录提示。列表区搜索框第一行独占，匹配计数贴其下，
-   * 筛选行（已授权、操作模式、管理区）排再下一行。登录后每行出现行尾操作
-   * 列（管理员铅笔、贡献者
+   * 到位，未登录点击给登录提示；hero meta 槽放收录声明（默认未经原作者同意、
+   * 移除联系站长；三语一份 key，单表页经 BmsTablePage 的 disclaimer prop
+   * 共用）。列表区搜索框第一行独占，匹配计数贴其下，筛选行（已授权、操作
+   * 模式、管理区）排再下一行。登录后每行出现行尾操作列（管理员铅笔、贡献者
    * 删除图标，受保护行不显删除）；表状态由授权图标列承担，管理员点图标开编辑
    * 卡片、非管理员只读。无卡片行，全部难度表始终显示，标签浏览是 plain 子折叠，
    * API 故障呈错误态。页面内写操作经带 `?t=` 的拉取穿透 60 秒边缘缓存
@@ -419,7 +420,12 @@
 <PageShell {tocItems} hero={heroPane} panes={[listPane]} />
 
 {#snippet heroPane()}
-  <PageHero id="bms-table-mirror" titleText={pageTitle} intro={m["mirror.intro"]()}>
+  <PageHero
+    id="bms-table-mirror"
+    titleText={pageTitle}
+    intro={m["mirror.intro"]()}
+    meta={m["mirror.disclaimer"]()}
+  >
     {#snippet title()}{pageTitle}{/snippet}
     {#snippet actions()}
       <button type="button" class={btnGhostMd} onclick={copyTables}>
