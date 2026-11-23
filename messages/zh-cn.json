@@ -344,6 +344,7 @@
   "editor.entries.select_row": "选择该条",
   "editor.entries.selected": "已选 {count} 条",
   "editor.entry.add_title": "添加条目",
+  "editor.entry.edit_panel_aria": "正在编辑的条目详情",
   "editor.entry.advanced": "进阶字段",
   "editor.entry.bmsir_add": "从 URL 添加",
   "editor.entry.course_add": "加入段位",
