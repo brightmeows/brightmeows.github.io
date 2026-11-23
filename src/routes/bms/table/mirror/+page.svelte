@@ -56,8 +56,11 @@
   import { errorMessageOf } from "#lib/utils/infra/error.js";
   /**
    * 镜像列表页规格：登录入口在顶栏（全局共享登录态 store），配额剩余在列表页
-   * 操作区（与“我删除的表”同行，写后实时刷新）；页顶只留添加表单（预览后提交、
-   * 轮询抓取状态）与回收站入口。登录后每行出现行尾操作列（管理员铅笔、贡献者
+   * 操作区（与“我删除的表”同行，写后实时刷新）。hero 动作行承载复制清单、
+   * 教程与添加表入口：添加表是页面级动作，点击后表单在列表区顶部展开并滚动
+   * 到位，未登录点击给登录提示。列表区搜索框第一行独占，匹配计数贴其下，
+   * 筛选行（已授权、操作模式、管理区）排再下一行。登录后每行出现行尾操作
+   * 列（管理员铅笔、贡献者
    * 删除图标，受保护行不显删除）；表状态由授权图标列承担，管理员点图标开编辑
    * 卡片、非管理员只读。无卡片行，全部难度表始终显示，标签浏览是 plain 子折叠，
    * API 故障呈错误态。页面内写操作经带 `?t=` 的拉取穿透 60 秒边缘缓存
@@ -107,8 +110,8 @@
 
   let mirrorPreview = $state<JsonPreviewHandle | undefined>(undefined);
 
-  // 添加表是列表卡头的动作，不是一张可显隐的内容卡。未登录点击给提示，
-  // 登录后展开内联表单；列表始终显示。
+  // 添加表入口在 hero 动作行，表单与未登录提示展开在列表区顶部的
+  // mirror-add-slot 内；列表始终显示。入口离表单远，状态更新后滚动到位。
   let addTableOpen = $state(false);
   let addTableNotice = $state<string | null>(null);
 
@@ -116,10 +119,15 @@
     await auth.ensureLoaded();
     if (auth.user === null) {
       addTableNotice = m["mirror.add_login_required"]();
-      return;
+    } else {
+      addTableNotice = null;
+      addTableOpen = !addTableOpen;
     }
-    addTableNotice = null;
-    addTableOpen = !addTableOpen;
+    await tick();
+    document.getElementById("mirror-add-slot")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   }
 
   // ---- 管理交互（仅 ADMIN_LOGIN 角色可见，服务端权限不变） ----
@@ -427,6 +435,17 @@
         {m["mirror.tutorial"]()}
         <ExternalLink class="size-4 shrink-0" aria-hidden="true" />
       </a>
+      <button
+        type="button"
+        class={btnGhostMd}
+        aria-expanded={addTableOpen}
+        aria-controls={addTableOpen ? "mirror-add" : undefined}
+        title={m["mirror.add_table_hint"]()}
+        onclick={() => void toggleAddTable()}
+      >
+        <Plus class="size-4 shrink-0" aria-hidden="true" />
+        {m["mirror.add_table"]()}
+      </button>
       {#if cb.copied}
         <span class="text-success">{m["common.copied"]()}</span>
       {:else if cb.failed}
@@ -447,65 +466,6 @@
         >
           {admin.notice.text}
         </div>
-      {/if}
-
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <div class="flex flex-wrap items-center gap-2">
-          <label class={showProtectedOnly ? btnChipOnWarning : btnChip}>
-            <Checkbox
-              size="sm"
-              ariaLabel={m["mirror.protected_filter"]()}
-              checked={showProtectedOnly}
-              onchange={(v: boolean) => (showProtectedOnly = v)}
-            />
-            {m["mirror.protected_filter"]()}
-          </label>
-          {#if auth.user !== null}
-            <label class={operationsMode ? btnChipOnAccent : btnChip}>
-              <Checkbox
-                size="sm"
-                ariaLabel={m["mirror.operations_mode"]()}
-                checked={operationsMode}
-                onchange={(v: boolean) => (operationsMode = v)}
-              />
-              {m["mirror.operations_mode"]()}
-            </label>
-          {/if}
-          {#if isAdmin}
-            <button
-              class={adminPanelOpen ? btnChipOnAccent : btnChip}
-              type="button"
-              aria-expanded={adminPanelOpen}
-              onclick={toggleAdminPanel}
-            >
-              {m["mirror.admin_panel"]()}
-            </button>
-          {/if}
-        </div>
-        <button
-          type="button"
-          class={btnGhostMd}
-          aria-expanded={addTableOpen}
-          aria-controls={addTableOpen ? "mirror-add" : undefined}
-          title={m["mirror.add_table_hint"]()}
-          onclick={() => void toggleAddTable()}
-        >
-          <Plus class="size-4 shrink-0" aria-hidden="true" />
-          {m["mirror.add_table"]()}
-        </button>
-      </div>
-      {#if addTableNotice}
-        <p class="text-[0.85rem] text-warning">{addTableNotice}</p>
-      {/if}
-      {#if addTableOpen && auth.user !== null}
-        <div id="mirror-add" class="scroll-mt-20">
-          <MirrorUserActions bind:this={userActions} onchanged={handleUserChanged} />
-        </div>
-      {/if}
-      {#if operationsMode}
-        <p class="text-[0.85rem] text-white-50">
-          {m["mirror.operations_mode_hint"]()}
-        </p>
       {/if}
 
       <div class="relative w-full">
@@ -535,6 +495,54 @@
             total: tables.length,
           })}
         </div>
+      {/if}
+
+      <div class="flex flex-wrap items-center gap-2">
+        <label class={showProtectedOnly ? btnChipOnWarning : btnChip}>
+          <Checkbox
+            size="sm"
+            ariaLabel={m["mirror.protected_filter"]()}
+            checked={showProtectedOnly}
+            onchange={(v: boolean) => (showProtectedOnly = v)}
+          />
+          {m["mirror.protected_filter"]()}
+        </label>
+        {#if auth.user !== null}
+          <label class={operationsMode ? btnChipOnAccent : btnChip}>
+            <Checkbox
+              size="sm"
+              ariaLabel={m["mirror.operations_mode"]()}
+              checked={operationsMode}
+              onchange={(v: boolean) => (operationsMode = v)}
+            />
+            {m["mirror.operations_mode"]()}
+          </label>
+        {/if}
+        {#if isAdmin}
+          <button
+            class={adminPanelOpen ? btnChipOnAccent : btnChip}
+            type="button"
+            aria-expanded={adminPanelOpen}
+            onclick={toggleAdminPanel}
+          >
+            {m["mirror.admin_panel"]()}
+          </button>
+        {/if}
+      </div>
+      <div id="mirror-add-slot" class="scroll-mt-20">
+        {#if addTableNotice}
+          <p class="text-[0.85rem] text-warning">{addTableNotice}</p>
+        {/if}
+        {#if addTableOpen && auth.user !== null}
+          <div id="mirror-add" class="scroll-mt-20">
+            <MirrorUserActions bind:this={userActions} onchanged={handleUserChanged} />
+          </div>
+        {/if}
+      </div>
+      {#if operationsMode}
+        <p class="text-[0.85rem] text-white-50">
+          {m["mirror.operations_mode_hint"]()}
+        </p>
       {/if}
 
       {#if isAdmin}
