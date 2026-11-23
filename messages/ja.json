@@ -551,6 +551,7 @@
   "mirror.delete_failed": "削除に失敗しました",
   "mirror.deleted": "「{name}」を削除しました。マニフェストは約1分後に更新されます。",
   "mirror.deleting": "削除中…",
+  "mirror.disclaimer": "本ミラーに掲載している難易度表は、原則として原作者の同意を得ていません。掲載取消をご希望の場合はサイト管理者までご連絡ください。すぐに対応しますにゃ。",
   "mirror.disable_confirm": "「{name}」を無効化しますか？公開マニフェストから消え、管理エリアでいつでも有効化し直せます。",
   "mirror.empty_desc": "ミラーリストが見つかりません。",
   "mirror.empty_title": "ミラーデータがありません",

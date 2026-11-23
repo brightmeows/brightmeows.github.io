@@ -21,7 +21,9 @@
    * 编辑态用 sessionStorage 记住上次组合）。标题区 hero 承载标题、符号 meta 与
    * 一行常用动作（模式主按钮加复制导入链接、查看 header.json、查看 data.json：
    * 查看态主按钮进编辑或本地编辑，编辑态主按钮切回预览；ghost 走 btnGhostMd，
-   * 复制按钮以原生 title 携带完整导入地址，导入地址不明文展示）。编辑态整页
+   * 复制按钮以原生 title 携带完整导入地址，导入地址不明文展示）。hero 之后
+   * 可渲染一行收录声明（disclaimer prop，路由层拼 i18n 文案传入，镜像表用，
+   * 空则不渲染；组件不认领镜像专属文案）。编辑态整页
    * 文件拖拽按落点路由：段位行写入该段位，其余位置追加谱面条目。notice：成功类
    * 短时自动清除（带动作的跳过清除），warn/error 常驻到被替换。保存闸门：save/
    * saveAsSharedNow/Ctrl+S 都以 data 就绪为前置（加载中 entries 为空，误保存会
@@ -118,6 +120,8 @@
     management?: Snippet | undefined;
     /** 菜单里的管理员操作槽（他人共享表的删除）。 */
     adminActions?: Snippet | undefined;
+    /** hero 下的收录声明行；空则不渲染。 */
+    disclaimer?: string | undefined;
   }
 
   let {
@@ -127,6 +131,7 @@
     actions,
     management,
     adminActions,
+    disclaimer,
   }: Props = $props();
 
   // 等级参考的状态属主是本组件：LevelRefTable 自取数并经 bind 回写；
@@ -859,6 +864,11 @@
       {/if}
     {/snippet}
   </PageHero>
+  {#if disclaimer}
+    <p class="mx-auto mt-2 max-w-[1000px] text-center text-[0.9rem] text-white-60">
+      {disclaimer}
+    </p>
+  {/if}
 {/snippet}
 
 {#snippet switcherPane()}

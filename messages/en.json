@@ -551,6 +551,7 @@
   "mirror.delete_failed": "Delete failed",
   "mirror.deleted": "Deleted “{name}”. The manifest updates in about a minute.",
   "mirror.deleting": "Deleting…",
+  "mirror.disclaimer": "Tables on this mirror are collected by default without the original authors' consent. To request removal, contact the site owner; requests will be handled promptly, nya.",
   "mirror.disable_confirm": "Disable “{name}”? It disappears from the public manifest until you re-enable it in the admin area.",
   "mirror.empty_desc": "Mirror list not found.",
   "mirror.empty_title": "No mirror data",

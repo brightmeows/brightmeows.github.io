@@ -28,5 +28,6 @@
     }}
     publish={{ saveAsShared: "same-origin" }}
     capabilities={{ kind: "mirror" }}
+    disclaimer={m["mirror.disclaimer"]()}
   />
 {/if}
