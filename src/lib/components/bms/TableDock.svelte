@@ -25,10 +25,12 @@
   import type { TableModel } from "#lib/data/table-page-model.svelte.js";
   import { m } from "#lib/paraglide/messages.js";
   /**
-   * 右下角 dock：查看态收起有主按钮时是主按钮加“菜单”按钮（副本场景无主按钮，
-   * 只剩“菜单”，创建副本收进面板表操作段），编辑态收起是只读“编辑中”胶囊、
-   * dirty 时的保存按钮与“菜单”按钮；展开面板收导入全三 tab、导出下载、格式参考、
-   * fork、草稿与 notice 等段。保存常驻菜单外，状态胶囊只读，菜单按钮负责展开。
+   * 右下角 dock：模式主按钮（编辑此表/本地编辑/预览）已升到页面 hero 动作行，
+   * dock 不再常驻主按钮——查看态收起只剩“菜单”按钮（创建副本收进面板表操作
+   * 段），编辑态收起是只读“编辑中”胶囊、dirty 时的保存按钮与“菜单”按钮；
+   * 展开面板保留主按钮（操作聚合）并收导入全三 tab、导出下载、格式参考、
+   * fork、草稿与 notice 等段。保存常驻菜单外，状态胶囊只读，菜单按钮负责展开；
+   * 面板展开时按下面板外任意处即收起（外点收起），不干扰滚动状态机。
    * 右下角另有回到顶部浮动件（BackToTopButton，z 低于本 dock）：本 dock 展开时
    * 面板盖住它是刻意的避让设计；收起态下它抬高在本 dock 上方。
    * 收展由 controllers/table-dock 状态机驱动（编辑态默认展开、查看态默认收起，
@@ -126,6 +128,9 @@
   let expansion = $state<DockExpansion>(scrollState.expansion);
   let keyboardFocus = $state(false);
   let lastScrollY = 0;
+  /** 展开面板根元素：外点收起用它判断按下目标是否在面板内。 */
+  // svelte-ignore non_reactive_update —— bind:this 的元素引用无需触发渲染，事件回调实时读取
+  let panelRoot: HTMLElement | null = null;
 
   // ---- 折叠段：表操作与导入 ----
   let tableActionsOpen = $state(false);
@@ -191,6 +196,13 @@
     expansion = scrollState.expansion;
   }
 
+  /** 外点收起：面板展开时按下面板外任意处即收起，不干扰滚动状态机与键盘冻结。 */
+  function handlePointerDown(event: PointerEvent): void {
+    if (expansion !== "expanded") return;
+    if (panelRoot instanceof HTMLElement && panelRoot.contains(event.target as Node)) return;
+    toggleExpansion();
+  }
+
   function handleFocusIn(event: FocusEvent): void {
     keyboardFocus = event.target instanceof HTMLElement && event.target.matches(":focus-visible");
   }
@@ -208,8 +220,10 @@
   onMount(() => {
     lastScrollY = window.scrollY;
     window.addEventListener("scroll", handleScroll, { passive: true });
+    document.addEventListener("pointerdown", handlePointerDown);
     return () => {
       window.removeEventListener("scroll", handleScroll);
+      document.removeEventListener("pointerdown", handlePointerDown);
     };
   });
 
@@ -273,6 +287,7 @@
         ? 'sm:w-[480px]'
         : 'sm:w-[340px]'}"
       style="max-height: calc(100dvh - 2rem - env(safe-area-inset-bottom, 0px))"
+      bind:this={panelRoot}
       onfocusin={handleFocusIn}
       onfocusout={handleFocusOut}
     >
@@ -527,22 +542,6 @@
         </button>
       {/if}
     {:else}
-      {#if showPrimary}
-        <button
-          class={btnPrimary}
-          type="button"
-          disabled={primaryDisabled}
-          title={primaryTitle}
-          onclick={onPrimary}
-        >
-          {#if copyMode}
-            <Copy class="size-4 shrink-0" aria-hidden="true" />
-          {:else}
-            <Pencil class="size-4 shrink-0" aria-hidden="true" />
-          {/if}
-          {primaryLabel}
-        </button>
-      {/if}
       {#if model.dirty && model.canSave}
         <button
           class={btnGhostMd}
