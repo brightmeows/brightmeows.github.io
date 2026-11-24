@@ -19,7 +19,7 @@
 - `pnpm build`：多语构建入口（`scripts/build-site.ts`）：en、zh-cn、ja 三个主站 flavor 各跑一遍（各自经 `BUILD_OUT` 落临时目录）后组装。
   - 组装结构、多语 chunk 合并与版本坑见 `scripts/assemble-site.ts` 头注；`node scripts/assemble-site.ts` 单独跑组装（CI verify job 的 matrix 路径：flavor 在独立 runner 单遍 build，artifact 汇合后组装，不经 `pnpm build`）。
   - `pnpm build:flavor` 跑单遍。
-- `node scripts/fetch-tables.ts`：本地跑数据管线（基线经 rclone 同步自 R2，用户层经站点 Worker 的内部接口读取，需要 `INTERNAL_API_TOKEN`；写表数据与索引两个 R2 前缀加 `warnings.log`；产物已 gitignore）
+- `node scripts/fetch-tables.ts`：本地跑数据管线（基线经 rclone 同步自 R2，用户层经站点 Worker 的内部接口读取，需要 `INTERNAL_API_TOKEN`；写表数据、索引、`health.json` 与 `warnings.log`；产物已 gitignore）
 - `node scripts/fetch-table-once.ts --url=<表源> --request-id=<id> --out-dir=./out`：单表抓取（复用管线抓取与命名逻辑）：数据目录供 `fetch-table` 工作流上传到 R2，抓取结果与状态经内部接口写进 D1
 - `pnpm test:parity`：手动新旧实现对拍（用公开 R2 基线与归档工具 v0.4.2 的二进制，逐对象比对产物；`PARITY_LIMIT` 可只对拍前 N 张表）
 - `pnpm check:quotes`：全量中文引号检查（扩展名与 `static/` 排除规则在 `package.json`，pre-commit 与 CI 共用）
@@ -94,8 +94,12 @@
 `.github/workflows/update-tables.yml` 每 6 小时（或 `scripts/fetch-tables.ts`、`scripts/pipeline/**` 变更时，以及手动 dispatch）跑 `scripts/fetch-tables.ts`。
 
 - 实现位于 `scripts/pipeline/`，与站点同仓演进。
-- 经 rclone 与 Cloudflare R2 双向同步：先拉取 R2 基线保留增量，跑完抓取再推回。输出表数据与索引两个 R2 前缀加 `warnings.log`（均 gitignored，仅存在于 CI 工作区与 R2）。
+- 经 rclone 与 Cloudflare R2 双向同步：先拉取 R2 基线保留增量，跑完抓取再推回。输出表数据、索引、`health.json` 与 `warnings.log`（均 gitignored，仅存在于 CI 工作区与 R2）。
 - 活跃表集合 = R2 基线（`info.json`）叠加**用户层**：站长与访客的添加、删除、禁用、替换、授权记录存于 D1（Worker 与单表抓取工作流经内部接口维护，管线经同一接口读取，需要 `INTERNAL_API_TOKEN`）。
+- `health.json`（位于表数据目录）记录每张活跃表的健康状态：公开 `status`、`last_success`、`reason`，内部另有 `last_attempt`、`consecutive_failures`、`first_failure_at`。
+  - 终态错误连续两轮、瞬时错误连续七天进入 stale；stale 表每月复查一次，未到期直接跳过。
+  - `last_success` 是数据最后更新时间，不是每轮抓取时间；成功抓取时取新 `state.toml` 的 `last_change`，数据没变就保持旧值。
+  - 首次生成时按 `SEED_STALE` 标记已确认的终态死表；`health.json` 只由管线写入，不要手工改 R2 对象。
 - 运行时依赖 `parse5` 与 `smol-toml`（devDependencies，因此工作流有 pnpm install 步骤）。R2 凭据以 Actions secrets 注入（`R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY`/`R2_ENDPOINT`/`R2_BUCKET`）。
 
 ### 抓取约定

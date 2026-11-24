@@ -42,6 +42,26 @@ export interface FetchOptions {
 export interface FetchTextResult {
   text: string;
   contentType: string;
+  status: number;
+}
+
+/** 抓取失败的终态/瞬时分类；health.ts 直接复用这组值。 */
+export type FetchFailureReason =
+  | "source_gone"
+  | "gas_runtime_retired"
+  | "access_denied"
+  | "network"
+  | "unknown";
+
+/** 带分类的抓取失败：页面、header 或 data 的终态错误在这里定性。 */
+export class FetchTableError extends Error {
+  readonly reason: FetchFailureReason;
+
+  constructor(message: string, reason: FetchFailureReason, options?: ErrorOptions) {
+    super(message, options);
+    this.name = "FetchTableError";
+    this.reason = reason;
+  }
 }
 
 function decodeBody(buffer: Buffer, contentType: string): string {
@@ -75,7 +95,11 @@ export async function fetchText(url: string, options: FetchOptions = {}): Promis
       });
       if (response.status >= 200 && response.status < 400) {
         const contentType = response.headers["content-type"] ?? "";
-        return { text: decodeBody(response.buffer, contentType), contentType };
+        return {
+          text: decodeBody(response.buffer, contentType),
+          contentType,
+          status: response.status,
+        };
       }
       h2Result = response;
     } catch {
@@ -87,7 +111,11 @@ export async function fetchText(url: string, options: FetchOptions = {}): Promis
       } catch {
         // h1 网络失败：沿用 h2 的结果（内容解析会如实报错）
         const contentType = h2Result.headers["content-type"] ?? "";
-        return { text: decodeBody(h2Result.buffer, contentType), contentType };
+        return {
+          text: decodeBody(h2Result.buffer, contentType),
+          contentType,
+          status: h2Result.status,
+        };
       }
     }
   }
@@ -133,7 +161,7 @@ async function fetchTextHttp1(url: string, options: FetchOptions): Promise<Fetch
       throw new Error(`读取响应失败：${current}（${describeError(error)}）`, { cause: error });
     }
     const contentType = response.headers.get("content-type") ?? "";
-    return { text: decodeBody(buffer, contentType), contentType };
+    return { text: decodeBody(buffer, contentType), contentType, status: response.status };
   }
   throw new Error(`重定向次数超过上限（${MAX_REDIRECTS}）：${url}`);
 }
@@ -223,6 +251,37 @@ export interface FetchedTable {
   dataJsonUrl: string;
 }
 
+/** 把响应状态与已知 Google 错误页映射到终态/瞬时分类。 */
+function classifyResponse(response: FetchTextResult): FetchFailureReason {
+  if (response.status === 404 || response.status === 410) {
+    return "source_gone";
+  }
+  if (response.status === 401 || response.status === 403) {
+    return "access_denied";
+  }
+  if (response.status >= 500) {
+    return "network";
+  }
+  if (response.text.includes("Rhino ランタイム") || response.text.includes("Rhino runtime")) {
+    return "gas_runtime_retired";
+  }
+  if (
+    response.text.includes("ページが見つかりません") ||
+    response.text.includes("ファイルを開くことができません") ||
+    response.text.includes("File not found")
+  ) {
+    return "source_gone";
+  }
+  if (
+    response.text.includes("アクセスが拒否されました") ||
+    response.text.includes("アクセス権が必要です") ||
+    response.text.includes("Access denied")
+  ) {
+    return "access_denied";
+  }
+  return "unknown";
+}
+
 /** 抓取一张完整难度表：页面、header、data。 */
 export async function fetchTable(
   info: TableInfo,
@@ -231,7 +290,10 @@ export async function fetchTable(
   const page = await fetchText(info.url, options);
   const pageQuery = parseHeaderQuery(page.text);
   if (pageQuery === null) {
-    throw new Error(`页面里找不到 bmstable，且不是 header JSON：${info.url}`);
+    throw new FetchTableError(
+      `页面里找不到 bmstable，且不是 header JSON：${info.url}`,
+      classifyResponse(page)
+    );
   }
 
   let headerJsonUrl: string;
@@ -246,7 +308,10 @@ export async function fetchTable(
     const headerResponse = await fetchText(headerJsonUrl, options);
     const headerQuery = parseHeaderQuery(headerResponse.text);
     if (headerQuery?.kind !== "json") {
-      throw new Error(`header 不是 JSON：${headerJsonUrl}`);
+      throw new FetchTableError(
+        `header 不是 JSON：${headerJsonUrl}`,
+        classifyResponse(headerResponse)
+      );
     }
     headerRaw = headerQuery.usedText;
     header = headerQuery.value;
@@ -258,12 +323,14 @@ export async function fetchTable(
   try {
     parsed = parseJsonWithFallback(dataResponse.text);
   } catch (error) {
-    throw new Error(`data.json 解析失败：${dataJsonUrl}（${describeError(error)}）`, {
-      cause: error,
-    });
+    throw new FetchTableError(
+      `data.json 解析失败：${dataJsonUrl}（${describeError(error)}）`,
+      classifyResponse(dataResponse),
+      { cause: error }
+    );
   }
   if (!Array.isArray(parsed.value)) {
-    throw new Error(`data.json 不是数组：${dataJsonUrl}`);
+    throw new FetchTableError(`data.json 不是数组：${dataJsonUrl}`, classifyResponse(dataResponse));
   }
   return {
     header,

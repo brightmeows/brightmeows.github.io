@@ -18,6 +18,9 @@ export interface RunSummary {
   tablesTotal: number;
   tablesFetched: number;
   tablesFailed: string[];
+  tablesSkipped: number;
+  tablesStale: number;
+  healthEntries: number;
   renamed: number;
   orphansMoved: number;
   tablesJsonEntries: number;
@@ -64,7 +67,8 @@ export class RunLog implements PipelineLogger {
     const lines: string[] = [
       "# BMS 难度表管线告警日志",
       `# 运行区间：${summary.startedAt.toISOString()} 至 ${summary.finishedAt.toISOString()}`,
-      `# 汇总：表 ${summary.tablesTotal} 张，成功 ${summary.tablesFetched}，失败 ${summary.tablesFailed.length}`,
+      `# 汇总：表 ${summary.tablesTotal} 张，成功 ${summary.tablesFetched}，失败 ${summary.tablesFailed.length}，跳过 stale ${summary.tablesSkipped}`,
+      `# stale 表 ${summary.tablesStale} 张；health 条目 ${summary.healthEntries}`,
       `# 用户层：添加 ${summary.userAdded}、删除 ${summary.userRemoved}、禁用 ${summary.userDisabled}、替换 ${summary.userReplaced}（读取告警 ${summary.userWarnings}）`,
       `# 目录重命名 ${summary.renamed}；孤儿 ${summary.orphansMoved}`,
       `# tables.json ${summary.tablesJsonEntries} 项；索引 ${Object.entries(summary.indexSizes)
