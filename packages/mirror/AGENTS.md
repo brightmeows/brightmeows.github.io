@@ -14,6 +14,9 @@
   - 兜底语义由 `api.test.ts` 锁定：非 admin 端点与既有客户端实现逐字段一致，admin 端点语义见各函数注释；改兜底前先确认不是在改对外行为。
 - **`<meta name="bmstable">` 有两个来源**：自托管表由 `[table]/+page.server.ts` 经 `PageData.bmstableMeta` → `+layout.svelte` 的 `<svelte:head>` 注入（`./header.json`）。
   - 镜像表由 Worker 运行时注入到 SPA 外壳的 `<head>`（绝对 R2 地址），两处共用 `injectBmstableMeta`。
+- **站点清单的健康字段由 Worker 从 R2 `health.json` 合并**：`health.json` 按源 URL 记录 `status`、`last_success`、`reason`；`tables.json` 合成时只加这三个可选字段，R2 原始清单不含它们。
+  - 解析、按 URL 合并与单表健康提取在 `manifest.ts` 的 `parseTableHealthManifest`、`mergeTableHealth`、`tableHealthOf`；health 不可用时清单退化为无健康字段，不阻塞主路径。
+  - 单表页由 Worker 注入 `mirror-table-meta` JSON；站内导航没有这份注入时，站点详情页回退拉清单，属站点 UI 层兜底。
 - **仓库里没有任何派生数据**：R2 是唯一权威源；镜像页与 `tables.json` 全部由 Worker 运行时应答，仓库不存派生文件。
 - **用户层匹配口径在 `src/user-layer.ts`**：URL 匹配统一走 `tableUrlKey` 宽松键
   （`normalizeTableUrl` 后折叠尾斜杠），目录名兜底走 `dirNameSet`，撤销索引由

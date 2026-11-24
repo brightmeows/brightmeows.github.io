@@ -1,10 +1,18 @@
-import type { MirrorTableItem } from "@brightmeows/mirror/types";
+import { isMirrorTableHealthReason, MIRROR_TABLE_META_ID } from "@brightmeows/mirror/manifest";
+import type {
+  MirrorTableHealth,
+  MirrorTableHealthReason,
+  MirrorTableItem,
+} from "@brightmeows/mirror/types";
 import type { MetaOverride } from "@brightmeows/mirror/user-layer";
 import { normalizeTableUrl } from "@brightmeows/mirror/user-layer";
 
 import { m } from "#lib/paraglide/messages.js";
+import { getLocale } from "#lib/paraglide/runtime.js";
 import type { Tag1Group, Tag2Group } from "#lib/types/bms-view.js";
 import type { StringConverter } from "#lib/types/common.js";
+import { formatDate } from "#lib/utils/infra/date.js";
+import { isRecord } from "#lib/utils/infra/object.js";
 
 /**
  * 构建搜索词（含 OpenCC 简繁日转换）
@@ -186,4 +194,70 @@ export function removeTableByUrl(
   url: string
 ): MirrorTableItem[] {
   return tables.filter((item) => item.url !== url);
+}
+
+/** 解析 Worker 注入的 mirror-table-meta JSON；坏结构返回 null。 */
+export function parseMirrorTableMeta(text: string | null): MirrorTableHealth | null {
+  if (text === null) {
+    return null;
+  }
+  let value: unknown;
+  try {
+    value = JSON.parse(text) as unknown;
+  } catch {
+    return null;
+  }
+  if (!isRecord(value)) {
+    return null;
+  }
+  const status = value.status;
+  if (status !== "ok" && status !== "stale") {
+    return null;
+  }
+  const lastSuccess =
+    typeof value.last_success === "string" && value.last_success !== ""
+      ? value.last_success
+      : undefined;
+  const reason = isMirrorTableHealthReason(value.reason) ? value.reason : undefined;
+  return {
+    status,
+    ...(lastSuccess === undefined ? {} : { last_success: lastSuccess }),
+    ...(reason === undefined ? {} : { reason }),
+  };
+}
+
+/** 读取 Worker 注入的健康元数据；服务端渲染或未注入时返回 null。 */
+export function readMirrorTableMeta(): MirrorTableHealth | null {
+  if (typeof document === "undefined") {
+    return null;
+  }
+  return parseMirrorTableMeta(document.getElementById(MIRROR_TABLE_META_ID)?.textContent ?? null);
+}
+
+/** 把 stale 原因码翻译成当前语言的一句说明。 */
+export function staleReasonText(reason: MirrorTableHealthReason | undefined): string {
+  switch (reason) {
+    case "source_gone":
+      return m["mirror.stale_reason_source_gone"]();
+    case "gas_runtime_retired":
+      return m["mirror.stale_reason_gas_runtime_retired"]();
+    case "access_denied":
+      return m["mirror.stale_reason_access_denied"]();
+    case "network":
+      return m["mirror.stale_reason_network"]();
+    case "unknown":
+    case undefined:
+      return m["mirror.stale_reason_unknown"]();
+  }
+}
+
+/** 拼出 stale 表的详情提示：原因加最后更新时间。 */
+export function staleNoticeText(
+  health: Pick<MirrorTableHealth, "last_success" | "reason">
+): string {
+  const date =
+    health.last_success === undefined
+      ? m["mirror.stale_unknown_date"]()
+      : formatDate(health.last_success, getLocale());
+  return m["mirror.stale_notice"]({ date, reason: staleReasonText(health.reason) });
 }

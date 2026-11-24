@@ -129,6 +129,8 @@
 
 列表页规格（操作区、行尾操作列、授权图标列、无卡片行、缓存穿透注意）见 `src/routes/bms/table/mirror/+page.svelte` 头注。
 
+- stale 展示：列表行按 `status` 显示 badge，单表页 hero 下显示 notice。Worker 注入 `mirror-table-meta`；站内导航没有注入时，详情页回退拉清单。
+
 #### 管理功能
 
 治理操作全部收进列表页（旧后台路径已移除）：管理折叠区与行内编辑卡片协议见 `src/lib/components/bms/MirrorAdminPanel.svelte` 头注。

@@ -16,7 +16,7 @@
   import { m } from "#lib/paraglide/messages.js";
   import type { MirrorAdminUi } from "#lib/types/bms-view.js";
   import type { JsonPreviewHandle } from "#lib/types/ui.js";
-  import { tableLabelOf } from "#lib/utils/mirror-tables.js";
+  import { staleNoticeText, tableLabelOf } from "#lib/utils/mirror-tables.js";
   import { clipboardFieldFeedback } from "#lib/utils/ui/clipboard.svelte.js";
 
   interface Props {
@@ -57,6 +57,7 @@
   const deleteLabel = $derived(
     deleting ? m["mirror.deleting"]() : m["mirror.delete_aria"]({ name: tableLabelOf(item) })
   );
+  const staleTitle = $derived(item.status === "stale" ? staleNoticeText(item) : undefined);
 </script>
 
 <tr
@@ -80,19 +81,29 @@
   <td
     class="table-td-compact min-w-50 wrap-break-word max-sm:col-start-1 max-sm:col-end-4 max-sm:row-start-2 max-sm:min-w-0 max-sm:border-0 max-sm:p-0"
   >
-    <strong
-      use:jsonPreview={{
-        preview: mirrorPreview,
-        trigger: "contextmenu",
-        options: {
-          value: item,
-          label: `${item.name ?? m["mirror.default_name"]()} JSON`,
-          maxHeightRem: 14,
-        },
-      }}
-    >
-      {item.name}
-    </strong>
+    <div class="flex flex-wrap items-center gap-2">
+      <strong
+        use:jsonPreview={{
+          preview: mirrorPreview,
+          trigger: "contextmenu",
+          options: {
+            value: item,
+            label: `${item.name ?? m["mirror.default_name"]()} JSON`,
+            maxHeightRem: 14,
+          },
+        }}
+      >
+        {item.name}
+      </strong>
+      {#if item.status === "stale"}
+        <span
+          class="inline-flex items-center rounded-glass-sm border border-warning/60 bg-warning/20 px-2 py-[0.15rem] text-[0.75rem] text-warning-light"
+          title={staleTitle}
+        >
+          {m["mirror.stale_badge"]()}
+        </span>
+      {/if}
+    </div>
   </td>
   <td
     class="table-td-compact px-2 max-sm:col-start-3 max-sm:row-start-1 max-sm:border-0 max-sm:p-0"

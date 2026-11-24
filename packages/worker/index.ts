@@ -24,7 +24,9 @@
 
 import {
   injectBmstableMeta,
+  injectMirrorTableMeta,
   serializeSiteTableList,
+  tableHealthOf,
   transformTableList,
 } from "@brightmeows/mirror/manifest";
 import { serializeSharedTableList, transformSharedTableList } from "@brightmeows/mirror/shared";
@@ -87,7 +89,8 @@ async function handleTablePage(
       "retry-after": String(MANIFEST_MAX_AGE),
     });
   }
-  if (!manifest.some((item) => item.dir_name === tableId)) {
+  const item = manifest.find((entry) => entry.dir_name === tableId);
+  if (item === undefined) {
     // 非英语树手动回对应语言的 404 页（not_found_handling 会回落到根树的英文 404）；
     // 英文直接交静态资源处理，客户端路由渲染错误页
     if (locale !== "en") return localizedNotFound(env, url, locale);
@@ -97,7 +100,11 @@ async function handleTablePage(
   const shellRes = await env.ASSETS.fetch(new URL(shellPath(locale), url.origin));
   const shell = await shellRes.text();
   // 与构建期脚本共用同一段注入逻辑，保证两种输出逐字节等价
-  const page = injectBmstableMeta(shell, r2TableHeaderUrl(env.R2_BASE, tableId));
+  let page = injectBmstableMeta(shell, r2TableHeaderUrl(env.R2_BASE, tableId));
+  const health = tableHealthOf(item);
+  if (health !== null) {
+    page = injectMirrorTableMeta(page, health);
+  }
 
   return new Response(page, {
     status: 200,

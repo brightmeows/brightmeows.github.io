@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { EPOCH_DATE, extractDateFromSlug, formatAbsolute, formatRelativeTime } from "./date.js";
+import {
+  EPOCH_DATE,
+  extractDateFromSlug,
+  formatAbsolute,
+  formatDate,
+  formatRelativeTime,
+} from "./date.js";
 
 describe("extractDateFromSlug", () => {
   it("识别三种目录日期形态", () => {
@@ -60,6 +66,19 @@ describe("formatAbsolute", () => {
   it("非法输入原样返回", () => {
     expect(formatAbsolute("not-a-date", "en")).toBe("not-a-date");
     expect(formatAbsolute(Number.NaN, "en")).toBe("NaN");
+  });
+});
+
+describe("formatDate", () => {
+  it("只输出日期，不含时刻", () => {
+    const value = formatDate("2026-06-12T21:44:59Z", "en");
+    expect(value).toMatch(/2026/);
+    expect(value).not.toMatch(/:/);
+  });
+
+  it("非法输入原样返回", () => {
+    expect(formatDate("not-a-date", "en")).toBe("not-a-date");
+    expect(formatDate(Number.NaN, "en")).toBe("NaN");
   });
 });
 
