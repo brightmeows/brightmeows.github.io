@@ -808,6 +808,25 @@ export function sanitizeStagedIndices(value: unknown, count: number): number[] {
   return out.sort((a, b) => a - b);
 }
 
+/**
+ * 暂存篮跨数组迁移：按条目对象身份把旧数组上的暂存索引映射到新数组。
+ * 找不到的（已删除）出篮，存留的按升序返回；篮内不存在重复索引。
+ */
+export function relocateStagedIndices(
+  prev: readonly Record<string, unknown>[],
+  current: readonly Record<string, unknown>[],
+  staged: readonly number[] | ReadonlySet<number>
+): number[] {
+  const relocated: number[] = [];
+  for (const index of staged) {
+    const entry = prev[index];
+    if (entry === undefined) continue;
+    const next = current.indexOf(entry);
+    if (next >= 0) relocated.push(next);
+  }
+  return relocated.sort((a, b) => a - b);
+}
+
 /** 单份草稿载荷（IndexedDB 结构克隆直存，无需序列化文本）。 */
 export interface DraftPayload {
   header: Record<string, unknown>;

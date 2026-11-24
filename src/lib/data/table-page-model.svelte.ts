@@ -4,6 +4,7 @@ import {
   buildEditorHeader,
   countUnassigned,
   type DraftPayload,
+  relocateStagedIndices,
   sanitizeStagedIndices,
   type TableEditPayload,
 } from "@brightmeows/bms/editor";
@@ -118,11 +119,30 @@ async function askConfirm(
  * 脏标记并入草稿防抖开关：只勾选不改内容也要触发落盘，刷新后篮不丢；
  * epoch 在整包套用（草稿恢复/远端回载）时递增，面板据此跳过一次身份重定位。
  */
-function createStagedState() {
+function createStagedState(entriesRef: () => ChartData[]) {
   let staged = $state<Set<number>>(new Set());
   let adoptedSignature = $state("");
   let epoch = $state(0);
-  const dirty = $derived([...staged].sort((a, b) => a - b).join(",") !== adoptedSignature);
+  const stagedSignature = () => [...staged].sort((a, b) => a - b).join(",");
+  const dirty = $derived.by(() => stagedSignature() !== adoptedSignature);
+  // 暂存篮跨数组迁移在模型子域维护：条目删除/撤销/编辑改写 entries 时面板可能
+  // 未挂载（谱面卡可隐藏），重定位不能依赖可选组件的 effect。首跑只记录数组，
+  // 整包套用（epoch 递增）跳过一次，索引以显式写入为准。
+  let relocatePrev: ChartData[] | null = null;
+  let seenRelocateEpoch = 0;
+  $effect(() => {
+    const current = entriesRef();
+    const prev = relocatePrev;
+    relocatePrev = current;
+    if (prev === null || prev === current) return;
+    if (epoch !== seenRelocateEpoch) {
+      seenRelocateEpoch = epoch;
+      return;
+    }
+    if (staged.size > 0) {
+      staged = new Set(relocateStagedIndices(prev, current, staged));
+    }
+  });
   return {
     get staged() {
       return staged;
@@ -186,7 +206,7 @@ export function createTableModel(input: TableModelInput) {
   let entries = $state<ChartData[]>([]);
   let levelHints = $state<Record<string, string>>({});
   let draftDataActive = $state(false);
-  const stagedState = createStagedState();
+  const stagedState = createStagedState(() => entries);
   const headerUnfilled = $derived.by(() => name.trim() === "" || symbol.trim() === "");
 
   // ---- 编辑与保存状态（草稿域状态在 createDraftLifecycle） ----

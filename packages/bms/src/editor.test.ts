@@ -34,6 +34,7 @@ import {
   removeLevelAt,
   setIndices,
   shortenHash,
+  relocateStagedIndices,
   sanitizeStagedIndices,
   shouldWarnOverwrite,
   splitNewEntries,
@@ -87,6 +88,24 @@ describe("sanitizeStagedIndices", () => {
 
   it("空表把所有索引判为越界", () => {
     expect(sanitizeStagedIndices([0, 1], 0)).toEqual([]);
+  });
+});
+
+describe("relocateStagedIndices", () => {
+  const a = { md5: "a" };
+  const b = { md5: "b" };
+  const c = { md5: "c" };
+
+  it("按对象身份迁移，删除的出篮，升序返回", () => {
+    expect(relocateStagedIndices([a, b, c], [b, a], [0, 1, 2])).toEqual([0, 1]);
+  });
+
+  it("越界与未命中索引跳过", () => {
+    expect(relocateStagedIndices([a], [a], [0, 1, 5])).toEqual([0]);
+  });
+
+  it("空集合返回空", () => {
+    expect(relocateStagedIndices([], [], new Set<number>())).toEqual([]);
   });
 });
 

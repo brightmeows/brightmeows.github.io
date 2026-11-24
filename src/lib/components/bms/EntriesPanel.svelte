@@ -149,18 +149,18 @@
   /** 窄屏（表格容器横向滚动）下编辑表单脱离表格，在表格下方全宽渲染。 */
   let narrowEditor = $derived(innerWidth < 800);
 
-  // 模型侧 undo/redo 与草稿恢复会整体替换 entries：按上一轮数组取出对象身份，
-  // 在新数组里重定位编辑中行与暂存；找不到的对象复位（表单收起、出篮）。
-  // 整包套用（stagedEpoch 递增）是例外：模型已按草稿/远端数据写入暂存索引，
-  // 身份重定位只会误清，跳过一次并顺势收起编辑行。
+  // 模型侧 undo/redo 与草稿恢复会整体替换 entries：按上一轮数组取出对象身份
+  // 重定位编辑中行；暂存篮的迁移在模型子域维护（见 createStagedState），面板
+  // 未挂载时也持续生效。首跑只记录数组；整包套用（stagedEpoch 递增）是例外：
+  // 模型已按草稿/远端数据写入，跳过一次并顺势收起编辑行。
   // svelte-ignore state_referenced_locally —— 刻意取 prop 初值：后续以 seen 比对检测递增
   let seenStagedEpoch = stagedEpoch;
-  let prevEntries: ChartData[] = [];
+  let prevEntries: ChartData[] | null = null;
   $effect(() => {
     const current = entries;
     const prev = prevEntries;
     prevEntries = current;
-    if (prev === current) return;
+    if (prev === null || prev === current) return;
     if (stagedEpoch !== seenStagedEpoch) {
       seenStagedEpoch = stagedEpoch;
       editingIndex = null;
@@ -174,16 +174,6 @@
         const next = current.indexOf(entry);
         editingIndex = next >= 0 ? next : null;
       }
-    }
-    if (staged.size > 0) {
-      const relocated = new Set<number>();
-      for (const index of staged) {
-        const entry = prev[index];
-        if (entry === undefined) continue;
-        const next = current.indexOf(entry);
-        if (next >= 0) relocated.add(next);
-      }
-      staged = relocated;
     }
   });
   let addOpen = $state(false);
