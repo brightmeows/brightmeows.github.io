@@ -444,3 +444,21 @@ export function moveChartToIndex(
 export function moveChartRow(course: EditableCourse, index: number, delta: number): EditableCourse {
   return moveChartToIndex(course, index, index + delta);
 }
+
+/** 段位目标下拉的结构化选项：消费方按 name 补未命名兜底与组前缀文案。 */
+export function courseTargetOptions(
+  model: CourseModel
+): { key: string; groupIndex: number; courseIndex: number; name: string }[] {
+  const options: { key: string; groupIndex: number; courseIndex: number; name: string }[] = [];
+  model.groups.forEach((group, groupIndex) => {
+    group.courses.forEach((course, courseIndex) => {
+      options.push({
+        key: `${groupIndex}:${courseIndex}`,
+        groupIndex,
+        courseIndex,
+        name: course.name,
+      });
+    });
+  });
+  return options;
+}

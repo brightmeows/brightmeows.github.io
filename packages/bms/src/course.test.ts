@@ -8,6 +8,7 @@ import {
   addGroupToModel,
   type CourseModel,
   courseChartRefsFromEntries,
+  courseTargetOptions,
   courseChartResolvedIn,
   courseHashIssue,
   emptyCourseModel,
@@ -372,5 +373,32 @@ describe("addChartsToCourse", () => {
     ]);
     expect(model.groups[1]?.courses[0]?.charts).toEqual([]);
     expect(model.groups[1]?.courses[0]?.name).toBe("other");
+  });
+});
+
+describe("courseTargetOptions", () => {
+  it("按组与课程次序展开结构化选项", () => {
+    const model: CourseModel = {
+      shape: "flat",
+      present: true,
+      groups: [
+        { courses: [{ name: "A", constraints: [], trophies: [], charts: [], extra: {} }] },
+        {
+          courses: [
+            { name: "", constraints: [], trophies: [], charts: [], extra: {} },
+            { name: "B", constraints: [], trophies: [], charts: [], extra: {} },
+          ],
+        },
+      ],
+    };
+    expect(courseTargetOptions(model)).toEqual([
+      { key: "0:0", groupIndex: 0, courseIndex: 0, name: "A" },
+      { key: "1:0", groupIndex: 1, courseIndex: 0, name: "" },
+      { key: "1:1", groupIndex: 1, courseIndex: 1, name: "B" },
+    ]);
+  });
+
+  it("空模型返回空选项", () => {
+    expect(courseTargetOptions(emptyCourseModel())).toEqual([]);
   });
 });

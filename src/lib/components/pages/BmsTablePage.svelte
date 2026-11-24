@@ -25,7 +25,10 @@
    * 可渲染一行收录声明（disclaimer prop，路由层拼 i18n 文案传入，镜像表用，
    * 空则不渲染；组件不认领镜像专属文案）。编辑态整页
    * 文件拖拽按落点路由：段位行写入该段位，其余位置追加谱面条目。notice：成功类
-   * 短时自动清除（带动作的跳过清除），warn/error 常驻到被替换。保存闸门：save/
+   * 短时自动清除（带动作的跳过清除），warn/error 常驻到被替换。编辑态条目勾选
+   * 即暂存，底部居中浮条承载落位动作（指派等级、加入段位、删除；见暂存浮条段），
+   * 浮条渲染在玻璃卡外：卡片的 backdrop-filter 会劫持 fixed 后代的包含块。
+   * 保存闸门：save/
    * saveAsSharedNow/Ctrl+S 都以 data 就绪为前置（加载中 entries 为空，误保存会
    * 清空共享表）。shared 模式接入整包保存（发布前必须全部指派，保存前比对线上
    * updated_at 并发提示）与同源草稿认领另存；放弃未保存修改在两态都可用。
@@ -35,11 +38,21 @@
    */
   import {
     addChartToCourse,
+    addChartsToCourse,
     courseChartRefsFromEntries,
+    courseTargetOptions,
     splitNewCourseCharts,
+    type CourseChartRef,
     type EditableCourse,
   } from "@brightmeows/bms/course";
-  import { splitNewEntries, type BmsDropResult } from "@brightmeows/bms/editor";
+  import {
+    assignLevel,
+    encodeLevelFilterOption,
+    parseLevelFilterOption,
+    removeIndices,
+    splitNewEntries,
+    type BmsDropResult,
+  } from "@brightmeows/bms/editor";
   import BookOpen from "@lucide/svelte/icons/book-open";
   import Check from "@lucide/svelte/icons/check";
   import ChevronDown from "@lucide/svelte/icons/chevron-down";
@@ -47,10 +60,15 @@
   import Download from "@lucide/svelte/icons/download";
   import ExternalLink from "@lucide/svelte/icons/external-link";
   import Eye from "@lucide/svelte/icons/eye";
+  import ListChecks from "@lucide/svelte/icons/list-checks";
   import Pencil from "@lucide/svelte/icons/pencil";
+  import Plus from "@lucide/svelte/icons/plus";
+  import Trash2 from "@lucide/svelte/icons/trash-2";
   import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
+  import X from "@lucide/svelte/icons/x";
   import type { Component, Snippet } from "svelte";
   import { onMount, tick } from "svelte";
+  import { fly } from "svelte/transition";
 
   import BmsDropOverlay, { type BmsDropTarget } from "#lib/components/bms/BmsDropOverlay.svelte";
   import CoursePanel from "#lib/components/bms/CoursePanel.svelte";
@@ -67,6 +85,7 @@
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
   import {
     badgeCountSm,
+    btnDanger,
     btnGhost,
     btnGhostMd,
     btnPrimary,
@@ -96,6 +115,7 @@
   import type { TocItem } from "#lib/types/ui.js";
   import { formatTitle } from "#lib/utils/title.js";
   import { clipboardFeedback } from "#lib/utils/ui/clipboard.svelte.js";
+  import { panelFly } from "#lib/utils/ui/transitions.js";
   import { goto } from "$app/navigation";
 
   /**
@@ -388,6 +408,93 @@
       };
     }
     model.notice = notice;
+  }
+
+  // ---- 暂存浮条（勾选即暂存）：渲染在本组件（玻璃卡外，backdrop-filter 会劫持
+  // fixed 后代的包含块）；动作经模型门面执行，bind 回写触发撤销快照。 ----
+  const BAR_LEVEL_NONE = "__none__";
+  let barLevelChoice = $state(BAR_LEVEL_NONE);
+  let barCourseChoice = $state("");
+  const barStagedCount = $derived(model.staging.staged.size);
+  const barCourseTargets = $derived(
+    courseTargetOptions(model.courseModel).map((option) => {
+      const name = option.name.trim() === "" ? m["course.unnamed"]() : option.name;
+      return {
+        key: option.key,
+        label: `${m["editor.course.group"]({ index: option.groupIndex + 1 })} / ${name}`,
+        groupIndex: option.groupIndex,
+        courseIndex: option.courseIndex,
+      };
+    })
+  );
+  $effect(() => {
+    if (!barCourseTargets.some((item) => item.key === barCourseChoice)) {
+      barCourseChoice = barCourseTargets[0]?.key ?? "";
+    }
+  });
+
+  function barAssign(): void {
+    if (barLevelChoice === BAR_LEVEL_NONE || barStagedCount === 0) return;
+    const parsed = parseLevelFilterOption(barLevelChoice);
+    model.entries = assignLevel(
+      model.entries,
+      [...model.staging.staged],
+      parsed.kind === "level" ? parsed.level : ""
+    );
+    barLevelChoice = BAR_LEVEL_NONE;
+    model.markDirty();
+    model.notice = null;
+  }
+
+  function barDelete(): void {
+    const count = barStagedCount;
+    if (count === 0) return;
+    model.entries = removeIndices(model.entries, [...model.staging.staged]);
+    model.markDirty();
+    model.notice = { kind: "ok", text: m["editor.undo.entries_deleted"]({ count }) };
+  }
+
+  function barClear(): void {
+    model.staging.staged = new Set();
+  }
+
+  function barAddToCourse(): void {
+    if (model.courseModel === undefined || barStagedCount === 0) return;
+    const target = barCourseTargets.find((item) => item.key === barCourseChoice);
+    if (target === undefined) return;
+    const refs: CourseChartRef[] = [...model.staging.staged].map((index) => {
+      const entry = model.entries[index] ?? {};
+      return {
+        md5: typeof entry.md5 === "string" ? entry.md5 : "",
+        sha256: typeof entry.sha256 === "string" ? entry.sha256 : "",
+        levelText: typeof entry.level === "string" ? entry.level : "",
+      };
+    });
+    const result = addChartsToCourse(
+      model.courseModel,
+      target.groupIndex,
+      target.courseIndex,
+      refs
+    );
+    model.courseModel = result.model;
+    model.markDirty();
+    model.notice =
+      result.added === 0
+        ? { kind: "warn", text: m["editor.entries.batch_course_none"]() }
+        : {
+            kind: "ok",
+            text:
+              result.skipped > 0
+                ? m["editor.entries.batch_course_partial"]({
+                    name: target.label,
+                    added: result.added,
+                    skipped: result.skipped,
+                  })
+                : m["editor.entries.batch_course_done"]({
+                    name: target.label,
+                    added: result.added,
+                  }),
+          };
   }
 
   // ---- 导入区按需加载（查看态不载入导入器包体） ----
@@ -727,6 +834,69 @@
     onTargetChange={handleDropTargetChange}
     onadd={handlePageDrop}
   />
+{/if}
+
+<!-- 暂存浮条：形态与玻璃卡外渲染的动机见组件头注；底部居中、篮空隐藏 -->
+{#if isEdit && model.dataReady && barStagedCount > 0}
+  <div
+    class="fixed bottom-4 left-1/2 z-999 max-w-[calc(100vw-2rem)] translate-x-[-50%] max-sm:bottom-24"
+    in:fly={panelFly().in}
+    out:fly={panelFly().out}
+  >
+    <div
+      class="glass-shadow-float flex max-w-full flex-wrap items-center gap-2 rounded-glass-md bg-glass p-3 px-4 backdrop-blur"
+    >
+      <span class="font-semibold whitespace-nowrap text-white">
+        {m["editor.entries.selected"]({ count: barStagedCount })}
+      </span>
+      <select
+        class="rounded-glass-sm border border-white-20 bg-black-30 px-2 py-1 text-[0.85rem] text-white outline-none"
+        bind:value={barLevelChoice}
+        disabled={model.busy}
+        aria-label={m["editor.entries.batch_choose"]()}
+      >
+        <option value={BAR_LEVEL_NONE} disabled>{m["editor.entries.batch_choose"]()}</option>
+        {#each model.levels as level (level)}
+          <option value={encodeLevelFilterOption(level)}>{level}</option>
+        {/each}
+        <option value="">{m["editor.entries.batch_clear"]()}</option>
+      </select>
+      <button
+        class={btnGhost}
+        type="button"
+        disabled={model.busy || barLevelChoice === BAR_LEVEL_NONE}
+        onclick={barAssign}
+      >
+        <ListChecks class="size-4 shrink-0" aria-hidden="true" />
+        {m["editor.entries.batch_apply"]()}
+      </button>
+      {#if barCourseTargets.length > 0}
+        <select
+          class="rounded-glass-sm border border-white-20 bg-black-30 px-2 py-1 text-[0.85rem] text-white outline-none"
+          bind:value={barCourseChoice}
+          disabled={model.busy}
+          aria-label={m["editor.entry.course_add_title"]()}
+        >
+          <option value="" disabled>{m["editor.entry.course_add_title"]()}</option>
+          {#each barCourseTargets as target (target.key)}
+            <option value={target.key}>{target.label}</option>
+          {/each}
+        </select>
+        <button class={btnGhost} type="button" disabled={model.busy} onclick={barAddToCourse}>
+          <Plus class="size-4 shrink-0" aria-hidden="true" />
+          {m["editor.entry.course_add"]()}
+        </button>
+      {/if}
+      <button class={btnDanger} type="button" disabled={model.busy} onclick={barDelete}>
+        <Trash2 class="size-4 shrink-0" aria-hidden="true" />
+        {m["editor.entries.batch_delete"]()}
+      </button>
+      <button class={btnGhost} type="button" disabled={model.busy} onclick={barClear}>
+        <X class="size-4 shrink-0" aria-hidden="true" />
+        {m["editor.entries.clear_selection"]()}
+      </button>
+    </div>
+  </div>
 {/if}
 
 <!-- 表操作折叠段：导出、查看原文与 fork（fork 仅查看态；编辑态另存共享在按钮区） -->
