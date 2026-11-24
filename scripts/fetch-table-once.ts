@@ -7,7 +7,7 @@
  * 失败时不产出数据目录——半成品目录会被管线当作基线，必须避免。
  *
  * 用法：
- *   node scripts/fetch-table-once.ts --url=<表源> --request-id=<id> --out-dir=./out [--author=<login>]
+ *   node scripts/fetch-table-once.ts --url=<表源> --request-id=<id> --out-dir=./out [--author=<login>] [--mode=add|recheck]
  *
  * 退出码恒为 0（除参数错误外）：状态已经写进 D1，工作流据 `<out-dir>/result.json`
  * 判断是否上传数据目录。
@@ -36,6 +36,8 @@ export interface FetchOnceOptions {
   outDir: string;
   /** 添加者 GitHub 登录名；仅记录在失败状态里，便于排查。 */
   author?: string | undefined;
+  /** add 新建表；recheck 只重抓已有表，不写 added/fetched。 */
+  mode?: "add" | "recheck" | undefined;
   timeoutMs?: number | undefined;
   /** 内部接口基址与 token（缺省走环境变量，测试可注入）。 */
   apiBase?: string | undefined;
@@ -53,6 +55,7 @@ async function reportResult(
   options: FetchOnceOptions,
   payload: {
     state: "done" | "failed";
+    mode?: "add" | "recheck" | undefined;
     dirName?: string | undefined;
     name?: string | undefined;
     symbol?: string | undefined;
@@ -65,6 +68,7 @@ async function reportResult(
       requestId: options.requestId,
       url: options.url,
       state: payload.state,
+      ...(payload.mode === undefined ? {} : { mode: payload.mode }),
       ...(payload.dirName === undefined ? {} : { dir_name: payload.dirName }),
       ...(payload.name === undefined ? {} : { name: payload.name }),
       ...(payload.symbol === undefined ? {} : { symbol: payload.symbol }),
@@ -84,6 +88,7 @@ function failureMessage(options: FetchOnceOptions, message: string): string {
 /** 抓取单张表：数据目录写入 out/，结果与状态写进 D1。 */
 export async function fetchTableOnce(options: FetchOnceOptions): Promise<FetchOnceResult> {
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const mode = options.mode ?? "add";
   try {
     const fetched = await fetchTable(
       { name: "", symbol: "", url: options.url, extra: {} },
@@ -112,6 +117,7 @@ export async function fetchTableOnce(options: FetchOnceOptions): Promise<FetchOn
     // 那时 result.json 记为 failed，工作流不会上传这份目录。
     await reportResult(options, {
       state: "done",
+      mode,
       dirName,
       name: updated.name,
       symbol: updated.symbol,
@@ -120,7 +126,11 @@ export async function fetchTableOnce(options: FetchOnceOptions): Promise<FetchOn
   } catch (error) {
     const message = describeError(error);
     try {
-      await reportResult(options, { state: "failed", message: failureMessage(options, message) });
+      await reportResult(options, {
+        state: "failed",
+        mode,
+        message: failureMessage(options, message),
+      });
     } catch (reportError) {
       // 状态回写失败不改变抓取结论：数据目录未产出，工作流据 result.json 判断
       console.error(`状态回写失败：${describeError(reportError)}`);
@@ -135,6 +145,7 @@ function parseArgs(argv: string[]): FetchOnceOptions {
     requestId?: string;
     outDir?: string;
     author?: string | undefined;
+    mode?: "add" | "recheck" | undefined;
     timeoutMs?: number;
   } = {};
   for (const arg of argv) {
@@ -147,6 +158,12 @@ function parseArgs(argv: string[]): FetchOnceOptions {
     } else if (arg.startsWith("--author=")) {
       const author = arg.slice("--author=".length);
       result.author = author === "" ? undefined : author;
+    } else if (arg.startsWith("--mode=")) {
+      const mode = arg.slice("--mode=".length);
+      if (mode !== "add" && mode !== "recheck") {
+        throw new Error(`未知抓取模式：${mode}`);
+      }
+      result.mode = mode;
     } else if (arg.startsWith("--timeout-ms=")) {
       result.timeoutMs = Number(arg.slice("--timeout-ms=".length));
     } else {

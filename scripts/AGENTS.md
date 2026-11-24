@@ -20,7 +20,7 @@
   - 组装结构、多语 chunk 合并与版本坑见 `scripts/assemble-site.ts` 头注；`node scripts/assemble-site.ts` 单独跑组装（CI verify job 的 matrix 路径：flavor 在独立 runner 单遍 build，artifact 汇合后组装，不经 `pnpm build`）。
   - `pnpm build:flavor` 跑单遍。
 - `node scripts/fetch-tables.ts`：本地跑数据管线（基线经 rclone 同步自 R2，用户层经站点 Worker 的内部接口读取，需要 `INTERNAL_API_TOKEN`；写表数据、索引、`health.json` 与 `warnings.log`；产物已 gitignore）
-- `node scripts/fetch-table-once.ts --url=<表源> --request-id=<id> --out-dir=./out`：单表抓取（复用管线抓取与命名逻辑）：数据目录供 `fetch-table` 工作流上传到 R2，抓取结果与状态经内部接口写进 D1
+- `node scripts/fetch-table-once.ts --url=<表源> --request-id=<id> --out-dir=./out [--mode=add|recheck]`：单表抓取（复用管线抓取与命名逻辑）：数据目录供 `fetch-table` 工作流上传到 R2，抓取结果与状态经内部接口写进 D1
 - `pnpm test:parity`：手动新旧实现对拍（用公开 R2 基线与归档工具 v0.4.2 的二进制，逐对象比对产物；`PARITY_LIMIT` 可只对拍前 N 张表）
 - `pnpm check:quotes`：全量中文引号检查（扩展名与 `static/` 排除规则在 `package.json`，pre-commit 与 CI 共用）
 - `pnpm check:icons`：UI 模板图标纪律检查（src 下 `.svelte` 禁 emoji 与符号图标；范围与禁用集见脚本头注，pre-commit 与 CI 共用）
@@ -83,6 +83,7 @@
   - 表数据写到本地输出目录（out，gitignored）后经 rclone 上传，抓取结果与状态则经 `POST /api/internal/fetch-result` 写进 D1。
   - **失败只写 failed 状态、不产出数据目录**（半成品目录会被管线当作基线）。
   - 抓取脚本退出码恒为 0（除参数错误），结果由输出目录里的结果 JSON 表达，前端轮询 `/api/tables/status/<id>` 据此结束。
+  - `mode=recheck` 用于管理端手动重抓：成功只上传 R2，不写 added/fetched；健康状态在下一轮 `update-tables` 更新。
   - 主站运行时读取 R2/D1，抓取完成后不再触发部署。输入经 env 传入、不直接插值进 shell 命令。
 
 ### 旧配置

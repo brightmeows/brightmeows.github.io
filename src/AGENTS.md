@@ -136,6 +136,8 @@
 治理操作全部收进列表页（旧后台路径已移除）：管理折叠区与行内编辑卡片协议见 `src/lib/components/bms/MirrorAdminPanel.svelte` 头注。
 权限模型跨端：`/api/admin/*` 只认 `ADMIN_LOGIN`，前端仅按角色显隐控件；清单条目的 `url` 在客户端被重写为站内镜像路径，提交前用 `url_from` 还原源 URL（接口以源 URL 为键）。
 
+- 管理员列表多健康列：status、reason、last_success；行内重抓按钮走 `/api/admin/recheck` 派发 `fetch-table.yml` 的 recheck 模式，成功只刷新 R2 数据，健康状态在下一轮 `update-tables` 更新。
+
 #### R2 端点
 
 R2 地址单一来源与镜像、共享两对 URL 构造函数都在 `src/lib/constants/r2.ts`（环境无关层，构建期与客户端共用）；改地址只改 `config/site.json` 的 `r2.base`，文件协议细节见其头注。

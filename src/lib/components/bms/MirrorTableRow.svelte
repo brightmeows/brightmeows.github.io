@@ -3,6 +3,7 @@
   import { mirrorTablePath } from "@brightmeows/mirror/urls";
   import Check from "@lucide/svelte/icons/check";
   import Copy from "@lucide/svelte/icons/copy";
+  import RefreshCw from "@lucide/svelte/icons/refresh-cw";
   import Trash2 from "@lucide/svelte/icons/trash-2";
   import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
 
@@ -14,8 +15,10 @@
   import ToggleButton from "#lib/components/ui/ToggleButton.svelte";
   import { btnDanger, btnGhostXs, btnIconPlain } from "#lib/constants/ui-classes.js";
   import { m } from "#lib/paraglide/messages.js";
+  import { getLocale } from "#lib/paraglide/runtime.js";
   import type { MirrorAdminUi } from "#lib/types/bms-view.js";
   import type { JsonPreviewHandle } from "#lib/types/ui.js";
+  import { formatDate } from "#lib/utils/infra/date.js";
   import { staleNoticeText, tableLabelOf } from "#lib/utils/mirror-tables.js";
   import { clipboardFieldFeedback } from "#lib/utils/ui/clipboard.svelte.js";
 
@@ -28,6 +31,12 @@
     showActions: boolean;
     /** 是否能执行删除（已登录）；管理员删除在编辑卡片内，贡献者在行尾。 */
     canDelete?: boolean;
+    /** 管理员可见的健康列。 */
+    showHealth: boolean;
+    /** 单行重抓回调；管理员健康列用。 */
+    onrecheck?: ((item: MirrorTableItem) => void) | undefined;
+    /** 当前正在派发重抓的行。 */
+    rechecking?: boolean;
     mirrorPreview?: JsonPreviewHandle | undefined;
     /** 删除进行中：按钮禁用。 */
     deleting?: boolean;
@@ -41,6 +50,9 @@
     adminUi,
     showActions,
     canDelete = false,
+    showHealth,
+    onrecheck,
+    rechecking = false,
     mirrorPreview,
     deleting = false,
     ondelete,
@@ -49,7 +61,7 @@
   let cb = clipboardFieldFeedback();
 
   const isExpanded = $derived(adminUi.expandedUrl === item.url);
-  const columnCount = $derived(showActions ? 7 : 6);
+  const columnCount = $derived(6 + (showHealth ? 1 : 0) + (showActions ? 1 : 0));
   const authTitle = $derived(
     item.protected === true ? m["mirror.protected_title"]() : m["mirror.unprotected_title"]()
   );
@@ -58,6 +70,29 @@
     deleting ? m["mirror.deleting"]() : m["mirror.delete_aria"]({ name: tableLabelOf(item) })
   );
   const staleTitle = $derived(item.status === "stale" ? staleNoticeText(item) : undefined);
+  const healthLabel = $derived(
+    item.status === "stale"
+      ? m["mirror.health_stale"]()
+      : item.status === "ok"
+        ? m["mirror.health_ok"]()
+        : m["mirror.health_unknown"]()
+  );
+  const healthClass = $derived(
+    item.status === "stale"
+      ? "border-warning/60 bg-warning/20 text-warning-light"
+      : item.status === "ok"
+        ? "border-success/60 bg-success/20 text-success"
+        : "border-white-20 bg-white-5 text-white-50"
+  );
+  const healthTitle = $derived(
+    item.status === "stale"
+      ? staleNoticeText(item)
+      : item.last_success === undefined
+        ? m["mirror.health_unknown_title"]()
+        : m["mirror.health_last_success"]({
+            date: formatDate(item.last_success, getLocale()),
+          })
+  );
 </script>
 
 <tr
@@ -137,6 +172,30 @@
       </span>
     {/if}
   </td>
+  {#if showHealth}
+    <td
+      class="table-td-compact px-2 max-sm:col-start-1 max-sm:col-end-4 max-sm:row-start-5 max-sm:border-0 max-sm:p-0"
+    >
+      <div class="flex items-center justify-center gap-1">
+        <span
+          class="inline-flex items-center rounded-glass-sm border px-2 py-[0.15rem] text-[0.75rem] {healthClass}"
+          title={healthTitle}
+        >
+          {healthLabel}
+        </span>
+        <button
+          class={btnIconPlain}
+          type="button"
+          title={m["mirror.health_recheck"]()}
+          aria-label={m["mirror.health_recheck_aria"]({ name: tableLabelOf(item) })}
+          disabled={rechecking}
+          onclick={() => onrecheck?.(item)}
+        >
+          <RefreshCw class="size-4 {rechecking ? 'animate-spin' : ''}" aria-hidden="true" />
+        </button>
+      </div>
+    </td>
+  {/if}
   <td
     class="table-td-compact min-w-32.5 wrap-break-word max-sm:col-start-1 max-sm:col-end-4 max-sm:row-start-3 max-sm:min-w-0 max-sm:border-0 max-sm:p-0"
   >
@@ -201,7 +260,9 @@
   </td>
   {#if showActions}
     <td
-      class="table-td-compact px-2 max-sm:col-start-1 max-sm:col-end-4 max-sm:row-start-5 max-sm:border-0 max-sm:p-0"
+      class="table-td-compact px-2 max-sm:col-start-1 max-sm:col-end-4 {showHealth
+        ? 'max-sm:row-start-6'
+        : 'max-sm:row-start-5'} max-sm:border-0 max-sm:p-0"
     >
       <div class="flex items-center gap-1">
         {#if adminUi.isAdmin}

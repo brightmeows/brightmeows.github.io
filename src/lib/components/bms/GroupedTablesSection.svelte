@@ -35,6 +35,10 @@
     ondelete?: ((item: MirrorTableItem) => void) | undefined;
     /** 操作模式：打开后每行显示管理或删除入口。 */
     operationsMode?: boolean;
+    /** 单行重抓回调；管理员健康列用。 */
+    onrecheck?: ((item: MirrorTableItem) => void) | undefined;
+    /** 当前正在派发重抓的行。 */
+    recheckingUrl?: string | null;
   }
 
   let {
@@ -46,11 +50,14 @@
     deletingDir = null,
     ondelete,
     operationsMode = false,
+    onrecheck,
+    recheckingUrl = null,
   }: Props = $props();
 
   // 操作列只在操作模式打开时出现，默认列表保持六列
   const showActions = $derived(operationsMode);
-  const columnCount = $derived(showActions ? 7 : 6);
+  const showHealth = $derived(adminUi.isAdmin);
+  const columnCount = $derived(6 + (showHealth ? 1 : 0) + (showActions ? 1 : 0));
 
   function scrollToTag1(tag1: string): void {
     const id = `tag1-group-${slugifyTag(tag1)}`;
@@ -170,6 +177,7 @@
               <col class="w-30" />
               <col class="w-[320px]" />
               <col class="w-16" />
+              {#if showHealth}<col class="w-28" />{/if}
               <col class="w-40" />
               <col class="w-40" />
               {#if showActions}<col class="w-28" />{/if}
@@ -187,6 +195,11 @@
                 <th class="table-th-compact table-th-sticky px-2 whitespace-nowrap" scope="col"
                   >{m["mirror.th_auth"]()}</th
                 >
+                {#if showHealth}
+                  <th class="table-th-compact table-th-sticky px-2 whitespace-nowrap" scope="col"
+                    >{m["mirror.th_health"]()}</th
+                  >
+                {/if}
                 <th class="table-th-compact table-th-sticky" scope="col"
                   >{m["common.th_mirror"]()}</th
                 >
@@ -250,7 +263,10 @@
                       onchange={(checked: boolean) => onRowChange(checked, item.url)}
                       {adminUi}
                       {showActions}
+                      {showHealth}
                       canDelete={showDelete}
+                      {onrecheck}
+                      rechecking={recheckingUrl === item.url}
                       {mirrorPreview}
                       deleting={deletingDir === item.dir_name}
                       {ondelete}
