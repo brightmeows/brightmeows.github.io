@@ -123,6 +123,7 @@ export interface AuditEntry {
     | "enable"
     | "replace"
     | "meta"
+    | "recheck"
     | "migrate"
     | "shared_create"
     | "shared_save"

@@ -22,6 +22,14 @@ on:
         description: "添加者 GitHub 登录名（仅记录，可空）"
         required: false
         type: string
+      mode:
+        description: "抓取模式：add 新建表，recheck 只重抓已有表"
+        required: false
+        default: "add"
+        type: choice
+        options:
+          - add
+          - recheck
 
 concurrency:
   group: fetch-table
@@ -52,6 +60,7 @@ jobs:
           TABLE_URL: ${{ inputs.url }}
           REQUEST_ID: ${{ inputs.requestId }}
           AUTHOR: ${{ inputs.author }}
+          MODE: ${{ inputs.mode }}
           # 抓取结果与状态经内部接口写进 D1
           INTERNAL_API_TOKEN: ${{ secrets.INTERNAL_API_TOKEN }}
         run: |
@@ -59,6 +68,7 @@ jobs:
             --url="$TABLE_URL" \
             --request-id="$REQUEST_ID" \
             --author="$AUTHOR" \
+            --mode="$MODE" \
             --out-dir=./out
 
       - name: Upload results to R2

@@ -4,6 +4,7 @@ import {
   API_ERROR_CODES,
   narrowAdd,
   narrowAdminMutation,
+  narrowAdminRecheck,
   narrowAdminOverview,
   narrowDelete,
   narrowFetchStatus,
@@ -362,5 +363,22 @@ describe("narrowAdminMutation", () => {
     expect(narrowAdminMutation({ ok: false, restoredObjects: "x" })).toEqual({
       ok: false,
     });
+  });
+});
+
+describe("narrowAdminRecheck", () => {
+  it("收下 requestId 与 url，缺 requestId 返回 null", () => {
+    expect(narrowAdminRecheck({ requestId: "r1", url: "u" }, "fallback")).toEqual({
+      ok: true,
+      requestId: "r1",
+      url: "u",
+    });
+    expect(narrowAdminRecheck({ requestId: "r1" }, "fallback")).toEqual({
+      ok: true,
+      requestId: "r1",
+      url: "fallback",
+    });
+    expect(narrowAdminRecheck({ url: "u" }, "fallback")).toBeNull();
+    expect(narrowAdminRecheck(null, "fallback")).toBeNull();
   });
 });

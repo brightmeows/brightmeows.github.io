@@ -1,9 +1,14 @@
 import type {
   AdminMutationResponse,
   AdminOverviewResponse,
+  AdminRecheckResponse,
   TrashEntry as ContractTrashEntry,
 } from "@brightmeows/mirror/api";
-import { narrowAdminMutation, narrowAdminOverview } from "@brightmeows/mirror/api";
+import {
+  narrowAdminMutation,
+  narrowAdminOverview,
+  narrowAdminRecheck,
+} from "@brightmeows/mirror/api";
 
 import { requestJson } from "./http";
 
@@ -108,5 +113,16 @@ export async function adminRestore(dirName: string): Promise<AdminMutationResult
       method: "POST",
       body: JSON.stringify({ dir_name: dirName }),
     })
+  );
+}
+
+/** 手动重抓一张已有表；返回 requestId 供状态轮询。 */
+export async function adminRecheck(url: string): Promise<AdminRecheckResponse | null> {
+  return narrowAdminRecheck(
+    await requestJson("/api/admin/recheck", {
+      method: "POST",
+      body: JSON.stringify({ url }),
+    }),
+    url
   );
 }

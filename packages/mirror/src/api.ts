@@ -543,6 +543,28 @@ export function narrowAdminMutation(body: unknown): AdminMutationResponse {
   };
 }
 
+/** `POST /api/admin/recheck` 的响应。 */
+export interface AdminRecheckResponse {
+  ok: boolean;
+  requestId: string;
+  url: string;
+}
+
+/** 重抓派发结果窄化：缺 requestId 返回 null（调用方按非法响应处理）。 */
+export function narrowAdminRecheck(
+  body: unknown,
+  fallbackUrl: string
+): AdminRecheckResponse | null {
+  if (!isRecord(body)) return null;
+  const requestId = body.requestId;
+  if (typeof requestId !== "string") return null;
+  return {
+    ok: body.ok !== false,
+    requestId,
+    url: typeof body.url === "string" ? body.url : fallbackUrl,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // 共享表（/api/shared/*）
 // ---------------------------------------------------------------------------
@@ -702,6 +724,8 @@ export interface InternalFetchResultRequest {
   requestId: string;
   url: string;
   state: "done" | "failed";
+  /** 抓取模式；recheck 只更新状态，不写 added/fetched。 */
+  mode?: "add" | "recheck";
   /** state 为 done 时必须。 */
   dir_name?: string;
   /** state 为 done 时必须。 */

@@ -161,12 +161,13 @@ CI 的 `CLOUDFLARE_API_TOKEN` 必须在 **Manage Account → Account API Tokens*
 ### GitHub App 派发
 
 - **触发单表抓取用 GitHub App**：Worker 的 `dispatch.ts` 用 App 私钥签 JWT、换 installation token，触发 `fetch-table.yml`；不再触发 deploy/mirror。
+  - 管理端手动重抓走同一工作流的 `mode=recheck`：成功只写 R2 数据，不写 added/fetched；健康状态由下一轮 `update-tables` 收敛。
 - **GitHub 下载的私钥是 PKCS#1，Web Crypto 只吃 PKCS#8**：`pkcs1ToPkcs8` 用 DER 重包一层（版本号加 rsaEncryption 的 AlgorithmIdentifier），站长不必额外跑 openssl 转换。
   - 这层包装由 `packages/worker/dispatch.test.ts` 用“Web Crypto 生成密钥、反向拆包、再包回去应与原 DER 逐字节一致”验证（不依赖 node:crypto，与 Workers 运行环境同一套 API）。
 
 ### 内部接口
 
-端点：`GET user-layer`（返回原始用户层的 6 类索引加 fetched，形状与旧 R2 对象一致，供管线算活跃表集合）、`POST fetch-result`（单表抓取回写结果与状态）、`POST backup-now`（立即执行一次用户层备份）。
+端点：`GET user-layer`（返回原始用户层的 6 类索引加 fetched，形状与旧 R2 对象一致，供管线算活跃表集合）、`POST fetch-result`（单表抓取回写结果与状态；`mode=recheck` 只写状态，不写 added/fetched）、`POST backup-now`（立即执行一次用户层备份）。
 
 - 鉴权是 `Authorization: Bearer <INTERNAL_API_TOKEN>`（恒定时间比较）；未配置 token 时拒绝一切内部调用。
 - 之所以不让 Actions 直连 Cloudflare API：那需要把账户级数据库权限交给 GitHub，而这组端点只暴露固定能力。

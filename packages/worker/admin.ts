@@ -10,6 +10,7 @@ import { API_ERROR_CODES } from "@brightmeows/mirror/api";
 import { getSession } from "./auth.ts";
 import { ADMIN_LOGIN, type Env } from "./env.ts";
 import {
+  handleAdminRecheck,
   handleAdminRestore,
   handleAuthorize,
   handleDisable,
@@ -53,6 +54,9 @@ export async function handleAdmin(request: Request, env: Env, url: URL): Promise
   }
   if (path === "/api/admin/restore") {
     return handleAdminRestore(request, env, session, now);
+  }
+  if (path === "/api/admin/recheck") {
+    return handleAdminRecheck(request, env, session, now);
   }
   return failure(404, "Unknown admin endpoint", { code: API_ERROR_CODES.unknownAdminEndpoint });
 }

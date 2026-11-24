@@ -69,6 +69,7 @@ async function handleFetchResult(request: Request, env: Env, now: Date): Promise
   if (state !== "done" && state !== "failed") {
     return failure(400, "state must be done or failed");
   }
+  const mode = bodyString(body, "mode") === "recheck" ? "recheck" : "add";
   const at = now.toISOString();
 
   if (state === "done") {
@@ -86,8 +87,10 @@ async function handleFetchResult(request: Request, env: Env, now: Date): Promise
       ...(symbol === undefined ? {} : { symbol }),
       fetched_at: at,
     };
-    await upsertFetched(env, entry);
-  } else {
+    if (mode === "add") {
+      await upsertFetched(env, entry);
+    }
+  } else if (mode === "add") {
     // 抓取失败：清掉 added 记录，同一 URL 可重新提交（失败状态留在 fetch_status）
     await deleteAddedById(env, requestId);
   }

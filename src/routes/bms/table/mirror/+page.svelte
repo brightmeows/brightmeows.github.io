@@ -40,6 +40,7 @@
     adminAuthorize,
     adminDisable,
     adminMeta,
+    adminRecheck,
     adminReplace,
     adminRestore,
     fetchAdminOverview,
@@ -108,6 +109,7 @@
   /** MirrorUserActions 实例：删除后刷新其配额与回收站列表。 */
   let userActions = $state<{ refresh: () => Promise<void> } | undefined>(undefined);
   let deletingDir = $state<string | null>(null);
+  let recheckingUrl = $state<string | null>(null);
 
   let mirrorPreview = $state<JsonPreviewHandle | undefined>(undefined);
 
@@ -348,6 +350,32 @@
       },
       m["admin.meta.cleared"]({ name: label })
     );
+  }
+
+  async function handleRecheck(item: MirrorTableItem): Promise<void> {
+    if (!isAdmin || recheckingUrl !== null) return;
+    recheckingUrl = item.url;
+    admin = { ...admin, notice: null };
+    try {
+      const result = await adminRecheck(sourceUrlOf(item));
+      admin = {
+        ...admin,
+        notice:
+          result === null
+            ? { kind: "error", text: m["mirror.recheck_failed"]() }
+            : { kind: "ok", text: m["mirror.recheck_dispatched"]() },
+      };
+    } catch (e) {
+      admin = {
+        ...admin,
+        notice: {
+          kind: "error",
+          text: errorMessageOf(e, m["mirror.recheck_failed"]()),
+        },
+      };
+    } finally {
+      recheckingUrl = null;
+    }
   }
 
   function handleReplaceAdd(from: string, to: string): Promise<boolean> {
@@ -596,6 +624,8 @@
           showDelete={auth.user !== null}
           {operationsMode}
           {deletingDir}
+          {recheckingUrl}
+          onrecheck={(item: MirrorTableItem) => void handleRecheck(item)}
           ondelete={(item: MirrorTableItem) => void handleDelete(item)}
         />
       {/if}

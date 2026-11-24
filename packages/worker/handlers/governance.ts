@@ -6,14 +6,20 @@
  */
 
 import { API_ERROR_CODES } from "@brightmeows/mirror/api";
-import type { AdminMutationResponse, AdminOverviewResponse } from "@brightmeows/mirror/api";
-import type { MetaOverride } from "@brightmeows/mirror/user-layer";
+import type {
+  AdminMutationResponse,
+  AdminOverviewResponse,
+  AdminRecheckResponse,
+} from "@brightmeows/mirror/api";
+import { tableUrlKey, type MetaOverride } from "@brightmeows/mirror/user-layer";
 
 import type { Session } from "../auth.ts";
+import { dispatchWorkflow } from "../dispatch.ts";
 import type { Env } from "../env.ts";
 import { failure, json, readJsonBody } from "../http.ts";
-import { invalidateMergedManifest } from "../manifest.ts";
+import { invalidateMergedManifest, loadMergedManifest } from "../manifest.ts";
 import { listAudit, writeAudit } from "../store/audit.ts";
+import { writeFetchStatus } from "../store/fetch-status.ts";
 import { restoreTableFromTrash } from "../store/trash.ts";
 import {
   deleteAuthorized,
@@ -333,4 +339,62 @@ export async function handleAdminRestore(
     ok: true,
     restoredObjects,
   });
+}
+
+/** 手动重抓：派发单表抓取，recheck 模式不改用户层 added/fetched。 */
+export async function handleAdminRecheck(
+  request: Request,
+  env: Env,
+  session: Session,
+  now: Date
+): Promise<Response> {
+  const body = await readJsonBody(request);
+  const url = normalizeBodyUrl(body);
+  if (url === null) {
+    return failure(400, "A valid url is required", { code: API_ERROR_CODES.needValidUrl });
+  }
+  const manifest = await loadMergedManifest(env);
+  if (manifest === null) {
+    return failure(503, "Manifest unavailable", { code: API_ERROR_CODES.manifestUnavailable });
+  }
+  const item = manifest.find((entry) => tableUrlKey(entry.url) === tableUrlKey(url));
+  if (item === undefined) {
+    return failure(404, "Table not found in the manifest", { code: API_ERROR_CODES.notInManifest });
+  }
+
+  const requestId = crypto.randomUUID();
+  const at = now.toISOString();
+  await writeFetchStatus(env, {
+    id: requestId,
+    url: item.url,
+    state: "pending",
+    updated_at: at,
+  });
+  try {
+    await dispatchWorkflow(env, "fetch-table.yml", {
+      url: item.url,
+      requestId,
+      author: session.login,
+      mode: "recheck",
+    });
+  } catch {
+    await writeFetchStatus(env, {
+      id: requestId,
+      url: item.url,
+      state: "failed",
+      message: API_ERROR_CODES.fetchDispatchFailed,
+      updated_at: new Date().toISOString(),
+    });
+    return failure(502, "Recheck dispatch failed", { code: API_ERROR_CODES.fetchDispatchFailed });
+  }
+  await writeAudit(env, {
+    at,
+    actor: session.login,
+    role: session.role,
+    action: "recheck",
+    url: item.url,
+    ...(item.dir_name === undefined ? {} : { dir_name: item.dir_name }),
+  });
+  invalidateMergedManifest();
+  return json<AdminRecheckResponse>({ ok: true, requestId, url: item.url });
 }
