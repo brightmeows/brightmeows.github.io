@@ -142,6 +142,8 @@
     adminActions?: Snippet | undefined;
     /** hero 下的收录声明行；空则不渲染。 */
     disclaimer?: string | undefined;
+    /** hero 下的数据新鲜度提示；镜像表的 stale 状态由路由层拼好传入。 */
+    healthNotice?: string | undefined;
   }
 
   let {
@@ -152,6 +154,7 @@
     management,
     adminActions,
     disclaimer,
+    healthNotice,
   }: Props = $props();
 
   // 等级参考的状态属主是本组件：LevelRefTable 自取数并经 bind 回写；
@@ -1034,6 +1037,13 @@
       {/if}
     {/snippet}
   </PageHero>
+  {#if healthNotice}
+    <p
+      class="mx-auto mt-2 max-w-[1000px] rounded-glass-sm border border-warning/40 bg-warning/10 px-4 py-2 text-center text-[0.9rem] text-warning-light"
+    >
+      {healthNotice}
+    </p>
+  {/if}
   {#if disclaimer}
     <p class="mx-auto mt-2 max-w-[1000px] text-center text-[0.9rem] text-white-60">
       {disclaimer}

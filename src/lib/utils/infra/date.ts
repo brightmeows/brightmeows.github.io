@@ -78,3 +78,10 @@ export function formatAbsolute(value: string | number, locale: string): string {
   if (!Number.isFinite(at)) return rawFallback(value);
   return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "medium" }).format(at);
 }
+
+/** 把时间戳格式化为绝对日期（medium 档，不含时刻）；非法输入原样返回。 */
+export function formatDate(value: string | number, locale: string): string {
+  const at = toEpoch(value);
+  if (!Number.isFinite(at)) return rawFallback(value);
+  return new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(at);
+}

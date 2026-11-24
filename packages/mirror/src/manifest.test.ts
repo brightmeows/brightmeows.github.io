@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import { injectBmstableMeta, renderBmstableMetaTag, transformTableList } from "./manifest.ts";
-import type { MirrorTableItem } from "./types.ts";
+import {
+  injectBmstableMeta,
+  injectMirrorTableMeta,
+  mergeTableHealth,
+  MIRROR_TABLE_META_ID,
+  parseTableHealthManifest,
+  renderBmstableMetaTag,
+  tableHealthOf,
+  transformTableList,
+} from "./manifest.ts";
+import type { MirrorTableHealth, MirrorTableItem } from "./types.ts";
 
 const SHELL =
   '<!doctype html><html lang="zh-CN"><head><meta charset="utf-8" /><title>x</title></head><body></body></html>';
@@ -86,5 +95,100 @@ describe("injectBmstableMeta", () => {
     expect(() =>
       injectBmstableMeta("<html><body>x</body></html>", "https://r2/a/header.json")
     ).toThrow(/head/);
+  });
+});
+
+describe("injectMirrorTableMeta", () => {
+  const health: MirrorTableHealth = {
+    status: "stale",
+    last_success: "2026-06-12T21:44:59.000Z",
+    reason: "source_gone",
+  };
+
+  it("注入 application/json script，JSON 内容不含裸 <", () => {
+    const out = injectMirrorTableMeta(SHELL, health);
+    expect(out).toContain(`id="${MIRROR_TABLE_META_ID}"`);
+    const start = out.indexOf(">", out.indexOf(MIRROR_TABLE_META_ID)) + 1;
+    const end = out.indexOf("</script>", start);
+    const json = out.slice(start, end);
+    expect(json).not.toContain("<");
+    expect(JSON.parse(json)).toEqual(health);
+  });
+
+  it("找不到 <head> 时报错", () => {
+    expect(() => injectMirrorTableMeta("<html><body>x</body></html>", health)).toThrow(/head/);
+  });
+});
+
+describe("parseTableHealthManifest", () => {
+  it("只收合法条目，坏条目与非对象顶层返回空结果", () => {
+    const parsed = parseTableHealthManifest({
+      generated_at: "2026-11-24T00:00:00.000Z",
+      tables: {
+        "https://a": {
+          status: "stale",
+          last_success: "2026-06-12T21:44:59.000Z",
+          reason: "source_gone",
+        },
+        "https://b": { status: "ok" },
+        "https://c": { status: "bad" },
+      },
+    });
+    expect(parsed.get("https://a")).toEqual({
+      status: "stale",
+      last_success: "2026-06-12T21:44:59.000Z",
+      reason: "source_gone",
+    });
+    expect(parsed.get("https://b")).toEqual({ status: "ok" });
+    expect(parsed.has("https://c")).toBe(false);
+    expect(parseTableHealthManifest(null).size).toBe(0);
+    expect(parseTableHealthManifest({ tables: [] }).size).toBe(0);
+  });
+});
+
+describe("mergeTableHealth", () => {
+  it("按源 URL 合并字段，没有健康记录的条目保持原对象", () => {
+    const list: MirrorTableItem[] = [
+      { name: "a", url: "https://a" },
+      { name: "b", url: "https://b" },
+    ];
+    const merged = mergeTableHealth(
+      list,
+      new Map([
+        [
+          "https://a",
+          {
+            status: "stale" as const,
+            last_success: "2026-06-12T21:44:59.000Z",
+            reason: "source_gone" as const,
+          },
+        ],
+      ])
+    );
+    expect(merged[0]).toMatchObject({
+      status: "stale",
+      last_success: "2026-06-12T21:44:59.000Z",
+      reason: "source_gone",
+    });
+    expect(merged[1]).toBe(list[1]);
+  });
+});
+
+describe("tableHealthOf", () => {
+  it("有状态时提取公开字段，无状态时返回 null", () => {
+    expect(
+      tableHealthOf({
+        name: "a",
+        url: "https://a",
+        status: "stale",
+        last_success: "2026-06-12T21:44:59.000Z",
+        reason: "access_denied",
+      })
+    ).toEqual({
+      status: "stale",
+      last_success: "2026-06-12T21:44:59.000Z",
+      reason: "access_denied",
+    });
+    expect(tableHealthOf({ name: "a", url: "https://a" })).toBeNull();
   });
 });

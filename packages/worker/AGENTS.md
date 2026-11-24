@@ -116,6 +116,7 @@ CI 的 `CLOUDFLARE_API_TOKEN` 必须在 **Manage Account → Account API Tokens*
 - **清单合成的 CPU 成本已实测，不为它单独缓存**：本地实测（Node，与 workerd 同为 V8；清单与用户层等规模）parse、merge 与完整响应构造都在毫秒级；线上 Worker CPU P99 在免费计划上限附近，合成只占一部分。
   监控触发条件：GraphQL Analytics 的 `workersInvocationsAdaptive`（cpuTime P50/P99 分位与 errors，近 7 天窗口）出现 1102 错误或 P99 持续越过 8ms 时再处理。
 - **清单在主站读取侧合成，用户层存于 D1**：Worker 把 R2 清单与 D1 用户层合并后响应；用户层不可用时退化为纯管线清单。桶名与 D1 库名在 `wrangler.jsonc` 的绑定里入库。
+  - 合并时并行读取 R2 `health.json`，按源 URL 附加 `status`/`last_success`/`reason`；health 不可用时只回退到无健康字段的清单，不阻塞主路径。
 - **难度表导入链接与查看页是同一条 URL**：`/bms/table/mirror/<dir_name>/` 既是 beatoraja / BeMusicSeeker 的导入地址（beatoraja 对不以 `.json` 结尾的 URL 会当 HTML 页解析 `bmstable` meta，对 `.json` 结尾的 URL 直读 header），也是浏览器里的查看页。
   - 页面直接展示当前地址作为可导入链接（`BmsTablePage` 从地址栏取，带复制按钮）。
   - `tables.json` 兼作 BeMusicSeeker 的难度表清单（超集字段）。

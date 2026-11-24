@@ -9,11 +9,13 @@ import {
   findMetaOverride,
   groupByTags,
   nextTagOrder,
+  parseMirrorTableMeta,
   removeTableByUrl,
   setTableProtected,
   shouldSuggestTagOrder,
   slugifyTag,
   sourceUrlOf,
+  staleNoticeText,
   tableLabelOf,
 } from "./mirror-tables";
 
@@ -213,5 +215,40 @@ describe("shouldSuggestTagOrder", () => {
     expect(shouldSuggestTagOrder(" SP ", ["SP", "DP"])).toBe(false);
     expect(shouldSuggestTagOrder("", ["SP"])).toBe(false);
     expect(shouldSuggestTagOrder("  ", ["SP"])).toBe(false);
+  });
+});
+
+describe("parseMirrorTableMeta", () => {
+  it("解析合法 JSON，坏结构与空值返回 null", () => {
+    expect(
+      parseMirrorTableMeta(
+        '{"status":"stale","last_success":"2026-06-12T21:44:59Z","reason":"source_gone"}'
+      )
+    ).toEqual({
+      status: "stale",
+      last_success: "2026-06-12T21:44:59Z",
+      reason: "source_gone",
+    });
+    expect(parseMirrorTableMeta('{"status":"ok"}')).toEqual({ status: "ok" });
+    expect(parseMirrorTableMeta('{"status":"bad"}')).toBeNull();
+    expect(parseMirrorTableMeta("not json")).toBeNull();
+    expect(parseMirrorTableMeta(null)).toBeNull();
+  });
+});
+
+describe("staleNoticeText", () => {
+  it("包含最后更新日期与原因文案", () => {
+    const text = staleNoticeText({
+      last_success: "2026-06-12T21:44:59Z",
+      reason: "source_gone",
+    });
+    expect(text).toContain("2026");
+    expect(text).toContain(m["mirror.stale_reason_source_gone"]());
+  });
+
+  it("缺少日期时用未知时间文案", () => {
+    const text = staleNoticeText({});
+    expect(text).toContain(m["mirror.stale_unknown_date"]());
+    expect(text).toContain(m["mirror.stale_reason_unknown"]());
   });
 });

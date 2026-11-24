@@ -7,7 +7,8 @@
  * 清单可用优先于增删可见。
  */
 
-import type { MirrorTableItem } from "@brightmeows/mirror/types";
+import { mergeTableHealth, parseTableHealthManifest } from "@brightmeows/mirror/manifest";
+import type { MirrorTableHealth, MirrorTableItem } from "@brightmeows/mirror/types";
 import { mergeTableList } from "@brightmeows/mirror/user-layer";
 
 import type { Env } from "./env.ts";
@@ -34,6 +35,10 @@ const MERGED_CACHE_MS = MANIFEST_MAX_AGE * 1000;
 
 function manifestUrl(env: Env): string {
   return `${env.R2_BASE.replace(/\/+$/, "")}/${env.R2_MANIFEST_OBJECT}`;
+}
+
+function healthUrl(env: Env): string {
+  return new URL("health.json", manifestUrl(env)).href;
 }
 
 /** 惰性打开快照命名空间；isolate 内复用同一个 promise，打开失败不缓存失败结果。 */
@@ -113,6 +118,22 @@ export async function loadManifest(
   return loadSnapshot(key);
 }
 
+/** 读取 health.json；失败返回空 Map，健康状态是增量信息，不阻塞清单。 */
+async function loadHealth(env: Env): Promise<Map<string, MirrorTableHealth>> {
+  try {
+    const res = await fetch(healthUrl(env), {
+      cf: { cacheTtl: MANIFEST_MAX_AGE, cacheEverything: true },
+    });
+    if (!res.ok) {
+      return new Map();
+    }
+    const parsed: unknown = await res.json();
+    return parseTableHealthManifest(parsed);
+  } catch {
+    return new Map();
+  }
+}
+
 /** 合成清单的内存缓存；失败结果不缓存。 */
 let mergedCache: { at: number; list: MirrorTableItem[] } | null = null;
 
@@ -133,12 +154,16 @@ export async function loadMergedManifest(
   if (mergedCache !== null && now - mergedCache.at < MERGED_CACHE_MS) {
     return mergedCache.list;
   }
-  const base = await loadManifest(env, ctx);
+  const [base, user, health] = await Promise.all([
+    loadManifest(env, ctx),
+    loadUserLayer(env),
+    loadHealth(env),
+  ]);
   if (base === null) {
     return null;
   }
-  const user = await loadUserLayer(env);
   const { list } = mergeTableList(base, user);
-  mergedCache = { at: now, list };
-  return list;
+  const merged = mergeTableHealth(list, health);
+  mergedCache = { at: now, list: merged };
+  return merged;
 }
