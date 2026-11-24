@@ -4,6 +4,8 @@ import {
   buildEditorHeader,
   countUnassigned,
   type DraftPayload,
+  relocateStagedIndices,
+  sanitizeStagedIndices,
   type TableEditPayload,
 } from "@brightmeows/bms/editor";
 import type { ChartData } from "@brightmeows/bms/format";
@@ -104,6 +106,75 @@ function historyAction(saving: boolean, run: () => void): void {
   if (!saving) run();
 }
 
+/** 确认原语：页面注入的弹层优先，缺省回退原生 confirm。 */
+async function askConfirm(
+  message: string,
+  choice: ((message: string) => Promise<boolean>) | undefined
+): Promise<boolean> {
+  return choice !== undefined ? choice(message) : window.confirm(message);
+}
+
+/**
+ * 条目暂存篮子域（勾选即暂存）：索引集合归模型所有并随草稿持久化。
+ * 脏标记并入草稿防抖开关：只勾选不改内容也要触发落盘，刷新后篮不丢；
+ * epoch 在整包套用（草稿恢复/远端回载）时递增，面板据此跳过一次身份重定位。
+ */
+function createStagedState(entriesRef: () => ChartData[]) {
+  let staged = $state<Set<number>>(new Set());
+  let adoptedSignature = $state("");
+  let epoch = $state(0);
+  const stagedSignature = () => [...staged].sort((a, b) => a - b).join(",");
+  const dirty = $derived.by(() => stagedSignature() !== adoptedSignature);
+  // 暂存篮跨数组迁移在模型子域维护：条目删除/撤销/编辑改写 entries 时面板可能
+  // 未挂载（谱面卡可隐藏），重定位不能依赖可选组件的 effect。首跑只记录数组，
+  // 整包套用（epoch 递增）跳过一次，索引以显式写入为准。
+  let relocatePrev: ChartData[] | null = null;
+  let seenRelocateEpoch = 0;
+  $effect(() => {
+    const current = entriesRef();
+    const prev = relocatePrev;
+    relocatePrev = current;
+    if (prev === null || prev === current) return;
+    if (epoch !== seenRelocateEpoch) {
+      seenRelocateEpoch = epoch;
+      return;
+    }
+    if (staged.size > 0) {
+      staged = new Set(relocateStagedIndices(prev, current, staged));
+    }
+  });
+  return {
+    get staged() {
+      return staged;
+    },
+    set staged(v: Set<number>) {
+      staged = v;
+    },
+    get epoch() {
+      return epoch;
+    },
+    get dirty() {
+      return dirty;
+    },
+    /** 草稿整包套用：净化后的索引写入并记基线签名。 */
+    adopt(indices: unknown, count: number): void {
+      staged = new Set(sanitizeStagedIndices(indices, count));
+      adoptedSignature = [...staged].sort((a, b) => a - b).join(",");
+      epoch += 1;
+    },
+    /** 远端与种子数据整包套用：暂存篮没有存续依据，复位。 */
+    reset(): void {
+      staged = new Set();
+      adoptedSignature = "";
+      epoch += 1;
+    },
+    /** 草稿载荷取升序索引数组。 */
+    toPayload(): number[] {
+      return [...staged].sort((a, b) => a - b);
+    },
+  };
+}
+
 /** 难度表页内存模型工厂：两段式加载、草稿与保存发布的响应式编排（输入经 getter 保持响应式）。 */
 export function createTableModel(input: TableModelInput) {
   const source = input.source;
@@ -135,6 +206,7 @@ export function createTableModel(input: TableModelInput) {
   let entries = $state<ChartData[]>([]);
   let levelHints = $state<Record<string, string>>({});
   let draftDataActive = $state(false);
+  const stagedState = createStagedState(() => entries);
   const headerUnfilled = $derived.by(() => name.trim() === "" || symbol.trim() === "");
 
   // ---- 编辑与保存状态（草稿域状态在 createDraftLifecycle） ----
@@ -223,6 +295,7 @@ export function createTableModel(input: TableModelInput) {
   function adoptDraft(draft: DraftPayload): void {
     applyHeaderState(draft.header);
     entries = draft.data.map((item) => ({ ...item }));
+    stagedState.adopt(draft.staged, entries.length);
     baselineUpdatedAt = draft.baselineUpdatedAt;
     draftDataActive = true;
     notice = null;
@@ -234,20 +307,15 @@ export function createTableModel(input: TableModelInput) {
       data: entries,
       savedAt: new Date().toISOString(),
       baselineUpdatedAt,
+      staged: stagedState.toPayload(),
     };
-  }
-
-  /** 确认原语：页面注入的弹层优先，缺省回退原生 confirm。 */
-  async function askConfirm(message: string): Promise<boolean> {
-    const choice = confirmChoice;
-    return choice !== undefined ? choice(message) : window.confirm(message);
   }
 
   // ---- 子域：草稿生命周期与两段式加载（单向依赖：loader 引用 drafts） ----
   const drafts: DraftLifecycle = createDraftLifecycle({
     draftKey: () => draftKey,
     isReady: () => ready,
-    isDirty: () => historyDomain.isDirty,
+    isDirty: () => historyDomain.isDirty || stagedState.dirty,
     capturePayload: buildDraftPayload,
     adoptDraft,
   });
@@ -270,6 +338,7 @@ export function createTableModel(input: TableModelInput) {
     },
     setEntries: (charts) => {
       entries = charts;
+      stagedState.reset();
     },
     prepareNewTable: () => drafts.prepareNewTable(),
     discoverDraft: () => drafts.discover(),
@@ -282,7 +351,7 @@ export function createTableModel(input: TableModelInput) {
 
   /** 放弃未保存修改：删草稿并回载远端（新表回到种子态）。 */
   async function discardEdits(): Promise<void> {
-    if (!(await askConfirm(m["editor.discard.unsaved_confirm"]()))) return;
+    if (!(await askConfirm(m["editor.discard.unsaved_confirm"](), confirmChoice))) return;
     draftDataActive = false;
     historyDomain.resetHistory();
     await drafts.resetAfterDiscard();
@@ -309,7 +378,7 @@ export function createTableModel(input: TableModelInput) {
         entries,
         baselineUpdatedAt,
         conflictCheck,
-        confirm: (message) => askConfirm(message),
+        confirm: (message) => askConfirm(message, confirmChoice),
       });
       if (plan.kind === "rejected") {
         notice = plan.notice;
@@ -469,6 +538,7 @@ export function createTableModel(input: TableModelInput) {
     set levelHints(v: Record<string, string>) {
       levelHints = v;
     },
+    staging: stagedState, // 暂存篮子域：bind staged，整包套用时 epoch 递增通知面板
     // 加载（委托 loader）
     get headerLoadState() {
       return loader.headerLoadState;

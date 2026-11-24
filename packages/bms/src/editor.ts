@@ -789,6 +789,44 @@ export function draftStorageKey(kind: DraftSourceKind, id: string): string {
   return `table-editor:${kind}:${id}`;
 }
 
+/**
+ * 草稿恢复时的暂存篮净化：只留范围内整数索引、去重并升序。
+ * 草稿的 data 与 staged 同快照落盘，索引理应一致；净化兜底手改或损坏的记录。
+ */
+export function sanitizeStagedIndices(value: unknown, count: number): number[] {
+  if (!Array.isArray(value)) return [];
+  const seen = new Set<number>();
+  const out: number[] = [];
+  for (const item of value) {
+    if (typeof item !== "number" || !Number.isInteger(item) || item < 0 || item >= count) {
+      continue;
+    }
+    if (seen.has(item)) continue;
+    seen.add(item);
+    out.push(item);
+  }
+  return out.sort((a, b) => a - b);
+}
+
+/**
+ * 暂存篮跨数组迁移：按条目对象身份把旧数组上的暂存索引映射到新数组。
+ * 找不到的（已删除）出篮，存留的按升序返回；篮内不存在重复索引。
+ */
+export function relocateStagedIndices(
+  prev: readonly Record<string, unknown>[],
+  current: readonly Record<string, unknown>[],
+  staged: readonly number[] | ReadonlySet<number>
+): number[] {
+  const relocated: number[] = [];
+  for (const index of staged) {
+    const entry = prev[index];
+    if (entry === undefined) continue;
+    const next = current.indexOf(entry);
+    if (next >= 0) relocated.push(next);
+  }
+  return relocated.sort((a, b) => a - b);
+}
+
 /** 单份草稿载荷（IndexedDB 结构克隆直存，无需序列化文本）。 */
 export interface DraftPayload {
   header: Record<string, unknown>;
@@ -796,6 +834,8 @@ export interface DraftPayload {
   savedAt: string;
   /** 进入编辑时线上清单的 updated_at（共享表用于并发提示；其余来源为 undefined）。 */
   baselineUpdatedAt: string | undefined;
+  /** 暂存篮（条目索引，升序去重）；旧草稿缺省按空篮处理。 */
+  staged?: number[];
 }
 
 /**

@@ -160,7 +160,7 @@ R2 地址单一来源与镜像、共享两对 URL 构造函数都在 `src/lib/co
 
 - 查看态默认、地址即导入地址（meta 注入不变）；点主按钮以 `?edit=1` 浅层路由就地切换（压入历史、返回键回查看态、深链与刷新保持编辑态）。主按钮按权限取舍：共享表作者“编辑此表”，自托管表 admin“本地编辑”；镜像表、他人共享表与自托管表非 admin 无主按钮，创建副本作为小按钮收在 dock 菜单的表操作段。副本意图另带 `?copy=1`，保存时跳新建页确认 id（复用草稿认领）。
 - 页面协议（两段式加载、三卡结构、hero 动作契约、notice、保存闸门、shared 整包保存与草稿认领另存、放弃修改）见 `src/lib/components/pages/BmsTablePage.svelte` 头注；
-  dock 收展与面板段见 `src/lib/components/bms/TableDock.svelte` 头注；条目表与等级分组见 `EntriesPanel` 头注；
+  dock 收展与面板段见 `src/lib/components/bms/TableDock.svelte` 头注；条目表、等级分组与编辑态暂存浮条见 `EntriesPanel` 头注；
   草稿闭环见 `src/lib/data/api/table-drafts.ts` 头注；拖拽管线见 `src/lib/utils/infra/bms-drop.ts` 头注；
   编辑态整页文件拖拽按落点路由，段位行写入该段位，其余位置追加谱面条目。
 - 添加谱面抽屉四 tab 的跨表来源镜像加共享，header/package 导入留在 dock 菜单；导入面板细节见 `TableImportSection` 头注。段位协议（picker 多选、跨表、反查、两列表独立）见 `CoursePanel` 头注。

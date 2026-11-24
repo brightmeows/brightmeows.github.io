@@ -1,12 +1,10 @@
 <script lang="ts">
-  import { addChartToCourse, type CourseModel } from "@brightmeows/bms/course";
+  import { addChartToCourse, type CourseModel, courseTargetOptions } from "@brightmeows/bms/course";
   import {
     assignHintLevels,
-    assignLevel,
     buildEntrySegments,
     countUnassigned,
     duplicateEntryLabel,
-    encodeLevelFilterOption,
     entryGroupAnchorId,
     entryItemCount,
     entryItemsInRange,
@@ -19,7 +17,6 @@
     groupEntryIndices,
     isUnassigned,
     moveItem,
-    parseLevelFilterOption,
     removeIndices,
     setIndices,
     splitNewEntries,
@@ -27,12 +24,9 @@
   import type { ChartData } from "@brightmeows/bms/format";
   import { findUnlistedLevels, levelSegmentColor } from "@brightmeows/bms/table";
   import CheckCheck from "@lucide/svelte/icons/check-check";
-  import ListChecks from "@lucide/svelte/icons/list-checks";
   import Plus from "@lucide/svelte/icons/plus";
   import RotateCcw from "@lucide/svelte/icons/rotate-ccw";
-  import Trash2 from "@lucide/svelte/icons/trash-2";
   import WandSparkles from "@lucide/svelte/icons/wand-sparkles";
-  import X from "@lucide/svelte/icons/x";
   import { onDestroy, onMount, tick, type Component } from "svelte";
 
   import type { AddChartsDrawerProps } from "./AddChartsDrawer.svelte";
@@ -42,11 +36,9 @@
   import EntryDetailForm from "#lib/components/bms/EntryDetailForm.svelte";
   import JsonPreview from "#lib/components/ui/JsonPreview.svelte";
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
-  import ToggleButton from "#lib/components/ui/ToggleButton.svelte";
   import ToggleJumpChip from "#lib/components/ui/ToggleJumpChip.svelte";
   import {
     btnChipOnWarning,
-    btnDanger,
     btnGhost,
     btnPrimary,
     inputEditorBase,
@@ -66,11 +58,18 @@
 
   /**
    * 条目面板：查看与编辑共用条目表、组头、难度导航与搜索/筛选。
-   * 查看态严格只读；编辑态增加添加、批量、勾选与行内编辑。
+   * 查看态严格只读；编辑态增加添加、勾选暂存与行内编辑。
+   * 暂存篮（勾选即暂存）状态归页面模型所有并随草稿持久化（DraftPayload.staged），
+   * 落位动作收编在暂存浮条：指派等级、加入段位、删除；浮条由页面渲染在
+   * BmsTablePage（玻璃卡外，backdrop-filter 会劫持 fixed 后代的包含块），动作
+   * 经模型门面执行；本面板只承担勾选、全选筛选结果与按文件等级指派（不依赖
+   * 篮非空）。加入段位按哈希与课程现有及批内谱面判重、缺哈希跳过，计数经
+   * dock notice 回报。
    * 未知自定义字段经 commitEntryEdit 保留并在详情表单里可编辑。
    * 删除与增改经 bind 回写触发模型 setter 压撤销快照（编辑会话历史见
    * table-model-history）；模型侧 undo/redo 整体替换 entries 时按对象身份
-   * 重定位编辑中行与勾选（见 entries effect）。
+   * 重定位编辑中行与暂存（见 entries effect），整包套用（stagedEpoch 递增，
+   * 草稿恢复/远端回载）跳过一次重定位、索引以模型写入为准。
    * 条目表按等级分组、取消分页全量渲染；等级行用 ToggleJumpChip 隐藏/显示组
    * （组件只服务该场景），组头静态；表格无等级列，下载与站点链接合并为链接列，
    * 图标统一并由容器宽度收进“...”菜单。添加谱面抽屉在面板内动态加载。
@@ -103,6 +102,13 @@
     onAddDrawerOpenChange?: ((open: boolean) => void) | undefined;
     hiddenLevels?: Set<string>;
     hideUnassigned?: boolean;
+    /**
+     * 暂存篮（勾选即暂存）：状态归页面模型所有并随草稿持久化，面板经 bind 读写。
+     * 就地批量工具条已收编进暂存浮条（浮条由 BmsTablePage 渲染，见其头注）。
+     */
+    staged?: Set<number>;
+    /** 模型整包套用（草稿恢复/远端回载）时递增：面板跳过一次身份重定位。 */
+    stagedEpoch?: number;
   }
 
   let {
@@ -125,9 +131,9 @@
     onAddDrawerOpenChange = undefined,
     hiddenLevels = $bindable(new Set()),
     hideUnassigned = $bindable(false),
+    staged = $bindable(new Set<number>()),
+    stagedEpoch = 0,
   }: Props = $props();
-
-  const BATCH_NONE = "__none__";
 
   interface LevelNavItem {
     level: string;
@@ -137,21 +143,29 @@
   }
 
   let query = $state("");
-  let selected = $state<Set<number>>(new Set());
   let editingIndex = $state<number | null>(null);
   let editKey = $state(0);
   let innerWidth = $state(0);
   /** 窄屏（表格容器横向滚动）下编辑表单脱离表格，在表格下方全宽渲染。 */
   let narrowEditor = $derived(innerWidth < 800);
 
-  // 模型侧 undo/redo 与草稿恢复会整体替换 entries：按上一轮数组取出对象身份，
-  // 在新数组里重定位编辑中行与勾选；找不到的对象复位（表单收起、勾选剔除）。
-  let prevEntries: ChartData[] = [];
+  // 模型侧 undo/redo 与草稿恢复会整体替换 entries：按上一轮数组取出对象身份
+  // 重定位编辑中行；暂存篮的迁移在模型子域维护（见 createStagedState），面板
+  // 未挂载时也持续生效。首跑只记录数组；整包套用（stagedEpoch 递增）是例外：
+  // 模型已按草稿/远端数据写入，跳过一次并顺势收起编辑行。
+  // svelte-ignore state_referenced_locally —— 刻意取 prop 初值：后续以 seen 比对检测递增
+  let seenStagedEpoch = stagedEpoch;
+  let prevEntries: ChartData[] | null = null;
   $effect(() => {
     const current = entries;
     const prev = prevEntries;
     prevEntries = current;
-    if (prev === current) return;
+    if (prev === null || prev === current) return;
+    if (stagedEpoch !== seenStagedEpoch) {
+      seenStagedEpoch = stagedEpoch;
+      editingIndex = null;
+      return;
+    }
     if (editingIndex !== null) {
       const entry = prev[editingIndex];
       if (entry === undefined) {
@@ -161,19 +175,7 @@
         editingIndex = next >= 0 ? next : null;
       }
     }
-    if (selected.size > 0) {
-      const relocated = new Set<number>();
-      for (const index of selected) {
-        const entry = prev[index];
-        if (entry === undefined) continue;
-        const next = current.indexOf(entry);
-        if (next >= 0) relocated.add(next);
-      }
-      selected = relocated;
-    }
   });
-  let batchChoice = $state<string>(BATCH_NONE);
-  let batchOpen = $state(false);
   let addOpen = $state(false);
   let AddChartsDrawer = $state<Component<AddChartsDrawerProps> | null>(null);
   let coursePickerTarget = $state<Record<string, unknown> | null>(null);
@@ -191,19 +193,15 @@
 
   const courseTargets = $derived.by<CourseTarget[]>(() => {
     if (courseModel === undefined) return [];
-    const targets: CourseTarget[] = [];
-    courseModel.groups.forEach((group, groupIndex) => {
-      group.courses.forEach((course, courseIndex) => {
-        const name = course.name.trim() === "" ? m["course.unnamed"]() : course.name;
-        targets.push({
-          key: `${groupIndex}:${courseIndex}`,
-          label: `${m["editor.course.group"]({ index: groupIndex + 1 })} / ${name}`,
-          groupIndex,
-          courseIndex,
-        });
-      });
+    return courseTargetOptions(courseModel).map((option) => {
+      const name = option.name.trim() === "" ? m["course.unnamed"]() : option.name;
+      return {
+        key: option.key,
+        label: `${m["editor.course.group"]({ index: option.groupIndex + 1 })} / ${name}`,
+        groupIndex: option.groupIndex,
+        courseIndex: option.courseIndex,
+      };
     });
-    return targets;
   });
 
   let tableEl = $state<HTMLTableElement | undefined>(undefined);
@@ -474,7 +472,6 @@
   });
 
   const unassignedCount = $derived(countUnassigned(entries));
-  const selectedCount = $derived(selected.size);
   const columnCount = $derived(editing ? 6 : 4);
   const filtering = $derived(query.trim() !== "" || hiddenLevels.size > 0 || hideUnassigned);
   const hintApplicableCount = $derived(
@@ -613,9 +610,6 @@
   $effect(() => {
     if (editing) return;
     editingIndex = null;
-    batchOpen = false;
-    selected = new Set();
-    batchChoice = BATCH_NONE;
     notice = null;
     coursePickerTarget = null;
     if (addOpen) closeAddDrawer();
@@ -632,38 +626,11 @@
   });
 
   function setSelected(index: number, checked: boolean): void {
-    selected = setIndices(selected, [index], checked);
+    staged = setIndices(staged, [index], checked);
   }
 
   function selectAllFiltered(): void {
-    selected = setIndices(selected, filteredIndices, true);
-  }
-
-  function clearSelection(): void {
-    selected = new Set();
-  }
-
-  function assignSelected(): void {
-    if (batchChoice === BATCH_NONE || selected.size === 0) return;
-    const parsed = parseLevelFilterOption(batchChoice);
-    entries = assignLevel(entries, [...selected], parsed.kind === "level" ? parsed.level : "");
-    batchChoice = BATCH_NONE;
-    notice = null;
-    onChange?.();
-  }
-
-  function deleteSelected(): void {
-    if (selected.size === 0) return;
-    const count = selected.size;
-    entries = removeIndices(entries, [...selected]);
-    selected = new Set();
-    editingIndex = null;
-    notice = null;
-    onChange?.();
-    onNotice?.({
-      kind: "ok",
-      text: m["editor.undo.entries_deleted"]({ count }),
-    });
+    staged = setIndices(staged, filteredIndices, true);
   }
 
   function startEdit(index: number): void {
@@ -821,7 +788,6 @@
     if (entry === undefined) return;
     const label = entryLabel(entry) || m["editor.entry.unnamed"]();
     entries = removeIndices(entries, [index]);
-    selected = new Set();
     if (editingIndex === index) editingIndex = null;
     notice = null;
     onChange?.();
@@ -887,12 +853,16 @@
             <Plus class="size-4 shrink-0" aria-hidden="true" />
             {m["editor.add.title"]()}
           </button>
-          <ToggleButton
-            expanded={batchOpen}
-            label={m["editor.entries.batch_toggle"]()}
-            {disabled}
-            onToggle={() => (batchOpen = !batchOpen)}
-          />
+          {#if hintApplicableCount > 0}
+            <button class={btnGhost} type="button" {disabled} onclick={assignFromHints}>
+              <WandSparkles class="size-4 shrink-0" aria-hidden="true" />
+              {m["editor.entries.assign_hint"]({ count: hintApplicableCount })}
+            </button>
+          {/if}
+          <button class={btnGhost} type="button" {disabled} onclick={selectAllFiltered}>
+            <CheckCheck class="size-4 shrink-0" aria-hidden="true" />
+            {m["editor.entries.select_filtered"]()}
+          </button>
         </div>
       {/if}
     </div>
@@ -912,61 +882,6 @@
             onJump={() => void jumpToGroup(item)}
           />
         {/each}
-      </div>
-    {/if}
-
-    {#if editing && batchOpen}
-      <div class="rounded-glass-sm border border-white-15 bg-black-20 p-3">
-        <div class="flex flex-wrap items-center gap-2">
-          <span class="text-[0.85rem] text-white-60">
-            {m["editor.entries.selected"]({ count: selectedCount })}
-          </span>
-          <div class="ml-auto flex flex-wrap items-center gap-2">
-            <button class={btnGhost} type="button" {disabled} onclick={selectAllFiltered}>
-              <CheckCheck class="size-4 shrink-0" aria-hidden="true" />
-              {m["editor.entries.select_filtered"]()}
-            </button>
-            <button class={btnGhost} type="button" {disabled} onclick={clearSelection}>
-              <X class="size-4 shrink-0" aria-hidden="true" />
-              {m["editor.entries.clear_selection"]()}
-            </button>
-            <select
-              class="rounded-glass-sm border border-white-20 bg-black-30 px-2 py-1 text-[0.85rem] text-white outline-none"
-              bind:value={batchChoice}
-              {disabled}
-            >
-              <option value={BATCH_NONE} disabled>{m["editor.entries.batch_choose"]()}</option>
-              {#each levels as level (level)}
-                <option value={encodeLevelFilterOption(level)}>{level}</option>
-              {/each}
-              <option value="">{m["editor.entries.batch_clear"]()}</option>
-            </select>
-            <button
-              class={btnGhost}
-              type="button"
-              disabled={disabled || selectedCount === 0 || batchChoice === BATCH_NONE}
-              onclick={assignSelected}
-            >
-              <ListChecks class="size-4 shrink-0" aria-hidden="true" />
-              {m["editor.entries.batch_apply"]()}
-            </button>
-            <button
-              class={btnDanger}
-              type="button"
-              disabled={disabled || selectedCount === 0}
-              onclick={deleteSelected}
-            >
-              <Trash2 class="size-4 shrink-0" aria-hidden="true" />
-              {m["editor.entries.batch_delete"]()}
-            </button>
-            {#if hintApplicableCount > 0}
-              <button class={btnGhost} type="button" {disabled} onclick={assignFromHints}>
-                <WandSparkles class="size-4 shrink-0" aria-hidden="true" />
-                {m["editor.entries.assign_hint"]({ count: hintApplicableCount })}
-              </button>
-            {/if}
-          </div>
-        </div>
       </div>
     {/if}
 
@@ -1027,7 +942,7 @@
         rowId={`entry-${item.index}`}
         showLevel={searchMode}
         selectable={editing}
-        selected={selected.has(item.index)}
+        selected={staged.has(item.index)}
         {disabled}
         drag={editing ? { dnd, index: item.index, disabled } : undefined}
         canMoveUp={(groupPos?.position ?? 0) > 0}
