@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { fetchText } from "./fetch.ts";
+import { fetchTable, fetchText } from "./fetch.ts";
 import { MAX_REDIRECTS, UnsafeFetchTargetError } from "./net-guard.ts";
 
 function redirectResponse(location: string): Response {
@@ -9,6 +9,20 @@ function redirectResponse(location: string): Response {
 
 function okResponse(body: string): Response {
   return new Response(body, { status: 200, headers: { "content-type": "text/plain" } });
+}
+
+function htmlResponse(body: string, status = 200): Response {
+  return new Response(body, {
+    status,
+    headers: { "content-type": "text/html; charset=utf-8" },
+  });
+}
+
+function jsonResponse(body: unknown): Response {
+  return new Response(JSON.stringify(body), {
+    status: 200,
+    headers: { "content-type": "application/json; charset=utf-8" },
+  });
 }
 
 /** 从 fetch 的 input 取 URL（input 也可能是 Request 或 URL）。 */
@@ -85,5 +99,96 @@ describe("fetchText 的手动重定向", () => {
         resolveHostnameImpl: publicResolver,
       })
     ).rejects.toBeInstanceOf(UnsafeFetchTargetError);
+  });
+});
+
+describe("fetchText 的状态码", () => {
+  it("保留最终响应状态", async () => {
+    const fetchImpl: typeof fetch = () =>
+      Promise.resolve(
+        new Response("missing", { status: 404, headers: { "content-type": "text/plain" } })
+      );
+    const result = await fetchText("http://example.com/missing", {
+      fetchImpl,
+      resolveHostnameImpl: publicResolver,
+    });
+    expect(result.status).toBe(404);
+  });
+});
+
+function tableInfo(url: string) {
+  return { name: "", symbol: "", url, extra: {} };
+}
+
+describe("fetchTable 的失败分类", () => {
+  it("页面 404 归为 source_gone", async () => {
+    const fetchImpl: typeof fetch = () => Promise.resolve(htmlResponse("Not Found", 404));
+    await expect(
+      fetchTable(tableInfo("http://example.com/table.html"), {
+        fetchImpl,
+        resolveHostnameImpl: publicResolver,
+      })
+    ).rejects.toMatchObject({ reason: "source_gone" });
+  });
+
+  it("Rhino 错误页归为 gas_runtime_retired", async () => {
+    const fetchImpl: typeof fetch = () =>
+      Promise.resolve(
+        htmlResponse("エラー Rhino ランタイムは非推奨となり、サポートが終了しました")
+      );
+    await expect(
+      fetchTable(tableInfo("http://example.com/table.html"), {
+        fetchImpl,
+        resolveHostnameImpl: publicResolver,
+      })
+    ).rejects.toMatchObject({ reason: "gas_runtime_retired" });
+  });
+
+  it("Drive 文件不存在归为 source_gone", async () => {
+    const fetchImpl: typeof fetch = (input) => {
+      const url = inputUrl(input);
+      if (url.endsWith("header.json")) {
+        return Promise.resolve(jsonResponse({ name: "x", symbol: "x", data_url: "./data.json" }));
+      }
+      if (url.endsWith("data.json")) {
+        return Promise.resolve(htmlResponse("ページが見つかりません"));
+      }
+      return Promise.resolve(htmlResponse('<meta name="bmstable" content="header.json" />'));
+    };
+    await expect(
+      fetchTable(tableInfo("http://example.com/table.html"), {
+        fetchImpl,
+        resolveHostnameImpl: publicResolver,
+      })
+    ).rejects.toMatchObject({ reason: "source_gone" });
+  });
+
+  it("403 归为 access_denied", async () => {
+    const fetchImpl: typeof fetch = (input) => {
+      const url = inputUrl(input);
+      if (url.endsWith("header.json")) {
+        return Promise.resolve(jsonResponse({ name: "x", symbol: "x", data_url: "./data.json" }));
+      }
+      if (url.endsWith("data.json")) {
+        return Promise.resolve(htmlResponse("Access denied", 403));
+      }
+      return Promise.resolve(htmlResponse('<meta name="bmstable" content="header.json" />'));
+    };
+    await expect(
+      fetchTable(tableInfo("http://example.com/table.html"), {
+        fetchImpl,
+        resolveHostnameImpl: publicResolver,
+      })
+    ).rejects.toMatchObject({ reason: "access_denied" });
+  });
+
+  it("没有 bmstable 的普通页面归为 unknown", async () => {
+    const fetchImpl: typeof fetch = () => Promise.resolve(htmlResponse("hello"));
+    await expect(
+      fetchTable(tableInfo("http://example.com/table.html"), {
+        fetchImpl,
+        resolveHostnameImpl: publicResolver,
+      })
+    ).rejects.toMatchObject({ reason: "unknown" });
   });
 });

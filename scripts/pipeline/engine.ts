@@ -22,6 +22,17 @@ import {
   isChangedJsonFile,
   readTextIfExists,
 } from "./fs-utils.ts";
+import {
+  buildHealthState,
+  classifyFetchError,
+  countStale,
+  initialHealthState,
+  parseHealthFile,
+  reasonLabel,
+  shouldRecheck,
+  type FetchOutcome,
+  type HealthFile,
+} from "./health.ts";
 import { compareUtf8, cloneJson } from "./json-utils.ts";
 import {
   computeOrphans,
@@ -33,13 +44,20 @@ import {
 import { RunLog, type PipelineLogger, type RunSummary } from "./log.ts";
 import { expectedDirName } from "./naming.ts";
 import { normalizeData, normalizeHeader } from "./normalize.ts";
-import { serializeJson, writeIndexes, writeTablesJson } from "./output.ts";
+import { serializeJson, writeHealthJson, writeIndexes, writeTablesJson } from "./output.ts";
 import { mergeActiveSet } from "./overlay.ts";
 import { mapPool } from "./pool.ts";
 import { scanDirs, scanDirsFull } from "./scan.ts";
-import { buildState, parseStateToml, serializeStateToml, sha3_256Hex } from "./state.ts";
+import {
+  buildState,
+  parseStateToml,
+  serializeStateToml,
+  sha3_256Hex,
+  type StateEntry,
+  type SyncState,
+} from "./state.ts";
 import { tableInfoToJson } from "./table-info.ts";
-import type { TableInfo } from "./types.ts";
+import type { FullDirEntry, TableInfo } from "./types.ts";
 import { loadUserLayer } from "./user-layer.ts";
 
 export interface PipelinePaths {
@@ -70,6 +88,8 @@ export interface PipelineOptions {
   userLayerToken?: string | undefined;
   /** 直接注入用户层（对拍与演练用）；提供时不再拉取接口。 */
   userLayer?: UserLayer | undefined;
+  /** 固定本轮时间（测试用）；缺省取启动时刻。 */
+  now?: Date | undefined;
 }
 
 export interface PipelineResult {
@@ -94,7 +114,7 @@ export async function runPipeline(options: PipelineOptions = {}): Promise<Pipeli
   const concurrency = options.concurrency ?? 24;
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const fetchOptions: FetchOptions = { timeoutMs, fetchImpl: options.fetchImpl };
-  const startedAt = new Date();
+  const startedAt = options.now ?? new Date();
 
   log.info(`管线启动：表目录 ${paths.tableDir}`);
 
@@ -121,6 +141,13 @@ export async function runPipeline(options: PipelineOptions = {}): Promise<Pipeli
   }
   log.info(`活跃表：${activeSet.activeUrls.size} 张`);
 
+  const { statePath, healthPath, previousState, initialHealth } = await preparePipelineHealth(
+    paths.tableDir,
+    activeSet.activeUrls,
+    log,
+    startedAt
+  );
+
   const preRenames = computeRenames(baseEntries, activeSet.tableInfoMap);
   const executedPreRenames = await executeRenames(preRenames, paths.tableDir, (message) =>
     log.warn(message)
@@ -132,21 +159,28 @@ export async function runPipeline(options: PipelineOptions = {}): Promise<Pipeli
   const targets = [...activeSet.tableInfoMap.values()].sort((left, right) =>
     compareUtf8(left.url, right.url)
   );
+  const { fetchTargets, outcomes, skipped } = planFetchTargets(targets, initialHealth, startedAt);
+  if (skipped > 0) {
+    log.info(`跳过 stale 表：${skipped} 张（未到月度复查）`);
+  }
   const failures: string[] = [];
   let fetched = 0;
-  await mapPool(targets, concurrency, async (info) => {
+  await mapPool(fetchTargets, concurrency, async (info) => {
     const oldDirName = activeSet.oldDirMap.get(info.url);
     try {
       await fetchAndSaveTable(info, paths.tableDir, oldDirName, fetchOptions, log);
+      outcomes.set(info.url, { kind: "ok" });
       fetched += 1;
     } catch (error) {
+      const reason = classifyFetchError(error);
+      outcomes.set(info.url, { kind: "failed", reason });
       failures.push(info.name === "" ? info.url : info.name);
       log.warn(
-        `抓取失败：${info.name === "" ? info.url : info.name}（${info.url}）${describeError(error)}`
+        `抓取失败：${info.name === "" ? info.url : info.name}（${info.url}）[${reasonLabel(reason)}] ${describeError(error)}`
       );
     }
   });
-  log.info(`抓取完成：成功 ${fetched}，失败 ${failures.length}`);
+  log.info(`抓取完成：成功 ${fetched}，失败 ${failures.length}，跳过 stale ${skipped}`);
 
   let scanned = await scanDirsFull(paths.tableDir);
   const safetyRenames = computeRenames(scanned);
@@ -175,36 +209,21 @@ export async function runPipeline(options: PipelineOptions = {}): Promise<Pipeli
     log.warn(`data.json 格式无法识别：${dirName}`);
   }
 
-  const statePath = path.join(paths.tableDir, "state.toml");
-  const previousState = parseStateToml((await readTextIfExists(statePath)) ?? "");
-  const stateEntries = [];
-  for (const entry of scanned) {
-    if (!activeSet.activeUrls.has(entry.info.url)) {
-      continue;
-    }
-    const dir = path.join(paths.tableDir, entry.dirName);
-    const infoContent = await readTextIfExists(path.join(dir, "info.json"));
-    const headerContent = await readTextIfExists(path.join(dir, "header.json"));
-    const dataContent = await readTextIfExists(path.join(dir, "data.json"));
-    if (infoContent === null || headerContent === null || dataContent === null) {
-      log.warn(`state：跳过 ${entry.dirName}，缺少 info/header/data 文件`);
-      continue;
-    }
-    stateEntries.push({
-      url: entry.info.url,
-      hashes: {
-        info: sha3_256Hex(infoContent),
-        header: sha3_256Hex(headerContent),
-        data: sha3_256Hex(dataContent),
-      },
-    });
-  }
-  await atomicWrite(
-    statePath,
-    serializeStateToml(buildState(previousState, stateEntries, new Date()))
+  const stateEntries = await collectStateEntries(
+    scanned,
+    activeSet.activeUrls,
+    paths.tableDir,
+    log
   );
+  const newState = buildState(previousState, stateEntries, startedAt);
+  await atomicWrite(statePath, serializeStateToml(newState));
+  const lastChangeByUrl = new Map(
+    [...newState.tables].map(([url, table]) => [url, table.lastChange])
+  );
+  const health = buildHealthState(initialHealth, outcomes, startedAt, lastChangeByUrl);
+  const healthEntries = await writeHealthJson(healthPath, health);
 
-  const finishedAt = new Date();
+  const finishedAt = options.now ?? new Date();
   const summary: RunSummary = {
     startedAt,
     finishedAt,
@@ -216,6 +235,9 @@ export async function runPipeline(options: PipelineOptions = {}): Promise<Pipeli
     tablesTotal: activeSet.activeUrls.size,
     tablesFetched: fetched,
     tablesFailed: failures,
+    tablesSkipped: skipped,
+    tablesStale: countStale(health),
+    healthEntries,
     renamed: executedPreRenames.length + executedSafetyRenames.length,
     orphansMoved,
     tablesJsonEntries,
@@ -228,6 +250,94 @@ export async function runPipeline(options: PipelineOptions = {}): Promise<Pipeli
     `管线完成：用时 ${((finishedAt.getTime() - startedAt.getTime()) / 1000).toFixed(1)} 秒，告警 ${log.warningCount} 条`
   );
   return { summary, warningsPath: paths.warnings };
+}
+
+interface PipelineHealth {
+  statePath: string;
+  healthPath: string;
+  previousState: SyncState | null;
+  initialHealth: HealthFile;
+}
+
+/** 读取 state.toml 与 health.json，初始化当前活跃表的健康状态。 */
+async function preparePipelineHealth(
+  tableDir: string,
+  activeUrls: ReadonlySet<string>,
+  log: PipelineLogger,
+  now: Date
+): Promise<PipelineHealth> {
+  const statePath = path.join(tableDir, "state.toml");
+  const previousState = parseStateToml((await readTextIfExists(statePath)) ?? "");
+  const healthPath = path.join(tableDir, "health.json");
+  const previousHealthText = await readTextIfExists(healthPath);
+  const previousHealth = previousHealthText === null ? null : parseHealthFile(previousHealthText);
+  if (previousHealthText !== null && previousHealth === null) {
+    log.warn("health.json 解析失败，按无历史状态处理");
+  }
+  const initialHealth = initialHealthState({
+    previous: previousHealth,
+    state: previousState,
+    activeUrls,
+    now,
+  });
+  return { statePath, healthPath, previousState, initialHealth };
+}
+
+interface PlannedFetch {
+  fetchTargets: TableInfo[];
+  outcomes: Map<string, FetchOutcome>;
+  skipped: number;
+}
+
+/** 按健康状态筛选本轮要抓取的表；未到复查期的 stale 表直接跳过。 */
+function planFetchTargets(
+  targets: readonly TableInfo[],
+  initialHealth: HealthFile,
+  now: Date
+): PlannedFetch {
+  const outcomes = new Map<string, FetchOutcome>();
+  const fetchTargets: TableInfo[] = [];
+  for (const info of targets) {
+    const health = initialHealth.tables.get(info.url);
+    if (health?.status === "stale" && !shouldRecheck(health, now)) {
+      outcomes.set(info.url, { kind: "skipped" });
+      continue;
+    }
+    fetchTargets.push(info);
+  }
+  return { fetchTargets, outcomes, skipped: targets.length - fetchTargets.length };
+}
+
+/** 读取活跃表三份产物的哈希，供 state.toml 判断 last_change。 */
+async function collectStateEntries(
+  scanned: readonly FullDirEntry[],
+  activeUrls: ReadonlySet<string>,
+  tableDir: string,
+  log: PipelineLogger
+): Promise<StateEntry[]> {
+  const entries: StateEntry[] = [];
+  for (const entry of scanned) {
+    if (!activeUrls.has(entry.info.url)) {
+      continue;
+    }
+    const dir = path.join(tableDir, entry.dirName);
+    const infoContent = await readTextIfExists(path.join(dir, "info.json"));
+    const headerContent = await readTextIfExists(path.join(dir, "header.json"));
+    const dataContent = await readTextIfExists(path.join(dir, "data.json"));
+    if (infoContent === null || headerContent === null || dataContent === null) {
+      log.warn(`state：跳过 ${entry.dirName}，缺少 info/header/data 文件`);
+      continue;
+    }
+    entries.push({
+      url: entry.info.url,
+      hashes: {
+        info: sha3_256Hex(infoContent),
+        header: sha3_256Hex(headerContent),
+        data: sha3_256Hex(dataContent),
+      },
+    });
+  }
+  return entries;
 }
 
 interface UserLayerLoad {

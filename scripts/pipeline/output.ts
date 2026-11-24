@@ -3,6 +3,7 @@
 import path from "node:path";
 
 import { atomicWrite, identityNormalizer, isChangedJsonFile } from "./fs-utils.ts";
+import { serializeHealthFile, type HealthFile } from "./health.ts";
 import { buildIndexes, finalizeIndex, type LongHashWarning } from "./index-build.ts";
 import { compareUtf8 } from "./json-utils.ts";
 import { tableInfoToJson } from "./table-info.ts";
@@ -39,6 +40,12 @@ export async function writeTablesJson(
     await atomicWrite(filePath, content);
   }
   return list.length;
+}
+
+/** 写入 health.json；generated_at 每轮变化，因此总是原子覆盖。 */
+export async function writeHealthJson(filePath: string, health: HealthFile): Promise<number> {
+  await atomicWrite(filePath, serializeHealthFile(health));
+  return health.tables.size;
 }
 
 export interface IndexWriteResult {
