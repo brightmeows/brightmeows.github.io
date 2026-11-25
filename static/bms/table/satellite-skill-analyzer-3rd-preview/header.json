@@ -1,8 +1,120 @@
 {
-  "name": "Satellite Skill Analyzer 3rd (Preview)",
+  "name": "Satellite Skill Analyzer 3rd (Preview: 暫定 + 提案)",
   "symbol": "sl",
   "data_url": "https://stellabms.xyz/sl/score.json",
   "course": [
+    [
+      {
+        "name": "Satellite Skill Analyzer 3rd sl0 暫定",
+        "constraint": ["grade_mirror", "gauge_lr2", "ln"],
+        "trophy": [
+          {
+            "name": "silvermedal",
+            "missrate": 5.0,
+            "scorerate": 70.0
+          },
+          {
+            "name": "goldmedal",
+            "missrate": 2.5,
+            "scorerate": 85.0
+          }
+        ],
+        "md5": [
+          "ea32f497020a57e00b09e8c1fe491a35",
+          "ce7b401b88f1d0fd7322ef5cf31303e5",
+          "a40af0bc31c2324abca47fb93a6c38dc",
+          "a08310d536d625e1776f50316eea25de"
+        ]
+      },
+      {
+        "name": "Satellite Skill Analyzer 3rd sl1 暫定",
+        "constraint": ["grade_mirror", "gauge_lr2", "ln"],
+        "trophy": [
+          {
+            "name": "silvermedal",
+            "missrate": 5.0,
+            "scorerate": 70.0
+          },
+          {
+            "name": "goldmedal",
+            "missrate": 2.5,
+            "scorerate": 85.0
+          }
+        ],
+        "md5": [
+          "5218c51ab40bf345c74cd399f7b88fdb",
+          "6c1b6dde4eb9c6fabe5f1ba126e585cf",
+          "46340426b571b819debe96a6739bd88b",
+          "f2e571f7a792563d73622f33c85f6498"
+        ]
+      },
+      {
+        "name": "Satellite Skill Analyzer 3rd sl6 暫定",
+        "constraint": ["grade_mirror", "gauge_lr2", "ln"],
+        "trophy": [
+          {
+            "name": "silvermedal",
+            "missrate": 5.0,
+            "scorerate": 70.0
+          },
+          {
+            "name": "goldmedal",
+            "missrate": 2.5,
+            "scorerate": 85.0
+          }
+        ],
+        "md5": [
+          "9dec1b7a3dfadda7b3c6bb5e013af494",
+          "7e1419a9ce6ce67c76154e7b3ee805ca",
+          "ebb6b359c311b29bb802d5cf46e30222",
+          "bde6e746250d86e04619a5d7f527c4be"
+        ]
+      },
+      {
+        "name": "Satellite Skill Analyzer 3rd sl7 暫定",
+        "constraint": ["grade_mirror", "gauge_lr2", "ln"],
+        "trophy": [
+          {
+            "name": "silvermedal",
+            "missrate": 5.0,
+            "scorerate": 70.0
+          },
+          {
+            "name": "goldmedal",
+            "missrate": 2.5,
+            "scorerate": 85.0
+          }
+        ],
+        "md5": [
+          "5e659030e7faf98454e6798e437cd2da",
+          "2fb7b1615be8e37023a048679e4a5802",
+          "6fa9f4f592d539f45f83c6ac22665580",
+          "f8dd029100b14f226a482480903efa48"
+        ]
+      },
+      {
+        "name": "Satellite Skill Analyzer 3rd sl8 暫定",
+        "constraint": ["grade_mirror", "gauge_lr2", "ln"],
+        "trophy": [
+          {
+            "name": "silvermedal",
+            "missrate": 5.0,
+            "scorerate": 70.0
+          },
+          {
+            "name": "goldmedal",
+            "missrate": 2.5,
+            "scorerate": 85.0
+          }
+        ],
+        "md5": [
+          "04358a9776ed6fb81fe30eaa930e6eb7",
+          "1c6748fab216f130f9f8a1e9e30a4d14",
+          "b31d63e8f79e8655fc461a9202a6f93c",
+          "91c049a4ad3585deffbca27a832781ac"
+        ]
+      }
+    ],
     [
       {
         "name": "Satellite Skill Analyzer 3rd sl0 MiyakoMeowBM",
@@ -25,9 +137,7 @@
           "1f17bdf52d77a37c2b1d80afa67ec969",
           "335d1a46f3d01d2a0a97b4eec3c1c2a0"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl0 selene.",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -49,9 +159,7 @@
           "2078e79fddd0894ad92b27c8b43bf096",
           "5e09c97dc459e052f9b6fa9fa091a56f"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl0 原田織絵",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -73,9 +181,7 @@
           "d46e8490a06f725bf67e33af6835c347",
           "ee438b1f0150e913ae4f5b2a685575f8"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl0 HJY_lr2raja",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -97,9 +203,7 @@
           "9e8e5eab10786acf2c4418aa63b6ab4d",
           "259c6ff7871efb0492d1dac5d16fda17"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl0 MiyakoMeow",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -121,9 +225,7 @@
           "1f17bdf52d77a37c2b1d80afa67ec969",
           "335d1a46f3d01d2a0a97b4eec3c1c2a0"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl0 よしの",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -145,9 +247,7 @@
           "5be2f2b71443afe72042eeb7437daaa7",
           "097298ec8c64bd0708ceaf60c413fc64"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl0 原田織絵 代案",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -169,9 +269,7 @@
           "70b6f38f9a5536c0826c15155c471d51",
           "a08310d536d625e1776f50316eea25de"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl0 よしの 代案",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -193,9 +291,29 @@
           "a40af0bc31c2324abca47fb93a6c38dc",
           "85c51c57f0a232d8b8c99576d4f7a9d1"
         ]
-      }
-    ],
-    [
+      },
+      {
+        "name": "Satellite Skill Analyzer 3rd sl0 *ふわうさ*",
+        "constraint": ["grade_mirror", "gauge_lr2", "ln"],
+        "trophy": [
+          {
+            "name": "silvermedal",
+            "missrate": 5.0,
+            "scorerate": 70.0
+          },
+          {
+            "name": "goldmedal",
+            "missrate": 2.5,
+            "scorerate": 85.0
+          }
+        ],
+        "md5": [
+          "05251470b0e850b7956b53ee51c70247",
+          "011d370c8a0d66bf3175a88609dca383",
+          "3f74ff490416c8e293d32f4b03c901ba",
+          "e6d59faa8aa2708d4faaa3013d136e40"
+        ]
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl1 原田織絵",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -217,9 +335,7 @@
           "4477569e9d0bee33ad929ec1cf0de878",
           "b08e9ed55ac7ff18317d8e42356f234c"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl1 MiyakoMeow",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -241,9 +357,7 @@
           "baeac3fee0f258b93dac1e13e6fc3431",
           "b87635f02576f048a4c68b7b5e09a52d"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl1 よしの",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -265,9 +379,7 @@
           "6c1b6dde4eb9c6fabe5f1ba126e585cf",
           "0efe4d95c4a3cf0988cff8228f41af15"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl1 Steve58313_B",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -289,9 +401,7 @@
           "46340426b571b819debe96a6739bd88b",
           "a7aed017352eea44490f97a66a83bd10"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl1 selene.",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -313,9 +423,7 @@
           "5218c51ab40bf345c74cd399f7b88fdb",
           "83c9297665649c503a8a71bb391ba7a6"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl1 HJY_lr2raja",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -337,9 +445,7 @@
           "d6a7a48757ba862ac0edd2f376c133e0",
           "f2e571f7a792563d73622f33c85f6498"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl1 原田織絵 代案",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -361,9 +467,51 @@
           "26dd7c6a5377f4200f279afcc25770c9",
           "97a569396ff351c00deafaa5256c5985"
         ]
-      }
-    ],
-    [
+      },
+      {
+        "name": "Satellite Skill Analyzer 3rd sl1 *ふわうさ*",
+        "constraint": ["grade_mirror", "gauge_lr2", "ln"],
+        "trophy": [
+          {
+            "name": "silvermedal",
+            "missrate": 5.0,
+            "scorerate": 70.0
+          },
+          {
+            "name": "goldmedal",
+            "missrate": 2.5,
+            "scorerate": 85.0
+          }
+        ],
+        "md5": [
+          "26dd7c6a5377f4200f279afcc25770c9",
+          "a0f64c8af8621f4fdce97e24193a76cb",
+          "40c46765cfe3645366b6e55498d79e1f",
+          "e7fd7f0663aed3b7aa8c3422ee389d69"
+        ]
+      },
+      {
+        "name": "Satellite Skill Analyzer 3rd sl1 lovelymayapop",
+        "constraint": ["grade_mirror", "gauge_lr2", "ln"],
+        "trophy": [
+          {
+            "name": "silvermedal",
+            "missrate": 5.0,
+            "scorerate": 70.0
+          },
+          {
+            "name": "goldmedal",
+            "missrate": 2.5,
+            "scorerate": 85.0
+          }
+        ],
+        "md5": [
+          "dbc7d01887e3a02ed502d76a0d842152",
+          "dc2c1489c43a83738900e2fcbea4f39a",
+          "77dd6afb7bfb291774fbdcf5aa0db282",
+          "1cdddf7704ef3ce9b04f2cc2d838d097"
+        ]
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl2 原田織絵",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -385,9 +533,7 @@
           "89db3567b8604113d4f144211ffe0727",
           "e2061134cf3acd5a71b7ef59b6a4ab9b"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl2 よしの",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -409,9 +555,7 @@
           "393690659885f5d73e838b43a6345333",
           "9fc0a85a05e953936b8054777fec22f3"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl2 selene.",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -433,9 +577,7 @@
           "cb28d3696c27fc8795c8753f649d6f46",
           "bde981560115cc2f7fa6e5a93b1c13dc"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl2 *ふわうさ*",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -457,9 +599,7 @@
           "393690659885f5d73e838b43a6345333",
           "a664ac5ffe78777c1eae005a3c4bd66c"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl2 原田織絵 代案",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -481,9 +621,7 @@
           "1f577fbcc3f269b7315c96f8cae0c925",
           "c67d87fd87b7ed99746fd42bb8675945"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl2 よしの 代案",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -505,9 +643,73 @@
           "4dae609e5f8eca718e30110d582fe268",
           "cb28d3696c27fc8795c8753f649d6f46"
         ]
-      }
-    ],
-    [
+      },
+      {
+        "name": "Satellite Skill Analyzer 3rd sl2 lovelymayapop",
+        "constraint": ["grade_mirror", "gauge_lr2", "ln"],
+        "trophy": [
+          {
+            "name": "silvermedal",
+            "missrate": 5.0,
+            "scorerate": 70.0
+          },
+          {
+            "name": "goldmedal",
+            "missrate": 2.5,
+            "scorerate": 85.0
+          }
+        ],
+        "md5": [
+          "74a92836eed3e92f6782b1627f80e9f4",
+          "eaaef1ecb6f00074ca25e451b223134d",
+          "aa9e4c9302be23f3f2c47841f1f32dfb",
+          "40f30911d1fccadee2830740ace1b566"
+        ]
+      },
+      {
+        "name": "Satellite Skill Analyzer 3rd sl2 Decimal",
+        "constraint": ["grade_mirror", "gauge_lr2", "ln"],
+        "trophy": [
+          {
+            "name": "silvermedal",
+            "missrate": 5.0,
+            "scorerate": 70.0
+          },
+          {
+            "name": "goldmedal",
+            "missrate": 2.5,
+            "scorerate": 85.0
+          }
+        ],
+        "md5": [
+          "25a58f5af8b3a955ccb585a1f7d2b87d",
+          "8a9d72554eada1de2172091e35c135fb",
+          "0496e348a2253430658af85f410cda4b",
+          "cd6d33af495b5b69d68536187c590406"
+        ]
+      },
+      {
+        "name": "Satellite Skill Analyzer 3rd sl2 Zinkhasfallen",
+        "constraint": ["grade_mirror", "gauge_lr2", "ln"],
+        "trophy": [
+          {
+            "name": "silvermedal",
+            "missrate": 5.0,
+            "scorerate": 70.0
+          },
+          {
+            "name": "goldmedal",
+            "missrate": 2.5,
+            "scorerate": 85.0
+          }
+        ],
+        "md5": [
+          "3b48a96876e3c65f9598a7ae9d95e6ba",
+          "fb8e2e64af3308e2e9190fec6424efe3",
+          "b328e36d0b6c5d4d4d6ff6da78601446",
+          "877f4a37193f789cf1dee377c3774282"
+        ]
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl3 原田織絵",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -529,9 +731,7 @@
           "9fcd8ed5738eeafee02f4261a29c2b58",
           "d9d7984f8dd5d70f8d9b7e1a4994634c"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl3 よしの",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -553,9 +753,7 @@
           "d8b7f3bdb99dc43d4a1b9f83f9453474",
           "f3b5d6531dbeeb57329dde6beb620d1c"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl3 selene.",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -577,9 +775,7 @@
           "5fc698f8ae2b9c5f45d0e7a3d156240a",
           "e19b38273e6b5d2bb8f4bf1da01dcbaf"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl3 *ふわうさ*",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -601,9 +797,7 @@
           "bb51e06228e7279b47120b9a5c527421",
           "9fcd8ed5738eeafee02f4261a29c2b58"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl3 原田織絵 代案",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -625,9 +819,7 @@
           "4a11ad87a53029ad93eeaa7936cdcdb8",
           "666945fc86b26493aa6908bd6e74cb06"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl3 よしの 代案",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -648,6 +840,28 @@
           "9b78bf8f468db8175da31eb12bb2b155",
           "b096eb7be1ff27a5c5fa52abd272d421",
           "e88320b832e16b0ef79e40674d3af2c2"
+        ]
+      },
+      {
+        "name": "Satellite Skill Analyzer 3rd sl3 lovelymayapop",
+        "constraint": ["grade_mirror", "gauge_lr2", "ln"],
+        "trophy": [
+          {
+            "name": "silvermedal",
+            "missrate": 5.0,
+            "scorerate": 70.0
+          },
+          {
+            "name": "goldmedal",
+            "missrate": 2.5,
+            "scorerate": 85.0
+          }
+        ],
+        "md5": [
+          "522eedd7a126eeb71ec1f54adc15843e",
+          "d4be913786b347383b6f2691dd9a3259",
+          "6ad63bdfce1072784d7903ca542e7608",
+          "938acecd03ff1f0a178abfebb1ed1f2b"
         ]
       }
     ],
@@ -673,9 +887,7 @@
           "dadab79f480ed2beded4e19bd6bff1a5",
           "85f5b85f746e9ebd8c40825299d08f2d"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl4 よしの",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -697,9 +909,7 @@
           "1b3a69ba41f4755f0b566a348c2eb4b0",
           "3213380b921dd1275fb392c0080f07ae"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl4 *ふわうさ*",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -721,11 +931,9 @@
           "684df5ad9c4ae413dc58246316a9cd43",
           "deab2d7c66503690608c04e5c5211f6d"
         ]
-      }
-    ],
-    [
+      },
       {
-        "name": "Satellite Skill Analyzer 3rd sl4 よしの 代案",
+        "name": "Satellite Skill Analyzer 3rd sl4 原田織絵 代案",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
         "trophy": [
           {
@@ -745,9 +953,7 @@
           "6ef5608de046dc9c1f614a1f503c582e",
           "f7b8ef3c476bf2974e84e2798ed4633e"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl4 *ふわうさ* 代案",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -769,9 +975,51 @@
           "25e19d3b2a346044fb0fd678d499241e",
           "f26f2c8b3fda7112ca197fb01b56aafb"
         ]
-      }
-    ],
-    [
+      },
+      {
+        "name": "Satellite Skill Analyzer 3rd sl4 selene.",
+        "constraint": ["grade_mirror", "gauge_lr2", "ln"],
+        "trophy": [
+          {
+            "name": "silvermedal",
+            "missrate": 5.0,
+            "scorerate": 70.0
+          },
+          {
+            "name": "goldmedal",
+            "missrate": 2.5,
+            "scorerate": 85.0
+          }
+        ],
+        "md5": [
+          "6814d6e7425da6293fcdc5be24278f4a",
+          "6ef5608de046dc9c1f614a1f503c582e",
+          "02d946340db4001ec78b1e6b9af3a388",
+          "42b8aae291c69e28bdebfcfbc31a0797"
+        ]
+      },
+      {
+        "name": "Satellite Skill Analyzer 3rd sl4 lovelymayapop",
+        "constraint": ["grade_mirror", "gauge_lr2", "ln"],
+        "trophy": [
+          {
+            "name": "silvermedal",
+            "missrate": 5.0,
+            "scorerate": 70.0
+          },
+          {
+            "name": "goldmedal",
+            "missrate": 2.5,
+            "scorerate": 85.0
+          }
+        ],
+        "md5": [
+          "12e0c7293d57dbbdad503f48bbfb5fea",
+          "0169686bd3883f1196f4dd7a4af48f36",
+          "4fc69b1a5567cc0fc2c6629fcf02371d",
+          "ace350ad036de70db59adae9e93386fa"
+        ]
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl5 原田織絵",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -793,9 +1041,7 @@
           "c52c84fbbab7e81c093383814febf3bd",
           "b1a7363b6d88d77bb2febc95bdc58390"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl5 よしの",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -817,9 +1063,7 @@
           "d3991e330fae2d3ed978464312112569",
           "d1c385f99b7a276c407a80280aa3fa7d"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl5 selene.",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -841,9 +1085,7 @@
           "d3991e330fae2d3ed978464312112569",
           "5e02110c1f58d795fc5875cf4c96d507"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl5 *ふわうさ*",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -865,9 +1107,7 @@
           "d0728a13bccc91b0fc42ba3fe2179081",
           "8faa0fc06a989fdb3f153e38ac7efddd"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl5 原田織絵 代案",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -889,9 +1129,7 @@
           "6fff17d90c2876092554b845df48b661",
           "9023f33c21e33d4d9429ab488c40d7ee"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl5 *ふわうさ* 代案",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -913,9 +1151,7 @@
           "de40be2b4c0d069304e5dcde4a92358e",
           "bce7cf5bce1794770ce3ff3443bb7a71"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl6 原田織絵",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -937,9 +1173,7 @@
           "bde6e746250d86e04619a5d7f527c4be",
           "ebb6b359c311b29bb802d5cf46e30222"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl6 よしの",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -961,9 +1195,7 @@
           "22850b3b023918b76b9eb2a7c7172a1f",
           "bde6e746250d86e04619a5d7f527c4be"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl6 selene.",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -985,9 +1217,7 @@
           "64e271a27a6699d68b374e1a180a1192",
           "2bbe7343241ebd482582247537da36f2"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl6 *ふわうさ*",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1005,13 +1235,11 @@
         ],
         "md5": [
           "f735b2d7e027cc20f10453b1abed1cfe",
-          "c982becdce32626a23083d798b02ede1",
+          "ebb6b359c311b29bb802d5cf46e30222",
           "04188c2d542f4c46f35c2c08a5104243",
           "88e7d0747983b331e35a264719c41e67"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl6 原田織絵 代案",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1033,9 +1261,7 @@
           "70120d2889c1e30252289b4e95e1f0c6",
           "406faee3dca676650f9d5fc947e19fff"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl6 *ふわうさ* 代案",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1081,9 +1307,7 @@
           "2fb7b1615be8e37023a048679e4a5802",
           "f8dd029100b14f226a482480903efa48"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl7 JURUMA",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1105,9 +1329,7 @@
           "6fa9f4f592d539f45f83c6ac22665580",
           "57d5f0db1acb5f612d2ae91f0db60325"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl7 Zethiwo",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1129,9 +1351,7 @@
           "dd684125ade7fbfc3572d6c1b8d9df09",
           "f8dd029100b14f226a482480903efa48"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl7 selene.",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1153,9 +1373,7 @@
           "38d2cd6c20a759a4e120b993f1dc0d0a",
           "ce15bfec1be3dfacb11ff3d875afad1b"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl7 よしの",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1177,9 +1395,7 @@
           "bc9af91ef329755dcdbc743f9e76e680",
           "acad13643f01121177a0eaf1a32c395d"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl7 *ふわうさ*",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1201,9 +1417,7 @@
           "f8dd029100b14f226a482480903efa48",
           "d5d29b974ac89d7a6c75e7e5ac9578fc"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl8 蕺草",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1225,9 +1439,7 @@
           "b31d63e8f79e8655fc461a9202a6f93c",
           "af4f6e14957bfe52449ac9ce07a4c300"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl8 よしの",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1249,9 +1461,7 @@
           "3c330a565f99d805693077ed7021296f",
           "6c0d37102eddd177de86a304b95c647a"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl8 Zethiwo",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1273,9 +1483,7 @@
           "04358a9776ed6fb81fe30eaa930e6eb7",
           "bf296157872d81d25a170a3d0bdd7c09"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl8 selene.",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1297,9 +1505,7 @@
           "0dc4116132fc33c90b2cd0ecead09831",
           "ab0f3b4401ffda28fc6d2575fbfce200"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl8 shigeno_aoi",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1321,9 +1527,7 @@
           "b31d63e8f79e8655fc461a9202a6f93c",
           "a0dfd7d70a53e4752d39e09b23877cff"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl8 *ふわうさ*",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1345,9 +1549,7 @@
           "af4f6e14957bfe52449ac9ce07a4c300",
           "04358a9776ed6fb81fe30eaa930e6eb7"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl8 原田織絵",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1369,9 +1571,7 @@
           "10e4f568080345c38ac11ed7b02e025f",
           "91c049a4ad3585deffbca27a832781ac"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl9 selene.",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1393,9 +1593,7 @@
           "cf717aef6c56099521ddb2d3335ae625",
           "60b382221191302b26014563b168be27"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl9 Zethiwo",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1417,9 +1615,7 @@
           "e11ea3e5107888481425f76d7da26222",
           "481bded0f838483a5d7913163abb485f"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl9 よしの",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1441,9 +1637,7 @@
           "7447b9bd0efd6be281e7307a4a62235e",
           "60b382221191302b26014563b168be27"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl9 shigeno_aoi",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1465,9 +1659,7 @@
           "3f7127096bb9e690bd5352064ef8b5b6",
           "0a7556dd67ac8c0d236c35452844e3d8"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl9 IN",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1489,9 +1681,7 @@
           "e11ea3e5107888481425f76d7da26222",
           "481bded0f838483a5d7913163abb485f"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl9 *ふわうさ*",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1512,6 +1702,72 @@
           "c0ddfa9b0d26eb38c614ff65bc0cc326",
           "efa5defcff334b6e382aab26ec375e5a",
           "225552f7a4a30610e0ff28671ca7230f"
+        ]
+      },
+      {
+        "name": "Satellite Skill Analyzer 3rd sl9 原田織絵",
+        "constraint": ["grade_mirror", "gauge_lr2", "ln"],
+        "trophy": [
+          {
+            "name": "silvermedal",
+            "missrate": 5.0,
+            "scorerate": 70.0
+          },
+          {
+            "name": "goldmedal",
+            "missrate": 2.5,
+            "scorerate": 85.0
+          }
+        ],
+        "md5": [
+          "f438433fa442598536589422dfb6616d",
+          "7914f4ececa1ca873ad20a2f26ae258d",
+          "abf32a38d7f8bc98f57742e212938355",
+          "7cbcff1c0b4fb74b2bd4928ca2461fb9"
+        ]
+      },
+      {
+        "name": "Satellite Skill Analyzer 3rd sl9 よしの 代案",
+        "constraint": ["grade_mirror", "gauge_lr2", "ln"],
+        "trophy": [
+          {
+            "name": "silvermedal",
+            "missrate": 5.0,
+            "scorerate": 70.0
+          },
+          {
+            "name": "goldmedal",
+            "missrate": 2.5,
+            "scorerate": 85.0
+          }
+        ],
+        "md5": [
+          "602cc5ef40df734beb381fb348e75b83",
+          "b43131e9629cb9a403b9d68cac794a0e",
+          "5cd9c8bd6e70aa8a3daa85f94a3a46ab",
+          "60b382221191302b26014563b168be27"
+        ]
+      },
+      {
+        "name": "Satellite Skill Analyzer 3rd sl9 selene. 代案",
+        "constraint": ["grade_mirror", "gauge_lr2", "ln"],
+        "trophy": [
+          {
+            "name": "silvermedal",
+            "missrate": 5.0,
+            "scorerate": 70.0
+          },
+          {
+            "name": "goldmedal",
+            "missrate": 2.5,
+            "scorerate": 85.0
+          }
+        ],
+        "md5": [
+          "f438433fa442598536589422dfb6616d",
+          "c18e2c5a8d7d45e7a9b83afc97697c17",
+          "35fbe7611db6cd78255d25e0608999a5",
+          "0d74abe1b55e4c7de690a956543f097b"
         ]
       }
     ],
@@ -1537,9 +1793,7 @@
           "aec21fd1d585fdfd67bf93fc1c5c92d9",
           "010d5e5f5225616215c1b365f68a604b"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl10 べりめとろす",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1561,9 +1815,7 @@
           "e7df53f94805d0d2a1976855eaded1c4",
           "023415328aa43c6557e0b6ee6656d16f"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl10 Steve58313_B",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1585,9 +1837,7 @@
           "509178355473f091dea516fcdc3472f7",
           "216063bc06f7c34b03e8932d54b67dce"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl10 shigeno_aoi",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1609,9 +1859,7 @@
           "f1e3b81187d776311556a0b713596ba5",
           "c7c5bc4ea5f507bb96aa2d2518efb385"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl10 IN",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1633,9 +1881,7 @@
           "408bf9274bf02b3ae09e3c58a3bc0587",
           "1ebf61990256b79628c9dee6a926ad39"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl11 べりめとろす",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1657,9 +1903,7 @@
           "c6e40998c81fbf3ae79484adc8975280",
           "40245d0384a485fe1a2ffec75095f626"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl11 selene.",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1681,9 +1925,7 @@
           "96af0b0fd5f9e61ed5078494776a951e",
           "3306e0ad9a72073aaf2cdfbc054d8b9d"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl11 Steve58313_B",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1705,9 +1947,7 @@
           "a9e52da28747098fcc9f9a72a14b8a32",
           "3ca65d64697a61e3a0d705ed05696c22"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl11 shigeno_aoi",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1729,9 +1969,7 @@
           "1bc3c15a4c40d87dbffa8be429140478",
           "267fbf20e2f0d04e64525b0dbee0f789"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl11 IN",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1753,9 +1991,7 @@
           "1fda5d1c3600b1278688ba1f73286cf6",
           "24c869a51384af113e9271a766e7d4be"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl12 べりめとろす",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1777,9 +2013,7 @@
           "aec4859fb3a64959fc8812faef30c9a2",
           "b57e7f1bdca974cd00379e3d1cf84504"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl12 selene.",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1801,9 +2035,7 @@
           "abaad8dae6cc9d43310c84f765d3c340",
           "accc5608f01d6885f164aa8fa4e7d764"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl12 Steve58313_B",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1825,9 +2057,7 @@
           "b2d0911f389aab92b4f7b0ff5ca345e0",
           "bca300b454c8d993060712e8ebdef243"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl12 shigeno_aoi",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
@@ -1849,9 +2079,7 @@
           "df995b9011a93b66ed1ad182faff8096",
           "b57e7f1bdca974cd00379e3d1cf84504"
         ]
-      }
-    ],
-    [
+      },
       {
         "name": "Satellite Skill Analyzer 3rd sl12 IN",
         "constraint": ["grade_mirror", "gauge_lr2", "ln"],
