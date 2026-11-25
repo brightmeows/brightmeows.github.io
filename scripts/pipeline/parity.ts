@@ -3,7 +3,8 @@
  *
  * 用 R2 上的公开基线（tables/<dir>/info.json 与 lists 缓存）搭两个独立
  * 工作区，分别跑新实现与旧二进制（bms-table-fetch release），再逐对象比对
- * 对外产物：info/header/data 逐字节比较，tables.json 与 indexes 按语义比较。
+ * 对外产物：info/header/data 逐字节比较，tables.json 与 indexes 按语义比较；
+ * v2 索引再解码回目录集合与同轮 v1 比对。
  * 旧配置来自存档 fixture（`scripts/pipeline/fixtures/legacy-table.toml`）：
  * 旧二进制固定读 `config/table.toml`，而仓库的 `config/` 已随旧配置退役。
  *
@@ -15,6 +16,12 @@ import { existsSync } from "node:fs";
 import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
+
+import {
+  COMPACT_SEARCH_INDEX_NAMES,
+  parseCompactSearchIndex,
+  parseCompactSearchIndexManifest,
+} from "@brightmeows/mirror/search-index";
 
 import { isRecord } from "../guards.ts";
 
@@ -446,7 +453,78 @@ export async function compareWorkspaces(
       differences
     );
   }
+  await compareCompactIndexes(newRoot, differences);
   return differences;
+}
+
+/** v2 与同轮 v1 的语义比对：解码数字 ID 后逐 term 比较目录集合。 */
+async function compareCompactIndexes(root: string, differences: ParityDifference[]): Promise<void> {
+  const manifestPath = path.join(root, "indexes", "v2", "manifest.json");
+  const manifestRaw = await readIfExists(manifestPath);
+  if (manifestRaw === null) {
+    differences.push({
+      kind: "file-differs",
+      table: "(顶层)",
+      file: "indexes/v2/manifest.json",
+      detail: "新实现缺少 v2 manifest",
+    });
+    return;
+  }
+  const manifest = parseCompactSearchIndexManifest(manifestRaw.toString("utf8"));
+  if (manifest === null) {
+    differences.push({
+      kind: "file-differs",
+      table: "(顶层)",
+      file: "indexes/v2/manifest.json",
+      detail: "v2 manifest 结构非法",
+    });
+    return;
+  }
+  const dirById = new Map(manifest.tables.map((table) => [table.id, table.dir] as const));
+  for (const name of COMPACT_SEARCH_INDEX_NAMES) {
+    const v1Raw = await readIfExists(path.join(root, "indexes", `${name}.json`));
+    const v2Raw = await readIfExists(path.join(root, "indexes", "v2", `${name}.json`));
+    if (v1Raw === null || v2Raw === null) {
+      differences.push({
+        kind: "file-differs",
+        table: "(顶层)",
+        file: `indexes/v2/${name}.json`,
+        detail: v1Raw === null ? "新实现缺少 v1 索引" : "新实现缺少 v2 索引",
+      });
+      continue;
+    }
+    const v1 = JSON.parse(v1Raw.toString("utf8")) as unknown;
+    if (!isRecord(v1)) {
+      differences.push({
+        kind: "file-differs",
+        table: "(顶层)",
+        file: `indexes/v2/${name}.json`,
+        detail: "v1 索引结构非法",
+      });
+      continue;
+    }
+    const v2 = parseCompactSearchIndex(JSON.parse(v2Raw.toString("utf8")) as unknown);
+    if (v2 === null) {
+      differences.push({
+        kind: "file-differs",
+        table: "(顶层)",
+        file: `indexes/v2/${name}.json`,
+        detail: "v2 索引结构非法",
+      });
+      continue;
+    }
+    const decoded = Object.fromEntries(
+      Object.entries(v2).map(([term, ids]) => [term, ids.map((id) => dirById.get(id) ?? `#${id}`)])
+    );
+    if (canonicalJson(v1) !== canonicalJson(decoded)) {
+      differences.push({
+        kind: "file-differs",
+        table: "(顶层)",
+        file: `indexes/v2/${name}.json`,
+        detail: "与 v1 语义不同",
+      });
+    }
+  }
 }
 
 async function compareJsonFile(
