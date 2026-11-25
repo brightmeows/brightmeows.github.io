@@ -88,7 +88,7 @@
   <div class="flex flex-wrap items-center gap-3">
     <div class="min-w-0 flex-1">
       <div class="text-[0.9rem] text-white-75">{m["editor.drop.title"]()}</div>
-      <div class="text-[0.82rem] text-white-50">{m["editor.drop.hint"]()}</div>
+      <div class="text-[0.8rem] text-white-50">{m["editor.drop.hint"]()}</div>
     </div>
     <button class={btnGhost} type="button" {disabled} onclick={() => fileInput?.click()}>
       {m["editor.drop.button"]()}

@@ -219,8 +219,8 @@
       {#if canWrite}
         <div class="flex flex-col gap-4">
           {#if canRename}
-            <div class="rounded-glass-sm border border-white-15 bg-black-20 p-3">
-              <div class="mb-2 text-[0.9rem] text-white-70">{m["shared.rename.section"]()}</div>
+            <div class="panel-inset">
+              <div class="panel-inset-label mb-2">{m["shared.rename.section"]()}</div>
               <div class="flex flex-wrap gap-2">
                 <input
                   class="{inputEditorBase} min-w-50 flex-1"

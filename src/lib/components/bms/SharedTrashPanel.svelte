@@ -95,7 +95,7 @@
         </div>
       {/if}
       {#if open}
-        <div class="rounded-glass-sm border border-white-15 bg-black-20 p-3">
+        <div class="panel-inset">
           {#if entries.length === 0}
             <div class="text-[0.9rem] text-white-60">{m["shared.trash.empty"]()}</div>
           {:else}

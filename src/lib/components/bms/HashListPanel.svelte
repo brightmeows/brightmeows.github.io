@@ -44,8 +44,8 @@
   }
 </script>
 
-<details class="rounded-glass-sm border border-white-15 bg-black-20 p-3">
-  <summary class="cursor-pointer text-[0.9rem] text-white-70">
+<details class="panel-inset">
+  <summary class="panel-inset-label cursor-pointer">
     {m["editor.hashlist.section"]()}
   </summary>
 

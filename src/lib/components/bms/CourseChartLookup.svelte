@@ -190,7 +190,7 @@
   <div class="mb-2 flex items-start justify-between gap-2">
     <div class="min-w-0">
       <div class="text-[0.9rem] font-medium text-white">{m["editor.course.lookup.title"]()}</div>
-      <p class="mt-0.5 text-[0.78rem] text-white-50">{m["editor.course.lookup.hint"]()}</p>
+      <p class="mt-0.5 text-[0.8rem] text-white-50">{m["editor.course.lookup.hint"]()}</p>
     </div>
     <button
       class={btnGhost}
@@ -204,7 +204,7 @@
   </div>
 
   <div class="flex flex-col gap-2">
-    <div class="rounded-glass-sm border border-white-10 bg-black-10 p-2">
+    <div class="panel-inset-tight">
       <div class="text-[0.8rem] text-white-50">{m["editor.course.lookup.current"]()}</div>
       {#if currentEntry !== null}
         <div class="mt-1 text-[0.85rem] text-white-80">
@@ -220,7 +220,7 @@
       {/if}
     </div>
 
-    <div class="rounded-glass-sm border border-white-10 bg-black-10 p-2">
+    <div class="panel-inset-tight">
       <div class="flex flex-wrap items-center gap-2">
         <span class="text-[0.8rem] text-white-50">{m["editor.course.lookup.mirror"]()}</span>
         <button
@@ -234,30 +234,30 @@
         </button>
       </div>
       {#if mirrorLoading || mirrorPending}
-        <p class="mt-1 text-[0.82rem] text-white-50">
+        <p class="mt-1 text-[0.8rem] text-white-50">
           {indexClient.phase === "loading"
             ? m["editor.course.lookup.index_loading"]()
             : m["editor.course.lookup.loading"]()}
         </p>
       {:else if mirrorError !== null}
-        <p class="mt-1 text-[0.82rem] text-error">
+        <p class="mt-1 text-[0.8rem] text-error">
           {m["editor.course.lookup.failed"]({ detail: mirrorError })}
         </p>
       {:else if mirrorResults.length > 0}
         <ul class="mt-1 space-y-1">
           {#each mirrorResults as hit (hit.tableId)}
-            <li class="text-[0.82rem] text-white-75">
+            <li class="text-[0.85rem] text-white-75">
               {describe(hit.entry)}
-              <span class="ml-1 font-mono text-[0.72rem] text-white-40">{hit.tableId}</span>
+              <span class="ml-1 font-mono text-[0.75rem] text-white-40">{hit.tableId}</span>
             </li>
           {/each}
         </ul>
       {:else if mirrorSearched && mirrorResults.length === 0}
-        <p class="mt-1 text-[0.82rem] text-white-50">{m["editor.course.lookup.empty"]()}</p>
+        <p class="mt-1 text-[0.8rem] text-white-50">{m["editor.course.lookup.empty"]()}</p>
       {/if}
     </div>
 
-    <div class="rounded-glass-sm border border-white-10 bg-black-10 p-2">
+    <div class="panel-inset-tight">
       <div class="flex flex-wrap items-center gap-2">
         <span class="text-[0.8rem] text-white-50">{m["editor.course.lookup.shared"]()}</span>
         <select
@@ -284,27 +284,27 @@
         </button>
       </div>
       {#if sharedLoading}
-        <p class="mt-1 text-[0.82rem] text-white-50">{m["editor.course.lookup.loading"]()}</p>
+        <p class="mt-1 text-[0.8rem] text-white-50">{m["editor.course.lookup.loading"]()}</p>
       {:else if sharedError !== null}
-        <p class="mt-1 text-[0.82rem] text-error">
+        <p class="mt-1 text-[0.8rem] text-error">
           {m["editor.course.lookup.failed"]({ detail: sharedError })}
         </p>
       {:else if sharedResults.length > 0}
         <ul class="mt-1 space-y-1">
           {#each sharedResults as hit (hit.tableId)}
-            <li class="text-[0.82rem] text-white-75">
+            <li class="text-[0.85rem] text-white-75">
               {describe(hit.entry)}
-              <span class="ml-1 font-mono text-[0.72rem] text-white-40">{hit.tableId}</span>
+              <span class="ml-1 font-mono text-[0.75rem] text-white-40">{hit.tableId}</span>
             </li>
           {/each}
         </ul>
       {:else if sharedSearched && sharedResults.length === 0}
-        <p class="mt-1 text-[0.82rem] text-white-50">{m["editor.course.lookup.empty"]()}</p>
+        <p class="mt-1 text-[0.8rem] text-white-50">{m["editor.course.lookup.empty"]()}</p>
       {/if}
     </div>
 
     {#if !hasHash}
-      <p class="text-[0.82rem] text-amber-300">{m["editor.course.lookup.no_hash"]()}</p>
+      <p class="text-[0.8rem] text-amber-300">{m["editor.course.lookup.no_hash"]()}</p>
     {/if}
   </div>
 </div>

@@ -9,6 +9,9 @@ Tailwind 默认圆角档退役）。本扫描拦：
 
 - 任意元素的 class 出现圆角默认档 rounded-sm/md/lg/xl/2xl（rounded-full
   圆形豁免）——玻璃阶梯兼作全站圆角尺。
+- 任意元素的 class 同时出现 rounded-glass-sm、border-white-15、
+  bg-black-20、p-3，或 rounded-glass-sm、border-white-10、bg-black-10、
+  p-2。编辑器内嵌面板请用 panel-inset / panel-inset-tight。
 - button/label 元素：class 串里 cursor-pointer 配圆角（rounded-glass-* 等
   玻璃档或任意值形态；rounded-full 圆形豁免），或同时出现 border-white-*
   与 bg-white-*/bg-black-*（chip 皮）。
@@ -37,6 +40,11 @@ RADIUS_FRAGMENTS = (
 )
 
 RADIUS_DEFAULT = re.compile("rounded-(?:sm|md|lg|xl|2xl)\\b")
+
+PANEL_FINGERPRINTS = (
+    frozenset({"rounded-glass-sm", "border-white-15", "bg-black-20", "p-3"}),
+    frozenset({"rounded-glass-sm", "border-white-10", "bg-black-10", "p-2"}),
+)
 
 
 def strip_line_numbers(content: str, offset: int) -> int:
@@ -67,6 +75,11 @@ def check_file(path: str, is_ui: bool) -> list[str]:
         if RADIUS_DEFAULT.search(cls):
             failed.append(
                 f"{path}:{lineno}: 圆角默认档越出玻璃圆角尺，请改用 rounded-glass-*（rounded-full 圆形豁免）"
+            )
+        class_words = cls.split()
+        if any(fingerprint.issubset(class_words) for fingerprint in PANEL_FINGERPRINTS):
+            failed.append(
+                f"{path}:{lineno}: 编辑器内嵌面板类串，请改用 panel-inset 或 panel-inset-tight"
             )
         if is_ui:
             continue
@@ -99,7 +112,7 @@ def main() -> int:
         failed.extend(check_file(path, "/components/ui/" in normalized))
     if failed:
         print(
-            "UI 模板发现绕过令牌的按钮/链接样式，请改用 ui-classes 令牌：",
+            "UI 模板发现绕过令牌的样式，请改用 ui-classes 或 layout.css 令牌：",
             file=sys.stderr,
         )
         for item in failed:

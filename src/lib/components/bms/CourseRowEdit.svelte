@@ -470,10 +470,7 @@
                 : courseChartResolvedIn(knownHashes, chart)
                   ? "resolved"
                   : "unresolved"}
-              <div
-                use:chartDnd.item={{ index, disabled }}
-                class="rounded-glass-sm border border-white-10 bg-black-10 p-2"
-              >
+              <div use:chartDnd.item={{ index, disabled }} class="panel-inset-tight">
                 <div class="flex flex-wrap items-center gap-2">
                   <DragHandle
                     dnd={chartDnd}
@@ -512,7 +509,7 @@
                 </div>
                 <div class="mt-1.5 flex flex-wrap items-center gap-2">
                   <span
-                    class="text-[0.78rem] {resolution === 'resolved'
+                    class="text-[0.8rem] {resolution === 'resolved'
                       ? 'text-success'
                       : resolution === 'unknown'
                         ? 'text-white-40'
@@ -525,11 +522,11 @@
                         : m["editor.course.chart.unresolved"]()}
                   </span>
                   {#if issue === "missing"}
-                    <span class="text-[0.78rem] text-error">
+                    <span class="text-[0.8rem] text-error">
                       {m["editor.course.chart.identity"]()}
                     </span>
                   {:else if issue !== "ok"}
-                    <span class="text-[0.78rem] text-error">
+                    <span class="text-[0.8rem] text-error">
                       {m["editor.course.chart.hash_invalid"]({ field: issue })}
                     </span>
                   {/if}
@@ -581,7 +578,7 @@
 
       {#if Object.keys(course.extra).length > 0}
         <details class="rounded-glass-sm border border-white-10 p-2">
-          <summary class="cursor-pointer text-[0.78rem] text-white-50">
+          <summary class="cursor-pointer text-[0.8rem] text-white-50">
             {m["editor.course.extra"]()}
           </summary>
           <pre
