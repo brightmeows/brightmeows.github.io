@@ -470,10 +470,7 @@
                 : courseChartResolvedIn(knownHashes, chart)
                   ? "resolved"
                   : "unresolved"}
-              <div
-                use:chartDnd.item={{ index, disabled }}
-                class="rounded-glass-sm border border-white-10 bg-black-10 p-2"
-              >
+              <div use:chartDnd.item={{ index, disabled }} class="panel-inset-tight">
                 <div class="flex flex-wrap items-center gap-2">
                   <DragHandle
                     dnd={chartDnd}

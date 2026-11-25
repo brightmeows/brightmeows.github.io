@@ -296,7 +296,7 @@
           {/if}
         </div>
 
-        <div class="rounded-glass-sm border border-white-15 bg-black-20 p-3">
+        <div class="panel-inset">
           <div class="text-[0.85rem] text-white-50">{m["shared.id.preview_label"]()}</div>
           <div class="mt-1 flex flex-wrap items-center gap-2">
             <code class="font-mono text-[0.95rem] break-all text-accent">{preview}</code>
@@ -344,8 +344,8 @@
         </div>
         <p class="-mt-2 text-[0.85rem] text-white-50">{m["shared.seed.hint"]()}</p>
 
-        <details class="rounded-glass-sm border border-white-15 bg-black-20 p-3">
-          <summary class="cursor-pointer text-[0.9rem] text-white-70">
+        <details class="panel-inset">
+          <summary class="panel-inset-label cursor-pointer">
             {m["shared.import.section"]()}
           </summary>
           <p class="mt-2 text-[0.85rem] text-white-60">{m["shared.import.hint"]()}</p>

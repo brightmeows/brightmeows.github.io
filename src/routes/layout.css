@@ -325,6 +325,19 @@
     @apply rounded-glass-md border-white-10 bg-black-20 p-8;
   }
 
+  /* ===== 编辑器内嵌面板（BMS 编辑器的 section 容器） ===== */
+  .panel-inset {
+    @apply rounded-glass-sm border border-white-15 bg-black-20 p-3;
+  }
+
+  .panel-inset-tight {
+    @apply rounded-glass-sm border border-white-10 bg-black-10 p-2;
+  }
+
+  .panel-inset-label {
+    @apply text-[0.9rem] text-white-70;
+  }
+
   /* ===== 表格样式 ===== */
   .table-glass {
     @apply w-full table-fixed border-collapse overflow-hidden rounded-glass-sm bg-white-5;

@@ -204,7 +204,7 @@
   </div>
 
   <div class="flex flex-col gap-2">
-    <div class="rounded-glass-sm border border-white-10 bg-black-10 p-2">
+    <div class="panel-inset-tight">
       <div class="text-[0.8rem] text-white-50">{m["editor.course.lookup.current"]()}</div>
       {#if currentEntry !== null}
         <div class="mt-1 text-[0.85rem] text-white-80">
@@ -220,7 +220,7 @@
       {/if}
     </div>
 
-    <div class="rounded-glass-sm border border-white-10 bg-black-10 p-2">
+    <div class="panel-inset-tight">
       <div class="flex flex-wrap items-center gap-2">
         <span class="text-[0.8rem] text-white-50">{m["editor.course.lookup.mirror"]()}</span>
         <button
@@ -257,7 +257,7 @@
       {/if}
     </div>
 
-    <div class="rounded-glass-sm border border-white-10 bg-black-10 p-2">
+    <div class="panel-inset-tight">
       <div class="flex flex-wrap items-center gap-2">
         <span class="text-[0.8rem] text-white-50">{m["editor.course.lookup.shared"]()}</span>
         <select
