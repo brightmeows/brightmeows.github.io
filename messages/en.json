@@ -656,6 +656,8 @@
   "search.idle_desc": "Press Enter or click the search button. Supports title, artist, MD5, SHA256.",
   "search.idle_title": "Enter keywords to search",
   "search.index_load_failed": "Index failed to load",
+  "search.index_stale": "Search index may be out of date. Last successful update: {time}.",
+  "search.index_stale_unknown": "Search index may be out of date. Last successful update time is unknown.",
   "search.input_placeholder": "Enter title, artist, MD5 or SHA256; Chinese variants auto-convert...",
   "search.load_url_failed": "Failed to load {url}: {status}",
   "search.loading_header": "Loading header...",

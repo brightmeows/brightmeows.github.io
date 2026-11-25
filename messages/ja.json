@@ -656,6 +656,8 @@
   "search.idle_desc": "Enter キーまたは検索ボタンで検索します。タイトル、アーティスト、MD5、SHA256 に対応。",
   "search.idle_title": "キーワードを入力して検索を開始",
   "search.index_load_failed": "インデックスの読み込みに失敗しました",
+  "search.index_stale": "検索インデックスが最新でない可能性があります。最終更新: {time}。",
+  "search.index_stale_unknown": "検索インデックスが最新でない可能性があります。最終更新時刻は不明です。",
   "search.input_placeholder": "タイトル、アーティスト、MD5、SHA256 を入力。簡体字・繁体字・日本語漢字を自動変換…",
   "search.load_url_failed": "{url} の読み込みに失敗しました: {status}",
   "search.loading_header": "ヘッダーを読み込み中…",

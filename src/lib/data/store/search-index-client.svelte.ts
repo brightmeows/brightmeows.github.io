@@ -47,6 +47,10 @@ export class SearchIndexClient {
   hashPhase = $state<HashIndexPhase>("idle");
   /** 哈希索引组失败原因。 */
   hashErrorMessage = $state<string | null>(null);
+  /** 是否有索引组因 manifest 或文件校验失败而使用缓存。 */
+  stale = $state(false);
+  /** 上一次成功生成的 manifest 时间，stale 提示用。 */
+  updatedAt = $state<string | null>(null);
 
   #worker: Worker | null = null;
   #nextSearchId = 1;
@@ -173,6 +177,8 @@ export class SearchIndexClient {
         break;
       }
       case "ready": {
+        this.stale = this.stale || (msg.stale ?? false);
+        this.updatedAt = msg.updatedAt ?? this.updatedAt;
         if (msg.error) {
           this.phase = "error";
           // Worker 无 DOM 上下文无法按 locale 求值消息，发代码由主线程翻译
@@ -185,6 +191,8 @@ export class SearchIndexClient {
         break;
       }
       case "hash-ready": {
+        this.stale = this.stale || (msg.stale ?? false);
+        this.updatedAt = msg.updatedAt ?? this.updatedAt;
         if (msg.error) {
           this.hashPhase = "error";
           this.hashErrorMessage =

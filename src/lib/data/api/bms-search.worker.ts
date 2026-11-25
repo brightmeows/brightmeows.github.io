@@ -1,11 +1,32 @@
 /// <reference lib="webworker" />
 
-import { detectQueryType, searchHashIndices, searchTextIndices } from "./bms-search";
+/**
+ * 搜索索引 Worker：拉 manifest、按文件哈希增量下载、SHA-256 校验与搜索。
+ *
+ * 同一页面生命周期内只确定一次 manifest，文本组与哈希组共用同一份表映射；
+ * manifest 或文件校验失败时回退 IDB 缓存并标记 stale，不回退 v1。
+ */
+
+import {
+  compactIndexTableDirs,
+  parseCompactSearchIndex,
+  parseCompactSearchIndexManifest,
+  type CompactSearchIndexManifest,
+  type CompactSearchIndexName,
+} from "@brightmeows/mirror/search-index";
+
+import {
+  detectQueryType,
+  isIndexFileCached,
+  searchHashIndices,
+  searchTextIndices,
+} from "./bms-search";
 import type {
   CandidateEntry,
   HashIndexBundle,
   KeyMatch,
   SearchIndex,
+  TableDirMap,
   TextIndexBundle,
   WorkerMessage,
   WorkerRequest,
@@ -13,184 +34,326 @@ import type {
 } from "./bms-search";
 import {
   getCachedHashIndices,
+  getCachedManifest,
   getCachedTextIndices,
-  getVersion,
   setCachedHashIndices,
+  setCachedManifest,
   setCachedTextIndices,
-  setVersion,
 } from "./bms-search-idb";
+import type { IndexGroup } from "./bms-search-idb";
 
 import { R2_INDEXES_BASE } from "#lib/constants/r2.js";
+import { sha256Hex } from "#lib/utils/infra/hash.js";
 
 // ---- state ----
 
+let manifest: CompactSearchIndexManifest | null = null;
+let manifestFromCache = false;
+let tableDirs: TableDirMap | null = null;
 let textIndices: TextIndexBundle | null = null;
 let hashIndices: HashIndexBundle | null = null;
-/** 哈希索引的加载中 Promise：并发请求合并成一次网络拉取。 */
 let hashLoadPromise: Promise<void> | null = null;
+let hashStale = false;
+let hashUpdatedAt: string | null = null;
 
 // ---- helpers ----
 
-const TEXT_INDEX_NAMES = ["title", "artist"] as const;
-const HASH_INDEX_NAMES = ["md5", "sha256"] as const;
-const INDEX_BASE = `${R2_INDEXES_BASE}/`;
-
-/** 计算单个索引对象的轻量摘要（排序 key，避免 JSON 顺序影响）。 */
-function computeIndexDigest(obj: Record<string, string[]>): string {
-  const keys = Object.keys(obj).sort();
-  let hash = 0;
-  for (const k of keys) {
-    for (let i = 0; i < k.length; i++) {
-      hash = (hash << 5) - hash + k.charCodeAt(i);
-      hash |= 0;
-    }
-    const arr = obj[k];
-    if (arr) {
-      hash += arr.length;
-      for (const val of arr) {
-        for (let j = 0; j < val.length; j++) {
-          hash = (hash << 5) - hash + val.charCodeAt(j);
-          hash |= 0;
-        }
-      }
-    }
-  }
-  return keys.length + ":" + hash.toString(36);
-}
-
-/** 计算一组索引的联合摘要（组内各索引摘要拼接）。 */
-function computeGroupDigest(group: TextIndexBundle | HashIndexBundle): string {
-  if ("title" in group) {
-    return [
-      `artist:${computeIndexDigest(group.artist)}`,
-      `title:${computeIndexDigest(group.title)}`,
-    ].join("|");
-  }
-  return [
-    `md5:${computeIndexDigest(group.md5)}`,
-    `sha256:${computeIndexDigest(group.sha256)}`,
-  ].join("|");
-}
-
-// ---- index loading ----
+const TEXT_INDEX_NAMES = ["title", "artist"] as const satisfies readonly CompactSearchIndexName[];
+const HASH_INDEX_NAMES = ["md5", "sha256"] as const satisfies readonly CompactSearchIndexName[];
+const MANIFEST_URL = `${R2_INDEXES_BASE}/manifest.json`;
 
 function post(out: WorkerMessage): void {
   self.postMessage(out);
 }
 
-/** 拉取一组索引；任一文件失败时整组返回 null。 */
-async function fetchIndexGroup(names: readonly string[]): Promise<SearchIndex[] | null> {
+function postReady(
+  source: "idb" | "network",
+  error?: string,
+  stale = false,
+  updatedAt?: string
+): void {
+  post({
+    type: "ready",
+    source,
+    ...(error === undefined ? {} : { error }),
+    stale,
+    updatedAt,
+  });
+}
+
+function postHashReady(error?: string, stale = false, updatedAt?: string): void {
+  post({
+    type: "hash-ready",
+    ...(error === undefined ? {} : { error }),
+    stale,
+    updatedAt,
+  });
+}
+
+async function fetchManifest(): Promise<CompactSearchIndexManifest | null> {
+  try {
+    const res = await fetch(MANIFEST_URL);
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+    const parsed = parseCompactSearchIndexManifest(await res.text());
+    if (parsed === null) {
+      throw new Error("invalid manifest");
+    }
+    return parsed;
+  } catch (error) {
+    console.error("[worker] 加载搜索索引 manifest 失败:", error);
+    return null;
+  }
+}
+
+interface EnsuredManifest {
+  manifest: CompactSearchIndexManifest;
+  fromCache: boolean;
+  stale: boolean;
+}
+
+/** 同一 Worker 生命周期内只确定一次 manifest，文本与哈希组共用同一份表映射。 */
+async function ensureManifest(group: IndexGroup): Promise<EnsuredManifest | null> {
+  if (manifest !== null) {
+    return { manifest, fromCache: manifestFromCache, stale: manifestFromCache };
+  }
+  const fresh = await fetchManifest();
+  if (fresh !== null) {
+    manifest = fresh;
+    manifestFromCache = false;
+    tableDirs = compactIndexTableDirs(fresh);
+    return { manifest: fresh, fromCache: false, stale: false };
+  }
+  const cached = await getCachedManifest(group);
+  if (cached !== null) {
+    manifest = cached;
+    manifestFromCache = true;
+    tableDirs = compactIndexTableDirs(cached);
+    return { manifest: cached, fromCache: true, stale: true };
+  }
+  return null;
+}
+
+interface LoadedIndexFile {
+  index: SearchIndex;
+  usedFallback: boolean;
+}
+
+/**
+ * 加载单个索引文件：文件哈希与缓存一致时直接用缓存，否则下载并按 manifest
+ * 校验 SHA-256；不匹配重试一次，仍失败且有缓存时回退缓存并标记 stale。
+ */
+async function loadIndexFile(
+  name: CompactSearchIndexName,
+  current: CompactSearchIndexManifest,
+  cachedManifest: CompactSearchIndexManifest | null,
+  cachedIndex: SearchIndex | undefined
+): Promise<LoadedIndexFile | null> {
+  const expected = current.files[name];
+  if (isIndexFileCached(name, current, cachedManifest, cachedIndex) && cachedIndex !== undefined) {
+    return { index: cachedIndex, usedFallback: false };
+  }
+
+  const url = `${R2_INDEXES_BASE}/${name}.json`;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      // 首次走浏览器/边缘缓存；哈希不匹配时用 manifest 哈希做 cache-busting 重试，
+      // 避免旧缓存文件在重试时再次命中。
+      const target = attempt === 0 ? url : `${url}?v=${expected.hash}`;
+      const res = await fetch(target);
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      const bytes = await res.arrayBuffer();
+      const actual = await sha256Hex(bytes);
+      if (actual !== expected.hash) {
+        throw new Error(`SHA-256 mismatch: ${name}`);
+      }
+      const raw: unknown = JSON.parse(new TextDecoder().decode(bytes));
+      const index = parseCompactSearchIndex(raw);
+      if (index === null) {
+        throw new Error(`invalid index payload: ${name}`);
+      }
+      return { index, usedFallback: false };
+    } catch (error) {
+      if (attempt === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        continue;
+      }
+      console.error(`[worker] 加载索引 ${name} 失败:`, error);
+      if (cachedIndex !== undefined) {
+        return { index: cachedIndex, usedFallback: true };
+      }
+      return null;
+    }
+  }
+  return null;
+}
+
+interface LoadedGroup {
+  indices: SearchIndex[];
+  stale: boolean;
+  usedFallback: boolean;
+}
+
+/** 加载一组索引；任一文件失败且无缓存时整组返回 null。 */
+async function loadGroup(
+  names: readonly CompactSearchIndexName[],
+  cachedByName: ReadonlyMap<CompactSearchIndexName, SearchIndex>,
+  cachedManifest: CompactSearchIndexManifest | null,
+  current: CompactSearchIndexManifest
+): Promise<LoadedGroup | null> {
+  const allCached = names.every((name) =>
+    isIndexFileCached(name, current, cachedManifest, cachedByName.get(name))
+  );
+  if (allCached) {
+    const indices: SearchIndex[] = [];
+    for (const name of names) {
+      const cached = cachedByName.get(name);
+      if (cached === undefined) {
+        return null;
+      }
+      indices.push(cached);
+    }
+    return { indices, stale: false, usedFallback: false };
+  }
+
   const total = names.length;
   for (const [i, name] of names.entries()) {
     post({ type: "index-progress", name, status: "loading", current: i, total });
   }
-
   const results = await Promise.all(
     names.map(async (name, i) => {
-      const data = await fetchSingleIndex(name, `${INDEX_BASE}${name}.json`);
+      const result = await loadIndexFile(name, current, cachedManifest, cachedByName.get(name));
       post({
         type: "index-progress",
         name,
-        status: data ? "done" : "error",
+        status: result === null ? "error" : "done",
         current: i + 1,
         total,
       });
-      return data;
+      return result;
     })
   );
 
-  const loaded: SearchIndex[] = [];
-  for (const item of results) {
-    if (item === null) return null;
-    loaded.push(item);
+  const indices: SearchIndex[] = [];
+  let usedFallback = false;
+  for (const result of results) {
+    if (result === null) {
+      return null;
+    }
+    indices.push(result.index);
+    usedFallback ||= result.usedFallback;
   }
-  return loaded;
+  return { indices, stale: usedFallback, usedFallback };
 }
 
-/** 首屏加载：文本索引组（title 与 artist），命中缓存立即就绪并后台校验。 */
+// ---- index loading ----
+
+/** 首屏加载文本索引组；manifest 失败时用缓存 manifest 与索引并标记 stale。 */
 async function loadTextIndices(): Promise<void> {
-  const [cached, cachedVersion] = await Promise.all([getCachedTextIndices(), getVersion("text")]);
-
-  if (cached && cachedVersion !== null) {
-    textIndices = cached;
-    post({ type: "ready", source: "idb" });
-    void revalidateTextIndices();
+  const ensured = await ensureManifest("text");
+  if (ensured === null) {
+    postReady("network", "index-load-failed");
     return;
   }
-
-  const fresh = await fetchIndexGroup(TEXT_INDEX_NAMES);
-  const [title, artist] = fresh ?? [];
-  if (!title || !artist) {
-    post({ type: "ready", source: "network", error: "index-load-failed" });
+  const current = ensured.manifest;
+  const [cachedManifest, cached] = await Promise.all([
+    getCachedManifest("text"),
+    getCachedTextIndices(),
+  ]);
+  const cachedByName = new Map<CompactSearchIndexName, SearchIndex>();
+  if (cached !== null) {
+    cachedByName.set("title", cached.title);
+    cachedByName.set("artist", cached.artist);
+  }
+  const loaded = await loadGroup(TEXT_INDEX_NAMES, cachedByName, cachedManifest, current);
+  if (loaded === null) {
+    postReady(
+      ensured.fromCache ? "idb" : "network",
+      "index-load-failed",
+      true,
+      current.generated_at
+    );
     return;
   }
-
+  const [title, artist] = loaded.indices;
+  if (title === undefined || artist === undefined) {
+    postReady(
+      ensured.fromCache ? "idb" : "network",
+      "index-load-failed",
+      true,
+      current.generated_at
+    );
+    return;
+  }
   textIndices = { title, artist };
   void setCachedTextIndices(textIndices).catch(() => {
     /* IDB silent */
   });
-  void setVersion("text", computeGroupDigest(textIndices)).catch(() => {
-    /* IDB silent */
-  });
-
-  post({ type: "ready", source: "network" });
-}
-
-/** 缓存命中后的后台校验：摘要变化时替换内存与缓存，失败时保留旧缓存。 */
-async function revalidateTextIndices(): Promise<void> {
-  const fresh = await fetchIndexGroup(TEXT_INDEX_NAMES);
-  const [title, artist] = fresh ?? [];
-  if (!title || !artist) return;
-  const bundle: TextIndexBundle = { title, artist };
-  const digest = computeGroupDigest(bundle);
-  const cachedVersion = await getVersion("text");
-  if (digest === cachedVersion) return;
-
-  textIndices = bundle;
-  void setCachedTextIndices(bundle).catch(() => {
-    /* IDB silent */
-  });
-  void setVersion("text", digest).catch(() => {
-    /* IDB silent */
-  });
+  if (!loaded.usedFallback) {
+    void setCachedManifest("text", current).catch(() => {
+      /* IDB silent */
+    });
+  }
+  postReady(
+    ensured.fromCache ? "idb" : "network",
+    undefined,
+    ensured.stale || loaded.stale,
+    current.generated_at
+  );
 }
 
 /** 执行一次哈希索引组加载；返回是否成功，失败由调用方决定是否允许重试。 */
 async function runHashLoad(): Promise<boolean> {
-  const [cached, cachedVersion] = await Promise.all([getCachedHashIndices(), getVersion("hash")]);
-  if (cached && cachedVersion !== null) {
-    hashIndices = cached;
-    post({ type: "hash-ready" });
-    void revalidateHashIndices();
-    return true;
-  }
-
-  const fresh = await fetchIndexGroup(HASH_INDEX_NAMES);
-  const [md5, sha256] = fresh ?? [];
-  if (!md5 || !sha256) {
-    post({ type: "hash-ready", error: "index-load-failed" });
+  const ensured = await ensureManifest("hash");
+  if (ensured === null) {
+    postHashReady("index-load-failed");
     return false;
   }
-
+  const current = ensured.manifest;
+  const [cachedManifest, cached] = await Promise.all([
+    getCachedManifest("hash"),
+    getCachedHashIndices(),
+  ]);
+  const cachedByName = new Map<CompactSearchIndexName, SearchIndex>();
+  if (cached !== null) {
+    cachedByName.set("md5", cached.md5);
+    cachedByName.set("sha256", cached.sha256);
+  }
+  const loaded = await loadGroup(HASH_INDEX_NAMES, cachedByName, cachedManifest, current);
+  if (loaded === null) {
+    postHashReady("index-load-failed", true, current.generated_at);
+    return false;
+  }
+  const [md5, sha256] = loaded.indices;
+  if (md5 === undefined || sha256 === undefined) {
+    postHashReady("index-load-failed", true, current.generated_at);
+    return false;
+  }
   hashIndices = { md5, sha256 };
+  hashStale = ensured.stale || loaded.stale;
+  hashUpdatedAt = current.generated_at;
   void setCachedHashIndices(hashIndices).catch(() => {
     /* IDB silent */
   });
-  void setVersion("hash", computeGroupDigest(hashIndices)).catch(() => {
-    /* IDB silent */
-  });
-
-  post({ type: "hash-ready" });
+  if (!loaded.usedFallback) {
+    void setCachedManifest("hash", current).catch(() => {
+      /* IDB silent */
+    });
+  }
+  postHashReady(undefined, hashStale, hashUpdatedAt);
   return true;
 }
 
-/** 按需加载：哈希索引组（md5 与 sha256），只在输入哈希时拉取。 */
+/** 按需加载哈希索引组，只在输入哈希时拉取。 */
 async function loadHashIndices(): Promise<void> {
-  if (hashIndices) {
-    post({ type: "hash-ready" });
+  if (hashIndices !== null) {
+    postHashReady(undefined, hashStale, hashUpdatedAt ?? undefined);
     return;
   }
-  if (hashLoadPromise) {
+  if (hashLoadPromise !== null) {
     await hashLoadPromise;
     return;
   }
@@ -205,69 +368,24 @@ async function loadHashIndices(): Promise<void> {
   await attempt;
 }
 
-/** 哈希缓存命中后的后台校验，语义与文本索引组一致。 */
-async function revalidateHashIndices(): Promise<void> {
-  const fresh = await fetchIndexGroup(HASH_INDEX_NAMES);
-  const [md5, sha256] = fresh ?? [];
-  if (!md5 || !sha256) return;
-  const bundle: HashIndexBundle = { md5, sha256 };
-  const digest = computeGroupDigest(bundle);
-  const cachedVersion = await getVersion("hash");
-  if (digest === cachedVersion) return;
-
-  hashIndices = bundle;
-  void setCachedHashIndices(bundle).catch(() => {
-    /* IDB silent */
-  });
-  void setVersion("hash", digest).catch(() => {
-    /* IDB silent */
-  });
-}
-
-/** 获取单个索引文件，失败时重试 1 次 */
-async function fetchSingleIndex(
-  name: string,
-  url: string,
-  signal?: AbortSignal
-): Promise<SearchIndex | null> {
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const resp = await fetch(url, { signal: signal ?? null });
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      // SearchIndex 为深层映射结构，形状由索引生成管线保证；消费方按键取值兜底
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-      return (await resp.json()) as SearchIndex;
-    } catch (err) {
-      // AbortError：不重试，立刻返回
-      if (err instanceof DOMException && err.name === "AbortError") return null;
-      // 仅首次失败后重试
-      if (attempt === 0) {
-        await new Promise((r) => setTimeout(r, 500));
-        continue;
-      }
-      console.error(`[worker] 加载索引 ${name} 失败:`, err);
-      return null;
-    }
-  }
-  return null;
-}
-
 // ---- search ----
 
 function handleSearch(req: WorkerSearchRequest): void {
   const type = detectQueryType(req.query);
   let candidates: Map<string, KeyMatch[]> | null = null;
 
-  if (type === "text") {
-    if (textIndices) {
-      candidates = searchTextIndices(req.query, textIndices, req.needles);
+  if (tableDirs !== null) {
+    if (type === "text") {
+      if (textIndices !== null) {
+        candidates = searchTextIndices(req.query, textIndices, tableDirs, req.needles);
+      }
+    } else if (hashIndices !== null) {
+      candidates = searchHashIndices(req.query, hashIndices, tableDirs);
     }
-  } else if (hashIndices) {
-    candidates = searchHashIndices(req.query, hashIndices);
   }
 
   const serialized: CandidateEntry[] = [];
-  if (candidates) {
+  if (candidates !== null) {
     for (const [tableId, keys] of candidates) {
       serialized.push({ tableId, matchedKeys: keys });
     }

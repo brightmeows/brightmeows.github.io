@@ -1,12 +1,42 @@
 import type { ChartData } from "@brightmeows/bms/format";
+import type {
+  CompactSearchIndex,
+  CompactSearchIndexManifest,
+  CompactSearchIndexName,
+} from "@brightmeows/mirror/search-index";
 
 import { r2TableHeaderUrl, r2TableDataUrl } from "#lib/constants/r2.js";
 import { m } from "#lib/paraglide/messages.js";
 import { fetchStream } from "#lib/utils/infra/fetch-stream.js";
 import { isRecord } from "#lib/utils/infra/object.js";
 
-/** 搜索索引类型 */
-export type SearchIndex = Record<string, string[]>;
+/** 搜索索引类型：term 到数字表 ID 数组。 */
+export type SearchIndex = CompactSearchIndex;
+
+/** 数字表 ID 到 R2 目录名的映射，来自 manifest 的表注册表。 */
+export type TableDirMap = ReadonlyMap<number, string>;
+
+/** 单个索引文件是否可直接用缓存：文件存在且 manifest 哈希一致。 */
+export function isIndexFileCached(
+  name: CompactSearchIndexName,
+  current: CompactSearchIndexManifest,
+  cachedManifest: CompactSearchIndexManifest | null,
+  cachedIndex: SearchIndex | undefined
+): boolean {
+  return cachedIndex !== undefined && cachedManifest?.files[name].hash === current.files[name].hash;
+}
+
+/** 一组索引里需要下载的文件；返回空数组即零索引下载。 */
+export function indexFilesToDownload(
+  names: readonly CompactSearchIndexName[],
+  current: CompactSearchIndexManifest,
+  cachedManifest: CompactSearchIndexManifest | null,
+  cached: ReadonlyMap<CompactSearchIndexName, SearchIndex>
+): CompactSearchIndexName[] {
+  return names.filter(
+    (name) => !isIndexFileCached(name, current, cachedManifest, cached.get(name))
+  );
+}
 
 /** 文本索引组：标题与艺术家，模糊搜索用。 */
 export interface TextIndexBundle {
@@ -67,6 +97,10 @@ export interface WorkerReady {
   type: "ready";
   source: "idb" | "network";
   error?: string;
+  /** manifest 拉取或文件校验失败后使用缓存时为 true。 */
+  stale?: boolean | undefined;
+  /** 上一次成功生成的 manifest 时间；stale 提示用。 */
+  updatedAt?: string | undefined;
 }
 export interface WorkerSearchResult {
   type: "search-result";
@@ -77,6 +111,8 @@ export interface WorkerSearchResult {
 export interface WorkerHashReady {
   type: "hash-ready";
   error?: string;
+  stale?: boolean | undefined;
+  updatedAt?: string | undefined;
 }
 export type WorkerMessage =
   | WorkerIndexProgress
@@ -100,12 +136,16 @@ function addMatches(
   result: Map<string, KeyMatch[]>,
   index: SearchIndex,
   keys: string[],
-  source: KeyMatch["source"]
+  source: KeyMatch["source"],
+  tableDirs: TableDirMap
 ): void {
   for (const key of keys) {
-    const tableIds = index[key];
-    if (!tableIds) continue;
-    for (const tid of tableIds) {
+    const ids = index[key];
+    // 动态 key 可能命中 Object.prototype（如 __proto__ / constructor），只接受数组
+    if (!Array.isArray(ids)) continue;
+    for (const id of ids) {
+      const tid = tableDirs.get(id);
+      if (tid === undefined) continue;
       let arr = result.get(tid);
       if (!arr) {
         arr = [];
@@ -120,6 +160,7 @@ function addMatches(
 export function searchTextIndices(
   query: string,
   indices: TextIndexBundle,
+  tableDirs: TableDirMap,
   needles?: string[]
 ): Map<string, KeyMatch[]> {
   const result = new Map<string, KeyMatch[]>();
@@ -128,22 +169,23 @@ export function searchTextIndices(
   const searchTerms = needles ?? [query.trim().toLowerCase()];
   const matchingKeys = (index: SearchIndex): string[] =>
     Object.keys(index).filter((k) => searchTerms.some((term) => k.toLowerCase().includes(term)));
-  addMatches(result, indices.title, matchingKeys(indices.title), "title");
-  addMatches(result, indices.artist, matchingKeys(indices.artist), "artist");
+  addMatches(result, indices.title, matchingKeys(indices.title), "title", tableDirs);
+  addMatches(result, indices.artist, matchingKeys(indices.artist), "artist", tableDirs);
   return result;
 }
 
 /** 哈希索引搜索：按输入是 MD5 还是 SHA256 精确命中。 */
 export function searchHashIndices(
   query: string,
-  indices: HashIndexBundle
+  indices: HashIndexBundle,
+  tableDirs: TableDirMap
 ): Map<string, KeyMatch[]> {
   const result = new Map<string, KeyMatch[]>();
   const trimmed = query.trim().toLowerCase();
   if (detectQueryType(query) === "sha256") {
-    addMatches(result, indices.sha256, [trimmed], "sha256");
+    addMatches(result, indices.sha256, [trimmed], "sha256", tableDirs);
   } else {
-    addMatches(result, indices.md5, [trimmed], "md5");
+    addMatches(result, indices.md5, [trimmed], "md5", tableDirs);
   }
   return result;
 }
@@ -152,12 +194,13 @@ export function searchHashIndices(
 export function searchIndices(
   query: string,
   indices: SearchIndexBundle,
+  tableDirs: TableDirMap,
   needles?: string[]
 ): Map<string, KeyMatch[]> {
   if (detectQueryType(query) === "text") {
-    return searchTextIndices(query, indices, needles);
+    return searchTextIndices(query, indices, tableDirs, needles);
   }
-  return searchHashIndices(query, indices);
+  return searchHashIndices(query, indices, tableDirs);
 }
 
 /** 根据 matchedKeys 和 queryType 过滤谱面列表 */

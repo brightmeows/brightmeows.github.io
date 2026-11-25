@@ -19,8 +19,8 @@ export const R2_BASE = siteConfig.r2.base;
 /** Base URL for table data (per-table header.json, data.json) */
 export const R2_TABLES_BASE = r2TablesBase(R2_BASE);
 
-/** Base URL for search index files (title, artist, md5, sha256) */
-export const R2_INDEXES_BASE = `${R2_BASE}/indexes`;
+/** Base URL for compact search index v2 (manifest plus title, artist, md5, sha256) */
+export const R2_INDEXES_BASE = `${R2_BASE}/indexes/v2`;
 
 /**
  * 返回 R2 上指定镜像表的 header.json 完整 URL。

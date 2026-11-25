@@ -39,7 +39,9 @@
   import { searchConverters } from "#lib/data/store/search-converters.svelte.js";
   import { SearchIndexClient } from "#lib/data/store/search-index-client.svelte.js";
   import { m } from "#lib/paraglide/messages.js";
+  import { getLocale } from "#lib/paraglide/runtime.js";
   import type { TableLoadState } from "#lib/types/bms-view.js";
+  import { formatRelativeTime } from "#lib/utils/infra/date.js";
   import { buildSearchNeedles } from "#lib/utils/mirror-tables.js";
 
   // 搜索索引 Worker：创建、索引加载状态与消息协议封装在共享客户端里
@@ -347,6 +349,17 @@
           </button>
         </div>
       </div>
+      {#if indexClient.stale}
+        <p class="mt-2 text-[0.85rem] text-warning/80">
+          {#if indexClient.updatedAt}
+            {m["search.index_stale"]({
+              time: formatRelativeTime(indexClient.updatedAt, getLocale()),
+            })}
+          {:else}
+            {m["search.index_stale_unknown"]()}
+          {/if}
+        </p>
+      {/if}
       <div class="mt-2 flex items-center gap-4">
         {#if queryCount > 0}
           <span class="text-[0.95rem] text-white-50"
