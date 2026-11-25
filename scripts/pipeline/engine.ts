@@ -3,7 +3,7 @@
  *
  * 与旧实现 bms-table-fetch 的四阶段同构，区别在活跃表集合的来源：不再有
  * 列表源与 toml 配置，改为 R2 基线叠加用户层（站长与访客的增删记录）。
- * 并发抓取后做安全网重命名、孤儿处理、生成 tables.json 与 indexes，
+ * 并发抓取后做安全网重命名、孤儿处理、生成 tables.json 与 v1/v2 搜索索引，
  * 并写 state.toml 与单轮 warnings.log。
  */
 
@@ -13,6 +13,7 @@ import type { UserLayer } from "@brightmeows/mirror/user-layer";
 
 import { internalApiBase } from "../internal-api.ts";
 
+import { writeCompactSearchIndexes } from "./compact-index.ts";
 import { describeError } from "./errors.ts";
 import { DEFAULT_TIMEOUT_MS, fetchTable, patchDataUrl, type FetchOptions } from "./fetch.ts";
 import {
@@ -44,7 +45,13 @@ import {
 import { RunLog, type PipelineLogger, type RunSummary } from "./log.ts";
 import { expectedDirName } from "./naming.ts";
 import { normalizeData, normalizeHeader } from "./normalize.ts";
-import { serializeJson, writeHealthJson, writeIndexes, writeTablesJson } from "./output.ts";
+import {
+  serializeJson,
+  writeHealthJson,
+  writeIndexes,
+  writeTablesJson,
+  type IndexWriteResult,
+} from "./output.ts";
 import { mergeActiveSet } from "./overlay.ts";
 import { mapPool } from "./pool.ts";
 import { scanDirs, scanDirsFull } from "./scan.ts";
@@ -204,7 +211,13 @@ export async function runPipeline(options: PipelineOptions = {}): Promise<Pipeli
 
   const tablesJsonPath = path.join(paths.tableDir, "tables.json");
   const tablesJsonEntries = await writeTablesJson(tablesJsonPath, scanned, activeSet.activeUrls);
-  const indexResult = await writeIndexes(paths.indexDir, scanned, activeSet.activeUrls);
+  const indexResult = await writeSearchIndexes(
+    log,
+    paths,
+    scanned,
+    activeSet.activeUrls,
+    startedAt
+  );
   for (const dirName of indexResult.unrecognized) {
     log.warn(`data.json 格式无法识别：${dirName}`);
   }
@@ -250,6 +263,33 @@ export async function runPipeline(options: PipelineOptions = {}): Promise<Pipeli
     `管线完成：用时 ${((finishedAt.getTime() - startedAt.getTime()) / 1000).toFixed(1)} 秒，告警 ${log.warningCount} 条`
   );
   return { summary, warningsPath: paths.warnings };
+}
+
+/** 写 v1 与 v2 搜索索引；v2 失败让管线在同步 R2 前失败。 */
+async function writeSearchIndexes(
+  log: PipelineLogger,
+  paths: PipelinePaths,
+  scanned: readonly FullDirEntry[],
+  activeUrls: ReadonlySet<string>,
+  now: Date
+): Promise<IndexWriteResult> {
+  const indexResult = await writeIndexes(paths.indexDir, scanned, activeUrls);
+  const compactResult = await writeCompactSearchIndexes(
+    paths.indexDir,
+    scanned,
+    activeUrls,
+    indexResult.built,
+    now
+  );
+  log.info(
+    `v2 索引：${Object.entries(compactResult.sizes)
+      .map(([name, size]) => `${name}=${size}`)
+      .join(" ")}；表 ${compactResult.tableCount} 张；manifest ${compactResult.manifestVersion}`
+  );
+  if (compactResult.registryReset) {
+    log.warn("v2 manifest 结构非法，表 ID 注册表已从 1 重排");
+  }
+  return indexResult;
 }
 
 interface PipelineHealth {
