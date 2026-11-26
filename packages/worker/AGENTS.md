@@ -74,6 +74,13 @@ CI 的 `CLOUDFLARE_API_TOKEN` 必须在 **Manage Account → Account API Tokens*
 - 每个 zone 的通配 DNS 用 proxied `A * 192.0.2.1`，具体记录优先。
 - Worker 只服务主站 apex，不参与旧主机 301。
 
+- **`miyakomeow.github.io` 复用 `miyakomeow.site` 的 wildcard 301**：GitHub Pages 自定义域设为
+  `github-pages.miyakomeow.site`，`miyakomeow.github.io` 先 301 到
+  `http://github-pages.miyakomeow.site/<path>`，再由该 zone 的 wildcard 规则 301 到主站。
+  - 目标仓库只承载跳转页，不镜像主站源码；具体 CNAME 只在 GitHub 首次验证与证书签发期间存在，验证后删除。长期保留会覆盖 wildcard，第二跳退化为 GitHub Pages 的 404。
+  - `github-pages.miyakomeow.site` 不加入 `config/redirects.json` 的 `excludeHosts`，也不单独登记规则；复用 `miyakomeow.site` 的 `matchApex` wildcard。
+  - 与 `brightmeows.github.io` 一样断在 https 到 http，不跟跨协议 301 的客户端仍不可用。证书签发卡住时，按 GitHub 官方口径移除并重新添加自定义域，重启签发流程。
+
 - **旧主机 301 的期望与只读检查**：`config/redirects.json` 记录三个 zone 的托管 ref/规则名、是否匹配 apex 与 R2 排除项；目标取 `config/site.json` 的 `origin`，状态 301，`preserve_query_string=true`。
   - `scripts/check-redirect-rules.ts` 只读比对 Cloudflare `http_request_dynamic_redirect` entrypoint，按 `ref` 或规则名（`description`）识别托管规则。
   - `CLOUDFLARE_RULES_TOKEN` 需要 `Zone / Dynamic URL Redirects / Read` 与 `Zone / Zone / Read`，scoped 到三个 zone，由 `config-drift.yml` 在配置变更的 PR、每周 schedule 与手动触发时跑。
