@@ -4,9 +4,11 @@
  * 与旧实现 bms-table-fetch 的四阶段同构，区别在活跃表集合的来源：不再有
  * 列表源与 toml 配置，改为 R2 基线叠加用户层（站长与访客的增删记录）。
  * 并发抓取后做安全网重命名、孤儿处理、生成 tables.json 与 v2 搜索索引，
- * 并写 state.toml 与单轮 warnings.log。
+ * 清理基线里残留的 v1 索引文件，并写 state.toml 与单轮 warnings.log。
  */
 
+import { existsSync } from "node:fs";
+import { rm } from "node:fs/promises";
 import path from "node:path";
 
 import type { UserLayer } from "@brightmeows/mirror/user-layer";
@@ -74,6 +76,8 @@ export const DEFAULT_PATHS: PipelinePaths = {
   indexDir: "indexes",
   warnings: "warnings.log",
 };
+
+const LEGACY_INDEX_FILES = ["title.json", "artist.json", "md5.json", "sha256.json"] as const;
 
 export interface PipelineOptions {
   cwd?: string;
@@ -260,7 +264,7 @@ export async function runPipeline(options: PipelineOptions = {}): Promise<Pipeli
   return { summary, warningsPath: paths.warnings };
 }
 
-/** 构建索引并写 v2；失败让管线在同步 R2 前失败。 */
+/** 构建索引、写 v2 并清理旧 v1；失败让管线在同步 R2 前失败。 */
 async function writeSearchIndexes(
   log: PipelineLogger,
   paths: PipelinePaths,
@@ -271,6 +275,7 @@ async function writeSearchIndexes(
   const activeEntries = scanned.filter((entry) => activeUrls.has(entry.info.url));
   const built = buildIndexes(activeEntries);
   const compact = await writeCompactSearchIndexes(paths.indexDir, scanned, activeUrls, built, now);
+  await removeLegacyIndexes(paths.indexDir, log);
   log.info(
     `v2 索引：${Object.entries(compact.sizes)
       .map(([name, size]) => `${name}=${size}`)
@@ -285,6 +290,21 @@ async function writeSearchIndexes(
 interface SearchIndexWriteResult {
   built: IndexBuildResult;
   compact: CompactIndexWriteResult;
+}
+
+/** 删除基线里残留的 v1 索引，让随后的 rclone sync 把 R2 根下旧文件一起下线。 */
+async function removeLegacyIndexes(indexDir: string, log: PipelineLogger): Promise<void> {
+  let removed = 0;
+  for (const file of LEGACY_INDEX_FILES) {
+    const filePath = path.join(indexDir, file);
+    if (existsSync(filePath)) {
+      await rm(filePath, { force: true });
+      removed += 1;
+    }
+  }
+  if (removed > 0) {
+    log.info(`清理旧 v1 索引：${removed} 个`);
+  }
 }
 
 interface PipelineHealth {

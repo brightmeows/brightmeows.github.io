@@ -98,7 +98,7 @@
 - 实现位于 `scripts/pipeline/`，与站点同仓演进。
 - 经 rclone 与 Cloudflare R2 双向同步：先拉取 R2 基线保留增量，跑完抓取再推回。输出表数据、v2 搜索索引、`health.json` 与 `warnings.log`（均 gitignored，仅存在于 CI 工作区与 R2）。
 - **搜索索引 v2**：`writeCompactSearchIndexes` 写 v2 目录与 manifest；`IndexBuildResult` 只构建一次，不重复解析表数据。
-  - 注册表、manifest version 与 SHA-256 细节见 `scripts/pipeline/compact-index.ts` 头注。根下 v1 文件已停写，由 rclone 删除。
+  - 注册表、manifest version 与 SHA-256 细节见 `scripts/pipeline/compact-index.ts` 头注。根下 v1 文件已停写，管线在同步前删除基线残留，rclone 随之下线。
 - 活跃表集合 = R2 基线（`info.json`）叠加**用户层**：站长与访客的添加、删除、禁用、替换、授权记录存于 D1（Worker 与单表抓取工作流经内部接口维护，管线经同一接口读取，需要 `INTERNAL_API_TOKEN`）。
 - `health.json`（位于表数据目录）记录每张活跃表的健康状态：公开 `status`、`last_success`、`reason`，内部另有 `last_attempt`、`consecutive_failures`、`first_failure_at`。
   - 终态错误连续两轮、瞬时错误连续七天进入 stale；stale 表每月复查一次，未到期直接跳过。
