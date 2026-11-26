@@ -94,6 +94,9 @@ describe("runPipeline 的健康状态", () => {
     });
     expect(result.summary.tablesFetched).toBe(1);
     expect(result.summary.tablesSkipped).toBe(0);
+    const manifest = await readFile(path.join(root, "indexes", "v2", "manifest.json"), "utf8");
+    expect(manifest).toContain('"format":2');
+    await expect(readFile(path.join(root, "indexes", "title.json"), "utf8")).rejects.toThrow();
   });
 
   it("未到复查期的 stale 表直接跳过，不触发抓取", async () => {

@@ -1,15 +1,7 @@
-/** 对外产物的构建与写入：tables.json 与 indexes/*.json（v1）。 */
-
-import path from "node:path";
+/** 对外产物的构建与写入：tables.json 与 health.json。 */
 
 import { atomicWrite, identityNormalizer, isChangedJsonFile } from "./fs-utils.ts";
 import { serializeHealthFile, type HealthFile } from "./health.ts";
-import {
-  buildIndexes,
-  finalizeIndex,
-  type IndexBuildResult,
-  type LongHashWarning,
-} from "./index-build.ts";
 import { compareUtf8 } from "./json-utils.ts";
 import { tableInfoToJson } from "./table-info.ts";
 import type { FullDirEntry, JsonValue } from "./types.ts";
@@ -51,44 +43,4 @@ export async function writeTablesJson(
 export async function writeHealthJson(filePath: string, health: HealthFile): Promise<number> {
   await atomicWrite(filePath, serializeHealthFile(health));
   return health.tables.size;
-}
-
-export interface IndexWriteResult {
-  sizes: Record<string, number>;
-  longHashWarnings: Map<string, LongHashWarning>;
-  unrecognized: string[];
-  /** v2 写入复用同一份构建结果，避免重复解析表数据。 */
-  built: IndexBuildResult;
-}
-
-/** 写入四个索引文件；返回条目数与告警信息供汇总。 */
-export async function writeIndexes(
-  indexDir: string,
-  entries: readonly FullDirEntry[],
-  activeUrls: ReadonlySet<string>
-): Promise<IndexWriteResult> {
-  const active = entries.filter((entry) => activeUrls.has(entry.info.url));
-  const built = buildIndexes(active);
-  const files: [string, Map<string, Set<string>>][] = [
-    ["title.json", built.title],
-    ["artist.json", built.artist],
-    ["md5.json", built.md5],
-    ["sha256.json", built.sha256],
-  ];
-  const sizes: Record<string, number> = {};
-  for (const [fileName, map] of files) {
-    const finalized = finalizeIndex(map);
-    const filePath = path.join(indexDir, fileName);
-    const content = serializeJson(finalized);
-    if (await isChangedJsonFile(filePath, content, identityNormalizer)) {
-      await atomicWrite(filePath, content);
-    }
-    sizes[fileName] = Object.keys(finalized).length;
-  }
-  return {
-    sizes,
-    longHashWarnings: built.longHashWarnings,
-    unrecognized: built.unrecognized,
-    built,
-  };
 }

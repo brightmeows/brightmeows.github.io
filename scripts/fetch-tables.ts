@@ -4,7 +4,7 @@
  * 用法：在仓库根目录执行 `node scripts/fetch-tables.ts`。
  * 活跃表集合来自 R2 基线叠加用户层——基线由工作流经 rclone 同步，用户层经站点
  * Worker 的内部接口读取（需要环境变量 INTERNAL_API_TOKEN）。产物写入 tables/、
- * indexes/ 的 v1 与 v2 产物与 warnings.log（均在 gitignore 中）。
+ * indexes/v2/ 的产物与 warnings.log（均在 gitignore 中）。
  */
 
 import { runPipeline } from "./pipeline/engine.ts";

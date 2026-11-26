@@ -1,10 +1,7 @@
 /**
  * 搜索索引 v2 写入：数字表 ID 注册表、manifest 与四个 minified 索引文件。
  *
- * 与 v1 的关系：
- * - v1 继续写根下 `indexes/*.json`，过渡期给旧客户端用。
- * - v2 写 `indexes/v2/`，客户端切换后 v1 由清理提交停写。
- * - 两个格式共用同一份 `IndexBuildResult`，不重复解析表数据。
+ * v1 已停写，客户端只读 v2；本模块直接消费 `IndexBuildResult`，不重复解析表数据。
  *
  * 一致性：
  * - manifest 最后写；客户端下载后按每文件 SHA-256 校验，兜住 rclone 并行上传窗口。
