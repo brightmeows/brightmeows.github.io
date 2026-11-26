@@ -22,6 +22,7 @@
 - `node scripts/fetch-tables.ts`：本地跑数据管线（基线经 rclone 同步自 R2，用户层经站点 Worker 的内部接口读取，需要 `INTERNAL_API_TOKEN`；写表数据、v1 与 v2 搜索索引、`health.json` 与 `warnings.log`；产物已 gitignore）
 - `node scripts/fetch-table-once.ts --url=<表源> --request-id=<id> --out-dir=./out [--mode=add|recheck]`：单表抓取（复用管线抓取与命名逻辑）：数据目录供 `fetch-table` 工作流上传到 R2，抓取结果与状态经内部接口写进 D1
 - `pnpm test:parity`：手动新旧实现对拍（用公开 R2 基线与归档工具 v0.4.2 的二进制，逐对象比对 v1 对外产物；`PARITY_LIMIT` 可只对拍前 N 张表）
+  - 同轮再把 v2 索引解码回目录集合，与 v1 逐 term 比对，锁定紧凑格式不改变语义。
 - `pnpm check:quotes`：全量中文引号检查（扩展名与 `static/` 排除规则在 `package.json`，pre-commit 与 CI 共用）
 - `pnpm check:icons`：UI 模板图标纪律检查（src 下 `.svelte` 禁 emoji 与符号图标；范围与禁用集见脚本头注，pre-commit 与 CI 共用）
 - `pnpm check:ui`：按钮与链接令牌纪律检查（src 下 `.svelte` 的按钮/chip 禁手写皮肤指纹、a 元素禁裸用 text-accent、圆角默认档越出玻璃阶梯；范围与指纹集见脚本头注，pre-commit 与 CI 共用）
