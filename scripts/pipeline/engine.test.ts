@@ -75,6 +75,8 @@ function tableFetch(): typeof fetch {
 describe("runPipeline 的健康状态", () => {
   it("成功抓取时写 health.json 并更新数据时间", async () => {
     const root = await makeRoot();
+    await mkdir(path.join(root, "indexes"), { recursive: true });
+    await writeFile(path.join(root, "indexes", "title.json"), "[]");
     const result = await runPipeline({
       cwd: root,
       paths: PATHS,
