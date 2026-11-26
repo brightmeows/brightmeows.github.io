@@ -30,6 +30,7 @@
   `src/routes/` 路由级 md 的 h1 由标题卡组件承担故关闭 MD041，分流写法在 `package.json`；pre-commit 与 CI 共用）
 - `R2_BUCKET=<桶名> node scripts/check-r2-cors.ts`：与线上桶 CORS policy 比对（需 Cloudflare 凭据；只读）
 - `node scripts/check-redirect-rules.ts`：与线上三个 zone 的旧主机 301 规则比对（需 `CLOUDFLARE_RULES_TOKEN`；只读）
+- `pnpm check:cache`：与线上 zone 的 `http_request_cache_settings` entrypoint 比对（需 `RULES_TOKEN`；只读）
 
 ## 校验脚本
 
@@ -69,7 +70,13 @@
 - `scripts/check-redirect-rules.ts`：只读比对三个 zone 的 `http_request_dynamic_redirect` entrypoint 与 `config/redirects.json`。
   - 凭据：需 `CLOUDFLARE_RULES_TOKEN`，权限 `Zone / Dynamic URL Redirects / Read` 加 `Zone / Zone / Read`，scoped 到三个 zone。
   - 由 `config-drift.yml` 在配置变更的 PR、每周 schedule 与手动触发时调用，不在 pre-commit 跑。
+- `scripts/check-cache-rules.ts`：只读比对 zone 的 `http_request_cache_settings` entrypoint 与 `config/cache-rules.json`。
+  - 凭据：复用 `RULES_TOKEN`；它已有 `Zone / Zone / Read`，补 `Cache Settings Read`（或 `Cache Rules Read`），scoped 到三个 zone。
+  - 由 `config-drift.yml` 在配置变更的 PR、每周 schedule 与手动触发时调用，不在 pre-commit 跑。
 - `scripts/redirect-rules.ts`：旧主机 301 的配置解析、表达式与规则构造、线上规则归一化与比对纯函数；`scripts/redirect-rules.test.ts` 锁定这些逻辑。
+- `scripts/cache-rules.ts`：R2 缓存规则的配置解析、表达式与规则构造、线上规则归一化与比对纯函数；`scripts/cache-rules.test.ts` 锁定这些逻辑。
+  - R2 主机取 `config/site.json` 的 `r2.base`，zone 取 `origin`；`config/cache-rules.json` 只存文件名、ref、描述与 TTL。
+  - 表达式使用 `starts_with`、`ends_with` 与固定集合；`matches` 需要 Business 或 WAF Advanced，Free 上会被 Cloudflare 拒绝。
 - `scripts/site-config.ts`：读取并校验 `config/site.json`（站点与部署配置的单一来源，脚本与校验共用；targets 只支持 worker）。
 
 ## 约定与决策

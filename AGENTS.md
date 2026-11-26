@@ -121,13 +121,19 @@ vitest 覆盖 `src/lib/utils/`、`src/lib/data/` 的纯逻辑、`src/lib/control
 
 ### 外部状态
 
-- **外部状态只把会静默退化的项纳入仓库**：桶 CORS 来源与旧主机 301 规则是两项“改了仓库但线上没跟上就静默退化”的外部状态：漏放 CORS 来源时原生客户端正常、只有浏览器失败；规则被删或被改时旧表导入链接会静默断掉。
-  - 期望值分别在 `config/site.json` 的 `r2.corsOrigins` 与 `config/redirects.json` 的 zone 列表，由 `scripts/check-r2-cors.ts`、`scripts/check-redirect-rules.ts` 只读比对。
+- **外部状态只把会静默退化的项纳入仓库**：桶 CORS 来源、旧主机 301 规则与 R2 缓存规则是三项“改了仓库但线上没跟上就静默退化”的外部状态：漏放 CORS 来源时原生客户端正常、只有浏览器失败；301 规则被删或被改时旧表导入链接会静默断掉；缓存规则失效时表数据与索引退回每次直连 R2。
+  - 期望值分别在 `config/site.json` 的 `r2.corsOrigins`、`config/redirects.json` 的 zone 列表与 `config/cache-rules.json` 的缓存规则。
+    - 由 `scripts/check-r2-cors.ts`、`scripts/check-redirect-rules.ts`、`scripts/check-cache-rules.ts` 只读比对。
   - `.github/workflows/config-drift.yml` 在相关配置变更的 PR、每周 schedule 与手动触发时跑。
-  - 令牌：CORS 复用 `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID`/`R2_BUCKET`，旧主机规则用 `CLOUDFLARE_RULES_TOKEN`，桶名与令牌权限见 `packages/worker/AGENTS.md`。
+  - 令牌：
+    - CORS 复用 `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID`/`R2_BUCKET`。
+    - 旧主机规则与缓存规则复用 `RULES_TOKEN`。
+    - 桶名与令牌权限见 `packages/worker/AGENTS.md`。
   - 其余外部状态（zone 开关、DNS 记录、secrets）维持文档口径：其中 DNS 是发布链路的硬前提（Worker 自定义域的解析）；需要 DNS 编辑权限的凭据（wrangler 的 OAuth scope 不含 DNS，只能控制台或临时令牌）。
 - **旧主机 301 的期望规则单独在 `config/redirects.json`**：zone 列表、托管 ref/规则名、是否匹配 apex 与 R2 排除项在这里。
   - 目标来源取 `config/site.json` 的 `origin`，不复制主站域名。规则由 `scripts/check-redirect-rules.ts` 只读比对，实际应用在 Cloudflare 控制台完成（见 `packages/worker/AGENTS.md`）。
+- **R2 缓存规则的期望单独在 `config/cache-rules.json`**：zone、ref、描述、表数据文件名、v2 索引文件名与 TTL 在这里。
+  - R2 主机取 `config/site.json` 的 `r2.base`，zone 取 `origin`，不复制域名；规则由 `scripts/check-cache-rules.ts` 只读比对，实际应用在控制台或一次性写令牌下完成（见 `packages/worker/AGENTS.md`）。
 - **R2 桶与 zone 行为的排障细节在 `packages/worker/AGENTS.md`**：排障时按症状取用。
   - 症状对照：取数 `Failed to fetch` 与“索引加载失败”（桶 CORS policy）、表数据无边缘缓存与 `cf-cache-status: DYNAMIC`（zone Cache Rules）、旧 UA 全线 403 error 1010（Browser Integrity Check）。
   - 机制、期望值与验证命令都在那里。

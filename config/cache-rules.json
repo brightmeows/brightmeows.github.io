@@ -1,0 +1,9 @@
+{
+  "zone": "brightmeows.com",
+  "ruleRef": "r2-json-cache",
+  "description": "R2 JSON cache",
+  "tableFiles": ["header.json", "data.json"],
+  "indexFiles": ["manifest.json", "title.json", "artist.json", "md5.json", "sha256.json"],
+  "edgeTtl": 600,
+  "browserTtl": 600
+}

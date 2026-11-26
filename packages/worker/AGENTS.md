@@ -53,8 +53,11 @@ CI 的 `CLOUDFLARE_API_TOKEN` 必须在 **Manage Account → Account API Tokens*
   - `Zone / Workers Routes / Write`（scoped 到 `brightmeows.com`，`wrangler.jsonc` 里 `custom_domain` 的绑定，失败形态见后文）；
   - `Account / Account Settings / Read`（wrangler 读账户信息）。
 - 界面入口见 Cloudflare 文档的 “Permission policies → Edit Cloudflare Workers” 一节。
-- `config-drift` 另用 `CLOUDFLARE_RULES_TOKEN`（`Zone / Single Redirect / Read` 加 `Zone / Zone / Read`，scoped 到 `brightmeows.com`、`brightmeows.cn`、`miyakomeow.site`），不复用部署令牌。
+- `config-drift` 另用 `RULES_TOKEN`，权限为 `Zone / Single Redirect / Read`、`Zone / Zone / Read` 与 `Cache Settings Read` 或 `Cache Rules Read`，scoped 到三个 zone；不复用部署令牌。
+- `config-drift` 的缓存规则比对复用 `RULES_TOKEN`；补 `Cache Settings Read` 或 `Cache Rules Read`，编辑令牌不改密钥。
+  - 缓存比对只查主站 zone，权限随 token scoped 到三个 zone。
 - 一次性运维动作（如清边缘缓存）另用临时令牌或控制台操作，不要复用部署令牌。
+  - 应用缓存规则也用一次性写令牌；写令牌只用于 `dry_run` 与一次 `PUT`，验证通过后撤销。
   - R2 的 S3 凭据（`R2_ACCESS_KEY_ID`/`R2_SECRET_ACCESS_KEY`/`R2_ENDPOINT`）来自 R2 页面的独立令牌（桶级 `Workers R2 Storage Bucket Item Write`，限定 `bms-table-mirror` 单桶，不能建删桶），与部署令牌无关。
 - rclone 的双向同步含删除目标端多余对象，在这套权限下长期正常。
 
@@ -100,12 +103,17 @@ CI 的 `CLOUDFLARE_API_TOKEN` 必须在 **Manage Account → Account API Tokens*
 
 `bms-table-mirror-r2.brightmeows.com` 上，表内容与搜索索引在 zone 的 `http_request_cache_settings` entrypoint 有一条规则。
 
-- 规则体：`set_cache_settings`（eligible for cache，edge TTL 600 秒，browser TTL 600 秒）。
-- 受影响路径：`/tables/*/header.json`、`/tables/*/data.json`、`/indexes/`。
-- 覆盖对象：tables.json 清单与共享表、meta 两个 R2 前缀由表达式排除。
+- 规则 ref 为 `r2-json-cache`，规则体：`set_cache_settings`（eligible for cache，edge TTL 600 秒，browser TTL 600 秒）。
+- 受影响路径：`/tables/<dir>/header.json`、`/tables/<dir>/data.json`、`/indexes/v2/{manifest,title,artist,md5,sha256}.json`。
+- 覆盖对象：`tables.json` 清单、`health.json`、shared 与 meta 两个 R2 前缀由表达式排除。
+- 期望配置在 `config/cache-rules.json`，R2 主机取 `config/site.json` 的 `r2.base`，zone 取 `origin`。
+  - 表达式由 `scripts/cache-rules.ts` 构造，用 `starts_with`、`ends_with` 与固定集合。
+  - `matches` 需要 Business 或 WAF Advanced，Free 上 dry-run 会被 Cloudflare 拒绝。
+- 不覆盖 `cache_key`：Cloudflare 默认缓存键已包含 Origin，两个来源各自缓存，CORS 不会串源。
+- 属外部状态，期望进入仓库并由 `scripts/check-cache-rules.ts` 只读比对；`config-drift.yml` 在配置变更的 PR、每周 schedule 与手动触发时跑，写操作不进 CI。
 - R2 对象本身没有 Cache-Control，JSON 不在 Cloudflare 默认缓存扩展名列表里；不配这条规则时客户端每次直连 R2（实测 `cf-cache-status` 恒为 DYNAMIC），浏览器侧也没有缓存头（规则生效后响应带 `cache-control: max-age=600`）。
-- 属外部状态、不进仓库断言：漏配是性能退化而非功能故障。
 - **验证必须用 GET**（`curl -s -o /dev/null -D -` 连发两次，第二次应为 `HIT` 且有 `age`）：HEAD 请求不参与缓存查找与填充，`curl -I` 恒显示 DYNAMIC；排查时曾被这一点误导（先怀疑了规则与表达式，实际机制一直有效）。
+- 验证还要看两个来源的 `access-control-allow-origin` 各自正确，以及 `tables.json`、`health.json`、shared、meta 不出现 `max-age=600`。
 
 ### Browser Integrity Check
 
