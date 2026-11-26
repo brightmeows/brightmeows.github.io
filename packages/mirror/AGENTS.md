@@ -4,7 +4,7 @@
 
 ## 约定
 
-- **`packages/mirror/`（`@brightmeows/mirror`）**：镜像表内核（URL 构造、清单变换、bmstable meta 渲染、API 契约），由站点、Worker 与脚本经 exports 子路径（`manifest`/`user-layer`/`urls`/`types`/`shared`/`api`）导入。
+- **`packages/mirror/`（`@brightmeows/mirror`）**：镜像表内核（URL 构造、清单变换、bmstable meta 渲染、API 契约），由站点、Worker 与脚本经 exports 子路径（`manifest`/`user-layer`/`urls`/`types`/`shared`/`api`/`search-index`）导入。
   - 约束：无任何 dependencies（无 Svelte/DOM/Node 依赖）、可擦除语法、相对导入带 `.ts` 扩展名；以 TS 源直出（`exports` 指向 `src/*.ts`，零构建），包 tsconfig 的 `erasableSyntaxOnly` 与 `verbatimModuleSyntax` 机械守住可擦除与显式 `import type` 两条。
   - 三种运行时共有的宿主 API（目前只有 `URL`）在 `src/globals.d.ts` 按最小面声明，不引入 DOM / Node / Workers 任一侧的全局类型。
   - Node 直接执行脚本时经 pnpm 的符号链接解析到 `node_modules` 之外的真实路径才能剥离类型：`--preserve-symlinks` 或把包实体复制进 `node_modules` 的布局会打破这条路径。
@@ -12,6 +12,8 @@
   - 消费方三方：Worker handlers（响应构造以 `json<契约类型>` 标注、报错引用常量）、站点客户端（`src/lib/data` 的端点函数用窄化兜底）、脚本内部客户端。
   - 窄化失败返回 null 或兜底值、不做 i18n（文案由调用方翻译，内核无消息依赖）；admin 端点窄化与其他端点同规（此前客户端是类型断言、无运行时校验）。
   - 兜底语义由 `api.test.ts` 锁定：非 admin 端点与既有客户端实现逐字段一致，admin 端点语义见各函数注释；改兜底前先确认不是在改对外行为。
+- **搜索索引 v2 契约在 `src/search-index.ts`（`./search-index` 子路径）**：manifest、数字表 ID 注册表与索引文件窄化，由站点客户端、Worker 与管线共用。
+  - 约束同内核：零依赖、无 i18n、可擦除语法；表 ID 按源 URL 持久化，rename 保 ID，删除不复用。格式与校验点见文件头注。
 - **`<meta name="bmstable">` 有两个来源**：自托管表由 `[table]/+page.server.ts` 经 `PageData.bmstableMeta` → `+layout.svelte` 的 `<svelte:head>` 注入（`./header.json`）。
   - 镜像表由 Worker 运行时注入到 SPA 外壳的 `<head>`（绝对 R2 地址），两处共用 `injectBmstableMeta`。
 - **站点清单的健康字段由 Worker 从 R2 `health.json` 合并**：`health.json` 按源 URL 记录 `status`、`last_success`、`reason`；`tables.json` 合成时只加这三个可选字段，R2 原始清单不含它们。

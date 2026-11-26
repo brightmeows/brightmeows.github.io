@@ -205,7 +205,7 @@ CI 的 lint/test/format 不依赖 build 产物（把构建产物目录移走后�
   远端原始源：data_url 指向的谱面文件（JSONP / 跨域 fetch）
 
 管线（Actions，每 6 小时；仓库不落任何派生数据）
-  R2 基线 × D1 用户层（经 /api/internal/*）──fetch-tables──> R2 tables/、indexes/
+  R2 基线 × D1 用户层（经 /api/internal/*）──fetch-tables──> R2 tables/、indexes/v2/
   列表变动只影响运行时读取，不再触发部署；单表抓取由 Worker 派发 fetch-table
 ```
 
