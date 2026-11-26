@@ -656,6 +656,8 @@
   "search.idle_desc": "按 Enter 或点击搜索按钮搜索。支持标题、艺术家、MD5、SHA256。",
   "search.idle_title": "输入关键词开始搜索",
   "search.index_load_failed": "索引加载失败",
+  "search.index_stale": "搜索索引可能不是最新，上次成功更新于 {time}。",
+  "search.index_stale_unknown": "搜索索引可能不是最新，上次成功更新时间未知。",
   "search.input_placeholder": "输入谱面标题、艺术家、MD5 或 SHA256，支持简繁日自动转换...",
   "search.load_url_failed": "加载 {url} 失败: {status}",
   "search.loading_header": "加载表头...",

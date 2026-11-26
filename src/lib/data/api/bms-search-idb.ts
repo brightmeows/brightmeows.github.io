@@ -1,9 +1,25 @@
+import {
+  parseCompactSearchIndexManifest,
+  type CompactSearchIndexManifest,
+} from "@brightmeows/mirror/search-index";
+
 import type { HashIndexBundle, SearchIndex, TextIndexBundle } from "./bms-search";
 
+/**
+ * 库名保留历史值；版本 2 升级时清空全部旧 store，不迁移 v1 缓存。
+ * 客户端切到 v2 后只缓存 manifest 与数字 ID 索引。
+ */
 const DB_NAME = "bms-search-v1";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const INDEX_STORE = "indices";
 const META_STORE = "metadata";
+
+/** 索引组：两组分开缓存 manifest 与文件，互不覆盖。 */
+export type IndexGroup = "text" | "hash";
+
+function manifestKey(group: IndexGroup): string {
+  return `manifest:${group}`;
+}
 
 // 惰性单例：复用 IndexedDB 连接，open/close 仅在必要时做
 let dbPromise: Promise<IDBDatabase | null> | null = null;
@@ -14,12 +30,12 @@ function getDB(): Promise<IDBDatabase | null> {
       const req = indexedDB.open(DB_NAME, DB_VERSION);
       req.onupgradeneeded = () => {
         const db = req.result;
-        if (!db.objectStoreNames.contains(INDEX_STORE)) {
-          db.createObjectStore(INDEX_STORE);
+        // 升版本清旧库：v1 的字符串表名索引与旧 version 键全部丢弃
+        for (const store of Array.from(db.objectStoreNames)) {
+          db.deleteObjectStore(store);
         }
-        if (!db.objectStoreNames.contains(META_STORE)) {
-          db.createObjectStore(META_STORE);
-        }
+        db.createObjectStore(INDEX_STORE);
+        db.createObjectStore(META_STORE);
       };
       req.onsuccess = () => resolve(req.result);
       req.addEventListener("error", () => {
@@ -44,6 +60,26 @@ function closeDB(): void {
   void p?.then((db) => {
     if (db) db.close();
   });
+}
+
+/** 读取指定索引组的缓存 manifest；缺失或结构非法时返回 null。 */
+export async function getCachedManifest(
+  group: IndexGroup
+): Promise<CompactSearchIndexManifest | null> {
+  const db = await getDB();
+  if (!db) return null;
+  const raw = await getFromStore<string>(db, META_STORE, manifestKey(group));
+  return raw === undefined ? null : parseCompactSearchIndexManifest(raw);
+}
+
+/** 写入指定索引组的缓存 manifest；IDB 写失败静默，下一次加载重新拉取。 */
+export async function setCachedManifest(
+  group: IndexGroup,
+  manifest: CompactSearchIndexManifest
+): Promise<void> {
+  const db = await getDB();
+  if (!db) return;
+  await putInStore(db, META_STORE, JSON.stringify(manifest), manifestKey(group));
 }
 
 /** 从 IDB 读取文本索引组，缺失任何一个 key 时返回 null */
@@ -94,26 +130,6 @@ export async function setCachedHashIndices(indices: HashIndexBundle): Promise<vo
     putInStore(db, INDEX_STORE, indices.md5, "md5"),
     putInStore(db, INDEX_STORE, indices.sha256, "sha256"),
   ]);
-}
-
-/** 索引组名称：两组分开缓存与校验，互不阻塞。 */
-export type IndexGroup = "text" | "hash";
-
-/** 读取指定索引组的版本标识 */
-export async function getVersion(group: IndexGroup): Promise<string | null> {
-  const db = await getDB();
-  if (!db) return null;
-
-  const v = await getFromStore<string>(db, META_STORE, `version:${group}`);
-  return v ?? null;
-}
-
-/** 写入指定索引组的版本标识 */
-export async function setVersion(group: IndexGroup, v: string): Promise<void> {
-  const db = await getDB();
-  if (!db) return;
-
-  await putInStore(db, META_STORE, v, `version:${group}`);
 }
 
 /** 清空缓存并关闭连接 */

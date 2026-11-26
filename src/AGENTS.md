@@ -119,7 +119,19 @@
 
 #### 搜索索引
 
-- **搜索索引目录不回归 git**：仓库内的搜索索引目录已不存在，索引移至 R2，由 `bms-search.worker.ts` 在客户端运行时拉取，不要重新创建。
+- **搜索索引只存在 R2，不进 git**：仓库内不保留索引目录，`bms-search.worker.ts` 在客户端运行时拉取。
+- **v2 格式与稳定表 ID**：索引是 term 到数字表 ID 数组的倒排，表 ID 按源 URL 持久化，rename 保 ID、新表递增、删除不复用；manifest 记录表映射、每文件 SHA-256、字节数与 term 数，`version` 排除 `generated_at`。
+  - 契约在 `packages/mirror/src/search-index.ts` 头注，客户端、Worker 与管线共用 `parseCompactSearchIndexManifest` 与 `compactIndexTableDirs`。
+  - R2 目录：
+
+    ```text
+    indexes/v2/manifest.json
+    indexes/v2/{title,artist,md5,sha256}.json
+    ```
+
+- **客户端加载**：先拉 manifest；版本与 IDB 一致时直接用缓存，否则只下哈希变化的文件。下载后按 manifest 校验 SHA-256，不匹配重试一次；仍失败用缓存并进入 stale，无缓存才报错。不回退 v1。
+  - IDB 版本升级时清空旧 store，不迁移 v1 缓存。
+- **stale 提示**：manifest 拉取或文件校验失败后用缓存时，搜索输入框下一行显示上次成功更新时间。
 
 #### 本地开发
 
