@@ -3,8 +3,8 @@
  *
  * 用 R2 上的公开基线（tables/<dir>/info.json 与 lists 缓存）搭两个独立
  * 工作区，分别跑新实现与旧二进制（bms-table-fetch release），再逐对象比对
- * 对外产物：info/header/data 逐字节比较，tables.json 与 indexes 按语义比较；
- * v2 索引再解码回目录集合与同轮 v1 比对。
+ * 对外产物：info/header/data 逐字节比较，tables.json 按语义比较；
+ * v2 索引解码回目录集合，与旧实现的 v1 索引逐 term 比对。
  * 旧配置来自存档 fixture（`scripts/pipeline/fixtures/legacy-table.toml`）：
  * 旧二进制固定读 `config/table.toml`，而仓库的 `config/` 已随旧配置退役。
  *
@@ -445,20 +445,16 @@ export async function compareWorkspaces(
     "tables.json",
     differences
   );
-  for (const file of ["title.json", "artist.json", "md5.json", "sha256.json"]) {
-    await compareJsonFile(
-      path.join(newRoot, "indexes", file),
-      path.join(rustRoot, "indexes", file),
-      file,
-      differences
-    );
-  }
-  await compareCompactIndexes(newRoot, differences);
+  await compareCompactIndexes(newRoot, rustRoot, differences);
   return differences;
 }
 
-/** v2 与同轮 v1 的语义比对：解码数字 ID 后逐 term 比较目录集合。 */
-async function compareCompactIndexes(root: string, differences: ParityDifference[]): Promise<void> {
+/** v2 与旧实现 v1 的语义比对：解码数字 ID 后逐 term 比较目录集合。 */
+async function compareCompactIndexes(
+  root: string,
+  rustRoot: string,
+  differences: ParityDifference[]
+): Promise<void> {
   const manifestPath = path.join(root, "indexes", "v2", "manifest.json");
   const manifestRaw = await readIfExists(manifestPath);
   if (manifestRaw === null) {
@@ -482,14 +478,14 @@ async function compareCompactIndexes(root: string, differences: ParityDifference
   }
   const dirById = new Map(manifest.tables.map((table) => [table.id, table.dir] as const));
   for (const name of COMPACT_SEARCH_INDEX_NAMES) {
-    const v1Raw = await readIfExists(path.join(root, "indexes", `${name}.json`));
+    const v1Raw = await readIfExists(path.join(rustRoot, "indexes", `${name}.json`));
     const v2Raw = await readIfExists(path.join(root, "indexes", "v2", `${name}.json`));
     if (v1Raw === null || v2Raw === null) {
       differences.push({
         kind: "file-differs",
         table: "(顶层)",
         file: `indexes/v2/${name}.json`,
-        detail: v1Raw === null ? "新实现缺少 v1 索引" : "新实现缺少 v2 索引",
+        detail: v1Raw === null ? "旧实现缺少 v1 索引" : "新实现缺少 v2 索引",
       });
       continue;
     }
@@ -499,7 +495,7 @@ async function compareCompactIndexes(root: string, differences: ParityDifference
         kind: "file-differs",
         table: "(顶层)",
         file: `indexes/v2/${name}.json`,
-        detail: "v1 索引结构非法",
+        detail: "旧实现 v1 索引结构非法",
       });
       continue;
     }

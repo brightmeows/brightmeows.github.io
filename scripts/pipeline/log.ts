@@ -24,6 +24,7 @@ export interface RunSummary {
   renamed: number;
   orphansMoved: number;
   tablesJsonEntries: number;
+  /** v2 索引的 term 数。 */
   indexSizes: Record<string, number>;
   longHashWarnings: Map<string, { count: number; sample: string }>;
   unrecognizedData: string[];

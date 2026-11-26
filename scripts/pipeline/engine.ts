@@ -3,7 +3,7 @@
  *
  * 与旧实现 bms-table-fetch 的四阶段同构，区别在活跃表集合的来源：不再有
  * 列表源与 toml 配置，改为 R2 基线叠加用户层（站长与访客的增删记录）。
- * 并发抓取后做安全网重命名、孤儿处理、生成 tables.json 与 v1/v2 搜索索引，
+ * 并发抓取后做安全网重命名、孤儿处理、生成 tables.json 与 v2 搜索索引，
  * 并写 state.toml 与单轮 warnings.log。
  */
 
@@ -13,7 +13,7 @@ import type { UserLayer } from "@brightmeows/mirror/user-layer";
 
 import { internalApiBase } from "../internal-api.ts";
 
-import { writeCompactSearchIndexes } from "./compact-index.ts";
+import { writeCompactSearchIndexes, type CompactIndexWriteResult } from "./compact-index.ts";
 import { describeError } from "./errors.ts";
 import { DEFAULT_TIMEOUT_MS, fetchTable, patchDataUrl, type FetchOptions } from "./fetch.ts";
 import {
@@ -34,6 +34,7 @@ import {
   type FetchOutcome,
   type HealthFile,
 } from "./health.ts";
+import { buildIndexes, type IndexBuildResult } from "./index-build.ts";
 import { compareUtf8, cloneJson } from "./json-utils.ts";
 import {
   computeOrphans,
@@ -45,13 +46,7 @@ import {
 import { RunLog, type PipelineLogger, type RunSummary } from "./log.ts";
 import { expectedDirName } from "./naming.ts";
 import { normalizeData, normalizeHeader } from "./normalize.ts";
-import {
-  serializeJson,
-  writeHealthJson,
-  writeIndexes,
-  writeTablesJson,
-  type IndexWriteResult,
-} from "./output.ts";
+import { serializeJson, writeHealthJson, writeTablesJson } from "./output.ts";
 import { mergeActiveSet } from "./overlay.ts";
 import { mapPool } from "./pool.ts";
 import { scanDirs, scanDirsFull } from "./scan.ts";
@@ -218,7 +213,7 @@ export async function runPipeline(options: PipelineOptions = {}): Promise<Pipeli
     activeSet.activeUrls,
     startedAt
   );
-  for (const dirName of indexResult.unrecognized) {
+  for (const dirName of indexResult.built.unrecognized) {
     log.warn(`data.json 格式无法识别：${dirName}`);
   }
 
@@ -254,9 +249,9 @@ export async function runPipeline(options: PipelineOptions = {}): Promise<Pipeli
     renamed: executedPreRenames.length + executedSafetyRenames.length,
     orphansMoved,
     tablesJsonEntries,
-    indexSizes: indexResult.sizes,
-    longHashWarnings: indexResult.longHashWarnings,
-    unrecognizedData: indexResult.unrecognized,
+    indexSizes: indexResult.compact.sizes,
+    longHashWarnings: indexResult.built.longHashWarnings,
+    unrecognizedData: indexResult.built.unrecognized,
   };
   await atomicWrite(paths.warnings, log.render(summary));
   log.info(
@@ -265,31 +260,31 @@ export async function runPipeline(options: PipelineOptions = {}): Promise<Pipeli
   return { summary, warningsPath: paths.warnings };
 }
 
-/** 写 v1 与 v2 搜索索引；v2 失败让管线在同步 R2 前失败。 */
+/** 构建索引并写 v2；失败让管线在同步 R2 前失败。 */
 async function writeSearchIndexes(
   log: PipelineLogger,
   paths: PipelinePaths,
   scanned: readonly FullDirEntry[],
   activeUrls: ReadonlySet<string>,
   now: Date
-): Promise<IndexWriteResult> {
-  const indexResult = await writeIndexes(paths.indexDir, scanned, activeUrls);
-  const compactResult = await writeCompactSearchIndexes(
-    paths.indexDir,
-    scanned,
-    activeUrls,
-    indexResult.built,
-    now
-  );
+): Promise<SearchIndexWriteResult> {
+  const activeEntries = scanned.filter((entry) => activeUrls.has(entry.info.url));
+  const built = buildIndexes(activeEntries);
+  const compact = await writeCompactSearchIndexes(paths.indexDir, scanned, activeUrls, built, now);
   log.info(
-    `v2 索引：${Object.entries(compactResult.sizes)
+    `v2 索引：${Object.entries(compact.sizes)
       .map(([name, size]) => `${name}=${size}`)
-      .join(" ")}；表 ${compactResult.tableCount} 张；manifest ${compactResult.manifestVersion}`
+      .join(" ")}；表 ${compact.tableCount} 张；manifest ${compact.manifestVersion}`
   );
-  if (compactResult.registryReset) {
+  if (compact.registryReset) {
     log.warn("v2 manifest 结构非法，表 ID 注册表已从 1 重排");
   }
-  return indexResult;
+  return { built, compact };
+}
+
+interface SearchIndexWriteResult {
+  built: IndexBuildResult;
+  compact: CompactIndexWriteResult;
 }
 
 interface PipelineHealth {

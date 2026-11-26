@@ -20,7 +20,7 @@ function makeSummary(overrides: Partial<RunSummary> = {}): RunSummary {
     renamed: 1,
     orphansMoved: 2,
     tablesJsonEntries: 10,
-    indexSizes: { "title.json": 3, "md5.json": 2 },
+    indexSizes: { title: 3, md5: 2 },
     longHashWarnings: new Map([["[a] 表", { count: 3, sample: "aaa… (160 chars total)" }]]),
     unrecognizedData: [],
     ...overrides,

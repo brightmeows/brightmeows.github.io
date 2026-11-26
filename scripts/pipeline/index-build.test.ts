@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildIndexes, extractChartItems, finalizeIndex } from "./index-build.ts";
+import { buildIndexes, extractChartItems } from "./index-build.ts";
 
 const MD5 = "0123456789abcdef0123456789abcdef";
 const SHA256 = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
@@ -59,15 +59,5 @@ describe("buildIndexes", () => {
   it("无法识别的 data.json 记入 unrecognized", () => {
     const result = buildIndexes([{ dirName: "d", dataRaw: '{"other":1}' }]);
     expect(result.unrecognized).toEqual(["d"]);
-  });
-});
-
-describe("finalizeIndex", () => {
-  it("键与集合都按字节序排序", () => {
-    const map = new Map<string, Set<string>>([
-      ["b", new Set(["2", "1"])],
-      ["a", new Set(["3"])],
-    ]);
-    expect(finalizeIndex(map)).toEqual({ a: ["3"], b: ["1", "2"] });
   });
 });

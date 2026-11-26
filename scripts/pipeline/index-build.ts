@@ -1,5 +1,6 @@
 /**
- * 索引构建：title、artist、md5、sha256 到表目录名的倒排索引。
+ * 索引构建：title、artist、md5、sha256 到表目录名的中间倒排。
+ * v2 写入时把目录名换成 manifest 注册表里的数字 ID。
  *
  * 与旧实现 output.rs 加 index.rs 的行为一致：只索引活跃表；哈希字段
  * 只接受符合长度且全为十六进制的值；超长哈希记为告警（按表折叠）。
@@ -146,22 +147,4 @@ export function buildIndexes(entries: readonly IndexBuildInput[]): IndexBuildRes
   }
 
   return result;
-}
-
-/** 把 `键 到 表名集合` 的映射整理为排序稳定的普通对象。 */
-export function finalizeIndex(map: Map<string, Set<string>>): Record<string, string[]> {
-  const keys = [...map.keys()].sort(compareByteOrder);
-  const result: Record<string, string[]> = {};
-  for (const key of keys) {
-    const bucket = map.get(key);
-    if (bucket === undefined) {
-      continue;
-    }
-    result[key] = [...bucket].sort(compareByteOrder);
-  }
-  return result;
-}
-
-function compareByteOrder(left: string, right: string): number {
-  return Buffer.compare(Buffer.from(left, "utf8"), Buffer.from(right, "utf8"));
 }
