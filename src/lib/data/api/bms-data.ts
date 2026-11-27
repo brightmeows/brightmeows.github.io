@@ -181,6 +181,10 @@ export async function fetchBmsTableData(
                 percent: 5 + Math.round(pct * 0.8),
                 phase: "downloading",
                 message: m["progress.downloading"](),
+                detail:
+                  total > 0
+                    ? `${formatBytes(loaded)} / ${formatBytes(total)}`
+                    : m["progress.downloaded"]({ bytes: formatBytes(loaded) }),
               });
             }
           : undefined

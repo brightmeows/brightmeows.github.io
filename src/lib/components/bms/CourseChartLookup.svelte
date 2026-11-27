@@ -4,15 +4,19 @@
   import X from "@lucide/svelte/icons/x";
   import { onDestroy, onMount } from "svelte";
 
+  import SearchIndexProgress from "#lib/components/bms/SearchIndexProgress.svelte";
+  import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
   import { btnGhost, inputEditorBase } from "#lib/constants/ui-classes.js";
   import {
     loadChartSourceData,
     loadChartSources,
+    type ChartSourceProgress,
     type ChartSource,
   } from "#lib/data/api/bms-sources.js";
   import { SearchIndexClient } from "#lib/data/store/search-index-client.svelte.js";
   import { m } from "#lib/paraglide/messages.js";
   import { errorMessageOf } from "#lib/utils/infra/error.js";
+  import { progressDetail, progressView } from "#lib/utils/infra/progress.js";
 
   /** 段位谱面反查结果：表 id 与命中条目。 */
   interface LookupHit {
@@ -38,10 +42,13 @@
   let mirrorSearched = $state(false);
   let mirrorError = $state<string | null>(null);
   let mirrorResults = $state<LookupHit[]>([]);
+  let mirrorProgress = $state({ loaded: 0, total: 0 });
   let sources = $state<ChartSource[]>([]);
   let sourcesLoaded = $state(false);
+  let sourcesProgress = $state({ loaded: 0, total: 0 });
   let sharedValue = $state("");
   let sharedLoading = $state(false);
+  let sharedProgress = $state({ loaded: 0, total: 0 });
   let sharedSearched = $state(false);
   let sharedError = $state<string | null>(null);
   let sharedResults = $state<LookupHit[]>([]);
@@ -52,6 +59,13 @@
   const currentEntry = $derived(findChartByHashes(entries, chart));
   const sharedSources = $derived(sources.filter((source) => source.kind === "shared"));
   const hashKey = $derived(`${chart.md5}\u0000${chart.sha256}`);
+  const sourcesProgressView = $derived(progressView(sourcesProgress.loaded, sourcesProgress.total));
+  const mirrorProgressView = $derived(progressView(mirrorProgress.loaded, mirrorProgress.total));
+  const sharedProgressView = $derived(progressView(sharedProgress.loaded, sharedProgress.total));
+
+  function reportMirrorProgress(progress: ChartSourceProgress): void {
+    mirrorProgress = { loaded: progress.loaded, total: progress.total };
+  }
 
   onMount(() => {
     indexClient.start();
@@ -98,7 +112,9 @@
   });
 
   async function loadSources(): Promise<void> {
-    sources = await loadChartSources();
+    sources = await loadChartSources((progress) => {
+      sourcesProgress = { loaded: progress.loaded, total: progress.total };
+    });
     sourcesLoaded = true;
   }
 
@@ -130,6 +146,7 @@
     mirrorSearched = true;
     mirrorError = null;
     mirrorResults = [];
+    mirrorProgress = { loaded: 0, total: 0 };
     try {
       const queries = [hashes.md5, hashes.sha256].filter((hash) => hash !== "");
       const lists = await Promise.all(queries.map((query) => indexClient.search(query)));
@@ -142,11 +159,14 @@
       for (const candidate of candidates.slice(0, 5)) {
         if (request !== mirrorRequest) return;
         try {
-          const data = await loadChartSourceData({
-            kind: "mirror",
-            id: candidate.tableId,
-            label: candidate.tableId,
-          });
+          const data = await loadChartSourceData(
+            {
+              kind: "mirror",
+              id: candidate.tableId,
+              label: candidate.tableId,
+            },
+            reportMirrorProgress
+          );
           const entry = findChartByHashes(data.entries, hashes);
           if (entry !== null) hits.push({ tableId: candidate.tableId, entry });
         } catch {
@@ -172,8 +192,11 @@
     sharedSearched = true;
     sharedError = null;
     sharedResults = [];
+    sharedProgress = { loaded: 0, total: 0 };
     try {
-      const data = await loadChartSourceData(source);
+      const data = await loadChartSourceData(source, (progress) => {
+        sharedProgress = { loaded: progress.loaded, total: progress.total };
+      });
       if (request !== sharedRequest) return;
       const entry = findChartByHashes(data.entries, hashes);
       sharedResults = entry === null ? [] : [{ tableId: source.id, entry }];
@@ -234,11 +257,30 @@
         </button>
       </div>
       {#if mirrorLoading || mirrorPending}
-        <p class="mt-1 text-[0.8rem] text-white-50">
-          {indexClient.phase === "loading"
-            ? m["editor.course.lookup.index_loading"]()
-            : m["editor.course.lookup.loading"]()}
-        </p>
+        {#if indexClient.hashPhase === "loading"}
+          <SearchIndexProgress
+            items={indexClient.hashProgress}
+            message={m["search.loading_hash_index"]()}
+            variant="inline"
+          />
+        {:else if indexClient.phase === "loading"}
+          <SearchIndexProgress
+            items={indexClient.progress}
+            message={m["search.loading_index_summary"]()}
+            variant="inline"
+          />
+        {:else if mirrorLoading}
+          <LoadingProgress
+            variant="compact"
+            message={m["editor.course.lookup.loading"]()}
+            progress={mirrorProgressView.determinate ? mirrorProgressView.percent : -1}
+            detail={progressDetail(mirrorProgress.loaded, mirrorProgress.total)}
+          />
+        {:else}
+          <p class="mt-1 text-[0.8rem] text-white-50">
+            {m["editor.course.lookup.loading"]()}
+          </p>
+        {/if}
       {:else if mirrorError !== null}
         <p class="mt-1 text-[0.8rem] text-error">
           {m["editor.course.lookup.failed"]({ detail: mirrorError })}
@@ -283,8 +325,21 @@
           {m["editor.course.lookup.search"]()}
         </button>
       </div>
+      {#if !sourcesLoaded}
+        <LoadingProgress
+          variant="compact"
+          message={m["editor.course.lookup.loading"]()}
+          progress={sourcesProgressView.determinate ? sourcesProgressView.percent : -1}
+          detail={progressDetail(sourcesProgress.loaded, sourcesProgress.total)}
+        />
+      {/if}
       {#if sharedLoading}
-        <p class="mt-1 text-[0.8rem] text-white-50">{m["editor.course.lookup.loading"]()}</p>
+        <LoadingProgress
+          variant="compact"
+          message={m["editor.course.lookup.loading"]()}
+          progress={sharedProgressView.determinate ? sharedProgressView.percent : -1}
+          detail={progressDetail(sharedProgress.loaded, sharedProgress.total)}
+        />
       {:else if sharedError !== null}
         <p class="mt-1 text-[0.8rem] text-error">
           {m["editor.course.lookup.failed"]({ detail: sharedError })}

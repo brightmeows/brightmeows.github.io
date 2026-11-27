@@ -14,6 +14,7 @@ import { requestJson } from "./http";
 
 import { m } from "#lib/paraglide/messages.js";
 import type { MirrorMetaFields } from "#lib/types/bms-view.js";
+import type { StreamProgress } from "#lib/utils/infra/fetch-stream.js";
 
 /**
  * 站长治理接口的客户端封装。
@@ -28,8 +29,12 @@ export type AdminOverview = AdminOverviewResponse;
 export type AdminMutationResult = AdminMutationResponse;
 
 /** 读取后台总览；响应形状非法时抛错（调用方按接口失败处理）。 */
-export async function fetchAdminOverview(): Promise<AdminOverview> {
-  const overview = narrowAdminOverview(await requestJson("/api/admin/overview"));
+export async function fetchAdminOverview(
+  onProgress?: (progress: StreamProgress) => void
+): Promise<AdminOverview> {
+  const overview = narrowAdminOverview(
+    await requestJson("/api/admin/overview", undefined, onProgress)
+  );
   if (overview === null) {
     throw new Error(m["userapi.admin_overview_invalid"]());
   }

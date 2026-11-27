@@ -5,6 +5,7 @@
   import { onMount } from "svelte";
 
   import Checkbox from "#lib/components/ui/Checkbox.svelte";
+  import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
   import { btnGhost, inputEditorBase, inputEditorMono } from "#lib/constants/ui-classes.js";
   import {
     loadChartSourceData,
@@ -13,6 +14,7 @@
   } from "#lib/data/api/bms-sources.js";
   import { m } from "#lib/paraglide/messages.js";
   import { errorMessageOf } from "#lib/utils/infra/error.js";
+  import { progressDetail, progressView } from "#lib/utils/infra/progress.js";
 
   /** 段位谱面选择结果：只引用哈希与等级，不写条目表。 */
   export interface CourseChartRef {
@@ -38,10 +40,12 @@
 
   let sources = $state<ChartSource[]>([]);
   let sourcesLoaded = $state(false);
+  let sourcesProgress = $state({ loaded: 0, total: 0 });
   let sourceQuery = $state("");
   let sourceValue = $state("current");
   let externalEntries = $state<Record<string, unknown>[]>([]);
   let loading = $state(false);
+  let sourceProgress = $state({ loaded: 0, total: 0 });
   let loadError = $state<string | null>(null);
   let query = $state("");
   let selected = $state<Set<number>>(new Set());
@@ -63,6 +67,8 @@
   );
   const filtered = $derived(filteredAll.slice(0, PICKER_LIMIT));
   const selectedCount = $derived(selected.size);
+  const sourcesProgressView = $derived(progressView(sourcesProgress.loaded, sourcesProgress.total));
+  const sourceProgressView = $derived(progressView(sourceProgress.loaded, sourceProgress.total));
 
   onMount(() => {
     void loadSources();
@@ -74,7 +80,9 @@
   });
 
   async function loadSources(): Promise<void> {
-    sources = await loadChartSources();
+    sources = await loadChartSources((progress) => {
+      sourcesProgress = { loaded: progress.loaded, total: progress.total };
+    });
     sourcesLoaded = true;
   }
 
@@ -83,6 +91,7 @@
     selected = new Set();
     loadError = null;
     externalEntries = [];
+    sourceProgress = { loaded: 0, total: 0 };
     loading = false;
     if (sourceValue === "current") return;
     const [kind, ...rest] = sourceValue.split(":");
@@ -91,7 +100,9 @@
     if (source === undefined) return;
     loading = true;
     try {
-      const data = await loadChartSourceData(source);
+      const data = await loadChartSourceData(source, (progress) => {
+        sourceProgress = { loaded: progress.loaded, total: progress.total };
+      });
       if (request !== sourceRequest) return;
       externalEntries = data.entries;
     } catch (error) {
@@ -207,13 +218,23 @@
   />
 
   {#if loading}
-    <p class="text-[0.85rem] text-white-50">{m["editor.entry.import.loading"]()}</p>
+    <LoadingProgress
+      variant="compact"
+      message={m["editor.entry.import.loading"]()}
+      progress={sourceProgressView.determinate ? sourceProgressView.percent : -1}
+      detail={progressDetail(sourceProgress.loaded, sourceProgress.total)}
+    />
   {:else if loadError !== null}
     <p class="text-[0.85rem] text-error">
       {m["editor.entry.import.failed"]({ detail: loadError })}
     </p>
   {:else if !sourcesLoaded && sourceValue !== "current"}
-    <p class="text-[0.85rem] text-white-50">{m["editor.entry.import.loading"]()}</p>
+    <LoadingProgress
+      variant="compact"
+      message={m["editor.entry.import.loading"]()}
+      progress={sourcesProgressView.determinate ? sourcesProgressView.percent : -1}
+      detail={progressDetail(sourcesProgress.loaded, sourcesProgress.total)}
+    />
   {:else if filtered.length === 0}
     <p class="text-[0.85rem] text-white-50">{m["editor.course.picker_empty"]()}</p>
   {:else}

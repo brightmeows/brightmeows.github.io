@@ -1,12 +1,10 @@
 <script lang="ts">
   import type { ChartData } from "@brightmeows/bms/format";
   import ArrowLeft from "@lucide/svelte/icons/arrow-left";
-  import Check from "@lucide/svelte/icons/check";
   import ChevronDown from "@lucide/svelte/icons/chevron-down";
   import ChevronRight from "@lucide/svelte/icons/chevron-right";
   import ClipboardList from "@lucide/svelte/icons/clipboard-list";
   import Download from "@lucide/svelte/icons/download";
-  import Hourglass from "@lucide/svelte/icons/hourglass";
   import Search from "@lucide/svelte/icons/search";
   import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
   import X from "@lucide/svelte/icons/x";
@@ -14,6 +12,7 @@
   import { SvelteMap } from "svelte/reactivity";
 
   import BmsSearchResult from "#lib/components/bms/BmsSearchResult.svelte";
+  import SearchIndexProgress from "#lib/components/bms/SearchIndexProgress.svelte";
   import PageHero from "#lib/components/layout/PageHero.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import Button from "#lib/components/ui/Button.svelte";
@@ -24,7 +23,6 @@
     btnSearchSubmit,
     inputSearchMono,
     spinnerLg,
-    spinnerMd,
   } from "#lib/constants/ui-classes.js";
   import { createEpochGuard, runTableLoad } from "#lib/controllers/table-load.js";
   import type { CandidateEntry, QueryType } from "#lib/data/api/bms-search.js";
@@ -119,7 +117,12 @@
         signal: abortController?.signal,
       },
       {
-        loadHeader: (signal) => loadTableHeader(tableId, signal),
+        loadHeader: (signal, onProgress) =>
+          loadTableHeader(
+            tableId,
+            signal,
+            onProgress ? (progress) => onProgress(progress.loaded, progress.total) : undefined
+          ),
         loadCharts: (signal, onProgress) => loadFullTableData(tableId, signal, onProgress),
         onParsed: (_tableId, name, symbol, charts) => {
           tableData.set(tableId, { name, symbol, charts });
@@ -282,26 +285,12 @@
 {#snippet contentPane()}
   {#if indexClient.phase === "loading"}
     <!-- 索引加载进度 -->
-    <div class="p-8 text-center">
-      <Hourglass class="mx-auto mb-6 size-12 text-white-30" strokeWidth={1.5} aria-hidden="true" />
-      <p class="mb-4 text-white-80">{m["search.loading_index"]()}</p>
-      <div class="mx-auto max-w-xs space-y-2 text-left">
-        {#each indexClient.progress as item (item.name)}
-          <div class="flex items-center gap-3 text-[0.9rem]">
-            {#if item.status === "loading"}
-              <div class={spinnerMd}></div>
-              <span class="text-white-60">{item.name}.json</span>
-            {:else if item.status === "done"}
-              <Check class="size-4 shrink-0 text-success" aria-hidden="true" />
-              <span class="text-white-80">{item.name}.json</span>
-            {:else}
-              <X class="size-4 shrink-0 text-error" aria-hidden="true" />
-              <span class="text-white-50">{item.name}.json</span>
-            {/if}
-          </div>
-        {/each}
-      </div>
-    </div>
+    <SearchIndexProgress
+      items={indexClient.progress}
+      message={m["search.loading_index_summary"]()}
+      title={m["search.loading_index"]()}
+      hint={m["search.loading_index_hint"]()}
+    />
   {:else if indexClient.phase === "error"}
     <div class="p-12 text-center">
       <TriangleAlert class="mx-auto mb-4 size-16 text-error" strokeWidth={1.5} aria-hidden="true" />
@@ -359,6 +348,13 @@
             {m["search.index_stale_unknown"]()}
           {/if}
         </p>
+      {/if}
+      {#if indexClient.hashPhase === "loading"}
+        <SearchIndexProgress
+          items={indexClient.hashProgress}
+          message={m["search.loading_hash_index"]()}
+          variant="inline"
+        />
       {/if}
       <div class="mt-2 flex items-center gap-4">
         {#if queryCount > 0}

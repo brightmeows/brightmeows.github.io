@@ -5,6 +5,8 @@
   import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
   import { m } from "#lib/paraglide/messages.js";
   import { errorMessageOf } from "#lib/utils/infra/error.js";
+  import { fetchStream, FetchStreamError } from "#lib/utils/infra/fetch-stream.js";
+  import { progressDetail, progressView } from "#lib/utils/infra/progress.js";
   import { resolveUrl } from "#lib/utils/infra/url.js";
 
   interface Props {
@@ -21,10 +23,12 @@
 
   let levelRefData = $state<LevelRefItem[]>([]);
   let loadErrorMessage = $state("");
+  let loadProgress = $state({ loaded: 0, total: 0 });
 
   let requestToken = 0;
 
   let hasContent = $derived(levelRefData.length > 0);
+  let loadProgressView = $derived(progressView(loadProgress.loaded, loadProgress.total));
 
   let tableHalves = $derived.by(() => {
     const midIndex = Math.ceil(levelRefData.length / 2);
@@ -57,6 +61,7 @@
 
     loadState = "loading";
     loadErrorMessage = "";
+    loadProgress = { loaded: 0, total: 0 };
 
     try {
       const levelRefUrl = buildLevelRefUrl(header);
@@ -66,11 +71,13 @@
         return;
       }
 
-      const response = await fetch(levelRefUrl);
+      const { response, bytes } = await fetchStream(levelRefUrl, undefined, (progress) => {
+        loadProgress = { loaded: progress.loaded, total: progress.total };
+      });
       if (token !== requestToken) return;
 
       if (response.ok) {
-        const data = (await response.json()) as LevelRefItem[];
+        const data = JSON.parse(new TextDecoder().decode(bytes)) as LevelRefItem[];
         if (token !== requestToken) return;
 
         if (Array.isArray(data)) {
@@ -90,6 +97,11 @@
         throw new Error(`HTTP ${response.status} ${response.statusText}`);
       }
     } catch (err) {
+      if (err instanceof FetchStreamError && err.status === 404) {
+        hasData = false;
+        loadState = "not-found";
+        return;
+      }
       console.error("加载难度对照表数据失败:", err);
       hasData = false;
       loadState = "error";
@@ -107,7 +119,12 @@
 </script>
 
 {#if loadState === "loading"}
-  <LoadingProgress variant="compact" message={m["levelref.loading"]()} />
+  <LoadingProgress
+    variant="compact"
+    message={m["levelref.loading"]()}
+    progress={loadProgressView.determinate ? loadProgressView.percent : -1}
+    detail={progressDetail(loadProgress.loaded, loadProgress.total)}
+  />
 {:else if loadState === "error"}
   <div class="message-error">
     {m["common.load_failed_with_error"]({ error: loadErrorMessage })}

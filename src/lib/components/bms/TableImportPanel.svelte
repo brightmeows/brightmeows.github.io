@@ -10,6 +10,7 @@
   import Check from "@lucide/svelte/icons/check";
   import Download from "@lucide/svelte/icons/download";
 
+  import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
   import { r2TableDataUrl, r2TableHeaderUrl } from "#lib/constants/r2.js";
   import {
     btnChip,
@@ -21,6 +22,8 @@
   import { strictErrorsNotice } from "#lib/controllers/editor.js";
   import { m } from "#lib/paraglide/messages.js";
   import { errorDetailOf } from "#lib/utils/infra/error.js";
+  import { fetchStream } from "#lib/utils/infra/fetch-stream.js";
+  import { progressDetail, progressView } from "#lib/utils/infra/progress.js";
 
   /**
    * 编辑器导入面板：粘贴或上传 JSON（合并包、header、data 自动识别）与镜像表
@@ -42,6 +45,8 @@
   let forkUrl = $state("");
   let busy = $state(false);
   let error = $state<string | null>(null);
+  let forkProgress = $state({ loaded: 0, total: 0 });
+  const forkProgressView = $derived(progressView(forkProgress.loaded, forkProgress.total));
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "json", label: m["editor.import.tab_json"]() },
@@ -158,20 +163,27 @@
     }
     busy = true;
     error = null;
+    forkProgress = { loaded: 0, total: 0 };
     try {
       const headerUrl = r2TableHeaderUrl(dirName);
-      const headerRes = await fetch(headerUrl);
-      if (!headerRes.ok) throw new Error(String(headerRes.status));
-      const header = (await headerRes.json()) as unknown;
+      const { bytes: headerBytes } = await fetchStream(headerUrl, undefined, (progress) => {
+        forkProgress = { loaded: progress.loaded, total: progress.total };
+      });
+      const header: unknown = JSON.parse(new TextDecoder().decode(headerBytes));
       if (!isRecord(header)) throw new Error(m["editor.import.invalid"]());
       const dataUrl =
         typeof header.data_url === "string" && header.data_url !== ""
           ? header.data_url
           : r2TableDataUrl(dirName);
       // data_url 可能是相对路径（如 ./data.json）：按 header 地址解析
-      const dataRes = await fetch(new URL(dataUrl, headerUrl).toString());
-      if (!dataRes.ok) throw new Error(String(dataRes.status));
-      const data = (await dataRes.json()) as unknown;
+      const { bytes: dataBytes } = await fetchStream(
+        new URL(dataUrl, headerUrl).toString(),
+        undefined,
+        (progress) => {
+          forkProgress = { loaded: progress.loaded, total: progress.total };
+        }
+      );
+      const data: unknown = JSON.parse(new TextDecoder().decode(dataBytes));
       if (!Array.isArray(data)) throw new Error(m["editor.import.invalid"]());
       const validated = validateParts(header, data);
       if (validated === null) return;
@@ -275,6 +287,16 @@
           {busy ? m["editor.import.busy"]() : m["editor.import.apply"]()}
         </button>
       </div>
+      {#if busy}
+        <div class="mt-2">
+          <LoadingProgress
+            variant="compact"
+            message={m["editor.import.busy"]()}
+            progress={forkProgressView.determinate ? forkProgressView.percent : -1}
+            detail={progressDetail(forkProgress.loaded, forkProgress.total)}
+          />
+        </div>
+      {/if}
     {/if}
   </div>
 

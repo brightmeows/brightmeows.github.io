@@ -1119,7 +1119,8 @@
   <div class="p-8">
     <LoadingProgress
       title={m["table.loading.data_title"]()}
-      message={m["table.loading.header_request"]()}
+      message={model.loadMessage}
+      detail={model.loadDetail}
       progress={0}
       variant="indeterminate"
     />

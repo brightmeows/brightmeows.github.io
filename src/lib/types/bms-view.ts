@@ -40,7 +40,13 @@ export type ProgressCallback = (event: LoadProgressEvent) => void;
 /** 表加载状态 — discriminated union，每个变体仅携带该阶段相关字段 */
 export type TableLoadState =
   | { status: "waiting"; tableId: string }
-  | { status: "loading-header"; tableId: string; name: string }
+  | {
+      status: "loading-header";
+      tableId: string;
+      name: string;
+      bytesLoaded?: number;
+      bytesTotal?: number;
+    }
   | {
       status: "loading-data";
       tableId: string;

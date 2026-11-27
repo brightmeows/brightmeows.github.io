@@ -19,6 +19,7 @@ import { requestJson } from "./http";
 import { fetchSiteTableList } from "./table-list";
 
 import { m } from "#lib/paraglide/messages.js";
+import type { StreamProgress } from "#lib/utils/infra/fetch-stream.js";
 
 /**
  * 共享表接口的客户端封装（与 mirror-user-api 同构：契约在
@@ -118,7 +119,10 @@ export async function fetchSharedRemoved(): Promise<SharedRemovedEntry[]> {
  */
 export async function loadSharedTables(
   tablesJsonPath = "/bms/table/shared/tables.json",
-  options: { cacheBust?: boolean | undefined } = {}
+  options: {
+    cacheBust?: boolean | undefined;
+    onProgress?: ((progress: StreamProgress) => void) | undefined;
+  } = {}
 ): Promise<SharedTableItem[]> {
   const data = await fetchSiteTableList<SharedTableItem>(
     tablesJsonPath,

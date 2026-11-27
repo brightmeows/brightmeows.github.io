@@ -1,6 +1,5 @@
 <script lang="ts">
   import ArrowRight from "@lucide/svelte/icons/arrow-right";
-  import Check from "@lucide/svelte/icons/check";
   import Hourglass from "@lucide/svelte/icons/hourglass";
   import Search from "@lucide/svelte/icons/search";
   import TriangleAlert from "@lucide/svelte/icons/triangle-alert";
@@ -9,6 +8,7 @@
   import { SvelteMap } from "svelte/reactivity";
 
   import BmsSearchResult from "#lib/components/bms/BmsSearchResult.svelte";
+  import SearchIndexProgress from "#lib/components/bms/SearchIndexProgress.svelte";
   import PageHero from "#lib/components/layout/PageHero.svelte";
   import PageShell from "#lib/components/layout/PageShell.svelte";
   import EmptyState from "#lib/components/ui/EmptyState.svelte";
@@ -17,7 +17,6 @@
     btnSearchSubmit,
     inputSearchLg,
     spinnerLg,
-    spinnerMd,
   } from "#lib/constants/ui-classes.js";
   import { createEpochGuard, runTableLoad, waitingState } from "#lib/controllers/table-load.js";
   import type { CandidateEntry } from "#lib/data/api/bms-search.js";
@@ -142,7 +141,12 @@
         signal: abortController?.signal,
       },
       {
-        loadHeader: (signal) => loadTableHeader(tableId, signal),
+        loadHeader: (signal, onProgress) =>
+          loadTableHeader(
+            tableId,
+            signal,
+            onProgress ? (progress) => onProgress(progress.loaded, progress.total) : undefined
+          ),
         loadCharts: (signal, onProgress) =>
           loadTableDataWithProgress(tableId, keySet, currentSearchType, signal, onProgress),
         onParsed: (_tableId, name, symbol, charts) => {
@@ -297,31 +301,23 @@
       <kbd class="rounded bg-white-10 px-1.5 py-0.5 text-white-60">Enter</kbd>
       {m["search.help_rest"]()}
     </p>
+    {#if indexClient.hashPhase === "loading"}
+      <SearchIndexProgress
+        items={indexClient.hashProgress}
+        message={m["search.loading_hash_index"]()}
+        variant="inline"
+      />
+    {/if}
   </div>
 
   {#if indexClient.phase === "loading"}
     <!-- 索引加载进度 -->
-    <div class="p-8 text-center">
-      <Hourglass class="mx-auto mb-6 size-12 text-white-30" strokeWidth={1.5} aria-hidden="true" />
-      <p class="mb-2 text-white-80">{m["search.loading_index"]()}</p>
-      <p class="mb-6 text-[0.9rem] text-white-50">{m["search.loading_index_hint"]()}</p>
-      <div class="mx-auto max-w-xs space-y-2 text-left">
-        {#each indexClient.progress as item (item.name)}
-          <div class="flex items-center gap-3 text-[0.9rem]">
-            {#if item.status === "loading"}
-              <div class={spinnerMd}></div>
-              <span class="text-white-60">{item.name}.json</span>
-            {:else if item.status === "done"}
-              <Check class="size-4 shrink-0 text-success" aria-hidden="true" />
-              <span class="text-white-80">{item.name}.json</span>
-            {:else}
-              <X class="size-4 shrink-0 text-error" aria-hidden="true" />
-              <span class="text-white-50">{item.name}.json</span>
-            {/if}
-          </div>
-        {/each}
-      </div>
-    </div>
+    <SearchIndexProgress
+      items={indexClient.progress}
+      message={m["search.loading_index_summary"]()}
+      title={m["search.loading_index"]()}
+      hint={m["search.loading_index_hint"]()}
+    />
   {:else if indexClient.phase === "error"}
     <!-- 索引加载失败 -->
     <div class="p-12 text-center">

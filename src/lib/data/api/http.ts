@@ -2,6 +2,7 @@ import { m } from "#lib/paraglide/messages.js";
 import type { AsyncState } from "#lib/types/common.js";
 import { messageInputs, translateMessage } from "#lib/utils/i18n/i18n.js";
 import { errorMessageOf } from "#lib/utils/infra/error.js";
+import { readResponseBytes, type StreamProgress } from "#lib/utils/infra/fetch-stream.js";
 import { isRecord } from "#lib/utils/infra/object.js";
 
 /**
@@ -33,7 +34,11 @@ export function toFailure(error: unknown): AsyncFailure {
 
 /** 请求并解析 JSON 响应（unknown 返回，形状窄化交给 mirror/api 的窄化函数）；
  * 非 2xx 时翻译错误封套（`{error, code, params?}`）后抛错。 */
-export async function requestJson(path: string, init?: RequestInit): Promise<unknown> {
+export async function requestJson(
+  path: string,
+  init?: RequestInit,
+  onProgress?: (progress: StreamProgress) => void
+): Promise<unknown> {
   const headers = new Headers(init?.headers);
   if (!headers.has("content-type")) {
     headers.set("content-type", "application/json");
@@ -69,6 +74,10 @@ export async function requestJson(path: string, init?: RequestInit): Promise<unk
       throw new ApiUnavailableError(message);
     }
     throw new Error(message);
+  }
+  if (onProgress) {
+    const { bytes } = await readResponseBytes(response, onProgress);
+    return JSON.parse(new TextDecoder().decode(bytes));
   }
   return await response.json();
 }

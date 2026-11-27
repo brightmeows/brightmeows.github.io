@@ -11,30 +11,39 @@ export interface StreamProgress {
   total: number;
 }
 
-/** 流式拉取：携带进度回调，返回响应与完整字节（无 body 或无回调时一次读全）。 */
-export async function fetchStream(
-  url: string,
-  signal?: AbortSignal,
+/** HTTP 非 2xx；保留状态码供调用方翻译文案。 */
+export class FetchStreamError extends Error {
+  readonly status: number;
+
+  constructor(status: number, statusText: string) {
+    super(`HTTP ${status}${statusText ? ` ${statusText}` : ""}`);
+    this.name = "FetchStreamError";
+    this.status = status;
+  }
+}
+
+export interface ReadResponseResult {
+  bytes: Uint8Array;
+  /** Content-Length 解析值，0 表示缺失或非法 */
+  total: number;
+}
+
+/** 读取响应体并逐 chunk 回调；已构造的 Response 由调用方决定如何处理。 */
+export async function readResponseBytes(
+  response: Response,
   onProgress?: (progress: StreamProgress) => void
-): Promise<{ response: Response; bytes: Uint8Array }> {
-  const response = await fetch(url, { signal: signal ?? null, redirect: "follow" });
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+): Promise<ReadResponseResult> {
+  const contentLength = response.headers.get("Content-Length");
+  const parsedLength = contentLength === null ? 0 : Number.parseInt(contentLength, 10);
+  const total = Number.isFinite(parsedLength) && parsedLength > 0 ? parsedLength : 0;
 
   if (!onProgress || !response.body) {
-    const text = await response.text();
-    const bytes = new TextEncoder().encode(text);
-    return {
-      response: new Response(bytes, {
-        status: response.status,
-        statusText: response.statusText,
-        headers: response.headers,
-      }),
-      bytes,
-    };
+    const buffer = await response.arrayBuffer();
+    const bytes = new Uint8Array(buffer);
+    onProgress?.({ loaded: bytes.length, total });
+    return { bytes, total };
   }
 
-  const contentLength = response.headers.get("Content-Length");
-  const total = contentLength ? parseInt(contentLength, 10) : 0;
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
   let loaded = 0;
@@ -55,12 +64,27 @@ export async function fetchStream(
     pos += chunk.length;
   }
 
+  return { bytes: combined, total };
+}
+
+/** 流式拉取：携带进度回调，返回响应与完整字节（无 body 或无回调时一次读全）。 */
+export async function fetchStream(
+  url: string,
+  signal?: AbortSignal,
+  onProgress?: (progress: StreamProgress) => void
+): Promise<{ response: Response; bytes: Uint8Array; total: number }> {
+  const response = await fetch(url, { signal: signal ?? null, redirect: "follow" });
+  if (!response.ok) throw new FetchStreamError(response.status, response.statusText);
+
+  const { bytes, total } = await readResponseBytes(response, onProgress);
+  const body = new Uint8Array(bytes).buffer;
   return {
-    response: new Response(combined, {
+    response: new Response(body, {
       status: response.status,
       statusText: response.statusText,
       headers: response.headers,
     }),
-    bytes: combined,
+    bytes,
+    total,
   };
 }

@@ -6,17 +6,20 @@
   import Undo2 from "@lucide/svelte/icons/undo-2";
   import X from "@lucide/svelte/icons/x";
 
+  import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
   import { btnGhost, inputInline } from "#lib/constants/ui-classes.js";
   import type { AdminOverview, TrashEntry } from "#lib/data/api/mirror-admin-api.js";
   import { m } from "#lib/paraglide/messages.js";
   import { getLocale } from "#lib/paraglide/runtime.js";
   import type { MirrorOverviewState } from "#lib/types/bms-view.js";
   import { formatAbsolute, formatRelativeTime } from "#lib/utils/infra/date.js";
+  import { progressDetail, progressView } from "#lib/utils/infra/progress.js";
 
   interface Props {
     overviewState: MirrorOverviewState;
     error: string | null;
     overview: AdminOverview | null;
+    progress?: { loaded: number; total: number } | undefined;
     busy: boolean;
     onretry: () => void;
     onreplaceadd: (from: string, to: string) => Promise<boolean>;
@@ -39,6 +42,7 @@
     overviewState,
     error,
     overview,
+    progress = { loaded: 0, total: 0 },
     busy,
     onretry,
     onreplaceadd,
@@ -46,6 +50,8 @@
     onenable,
     onrestore,
   }: Props = $props();
+
+  const progressViewState = $derived(progressView(progress.loaded, progress.total));
 
   let replaceFrom = $state("");
   let replaceTo = $state("");
@@ -63,7 +69,12 @@
 
 <div>
   {#if overview === null && (overviewState === "idle" || overviewState === "loading")}
-    <div class="text-[0.95rem] text-white-70">{m["common.loading_data"]()}</div>
+    <LoadingProgress
+      variant="compact"
+      message={m["common.loading_data"]()}
+      progress={progressViewState.determinate ? progressViewState.percent : -1}
+      detail={progressDetail(progress.loaded, progress.total)}
+    />
   {:else if overview === null}
     <div class="flex flex-wrap items-center gap-3 text-[0.95rem] text-error">
       <span>{error ?? m["common.load_failed"]()}</span>

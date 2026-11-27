@@ -55,6 +55,7 @@
   import type { AsyncState } from "#lib/types/common.js";
   import type { JsonPreviewHandle, TocItem } from "#lib/types/ui.js";
   import { errorMessageOf } from "#lib/utils/infra/error.js";
+  import { progressDetail, progressView } from "#lib/utils/infra/progress.js";
   /**
    * 镜像列表页规格：登录入口在顶栏（全局共享登录态 store），配额剩余在列表页
    * 操作区（与“我删除的表”同行，写后实时刷新）。hero 动作行承载复制清单、
@@ -96,6 +97,7 @@
 
   // 清单三态与数据（数据另行持有：治理动作会做本地即时变更再重拉）
   let listState = $state<AsyncState<MirrorTableItem[]>>({ phase: "loading" });
+  let listProgress = $state({ loaded: 0, total: 0 });
   let tables = $state<MirrorTableItem[]>([]);
   let selectedMap = $state<Record<string, boolean>>({});
   let searchQuery = $state("");
@@ -135,10 +137,12 @@
 
   // ---- 管理交互（仅 ADMIN_LOGIN 角色可见，服务端权限不变） ----
   let admin = $state<MirrorAdminState>(initialMirrorAdminState());
+  let adminProgress = $state({ loaded: 0, total: 0 });
   let adminPanelOpen = $state(false);
   let currentHash = $state("");
 
   const isAdmin = $derived(auth.status === "ready" && auth.user?.role === "admin");
+  const listProgressView = $derived(progressView(listProgress.loaded, listProgress.total));
 
   // 标签编辑建议：现有值去重排序，新标签序号取现有最大值加一
   const tag1Options = $derived(collectTagValues(tables, "tag1"));
@@ -203,12 +207,23 @@
   });
 
   function deps(): MirrorAdminDeps {
-    return { fetchOverview: fetchAdminOverview };
+    return {
+      fetchOverview: () =>
+        fetchAdminOverview((progress) => {
+          adminProgress = progress;
+        }),
+    };
   }
 
   async function loadTables(cacheBust = false): Promise<void> {
+    listProgress = { loaded: 0, total: 0 };
     try {
-      tables = await loadMirrorTables(tablesJsonPath, baseRoute, { cacheBust });
+      tables = await loadMirrorTables(tablesJsonPath, baseRoute, {
+        cacheBust,
+        onProgress: (progress) => {
+          listProgress = progress;
+        },
+      });
       listState = { phase: "ready", data: tables };
     } catch (e) {
       listState = toFailure(e);
@@ -221,6 +236,7 @@
   }
 
   async function loadOverview(force: boolean): Promise<void> {
+    adminProgress = { loaded: 0, total: 0 };
     admin = await loadOverviewIfNeeded(admin, deps(), force);
   }
 
@@ -586,6 +602,7 @@
               overviewState={admin.overviewState}
               error={admin.overviewError}
               overview={admin.overview}
+              progress={adminProgress}
               busy={admin.busy}
               onretry={() => void loadOverview(true)}
               onreplaceadd={handleReplaceAdd}
@@ -599,7 +616,9 @@
 
       {#if listState.phase === "loading"}
         <LoadingProgress
-          variant="indeterminate"
+          variant={listProgressView.determinate ? "determinate" : "indeterminate"}
+          progress={listProgressView.percent}
+          detail={progressDetail(listProgress.loaded, listProgress.total)}
           message={m["mirror.loading"]()}
           title={pageTitle}
         />

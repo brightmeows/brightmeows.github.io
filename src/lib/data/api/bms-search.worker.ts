@@ -28,6 +28,7 @@ import type {
   SearchIndex,
   TableDirMap,
   TextIndexBundle,
+  WorkerIndexProgress,
   WorkerMessage,
   WorkerRequest,
   WorkerSearchRequest,
@@ -43,6 +44,7 @@ import {
 import type { IndexGroup } from "./bms-search-idb";
 
 import { R2_INDEXES_BASE } from "#lib/constants/r2.js";
+import { fetchStream } from "#lib/utils/infra/fetch-stream.js";
 import { sha256Hex } from "#lib/utils/infra/hash.js";
 
 // ---- state ----
@@ -64,6 +66,18 @@ const MANIFEST_URL = `${R2_INDEXES_BASE}/manifest.json`;
 
 function post(out: WorkerMessage): void {
   self.postMessage(out);
+}
+
+type IndexProgressUpdate = Omit<WorkerIndexProgress, "type" | "name" | "current" | "total">;
+type IndexProgressName = "manifest" | CompactSearchIndexName;
+
+function postIndexProgress(
+  name: IndexProgressName,
+  current: number,
+  total: number,
+  update: IndexProgressUpdate
+): void {
+  post({ type: "index-progress", name, current, total, ...update });
 }
 
 function postReady(
@@ -92,14 +106,33 @@ function postHashReady(error?: string, stale = false, updatedAt?: string): void 
 
 async function fetchManifest(): Promise<CompactSearchIndexManifest | null> {
   try {
-    const res = await fetch(MANIFEST_URL);
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`);
-    }
-    const parsed = parseCompactSearchIndexManifest(await res.text());
+    const { bytes, total } = await fetchStream(MANIFEST_URL, undefined, (progress) => {
+      postIndexProgress("manifest", 0, 3, {
+        status: "loading",
+        phase: "downloading",
+        loaded: progress.loaded,
+        sizeBytes: 0,
+        totalBytes: progress.total,
+      });
+    });
+    postIndexProgress("manifest", 0, 3, {
+      status: "loading",
+      phase: "parsing",
+      loaded: bytes.length,
+      sizeBytes: bytes.length,
+      totalBytes: total,
+    });
+    const parsed = parseCompactSearchIndexManifest(new TextDecoder().decode(bytes));
     if (parsed === null) {
       throw new Error("invalid manifest");
     }
+    postIndexProgress("manifest", 0, 3, {
+      status: "done",
+      phase: "done",
+      loaded: bytes.length,
+      sizeBytes: bytes.length,
+      totalBytes: total,
+    });
     return parsed;
   } catch (error) {
     console.error("[worker] 加载搜索索引 manifest 失败:", error);
@@ -130,8 +163,22 @@ async function ensureManifest(group: IndexGroup): Promise<EnsuredManifest | null
     manifest = cached;
     manifestFromCache = true;
     tableDirs = compactIndexTableDirs(cached);
+    postIndexProgress("manifest", 0, 3, {
+      status: "done",
+      phase: "cached",
+      loaded: 0,
+      sizeBytes: 0,
+      totalBytes: 0,
+    });
     return { manifest: cached, fromCache: true, stale: true };
   }
+  postIndexProgress("manifest", 0, 3, {
+    status: "error",
+    phase: "downloading",
+    loaded: 0,
+    sizeBytes: 0,
+    totalBytes: 0,
+  });
   return null;
 }
 
@@ -139,6 +186,8 @@ interface LoadedIndexFile {
   index: SearchIndex;
   usedFallback: boolean;
 }
+
+type ReportIndexProgress = (update: IndexProgressUpdate) => void;
 
 /**
  * 加载单个索引文件：文件哈希与缓存一致时直接用缓存，否则下载并按 manifest
@@ -148,10 +197,18 @@ async function loadIndexFile(
   name: CompactSearchIndexName,
   current: CompactSearchIndexManifest,
   cachedManifest: CompactSearchIndexManifest | null,
-  cachedIndex: SearchIndex | undefined
+  cachedIndex: SearchIndex | undefined,
+  report: ReportIndexProgress
 ): Promise<LoadedIndexFile | null> {
   const expected = current.files[name];
   if (isIndexFileCached(name, current, cachedManifest, cachedIndex) && cachedIndex !== undefined) {
+    report({
+      status: "done",
+      phase: "cached",
+      loaded: expected.bytes,
+      sizeBytes: expected.bytes,
+      totalBytes: expected.bytes,
+    });
     return { index: cachedIndex, usedFallback: false };
   }
 
@@ -161,20 +218,52 @@ async function loadIndexFile(
       // 首次走浏览器/边缘缓存；哈希不匹配时用 manifest 哈希做 cache-busting 重试，
       // 避免旧缓存文件在重试时再次命中。
       const target = attempt === 0 ? url : `${url}?v=${expected.hash}`;
-      const res = await fetch(target);
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-      const bytes = await res.arrayBuffer();
+      report({
+        status: "loading",
+        phase: "downloading",
+        loaded: 0,
+        sizeBytes: expected.bytes,
+        totalBytes: 0,
+      });
+      const { bytes, total } = await fetchStream(target, undefined, (progress) => {
+        report({
+          status: "loading",
+          phase: "downloading",
+          loaded: progress.loaded,
+          sizeBytes: expected.bytes,
+          totalBytes: progress.total,
+        });
+      });
+      report({
+        status: "loading",
+        phase: "verifying",
+        loaded: bytes.length,
+        sizeBytes: expected.bytes,
+        totalBytes: total,
+      });
       const actual = await sha256Hex(bytes);
       if (actual !== expected.hash) {
         throw new Error(`SHA-256 mismatch: ${name}`);
       }
+      report({
+        status: "loading",
+        phase: "parsing",
+        loaded: bytes.length,
+        sizeBytes: expected.bytes,
+        totalBytes: total,
+      });
       const raw: unknown = JSON.parse(new TextDecoder().decode(bytes));
       const index = parseCompactSearchIndex(raw);
       if (index === null) {
         throw new Error(`invalid index payload: ${name}`);
       }
+      report({
+        status: "done",
+        phase: "done",
+        loaded: bytes.length,
+        sizeBytes: expected.bytes,
+        totalBytes: total,
+      });
       return { index, usedFallback: false };
     } catch (error) {
       if (attempt === 0) {
@@ -183,8 +272,22 @@ async function loadIndexFile(
       }
       console.error(`[worker] 加载索引 ${name} 失败:`, error);
       if (cachedIndex !== undefined) {
+        report({
+          status: "done",
+          phase: "cached",
+          loaded: expected.bytes,
+          sizeBytes: expected.bytes,
+          totalBytes: expected.bytes,
+        });
         return { index: cachedIndex, usedFallback: true };
       }
+      report({
+        status: "error",
+        phase: "downloading",
+        loaded: 0,
+        sizeBytes: expected.bytes,
+        totalBytes: 0,
+      });
       return null;
     }
   }
@@ -204,36 +307,34 @@ async function loadGroup(
   cachedManifest: CompactSearchIndexManifest | null,
   current: CompactSearchIndexManifest
 ): Promise<LoadedGroup | null> {
+  const total = names.length;
   const allCached = names.every((name) =>
     isIndexFileCached(name, current, cachedManifest, cachedByName.get(name))
   );
   if (allCached) {
     const indices: SearchIndex[] = [];
-    for (const name of names) {
+    for (const [i, name] of names.entries()) {
       const cached = cachedByName.get(name);
       if (cached === undefined) {
         return null;
       }
       indices.push(cached);
+      const size = current.files[name].bytes;
+      postIndexProgress(name, i, total, {
+        status: "done",
+        phase: "cached",
+        loaded: size,
+        sizeBytes: size,
+        totalBytes: size,
+      });
     }
     return { indices, stale: false, usedFallback: false };
   }
 
-  const total = names.length;
-  for (const [i, name] of names.entries()) {
-    post({ type: "index-progress", name, status: "loading", current: i, total });
-  }
   const results = await Promise.all(
     names.map(async (name, i) => {
-      const result = await loadIndexFile(name, current, cachedManifest, cachedByName.get(name));
-      post({
-        type: "index-progress",
-        name,
-        status: result === null ? "error" : "done",
-        current: i + 1,
-        total,
-      });
-      return result;
+      const report = (update: IndexProgressUpdate) => postIndexProgress(name, i, total, update);
+      return await loadIndexFile(name, current, cachedManifest, cachedByName.get(name), report);
     })
   );
 

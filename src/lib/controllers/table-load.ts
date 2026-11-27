@@ -22,7 +22,15 @@ export function waitingState(tableId: string): TableLoadState {
 }
 
 /** header 拉取中；表名先以 id 占位，拿到 header 后覆盖。 */
-export function loadingHeaderState(tableId: string, name: string): TableLoadState {
+export function loadingHeaderState(
+  tableId: string,
+  name: string,
+  bytesLoaded = 0,
+  bytesTotal = 0
+): TableLoadState {
+  if (bytesLoaded > 0 || bytesTotal > 0) {
+    return { status: "loading-header", tableId, name, bytesLoaded, bytesTotal };
+  }
   return { status: "loading-header", tableId, name };
 }
 
@@ -123,7 +131,8 @@ export interface TableLoadIo {
 export interface TableLoadTasks {
   /** header 拉取（loadTableHeader 的表绑定；永不 reject，缺失返回 null）。 */
   loadHeader: (
-    signal: AbortSignal | undefined
+    signal: AbortSignal | undefined,
+    onProgress?: (loaded: number, total: number) => void
   ) => Promise<{ name: string; symbol: string | undefined } | null>;
   /** 数据段取数：单搜按 keySet 过滤，批量取全量。onProgress 已代际守卫并回写进度。 */
   loadCharts: (
@@ -155,7 +164,13 @@ export async function runTableLoad(
 ): Promise<void> {
   io.setState(tableId, loadingHeaderState(tableId, tableId));
   try {
-    const header = await tasks.loadHeader(io.signal);
+    const header = await tasks.loadHeader(io.signal, (loaded, total) => {
+      if (!io.isEpochValid()) return;
+      io.setState(
+        tableId,
+        loadingHeaderState(tableId, tableDisplayName(io.getState(tableId), tableId), loaded, total)
+      );
+    });
     if (!io.isEpochValid()) return;
 
     const name = header?.name ?? tableId;

@@ -169,9 +169,16 @@
             {loadState.name}
           </a>
           <span class="shrink-0 text-[0.8rem] text-white-40">
-            {loadState.status === "loading-header"
-              ? m["search.loading_header"]()
-              : m["search.parsing"]()}
+            {#if loadState.status === "loading-header"}
+              {loadState.bytesLoaded !== undefined && loadState.bytesLoaded > 0
+                ? formatBytes(loadState.bytesLoaded) +
+                  (loadState.bytesTotal !== undefined && loadState.bytesTotal > 0
+                    ? ` / ${formatBytes(loadState.bytesTotal)}`
+                    : "")
+                : m["search.loading_header"]()}
+            {:else}
+              {m["search.parsing"]()}
+            {/if}
           </span>
         </div>
       {:else if loadState?.status === "error"}
