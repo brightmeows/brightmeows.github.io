@@ -55,6 +55,8 @@ async function fetchWithProgress(url: string, onProgress?: ProgressCallback): Pr
             phase: "downloading",
             message: m["progress.downloading"](),
             detail: `${formatBytes(loaded)} / ${formatBytes(total)}`,
+            loaded,
+            total,
           });
         } else {
           onProgress({
@@ -62,6 +64,8 @@ async function fetchWithProgress(url: string, onProgress?: ProgressCallback): Pr
             phase: "downloading",
             message: m["progress.downloading"](),
             detail: m["progress.downloaded"]({ bytes: formatBytes(loaded) }),
+            loaded,
+            total: 0,
           });
         }
       }
@@ -185,6 +189,8 @@ export async function fetchBmsTableData(
                   total > 0
                     ? `${formatBytes(loaded)} / ${formatBytes(total)}`
                     : m["progress.downloaded"]({ bytes: formatBytes(loaded) }),
+                loaded,
+                total,
               });
             }
           : undefined

@@ -47,6 +47,7 @@
   import type { EditorNotice } from "#lib/controllers/editor.js";
   import { m } from "#lib/paraglide/messages.js";
   import type { JsonPreviewHandle } from "#lib/types/ui.js";
+  import { progressView } from "#lib/utils/infra/progress.js";
   import { validateUrl } from "#lib/utils/infra/url.js";
   import { createDragList } from "#lib/utils/ui/dnd-list.svelte.js";
   import {
@@ -91,8 +92,9 @@
     disabled?: boolean;
     loadState?: "idle" | "loading" | "loaded" | "error";
     loadMessage?: string;
-    loadPercent?: number;
     loadDetail?: string;
+    loadLoaded?: number;
+    loadTotal?: number;
     dataError?: string | null;
     onRetry?: (() => void | Promise<void>) | undefined;
     onChange?: (() => void) | undefined;
@@ -122,8 +124,9 @@
     disabled = false,
     loadState = "loaded",
     loadMessage = "",
-    loadPercent = 0,
     loadDetail = "",
+    loadLoaded = 0,
+    loadTotal = 0,
     dataError = null,
     onRetry,
     onChange,
@@ -134,6 +137,7 @@
     staged = $bindable(new Set<number>()),
     stagedEpoch = 0,
   }: Props = $props();
+  const loadProgressView = $derived(progressView(loadLoaded, loadTotal));
 
   interface LevelNavItem {
     level: string;
@@ -809,9 +813,9 @@
     <LoadingProgress
       title={m["table.loading.charts"]()}
       message={loadMessage}
-      progress={loadPercent}
+      progress={loadProgressView.percent}
       detail={loadDetail}
-      variant="determinate"
+      variant={loadProgressView.determinate ? "determinate" : "indeterminate"}
     />
   {:else if loadState === "error"}
     <div class="py-8 text-center">

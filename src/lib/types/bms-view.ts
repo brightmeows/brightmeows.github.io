@@ -33,6 +33,8 @@ export interface LoadProgressEvent {
   phase: "connecting" | "downloading" | "parsing" | "processing" | "done";
   message: string;
   detail?: string;
+  loaded?: number;
+  total?: number;
 }
 
 export type ProgressCallback = (event: LoadProgressEvent) => void;

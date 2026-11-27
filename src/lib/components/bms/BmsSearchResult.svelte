@@ -21,6 +21,7 @@
   import { m } from "#lib/paraglide/messages.js";
   import type { TableLoadState } from "#lib/types/bms-view.js";
   import { formatBytes } from "#lib/utils/infra/format.js";
+  import { progressView } from "#lib/utils/infra/progress.js";
   import { validateUrl } from "#lib/utils/infra/url.js";
   import { clipboardFieldFeedback } from "#lib/utils/ui/clipboard.svelte.js";
 
@@ -141,6 +142,7 @@
           {/if}
         </div>
       {:else if loadState?.status === "loading-data"}
+        {@const dataProgress = progressView(loadState.bytesLoaded, loadState.bytesTotal)}
         <!-- 加载中（带进度）：显示进度条 -->
         {@const displayName = loadState.name}
         <div class="card-dark flex flex-col gap-2">
@@ -156,9 +158,16 @@
           </div>
           <div class="flex items-center gap-3">
             <div class="progress-track">
-              <div class="progress-fill" style="width:{loadState.progress}%"></div>
+              <div
+                class="h-full rounded-glass-sm {dataProgress.determinate
+                  ? 'progress-fill'
+                  : 'shimmer-bar'}"
+                style="width:{dataProgress.determinate ? dataProgress.percent : 100}%"
+              ></div>
             </div>
-            <span class="shrink-0 text-[0.8rem] text-white-50">{loadState.progress}%</span>
+            <span class="shrink-0 text-[0.8rem] text-white-50">
+              {dataProgress.determinate ? `${dataProgress.percent}%` : m["progress.downloading"]()}
+            </span>
           </div>
         </div>
       {:else if loadState?.status === "loading-header" || loadState?.status === "parsing"}

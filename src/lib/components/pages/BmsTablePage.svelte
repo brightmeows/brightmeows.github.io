@@ -1219,8 +1219,9 @@
     disabled={isEdit ? model.busy || !dataReady : false}
     loadState={model.dataLoadState}
     loadMessage={model.loadMessage}
-    loadPercent={model.loadPercent}
     loadDetail={model.loadDetail}
+    loadLoaded={model.loadBytes.loaded}
+    loadTotal={model.loadBytes.total}
     dataError={model.dataError}
     onRetry={model.retryData}
     onChange={model.markDirty}
