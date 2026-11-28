@@ -32,7 +32,9 @@
   let displayPercent = $derived(
     isIndeterminate ? 0 : Math.min(100, Math.max(0, Math.round(progress)))
   );
-  let ariaValueText = $derived(detail ? `${message} ${detail}` : message);
+  let ariaValueText = $derived(
+    isIndeterminate ? (detail ? `${message} ${detail}` : message) : undefined
+  );
 </script>
 
 <style>

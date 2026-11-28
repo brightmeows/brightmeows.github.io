@@ -72,6 +72,7 @@
       }
 
       const { response, bytes } = await fetchStream(levelRefUrl, undefined, (progress) => {
+        if (token !== requestToken) return;
         loadProgress = { loaded: progress.loaded, total: progress.total };
       });
       if (token !== requestToken) return;
@@ -97,6 +98,7 @@
         throw new Error(`HTTP ${response.status} ${response.statusText}`);
       }
     } catch (err) {
+      if (token !== requestToken) return;
       if (err instanceof FetchStreamError && err.status === 404) {
         hasData = false;
         loadState = "not-found";

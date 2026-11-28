@@ -70,6 +70,15 @@ describe("aggregateDownloadProgress", () => {
     ).toEqual({ loaded: 15, total: 0, sizeBytes: 30 });
   });
 
+  it("makes the aggregate indeterminate if any file exceeds its total", () => {
+    expect(
+      aggregateDownloadProgress([
+        { loaded: 30, totalBytes: 20, sizeBytes: 20 },
+        { loaded: 5, totalBytes: 10, sizeBytes: 10 },
+      ])
+    ).toEqual({ loaded: 35, total: 0, sizeBytes: 30 });
+  });
+
   it("returns an unknown total for an empty group", () => {
     expect(aggregateDownloadProgress([])).toEqual({ loaded: 0, total: 0, sizeBytes: 0 });
   });

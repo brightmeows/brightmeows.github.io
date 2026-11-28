@@ -65,8 +65,8 @@ export function progressDetail(loaded: number, total: number): string {
 /**
  * 聚合一组文件的下载量。
  *
- * 任一文件没有可用总量时聚合总量置 0，避免把未知文件漏掉后假装确定；
- * sizeBytes 始终累加，供无总量时显示已知文件大小。
+ * 任一文件没有可用总量或已加载量超过声明总量时聚合总量置 0，避免把未知
+ * 文件漏掉后假装确定；sizeBytes 始终累加，供无总量时显示已知文件大小。
  */
 export function aggregateDownloadProgress(
   items: readonly ProgressItemBytes[]
@@ -78,8 +78,9 @@ export function aggregateDownloadProgress(
   for (const item of items) {
     loaded += safeBytes(item.loaded);
     sizeBytes += safeBytes(item.sizeBytes);
-    if (safeBytes(item.totalBytes) > 0) {
-      total += safeBytes(item.totalBytes);
+    const itemTotal = safeBytes(item.totalBytes);
+    if (itemTotal > 0 && safeBytes(item.loaded) <= itemTotal) {
+      total += itemTotal;
     } else {
       allTotalsKnown = false;
     }

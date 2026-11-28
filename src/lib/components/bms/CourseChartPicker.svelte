@@ -217,6 +217,17 @@
     {disabled}
   />
 
+  {#if !sourcesLoaded}
+    <div class="mb-2">
+      <LoadingProgress
+        variant="compact"
+        message={m["editor.entry.import.loading"]()}
+        progress={sourcesProgressView.determinate ? sourcesProgressView.percent : -1}
+        detail={progressDetail(sourcesProgress.loaded, sourcesProgress.total)}
+      />
+    </div>
+  {/if}
+
   {#if loading}
     <LoadingProgress
       variant="compact"
@@ -229,12 +240,7 @@
       {m["editor.entry.import.failed"]({ detail: loadError })}
     </p>
   {:else if !sourcesLoaded && sourceValue !== "current"}
-    <LoadingProgress
-      variant="compact"
-      message={m["editor.entry.import.loading"]()}
-      progress={sourcesProgressView.determinate ? sourcesProgressView.percent : -1}
-      detail={progressDetail(sourcesProgress.loaded, sourcesProgress.total)}
-    />
+    <p class="text-[0.85rem] text-white-50">{m["editor.entry.import.loading"]()}</p>
   {:else if filtered.length === 0}
     <p class="text-[0.85rem] text-white-50">{m["editor.course.picker_empty"]()}</p>
   {:else}
