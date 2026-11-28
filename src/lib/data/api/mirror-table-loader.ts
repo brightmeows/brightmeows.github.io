@@ -3,11 +3,14 @@ import type { MirrorTableItem } from "@brightmeows/mirror/types";
 import { fetchSiteTableList } from "./table-list";
 
 import { m } from "#lib/paraglide/messages.js";
+import type { StreamProgress } from "#lib/utils/infra/fetch-stream.js";
 
 /** 清单加载选项。 */
 export interface LoadMirrorTablesOptions {
   /** 附加时间戳查询参数穿透边缘缓存（管理操作后使用；访客保持默认缓存）。 */
   cacheBust?: boolean | undefined;
+  /** 清单下载进度；无 Content-Length 时 total 为 0。 */
+  onProgress?: ((progress: StreamProgress) => void) | undefined;
 }
 
 /**

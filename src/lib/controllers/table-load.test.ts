@@ -29,6 +29,13 @@ describe("状态构造器", () => {
       tableId: "t",
       name: "名",
     });
+    expect(loadingHeaderState("t", "名", 5, 10)).toEqual({
+      status: "loading-header",
+      tableId: "t",
+      name: "名",
+      bytesLoaded: 5,
+      bytesTotal: 10,
+    });
     expect(loadingDataState("t", "名", 40, 4, 10)).toEqual({
       status: "loading-data",
       tableId: "t",

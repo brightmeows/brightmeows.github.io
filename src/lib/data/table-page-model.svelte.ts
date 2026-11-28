@@ -555,14 +555,14 @@ export function createTableModel(input: TableModelInput) {
     get dataFetchUrl() {
       return draftDataActive ? null : loader.dataFetchUrl;
     },
-    get loadPercent() {
-      return loader.loadPercent;
-    },
     get loadMessage() {
       return loader.loadMessage;
     },
     get loadDetail() {
       return loader.loadDetail;
+    },
+    get loadBytes() {
+      return loader.loadBytes;
     },
     get ready() {
       return ready;

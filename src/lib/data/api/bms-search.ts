@@ -8,6 +8,7 @@ import type {
 import { r2TableHeaderUrl, r2TableDataUrl } from "#lib/constants/r2.js";
 import { m } from "#lib/paraglide/messages.js";
 import { fetchStream } from "#lib/utils/infra/fetch-stream.js";
+import type { StreamProgress } from "#lib/utils/infra/fetch-stream.js";
 import { isRecord } from "#lib/utils/infra/object.js";
 
 /** 搜索索引类型：term 到数字表 ID 数组。 */
@@ -86,8 +87,16 @@ export type WorkerRequest = WorkerSearchRequest | WorkerLoadHashRequest;
 /** Worker → 主线程：索引加载进度 */
 export interface WorkerIndexProgress {
   type: "index-progress";
-  name: string;
+  name: "manifest" | CompactSearchIndexName;
   status: "loading" | "done" | "error";
+  /** 下载、校验、解析或缓存命中；status 为 done 时可省略。 */
+  phase?: "downloading" | "verifying" | "parsing" | "cached" | "done" | undefined;
+  /** 本次网络已下载字节；缓存命中时为已知文件大小。 */
+  loaded?: number | undefined;
+  /** manifest 声明的文件大小，作为无响应头时的大小标签。 */
+  sizeBytes?: number | undefined;
+  /** 响应 Content-Length；0 或缺失表示总量未知。 */
+  totalBytes?: number | undefined;
   /** Worker 发送但页面侧未消费，保留用于调试 */
   current: number;
   /** Worker 发送但页面侧未消费，保留用于调试 */
@@ -263,12 +272,12 @@ export async function loadTableDataWithProgress(
 /** 加载表的 header.json，返回表名和 symbol；表不存在时返回 null */
 export async function loadTableHeader(
   tableId: string,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  onProgress?: (progress: StreamProgress) => void
 ): Promise<{ name: string; symbol: string | undefined } | null> {
   try {
-    const headerRaw = await fetchJson(r2TableHeaderUrl(tableId), {
-      signal: signal ?? null,
-    });
+    const { bytes } = await fetchStream(r2TableHeaderUrl(tableId), signal, onProgress);
+    const headerRaw: unknown = JSON.parse(new TextDecoder().decode(bytes));
     const name =
       isRecord(headerRaw) && typeof headerRaw.name === "string" ? headerRaw.name : tableId;
     const symbol =
@@ -277,10 +286,4 @@ export async function loadTableHeader(
   } catch {
     return null;
   }
-}
-
-async function fetchJson(url: string, init?: RequestInit): Promise<unknown> {
-  const res = await fetch(url, init);
-  if (!res.ok) throw new Error(m["search.load_url_failed"]({ url, status: res.status }));
-  return await res.json();
 }

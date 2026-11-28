@@ -41,16 +41,18 @@ export function createTableLoader(deps: TableLoaderDeps) {
   let dataError = $state<string | null>(null);
   let dataSourceUrl = $state<string | null>(null);
   let dataFetchUrl = $state<string | null>(null);
-  let loadPercent = $state(0);
   let loadMessage = $state<string>(m["editor.frame.loading"]());
   let loadDetail = $state("");
+  let loadLoaded = $state(0);
+  let loadTotal = $state(0);
 
   const ready = $derived.by(() => headerLoadState === "loaded" && dataLoadState === "loaded");
 
   const progressCallback: ProgressCallback = (event) => {
-    loadPercent = event.percent;
     loadMessage = event.message;
     loadDetail = event.detail ?? "";
+    if (event.loaded !== undefined) loadLoaded = event.loaded;
+    if (event.total !== undefined) loadTotal = event.total;
   };
 
   async function loadHeader(): Promise<void> {
@@ -61,9 +63,10 @@ export function createTableLoader(deps: TableLoaderDeps) {
     }
     headerLoadState = "loading";
     headerError = null;
-    loadPercent = 0;
     loadMessage = m["editor.frame.loading"]();
     loadDetail = "";
+    loadLoaded = 0;
+    loadTotal = 0;
     deps.initBaseline();
     try {
       const header = await fetchBmsHeader(headerUrl, progressCallback);
@@ -92,9 +95,10 @@ export function createTableLoader(deps: TableLoaderDeps) {
     dataError = null;
     dataFetchUrl = null;
     deps.setEntries([]);
-    loadPercent = 0;
     loadMessage = m["table.loading.charts"]();
     loadDetail = "";
+    loadLoaded = 0;
+    loadTotal = 0;
     try {
       const result = await fetchBmsTableData(dataUrl, resolveUrl(baseUrl ?? ""), progressCallback);
       deps.setEntries(result.data);
@@ -157,14 +161,14 @@ export function createTableLoader(deps: TableLoaderDeps) {
     get dataFetchUrl() {
       return dataFetchUrl;
     },
-    get loadPercent() {
-      return loadPercent;
-    },
     get loadMessage() {
       return loadMessage;
     },
     get loadDetail() {
       return loadDetail;
+    },
+    get loadBytes() {
+      return { loaded: loadLoaded, total: loadTotal };
     },
     get ready() {
       return ready;

@@ -31,6 +31,7 @@
   import { searchConverters } from "#lib/data/store/search-converters.svelte.js";
   import { m } from "#lib/paraglide/messages.js";
   import { errorMessageOf } from "#lib/utils/infra/error.js";
+  import { progressDetail, progressView } from "#lib/utils/infra/progress.js";
   import { buildSearchNeedles } from "#lib/utils/mirror-tables.js";
   import { resolve } from "$app/paths";
 
@@ -41,6 +42,7 @@
   const pageTitle = m["table.page.title"]();
 
   let loading = $state(true);
+  let loadProgress = $state({ loaded: 0, total: 0 });
   let error = $state<string | null>(null);
   let tables = $state<SharedTableItem[]>([]);
   let searchQuery = $state("");
@@ -52,6 +54,7 @@
 
   const login = $derived(auth.user?.login ?? null);
   const isAdmin = $derived(auth.status === "ready" && auth.user?.role === "admin");
+  const loadProgressView = $derived(progressView(loadProgress.loaded, loadProgress.total));
 
   let searchNeedles = $derived(buildSearchNeedles(searchQuery, searchConverters.list));
   let matched = $derived(filterSharedTables(tables, searchNeedles));
@@ -68,8 +71,14 @@
   ];
 
   async function loadTables(cacheBust = false): Promise<void> {
+    loadProgress = { loaded: 0, total: 0 };
     try {
-      tables = await loadSharedTables(undefined, { cacheBust });
+      tables = await loadSharedTables(undefined, {
+        cacheBust,
+        onProgress: (progress) => {
+          loadProgress = progress;
+        },
+      });
       error = null;
     } catch (e) {
       error = errorMessageOf(e, m["common.unknown_error"]());
@@ -213,7 +222,9 @@
     {#if loading}
       <div class="mt-6">
         <LoadingProgress
-          variant="indeterminate"
+          variant={loadProgressView.determinate ? "determinate" : "indeterminate"}
+          progress={loadProgressView.percent}
+          detail={progressDetail(loadProgress.loaded, loadProgress.total)}
           message={m["shared.list.loading"]()}
           title={pageTitle}
         />

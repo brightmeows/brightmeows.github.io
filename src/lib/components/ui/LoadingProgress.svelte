@@ -29,7 +29,12 @@
   }: Props = $props();
 
   let isIndeterminate = $derived(variant === "indeterminate" || progress < 0);
-  let displayPercent = $derived(isIndeterminate ? 0 : Math.round(progress));
+  let displayPercent = $derived(
+    isIndeterminate ? 0 : Math.min(100, Math.max(0, Math.round(progress)))
+  );
+  let ariaValueText = $derived(
+    isIndeterminate ? (detail ? `${message} ${detail}` : message) : undefined
+  );
 </script>
 
 <style>
@@ -56,13 +61,24 @@
 
 {#if variant === "compact"}
   <div class="flex items-center gap-3 {className}">
-    <div class="h-2 flex-1 overflow-hidden rounded-glass-sm bg-white-10">
+    <div
+      class="h-2 flex-1 overflow-hidden rounded-glass-sm bg-white-10"
+      role="progressbar"
+      aria-label={message}
+      aria-valuemin="0"
+      aria-valuemax="100"
+      aria-valuenow={isIndeterminate ? undefined : displayPercent}
+      aria-valuetext={ariaValueText}
+    >
       <div
         class="h-full rounded-glass-sm {isIndeterminate ? 'shimmer-bar' : 'progress-fill'}"
-        style="width:{isIndeterminate ? 100 : progress}%"
+        style="width:{isIndeterminate ? 100 : displayPercent}%"
       ></div>
     </div>
     <span class="text-[0.85rem] text-white-70">{message}</span>
+    {#if detail}
+      <span class="text-[0.8rem] text-white-50">{detail}</span>
+    {/if}
   </div>
 {:else}
   <div class="glass-loading-container {className}">
@@ -75,11 +91,19 @@
       {/if}
     </div>
 
-    <div class="progress-track mb-6 h-3">
+    <div
+      class="progress-track mb-6 h-3"
+      role="progressbar"
+      aria-label={message}
+      aria-valuemin="0"
+      aria-valuemax="100"
+      aria-valuenow={isIndeterminate ? undefined : displayPercent}
+      aria-valuetext={ariaValueText}
+    >
       {#if isIndeterminate}
         <div class="shimmer-bar h-full w-full rounded-glass-sm"></div>
       {:else}
-        <div class="progress-fill" style="width:{progress}%"></div>
+        <div class="progress-fill" style="width:{displayPercent}%"></div>
       {/if}
     </div>
 

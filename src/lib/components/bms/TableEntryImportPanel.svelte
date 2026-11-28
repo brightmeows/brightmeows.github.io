@@ -13,6 +13,7 @@
   import { onMount } from "svelte";
 
   import Checkbox from "#lib/components/ui/Checkbox.svelte";
+  import LoadingProgress from "#lib/components/ui/LoadingProgress.svelte";
   import { btnGhost, inputEditorMono } from "#lib/constants/ui-classes.js";
   import {
     loadChartSourceData,
@@ -21,6 +22,7 @@
   } from "#lib/data/api/bms-sources.js";
   import { m } from "#lib/paraglide/messages.js";
   import { errorMessageOf } from "#lib/utils/infra/error.js";
+  import { progressDetail, progressView } from "#lib/utils/infra/progress.js";
 
   /**
    * 跨表选择导入：从镜像或共享表里按标题/哈希挑条目追加到当前表。
@@ -42,11 +44,13 @@
 
   let sources = $state<ChartSource[]>([]);
   let sourcesLoaded = $state(false);
+  let sourcesProgress = $state({ loaded: 0, total: 0 });
   let sourceQuery = $state("");
   let selectedSource = $state<ChartSource | null>(null);
   let sourceEntries = $state<Record<string, unknown>[]>([]);
   let sourceName = $state("");
   let loading = $state(false);
+  let sourceProgress = $state({ loaded: 0, total: 0 });
   let loadError = $state<string | null>(null);
   let chartQuery = $state("");
   let currentPage = $state(1);
@@ -73,13 +77,18 @@
   const pageSomeSelected = $derived(
     !pageAllSelected && pageIndices.some((index) => selected.has(index))
   );
+  const sourcesProgressView = $derived(progressView(sourcesProgress.loaded, sourcesProgress.total));
+  const sourceProgressView = $derived(progressView(sourceProgress.loaded, sourceProgress.total));
 
   onMount(() => {
     void loadSources();
   });
 
   async function loadSources(): Promise<void> {
-    sources = await loadChartSources();
+    sourcesProgress = { loaded: 0, total: 0 };
+    sources = await loadChartSources((progress) => {
+      sourcesProgress = { loaded: progress.loaded, total: progress.total };
+    });
     sourcesLoaded = true;
   }
 
@@ -89,11 +98,14 @@
     selectedSource = source;
     sourceEntries = [];
     sourceName = "";
+    sourceProgress = { loaded: 0, total: 0 };
     selected = new Set();
     chartQuery = "";
     currentPage = 1;
     try {
-      const data = await loadChartSourceData(source);
+      const data = await loadChartSourceData(source, (progress) => {
+        sourceProgress = { loaded: progress.loaded, total: progress.total };
+      });
       sourceEntries = data.entries;
       sourceName = data.name;
     } catch (error) {
@@ -186,7 +198,14 @@
         {disabled}
       />
       {#if !sourcesLoaded}
-        <p class="mt-2 text-[0.85rem] text-white-50">{m["editor.entry.import.loading"]()}</p>
+        <div class="mt-2">
+          <LoadingProgress
+            variant="compact"
+            message={m["editor.entry.import.loading"]()}
+            progress={sourcesProgressView.determinate ? sourcesProgressView.percent : -1}
+            detail={progressDetail(sourcesProgress.loaded, sourcesProgress.total)}
+          />
+        </div>
       {:else if sources.length === 0}
         <p class="mt-2 text-[0.85rem] text-white-50">{m["editor.entry.import.no_sources"]()}</p>
       {:else}
@@ -220,7 +239,12 @@
       </div>
 
       {#if loading}
-        <p class="text-[0.85rem] text-white-50">{m["editor.entry.import.loading"]()}</p>
+        <LoadingProgress
+          variant="compact"
+          message={m["editor.entry.import.loading"]()}
+          progress={sourceProgressView.determinate ? sourceProgressView.percent : -1}
+          detail={progressDetail(sourceProgress.loaded, sourceProgress.total)}
+        />
       {:else if loadError !== null}
         <p class="text-[0.85rem] text-error">
           {m["editor.entry.import.failed"]({ detail: loadError })}

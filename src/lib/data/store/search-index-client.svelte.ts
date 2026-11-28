@@ -15,14 +15,34 @@ export type IndexPhase = "loading" | "ready" | "error";
 /** 哈希索引组阶段：首屏不加载，输入哈希时才按需拉取。 */
 export type HashIndexPhase = "idle" | "loading" | "ready" | "error";
 
+export type IndexProgressName = "manifest" | "title" | "artist" | "md5" | "sha256";
+
 /** 单个索引文件的加载状态（模板进度列表用）。 */
 export interface IndexProgressItem {
-  name: string;
+  name: IndexProgressName;
   status: "loading" | "done" | "error";
+  phase: "downloading" | "verifying" | "parsing" | "cached" | "done";
+  loaded: number;
+  /** manifest 声明的文件大小，无响应头时作大小标签。 */
+  sizeBytes: number;
+  /** Content-Length；0 表示总量未知。 */
+  totalBytes: number;
 }
 
 /** 首屏加载的索引组；哈希组按需加载，不进入这张进度表。 */
-const INDEX_NAMES = ["title", "artist"] as const;
+const INDEX_NAMES = ["manifest", "title", "artist"] as const;
+const HASH_INDEX_NAMES = ["md5", "sha256"] as const;
+
+function initialProgress(name: IndexProgressName): IndexProgressItem {
+  return {
+    name,
+    status: "loading",
+    phase: "downloading",
+    loaded: 0,
+    sizeBytes: 0,
+    totalBytes: 0,
+  };
+}
 
 /**
  * 搜索索引 Worker 的共享客户端（Svelte 5 runes）。
@@ -37,10 +57,10 @@ const INDEX_NAMES = ["title", "artist"] as const;
 export class SearchIndexClient {
   /** 索引加载阶段；仅 `ready` 后可发起搜索。 */
   phase = $state<IndexPhase>("loading");
-  /** 四个索引文件的加载进度（按固定顺序）。 */
-  progress = $state<IndexProgressItem[]>(
-    INDEX_NAMES.map((name) => ({ name, status: "loading" as const }))
-  );
+  /** 首屏三个文件的加载进度（按固定顺序）。 */
+  progress = $state<IndexProgressItem[]>(INDEX_NAMES.map(initialProgress));
+  /** 哈希组按需加载进度；首屏不下载。 */
+  hashProgress = $state<IndexProgressItem[]>(HASH_INDEX_NAMES.map(initialProgress));
   /** 加载失败原因；phase 为 `error` 时展示。 */
   errorMessage = $state<string | null>(null);
   /** 哈希索引组阶段；`idle` 表示尚未按需加载。 */
@@ -113,6 +133,7 @@ export class SearchIndexClient {
     });
     if (this.hashPhase === "idle" && this.#worker) {
       this.hashPhase = "loading";
+      this.hashProgress = HASH_INDEX_NAMES.map(initialProgress);
       const request: WorkerLoadHashRequest = { type: "load-hash" };
       this.#worker.postMessage(request);
     }
@@ -171,9 +192,7 @@ export class SearchIndexClient {
   #onMessage(msg: WorkerMessage): void {
     switch (msg.type) {
       case "index-progress": {
-        this.progress = this.progress.map((item) =>
-          item.name === msg.name ? { ...item, status: msg.status } : item
-        );
+        this.#applyIndexProgress(msg);
         break;
       }
       case "ready": {
@@ -212,6 +231,22 @@ export class SearchIndexClient {
         }
         break;
       }
+    }
+  }
+
+  #applyIndexProgress(msg: Extract<WorkerMessage, { type: "index-progress" }>): void {
+    const next: IndexProgressItem = {
+      name: msg.name,
+      status: msg.status,
+      phase: msg.phase ?? (msg.status === "done" ? "done" : "downloading"),
+      loaded: msg.loaded ?? 0,
+      sizeBytes: msg.sizeBytes ?? 0,
+      totalBytes: msg.totalBytes ?? 0,
+    };
+    if (this.progress.some((item) => item.name === msg.name)) {
+      this.progress = this.progress.map((item) => (item.name === msg.name ? next : item));
+    } else if (this.hashProgress.some((item) => item.name === msg.name)) {
+      this.hashProgress = this.hashProgress.map((item) => (item.name === msg.name ? next : item));
     }
   }
 }
